@@ -1,0 +1,38 @@
+name: Web & Mobile CI Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - hameed/mobile-app
+  workflow_dispatch:
+
+concurrency:
+  group: ci-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type-check
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Web production build (Local-Only) and Capacitor sync check
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android && npx cap doctor android

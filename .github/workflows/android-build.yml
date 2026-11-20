@@ -1,0 +1,112 @@
+# بناء تطبيق الأندرويد (Capacitor) — APK للتجربة و AAB/APK للنشر على متجر Play
+# يعمل: يدويًا (workflow_dispatch) أو عند الدفع إلى main / hameed/mobile-app أو وسم app-v*
+# التوقيع: ضع هذه الأسرار في إعدادات المستودع (Settings → Secrets → Actions):
+#   KEYSTORE_BASE64  — ملف المفاتيح بترميز base64 (base64 -w0 release.keystore)
+#   KEYSTORE_PASSWORD، KEY_ALIAS، KEY_PASSWORD
+name: Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - hameed/mobile-app
+    tags:
+      - 'app-v*'
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check and run unit tests
+        run: |
+          npm run lint
+          npm run test:unit
+
+      - name: Check optional bundled Adhan audio assets
+        run: |
+          missing=0
+          for f in adhan_ahmad.mp3 adhan_madinah.mp3 adhan_madinah2.mp3 adhan_mohammed.mp3 adhan_almulla.mp3 adhan_hamad.mp3 takbeerat_eid.mp3; do
+            if [ ! -s "public/sounds/adhan/$f" ] || [ ! -s "android/app/src/main/res/raw/$f" ]; then
+              echo "::warning::Optional Adhan audio '$f' is missing; app falls back to built-in/system alert sound."
+              missing=$((missing + 1))
+            fi
+          done
+          echo "Optional missing Adhan MP3 checks: $missing"
+
+      - name: Build web assets, generate icons/splash, and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+
+      - name: Verify required Android resources and Capacitor setup
+        run: |
+          test -s "android/app/src/main/res/drawable/splash.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png"
+          test -s "android/app/src/main/assets/public/index.html"
+          npx cap doctor android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK (للتجربة الفورية)
+        run: ./android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Build signed release AAB and APK (متطلب متجر Play)
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./android/gradlew -p android bundleRelease assembleRelease --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Upload signed release AAB
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload signed release APK
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
