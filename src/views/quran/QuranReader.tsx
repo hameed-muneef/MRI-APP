@@ -16,6 +16,9 @@ import {EmptyNote, QuranVerseText, ReferenceBadge, copyText, shareText} from './
 import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, type FetchState} from '../../quran/content-api';
 import {loadReciters, audioUrl, defaultMoshaf, type Reciter} from '../../quran/audio';
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
+import {backgroundAudio} from '../../audio/background-player';
+import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
+import type {AudioTrack} from '../../audio/types';
 import {InternetBadge, useOnline} from '../../online';
 import {passageAyahs, progressLabel, clampRepeat, type MemorizationProgress} from '../../quran/memorization-audio';
 
@@ -94,29 +97,34 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
   const [scrollMenu, setScrollMenu] = useState<{x:number;y:number}|null>(null);
   const autoScrollSpeedRef = useRef(autoScrollSpeed);
 
-  // Audio recitation
+  // Audio recitation backed by backgroundAudio (persists across tabs & screen lock)
+  const audioState = useBackgroundAudio();
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [reciterId, setReciterId] = useState<number | null>(null);
   const [moshafId, setMoshafId] = useState<number | null>(null);
-  const [audioLoading, setAudioLoading] = useState(false);
-  const [audioError, setAudioError] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string>('');
+  const [memoPreparing, setMemoPreparing] = useState(false);
+
+  const isReaderSurahActive =
+    audioState.category === 'quran' &&
+    audioState.status !== 'idle' &&
+    audioState.currentTrack?.meta?.mode === 'reader-surah' &&
+    Number(audioState.currentTrack?.meta?.surah) === surahNumber;
+  const isPlaying = isReaderSurahActive && audioState.status === 'playing';
+  const audioLoading = memoPreparing || (isReaderSurahActive && audioState.status === 'loading');
+  const audioError = isReaderSurahActive && audioState.status === 'error' ? (audioState.error ?? 'تعذر تشغيل التلاوة.') : '';
 
   useEffect(() => {
     let active = true;
     loadReciters().then(list => {
       if (!active) return;
       setReciters(list);
-      // Pick a default reciter (Abdul Basit or first available)
       const defaultReciter = list.find(r => r.name.includes('عبد الباسط')) || list[0];
       if (defaultReciter) {
         setReciterId(defaultReciter.id);
         const m = defaultMoshaf(defaultReciter);
         if (m) setMoshafId(m.id);
       }
-    }).catch(() => { if (active) setAudioError('تعذر تحميل قائمة القراء.'); });
+    }).catch(() => {});
     return () => { active = false; };
   }, []);
 
@@ -126,105 +134,98 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
   const playSurah = () => {
     if (!currentMoshaf) return;
     const url = audioUrl(currentMoshaf, surahNumber);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setAudioLoading(true);
-    setAudioError('');
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    audioUrlRef.current = url;
-    audio.addEventListener('canplay', () => setAudioLoading(false), {once: true});
-    audio.addEventListener('playing', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
-    audio.addEventListener('ended', () => setIsPlaying(false));
-    audio.addEventListener('error', () => { setAudioLoading(false); setAudioError('تعذر تشغيل التلاوة.'); });
-    audio.play().catch(() => { setAudioLoading(false); setAudioError('تعذر تشغيل التلاوة.'); });
+    const info = surahInfo(asset, surahNumber);
+    void backgroundAudio.playSingle({
+      id: `quran:reader-surah:${reciterId ?? 0}:${surahNumber}`,
+      title: info?.name ?? `سورة ${surahNumber}`,
+      subtitle: currentReciter?.name ?? 'تلاوة القرآن الكريم',
+      url,
+      category: 'quran',
+      meta: {mode: 'reader-surah', surah: surahNumber},
+    });
   };
 
   const togglePlay = () => {
-    if (memoStatus === 'playing' || memoStatus === 'paused') stopMemo();
-    // تلاوة السورة تُوقف صوت الآية المنفردة — صوت واحد فقط في كل لحظة.
-    stopAyahAudio();
-    if (!audioRef.current) { playSurah(); return; }
-    if (isPlaying) {
-      audioRef.current.pause();
+    if (!isReaderSurahActive) { playSurah(); return; }
+    if (audioState.status === 'playing' || audioState.status === 'loading') {
+      void backgroundAudio.pause();
     } else {
-      audioRef.current.play().catch(() => setAudioError('تعذر تشغيل التلاوة.'));
+      void backgroundAudio.resume();
     }
   };
 
   const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (audioState.category === 'quran') {
+      void backgroundAudio.stop();
     }
-    setIsPlaying(false);
-    setAudioLoading(false);
   };
 
   // Per-ayah audio (Quran.com)
   const [ayahReciterId] = useState<number>(7); // Mishary Alafasy default
   const [ayahAudioUrls, setAyahAudioUrls] = useState<Map<number, string>>(new Map());
-  const [playingAyah, setPlayingAyah] = useState<number | null>(null);
-  const ayahAudioRef = useRef<HTMLAudioElement | null>(null);
-  // يضمن أن صوت آية واحدة فقط يعمل في أي لحظة: كل تشغيل جديد يُبطل الطلبات السابقة.
-  const ayahPlayTokenRef = useRef(0);
+  const playingAyah =
+    audioState.category === 'quran' &&
+    (audioState.status === 'playing' || audioState.status === 'loading') &&
+    audioState.currentTrack?.meta?.mode === 'reader-ayah' &&
+    Number(audioState.currentTrack?.meta?.surah) === surahNumber
+      ? Number(audioState.currentTrack.meta.ayah)
+      : null;
 
   const stopAyahAudio = () => {
-    ayahPlayTokenRef.current += 1;
-    if (ayahAudioRef.current) {
-      ayahAudioRef.current.pause();
-      ayahAudioRef.current = null;
+    if (audioState.category === 'quran' && audioState.currentTrack?.meta?.mode === 'reader-ayah') {
+      void backgroundAudio.stop();
     }
-    setPlayingAyah(null);
   };
 
   const playAyah = async (ayah: number) => {
-    // Stop memo if running
-    if (memoStatus === 'playing' || memoStatus === 'paused') stopMemo();
-    // Stop surah-level audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setIsPlaying(false);
+    if (playingAyah === ayah) {
+      void backgroundAudio.stop();
+      return;
     }
-    // Stop the currently playing ayah — only one ayah voice runs at a time
-    if (ayahAudioRef.current) {
-      ayahAudioRef.current.pause();
-      ayahAudioRef.current = null;
-    }
-    const token = ++ayahPlayTokenRef.current;
-    setPlayingAyah(ayah);
-    let url: string | null = ayahAudioUrls.get(ayah) ?? null;
-    if (!url) {
-      url = await fetchAyahAudioUrl(ayahReciterId, surahNumber, ayah);
-      // تم تشغيل آية أخرى أثناء جلب الرابط — لا تُشغّل هذه.
-      if (token !== ayahPlayTokenRef.current) return;
-      if (url) setAyahAudioUrls(prev => new Map(prev).set(ayah, url!));
-    }
-    if (!url) { if (token === ayahPlayTokenRef.current) setPlayingAyah(null); return; }
-    const audio = new Audio(url);
-    ayahAudioRef.current = audio;
-    audio.addEventListener('ended', () => {
-      // Auto-play next ayah
-      const idx = verses.findIndex(v => v.a === ayah);
-      if (token === ayahPlayTokenRef.current) {
-        if (idx >= 0 && idx < verses.length - 1) playAyah(verses[idx + 1].a);
-        else setPlayingAyah(null);
+    const startIdx = verses.findIndex(v => v.a === ayah);
+    if (startIdx < 0) return;
+
+    let urlMap = new Map(ayahAudioUrls);
+    if (!urlMap.has(ayah)) {
+      const fetched = await fetchSurahAyahAudioUrls(ayahReciterId, surahNumber, verses.map(v => v.a));
+      if (fetched.size > 0) {
+        urlMap = fetched;
+        setAyahAudioUrls(fetched);
+      } else {
+        const single = await fetchAyahAudioUrl(ayahReciterId, surahNumber, ayah);
+        if (single) urlMap.set(ayah, single);
       }
-    });
-    audio.addEventListener('error', () => { if (token === ayahPlayTokenRef.current) setPlayingAyah(null); });
-    audio.play().catch(() => { if (token === ayahPlayTokenRef.current) setPlayingAyah(null); });
+    }
+
+    const info = surahInfo(asset, surahNumber);
+    const tracks: AudioTrack[] = [];
+    for (let i = startIdx; i < verses.length; i += 1) {
+      const aNum = verses[i].a;
+      const url = urlMap.get(aNum);
+      if (!url) continue;
+      tracks.push({
+        id: `quran:reader-ayah:${surahNumber}:${aNum}`,
+        title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(aNum)}`,
+        subtitle: 'تلاوة متتابعة',
+        url,
+        category: 'quran',
+        meta: {mode: 'reader-ayah', surah: surahNumber, ayah: aNum},
+      });
+    }
+    if (!tracks.length) return;
+    await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
 
-  // Stop audio when surah changes
-  useEffect(() => { stopAudio(); stopAyahAudio(); stopMemo(); }, [surahNumber]);
-
-  // Cleanup on unmount
-  useEffect(() => { return () => { stopAudio(); stopAyahAudio(); }; }, []);
+  // Stop reader audio only when user switches to a different surah (not on initial mount or unmount).
+  const prevSurahAudioRef = useRef(surahNumber);
+  useEffect(() => {
+    if (prevSurahAudioRef.current === surahNumber) return;
+    prevSurahAudioRef.current = surahNumber;
+    const cur = backgroundAudio.getState();
+    if (cur.category === 'quran' && String(cur.currentTrack?.meta?.mode ?? '').startsWith('reader-')) {
+      void backgroundAudio.stop();
+    }
+  }, [surahNumber]);
 
   useEffect(()=>{autoScrollSpeedRef.current=autoScrollSpeed},[autoScrollSpeed]);
 useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(autoScrollSpeed)); } catch { /* ignore */ } }, [autoScrollSpeed]);
@@ -264,99 +265,100 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
   const [memoEnd, setMemoEnd] = useState(1);
   const [memoAyahRepeat, setMemoAyahRepeat] = useState(3);
   const [memoPassageRepeat, setMemoPassageRepeat] = useState(1);
-  const [memoStatus, setMemoStatus] = useState<'idle' | 'playing' | 'paused' | 'complete'>('idle');
-  const [memoProgress, setMemoProgress] = useState<MemorizationProgress | null>(null);
-  const memoAbortRef = useRef(false);
-  const memoPausedRef = useRef(false);
-  const memoAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const memoAyahs = useMemo(() => passageAyahs(memoStart, memoEnd), [memoStart, memoEnd]);
 
+  const isMemoTrack =
+    audioState.category === 'quran' &&
+    audioState.status !== 'idle' &&
+    audioState.currentTrack?.meta?.mode === 'reader-memo' &&
+    Number(audioState.currentTrack?.meta?.surah) === surahNumber;
+
+  const memoStatus: 'idle' | 'playing' | 'paused' | 'complete' = isMemoTrack
+    ? (audioState.status === 'paused' ? 'paused' : 'playing')
+    : 'idle';
+
+  const memoProgress: MemorizationProgress | null = isMemoTrack && audioState.currentTrack?.meta
+    ? {
+        currentAyah: Number(audioState.currentTrack.meta.ayah ?? memoStart),
+        ayahIndex: Number(audioState.currentTrack.meta.ayahIndex ?? 0),
+        ayahRepeatCurrent: Number(audioState.currentTrack.meta.ayahRepeatCurrent ?? 1),
+        ayahRepeatTotal: Number(audioState.currentTrack.meta.ayahRepeatTotal ?? memoAyahRepeat),
+        passageRepeatCurrent: Number(audioState.currentTrack.meta.passageRepeatCurrent ?? 1),
+        passageRepeatTotal: Number(audioState.currentTrack.meta.passageRepeatTotal ?? memoPassageRepeat),
+        totalAyahs: Number(audioState.currentTrack.meta.totalAyahs ?? memoAyahs.length),
+        isPlaying: audioState.status === 'playing' || audioState.status === 'loading',
+        isPaused: audioState.status === 'paused',
+        isComplete: false,
+      }
+    : null;
+
   const runMemo = async () => {
-    // وضع الحفظ يوقف أي تلاوة جارية — صوت واحد فقط في كل لحظة.
-    stopAyahAudio();
-    stopAudio();
-    memoAbortRef.current = false;
-    memoPausedRef.current = false;
-    setMemoStatus('playing');
+    setMemoPreparing(true);
+    let urlMap = new Map(ayahAudioUrls);
+    if (memoAyahs.some(a => !urlMap.has(a))) {
+      const batch = await fetchSurahAyahAudioUrls(ayahReciterId, surahNumber, memoAyahs);
+      if (batch.size > 0) {
+        urlMap = batch;
+        setAyahAudioUrls(batch);
+      } else {
+        for (const a of memoAyahs) {
+          if (!urlMap.has(a)) {
+            const single = await fetchAyahAudioUrl(ayahReciterId, surahNumber, a);
+            if (single) urlMap.set(a, single);
+          }
+        }
+      }
+    }
+    setMemoPreparing(false);
+
+    const info = surahInfo(asset, surahNumber);
     const totalAyahs = memoAyahs.length;
-    for (let pr = 0; pr < memoPassageRepeat; pr++) {
-      if (memoAbortRef.current) break;
-      for (let ai = 0; ai < totalAyahs; ai++) {
-        if (memoAbortRef.current) break;
+    const tracks: AudioTrack[] = [];
+    for (let pr = 0; pr < memoPassageRepeat; pr += 1) {
+      for (let ai = 0; ai < totalAyahs; ai += 1) {
         const ayah = memoAyahs[ai];
-        for (let ar = 0; ar < memoAyahRepeat; ar++) {
-          if (memoAbortRef.current) break;
-          // Wait if paused
-          while (memoPausedRef.current && !memoAbortRef.current) {
-            await new Promise(r => setTimeout(r, 200));
-          }
-          if (memoAbortRef.current) break;
-          setMemoProgress({
-            currentAyah: ayah,
-            ayahIndex: ai,
-            ayahRepeatCurrent: ar + 1,
-            ayahRepeatTotal: memoAyahRepeat,
-            passageRepeatCurrent: pr + 1,
-            passageRepeatTotal: memoPassageRepeat,
-            totalAyahs,
-            isPlaying: true,
-            isPaused: false,
-            isComplete: false
-          });
-          // Play the ayah
-          let url: string | null = ayahAudioUrls.get(ayah) ?? null;
-          if (!url) {
-            url = await fetchAyahAudioUrl(ayahReciterId, surahNumber, ayah);
-            if (url) setAyahAudioUrls(prev => new Map(prev).set(ayah, url!));
-          }
-          if (!url) {
-            // Skip this ayah if audio unavailable, but continue
-            continue;
-          }
-          if (memoAbortRef.current) break;
-          await new Promise<void>((resolve) => {
-            const audio = new Audio(url!);
-            memoAudioRef.current = audio;
-            audio.addEventListener('ended', () => resolve());
-            audio.addEventListener('error', () => resolve());
-            audio.play().catch(() => resolve());
+        const url = urlMap.get(ayah);
+        if (!url) continue;
+        for (let ar = 0; ar < memoAyahRepeat; ar += 1) {
+          tracks.push({
+            id: `quran:memo:${surahNumber}:${ayah}:p${pr + 1}:r${ar + 1}`,
+            title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(ayah)}`,
+            subtitle: `تكرار ${toArabicNumber(ar + 1)}/${toArabicNumber(memoAyahRepeat)} · مقطع ${toArabicNumber(pr + 1)}/${toArabicNumber(memoPassageRepeat)}`,
+            url,
+            category: 'quran',
+            meta: {
+              mode: 'reader-memo',
+              surah: surahNumber,
+              ayah,
+              ayahIndex: ai,
+              ayahRepeatCurrent: ar + 1,
+              ayahRepeatTotal: memoAyahRepeat,
+              passageRepeatCurrent: pr + 1,
+              passageRepeatTotal: memoPassageRepeat,
+              totalAyahs,
+            },
           });
         }
       }
     }
-    if (!memoAbortRef.current) {
-      setMemoStatus('complete');
-      setMemoProgress(prev => prev ? {...prev, isPlaying: false, isComplete: true} : null);
-    } else {
-      setMemoStatus('idle');
-      setMemoProgress(null);
+    if (!tracks.length) {
+      notify('تعذر جلب الصوتيات الخاصة بالحفظ.');
+      return;
     }
+    await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
 
   const pauseMemo = () => {
-    memoPausedRef.current = true;
-    if (memoAudioRef.current) memoAudioRef.current.pause();
-    setMemoStatus('paused');
-    setMemoProgress(prev => prev ? {...prev, isPlaying: false, isPaused: true} : null);
+    void backgroundAudio.pause();
   };
 
   const resumeMemo = () => {
-    memoPausedRef.current = false;
-    if (memoAudioRef.current) memoAudioRef.current.play().catch(() => {});
-    setMemoStatus('playing');
-    setMemoProgress(prev => prev ? {...prev, isPlaying: true, isPaused: false} : null);
+    void backgroundAudio.resume();
   };
 
   const stopMemo = () => {
-    memoAbortRef.current = true;
-    memoPausedRef.current = false;
-    if (memoAudioRef.current) {
-      memoAudioRef.current.pause();
-      memoAudioRef.current = null;
-    }
-    setMemoStatus('idle');
-    setMemoProgress(null);
+    if (isMemoTrack) void backgroundAudio.stop();
   };
 
   const surah = surahInfo(asset, surahNumber);
@@ -548,7 +550,7 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
           {audioLoading ? <Loader2 size={16} className="spin"/> : isPlaying ? <Pause size={16}/> : <Play size={16}/>}
           {audioLoading ? 'جارٍ التحميل…' : isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
         </button>
-        <button type="button" className="icon-btn" onClick={stopAudio} disabled={!audioRef.current} aria-label="إيقاف"><Square size={16}/></button>
+        <button type="button" className="icon-btn" onClick={stopAudio} disabled={!isReaderSurahActive} aria-label="إيقاف"><Square size={16}/></button>
         {audioError && <span className="muted small" role="alert">{audioError}</span>}
       </div>
 
@@ -605,11 +607,6 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
             )}
             {(memoStatus === 'playing' || memoStatus === 'paused') && (
               <button type="button" className="icon-btn" onClick={stopMemo} aria-label="إيقاف"><Square size={16}/></button>
-            )}
-            {memoStatus === 'complete' && (
-              <button type="button" className="soft-btn" onClick={() => { setMemoStatus('idle'); setMemoProgress(null); }}>
-                <RotateCcw size={16}/> إعادة
-              </button>
             )}
           </div>
           {memoProgress && (

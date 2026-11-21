@@ -6,7 +6,7 @@ import {createQuranState} from './quran/learning';
 import type {QuranLearningState} from './quran/types';
 
 // أنواع الحالة المشتركة ومساعداتها، لاستخدامها في App والواجهات المستخرجة
-export type View='home'|'day'|'tasks'|'week'|'month'|'goals'|'quran'|'haramain'|'reflect'|'wird'|'profile'|'settings'|'payment'|'paymentHistory'|'qibla';
+export type View='home'|'day'|'tasks'|'week'|'month'|'goals'|'quran'|'haramain'|'reflect'|'wird'|'profile'|'settings'|'payment'|'paymentHistory'|'qibla'|'mosques';
 export type Period='daily'|'weekly'|'monthly';
 // doneKey: مفتاح الفترة التي تأشر فيها المهمة («يومي مع الله» جديد يوميًا، والأسبوعي والشهري مرتبطان بفترتهما)؛ راجع task-periods.ts
 export type Task={id:string;title:string;period:Period;done:boolean;optional:boolean;weekStart?:string;monthKey?:string;scheduledDate?:string;doneKey?:string;sourceLabel?:string;source?:{groupId:string;revision:number;position:number}};

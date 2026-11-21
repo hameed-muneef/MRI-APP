@@ -12,7 +12,10 @@ import {
   searchVerses, basmalaText
 } from '../../quran/content';
 import {TRANSLATIONS, TAFSIRS, fetchTafsir, fetchTranslation, type FetchState} from '../../quran/content-api';
-import {fetchAyahAudioUrl, fetchChapterAudioUrl, DEFAULT_RECITATION_ID, QURAN_COM_RECITERS} from '../../quran/ayah-audio';
+import {fetchAllChapterAudioUrls, fetchAyahAudioUrl, fetchChapterAudioUrl, DEFAULT_RECITATION_ID, QURAN_COM_RECITERS} from '../../quran/ayah-audio';
+import {backgroundAudio} from '../../audio/background-player';
+import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
+import type {AudioTrack} from '../../audio/types';
 import {InternetBadge, useOnline} from '../../online';
 import {copyText, shareText} from './ui';
 import QuranReader from './QuranReader';
@@ -110,23 +113,32 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   const [autoSpeed, setAutoSpeed] = useState<number>(() => {
     try { const v = Number(localStorage.getItem('quran-autoscroll-speed')); return Number.isFinite(v) && v > 0 ? v : 240; } catch { return 240; }
   });
-  const [playingKey, setPlayingKey] = useState<string>('');
-  const [audioLoading, setAudioLoading] = useState(false);
+  const audioState = useBackgroundAudio();
+  const [ayahLoading, setAyahLoading] = useState(false);
   const [reciterId, setReciterId] = useState<number>(() => {
     try { const v = Number(localStorage.getItem('quran-reciter-id')); return QURAN_COM_RECITERS.some(r => r.id === v) ? v : DEFAULT_RECITATION_ID; } catch { return DEFAULT_RECITATION_ID; }
   });
   const [playScope, setPlayScope] = useState<'surah' | 'fromHere' | 'all'>(() => {
     try { const v = localStorage.getItem('quran-play-scope'); return (v === 'surah' || v === 'fromHere' || v === 'all') ? v : 'surah'; } catch { return 'surah'; }
   });
-  const continuousRef = useRef<{running: boolean}>({running: false});
+  const activeQuranContinuous =
+    audioState.category === 'quran' &&
+    audioState.status !== 'idle' &&
+    audioState.currentTrack?.meta?.mode === 'continuous';
+  const playState: 'idle' | 'playing' | 'paused' = activeQuranContinuous
+    ? (audioState.status === 'paused' ? 'paused' : audioState.status === 'error' ? 'idle' : 'playing')
+    : 'idle';
+  const currentKey = activeQuranContinuous ? String(audioState.currentTrack?.meta?.key ?? '') : '';
+  const playingKey =
+    audioState.category === 'quran' && (audioState.status === 'playing' || audioState.status === 'loading')
+      ? String(audioState.currentTrack?.meta?.key ?? '')
+      : '';
+  const audioLoading = ayahLoading || (audioState.category === 'quran' && audioState.status === 'loading');
+
   const playStateRef = useRef<'idle' | 'playing' | 'paused'>('idle');
-  const [playState, setPlayState] = useState<'idle' | 'playing' | 'paused'>('idle');
-  const currentKeyRef = useRef<string>('');
-  const [currentKey, setCurrentKey] = useState<string>('');
+  playStateRef.current = playState;
   const currentIndexRef = useRef<number>(0);
   const currentStopSurahRef = useRef<number | undefined>(undefined);
-  const currentResolveRef = useRef<(() => void) | null>(null);
-  const restartRef = useRef<boolean>(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [khatmahOpen, setKhatmahOpen] = useState(false);
   const [khatmahPace, setKhatmahPace] = useState<number>(() => {
@@ -137,7 +149,6 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   });
 
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoScrollingRef = useRef<boolean>(false);
   const speedRef = useRef(autoSpeed);
   const stateRef = useRef(state);
@@ -246,129 +257,99 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   };
 
   const stopAudio = useCallback(() => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    setPlayingKey('');
+    void backgroundAudio.stop();
   }, []);
 
   const closePopover = useCallback(() => {
-    continuousRef.current.running = false;
-    restartRef.current = false;
-    const r = currentResolveRef.current;
-    currentResolveRef.current = null;
-    if (r) r();
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    playStateRef.current = 'idle';
-    setPlayState('idle');
-    setCurrentKey('');
-    setPlayingKey('');
     setActive(null);
   }, []);
 
   const pauseContinuous = useCallback(() => {
-    if (playStateRef.current !== 'playing') return;
-    playStateRef.current = 'paused';
-    setPlayState('paused');
-    if (audioRef.current) audioRef.current.pause();
+    void backgroundAudio.pause();
   }, []);
 
   const resumeContinuous = useCallback(() => {
-    if (playStateRef.current !== 'paused') return;
-    playStateRef.current = 'playing';
-    setPlayState('playing');
-    if (audioRef.current) audioRef.current.play().catch(() => {});
+    void backgroundAudio.resume();
   }, []);
 
   const playContinuousFrom = useCallback(async (startIndex: number, stopSurah?: number) => {
-    const cur = audioRef.current;
-    if (cur) { cur.pause(); audioRef.current = null; }
-    if (playStateRef.current !== 'idle') {
-      continuousRef.current.running = false;
-      const r = currentResolveRef.current;
-      currentResolveRef.current = null;
-      if (r) r();
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    if (!online) {
+      notify('تلاوة القرآن تحتاج اتصالًا بالإنترنت. النص والتفسير المحفوظ يعملان بلا اتصال.');
+      return;
     }
-    continuousRef.current.running = true;
-    playStateRef.current = 'playing';
-    setPlayState('playing');
     const verses = asset.verses;
     const startVerse = verses[Math.max(0, Math.min(startIndex, verses.length - 1))];
-    let surah = stopSurah !== undefined ? stopSurah : (startVerse?.s ?? 1);
-    const lastSurah = stopSurah !== undefined ? stopSurah : (playScope === 'surah' ? surah : 114);
-    while (continuousRef.current.running && surah <= lastSurah) {
-      const key = `${surah}:1`;
-      currentIndexRef.current = verses.findIndex(v => v.s === surah && v.a === 1);
-      currentKeyRef.current = key;
-      setCurrentKey(key);
-      setPlayingKey(key);
-      const firstVerse = asset.verses.find(v => v.s === surah && v.a === 1);
-      if (firstVerse) {
-        const el = pageRefs.current[firstVerse.p - 1];
-        if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY - TOOLBAR_OFFSET;
-          window.scrollTo({top: Math.max(0, top), behavior: 'auto'});
-        }
+    const startSurah = stopSurah !== undefined ? stopSurah : (startVerse?.s ?? 1);
+    const lastSurah = stopSurah !== undefined ? stopSurah : (playScope === 'surah' ? startSurah : 114);
+    currentStopSurahRef.current = stopSurah;
+    currentIndexRef.current = Math.max(0, verses.findIndex(v => v.s === startSurah && v.a === 1));
+
+    const firstVerse = asset.verses.find(v => v.s === startSurah && v.a === 1);
+    if (firstVerse) {
+      const el = pageRefs.current[firstVerse.p - 1];
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - TOOLBAR_OFFSET;
+        window.scrollTo({top: Math.max(0, top), behavior: 'auto'});
       }
-      while ((playStateRef.current as string) === 'paused' && continuousRef.current.running) {
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (!continuousRef.current.running) break;
-      if ((playStateRef.current as string) === 'idle') break;
-      const url = await fetchChapterAudioUrl(reciterIdRef.current ?? reciterId, surah);
-      if (!continuousRef.current.running) break;
-      if (restartRef.current) { restartRef.current = false; continue; }
-      if (!url) { surah += 1; continue; }
-      await new Promise<void>(resolve => {
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        currentResolveRef.current = resolve;
-        const finish = () => { currentResolveRef.current = null; audioRef.current = null; resolve(); };
-        audio.addEventListener('ended', finish, {once: true});
-        audio.addEventListener('error', finish, {once: true});
-        audio.play().catch(finish);
-      });
-      if (!continuousRef.current.running) break;
-      if (restartRef.current) { restartRef.current = false; continue; }
-      surah += 1;
     }
-    continuousRef.current.running = false;
-    playStateRef.current = 'idle';
-    setPlayState('idle');
-    setCurrentKey('');
-    setPlayingKey('');
-    currentResolveRef.current = null;
-  }, [asset, reciterId]);
+
+    const activeReciterId = reciterIdRef.current ?? reciterId;
+    const reciterName = QURAN_COM_RECITERS.find(r => r.id === activeReciterId)?.name ?? 'مشاري راشد العفاسي';
+    setAyahLoading(true);
+    let urlMap = await fetchAllChapterAudioUrls(activeReciterId);
+    if (!urlMap.has(startSurah)) {
+      const single = await fetchChapterAudioUrl(activeReciterId, startSurah);
+      if (single) {
+        urlMap = new Map(urlMap).set(startSurah, single);
+      }
+    }
+    setAyahLoading(false);
+
+    const tracks: AudioTrack[] = [];
+    for (let s = startSurah; s <= lastSurah; s += 1) {
+      const url = urlMap.get(s);
+      if (!url) continue;
+      tracks.push({
+        id: `quran:ch:${activeReciterId}:${s}`,
+        title: surahInfo(asset, s)?.name ?? `سورة ${s}`,
+        subtitle: reciterName,
+        url,
+        category: 'quran',
+        meta: {mode: 'continuous', key: `${s}:1`, surah: s, reciterId: activeReciterId},
+      });
+    }
+
+    if (!tracks.length) {
+      notify('تعذر جلب تلاوة السورة حاليًا. تحقق من الاتصال وأعد المحاولة.');
+      return;
+    }
+
+    await backgroundAudio.playQueue(tracks, 0, 'quran');
+  }, [asset, notify, online, playScope, reciterId]);
 
   // reciterIdRef sync
   const reciterIdRef = useRef<number>(reciterId);
   useEffect(() => { reciterIdRef.current = reciterId; }, [reciterId]);
 
   const playAyah = async (verse: QuranVerse) => {
-    if (continuousRef.current.running) {
-      continuousRef.current.running = false;
-      const r = currentResolveRef.current;
-      currentResolveRef.current = null;
-      if (r) r();
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-      playStateRef.current = 'idle';
-      setPlayState('idle');
-    }
-    if (playingKey === `${verse.s}:${verse.a}`) { stopAudio(); return; }
+    const targetKey = `${verse.s}:${verse.a}`;
+    if (playingKey === targetKey) { stopAudio(); return; }
     if (!online) { notify('تلاوة الآيات تحتاج اتصالًا بالإنترنت. النص والتفسير المحفوظ يعملان بلا اتصال.'); return; }
-    setAudioLoading(true);
+    setAyahLoading(true);
     const url = await fetchAyahAudioUrl(reciterId, verse.s, verse.a);
-    setAudioLoading(false);
+    setAyahLoading(false);
     if (!url) { notify('تعذر جلب تلاوة هذه الآية.'); return; }
-    stopAudio();
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    audio.addEventListener('ended', () => setPlayingKey(''), {once: true});
-    audio.addEventListener('error', () => { setPlayingKey(''); notify('تعذر تشغيل التلاوة.'); });
-    setPlayingKey(`${verse.s}:${verse.a}`);
-    audio.play().catch(() => { setPlayingKey(''); notify('تعذر تشغيل التلاوة.'); });
+    const surahName = surahInfo(asset, verse.s)?.name ?? `سورة ${verse.s}`;
+    const reciterName = QURAN_COM_RECITERS.find(r => r.id === reciterId)?.name ?? '';
+    await backgroundAudio.playSingle({
+      id: `quran:ayah:${reciterId}:${targetKey}`,
+      title: `${surahName} · آية ${toArabicNumber(verse.a)}`,
+      subtitle: reciterName,
+      url,
+      category: 'quran',
+      meta: {mode: 'ayah', key: targetKey, surah: verse.s, ayah: verse.a, reciterId},
+    });
   };
-
-  useEffect(() => () => { continuousRef.current.running = false; audioRef.current?.pause(); audioRef.current = null; }, []);
 
   // جلب التفسير أو الترجمة عند اختيار الآية (يُخزَّن محليًا بعد أول فتح).
   useEffect(() => {
@@ -505,27 +486,24 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   useEffect(() => { setJumpValue('1'); }, [jumpKind]);
 
   // تغيير القارئ/النطاق أثناء التشغيل: تحديث المصدر في المكان (إعادة تشغيل من الموضع الحالي).
+  const prevReciterRef = useRef(reciterId);
   useEffect(() => {
+    if (prevReciterRef.current === reciterId) return;
+    prevReciterRef.current = reciterId;
     if (playStateRef.current === 'idle') return;
-    restartRef.current = false;
-    // restart from current index with new reciter
-    const idx = currentIndexRef.current;
+    const playingSurah = Number(currentKey.split(':')[0]) || (pages[page - 1]?.verses[0]?.s ?? 1);
+    const idx = Math.max(0, asset.verses.findIndex(v => v.s === playingSurah && v.a === 1));
     const ss = currentStopSurahRef.current;
-    // stop current audio
-    const r = currentResolveRef.current;
-    currentResolveRef.current = null;
-    if (r) r();
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    // re-trigger playContinuousFrom from idx (it will handle idle check)
-    // Use a microtask to avoid setState during render
     const t = setTimeout(() => { void playContinuousFrom(idx, ss); }, 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reciterId]);
 
+  const prevScopeRef = useRef(playScope);
   useEffect(() => {
+    if (prevScopeRef.current === playScope) return;
+    prevScopeRef.current = playScope;
     if (playStateRef.current === 'idle') return;
-    // scope changed: restart from new scope start
     let startIndex = 0;
     const startSurah = pages[page - 1]?.verses[0]?.s ?? 1;
     if (playScope === 'surah') {
@@ -540,12 +518,6 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     }
     const stopSurah = playScope === 'surah' ? startSurah : undefined;
     currentStopSurahRef.current = stopSurah;
-    const r = currentResolveRef.current;
-    currentResolveRef.current = null;
-    if (r) r();
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    playStateRef.current = 'idle';
-    setPlayState('idle');
     const t = setTimeout(() => { void playContinuousFrom(startIndex, stopSurah); }, 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

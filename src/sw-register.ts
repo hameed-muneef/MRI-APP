@@ -9,7 +9,7 @@ const isCapacitorNative =
   typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform === 'function' &&
   Boolean((window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform());
 
-if (!isCapacitorNative && 'serviceWorker' in navigator) {
+if (!isCapacitorNative && import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // إعادة تحميل واحدة عند تولي service worker جديد للسيطرة على الصفحة.
     navigator.serviceWorker.addEventListener('controllerchange', () => {

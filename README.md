@@ -1,4 +1,4 @@
-﻿# الربانيون — نسخة أولية قابلة للتشغيل (MVP 0.1)
+# الربانيون — نسخة أولية قابلة للتشغيل (MVP 0.1)
 
 للنشر على Netlify مع Supabase، راجع [NETLIFY_DEPLOY.md](NETLIFY_DEPLOY.md).
 للنشر على Cloudflare Pages مع ملفات الكتب الكبيرة، راجع [CLOUDFLARE_DEPLOY.md](CLOUDFLARE_DEPLOY.md).

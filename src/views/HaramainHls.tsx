@@ -1,23 +1,35 @@
-// مشغّل HLS.js لرابط بث رسمي يحدّده المدير. يُستورد hls.js كسولًا (chunk مستقل)
-// ولا يُستخدم إلا حين يوجد رابط m3u8. عند أي خطأ قاتل نبلّغ المكوّن الأعلى
-// ليعود إلى عرض الصفحة الرسمية داخل إطار — بلا حالة تحميل لا نهائية.
+// مشغّل HLS.js لرابط بث رسمي. يُستورد hls.js كسولًا (chunk مستقل)
+// عند أي خطأ قاتل نبلّغ المكوّن الأعلى ليعود إلى الصفحة الرسمية داخل إطار.
 
 import {useEffect, useRef, useState} from 'react';
 import {Loader2} from 'lucide-react';
 
 type Props = {
   src: string;
+  /** عند تشغيل الصوت عبر مشغّل الخلفية نكتم صوت الفيديو لتفادي الازدواج. */
+  forceMuted?: boolean;
+  /** يُستدعى عند تغيير حالة الصوت/التشغيل لمزامنة التمرير للخلفية تلقائيًا عند مغادرة الصفحة. */
+  onAudibleChange?: (audible: boolean) => void;
   /** خطأ قاتل (تعذر الشبكة/الرابط منتهي) — يعود العرض إلى الصفحة الرسمية */
   onFatalError: () => void;
 };
 
-export default function HaramainHls({src, onFatalError}: Props) {
+export default function HaramainHls({src, forceMuted = false, onAudibleChange, onFatalError}: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [state, setState] = useState<'loading' | 'playing' | 'error'>('loading');
   const failedRef = useRef(false);
-  // آخر نسخة من المستمع كي لا يعاد إعداد المشغّل مع كل رسم للمكوّن الأعلى.
   const onFatalErrorRef = useRef(onFatalError);
   onFatalErrorRef.current = onFatalError;
+  const onAudibleRef = useRef(onAudibleChange);
+  onAudibleRef.current = onAudibleChange;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (forceMuted) {
+      video.muted = true;
+    }
+  }, [forceMuted]);
 
   useEffect(() => {
     failedRef.current = false;
@@ -27,10 +39,14 @@ export default function HaramainHls({src, onFatalError}: Props) {
     let destroy: (() => void) | undefined;
     let disposed = false;
 
+    const notifyAudible = () => {
+      const audible = !video.paused && !video.muted && !forceMuted;
+      onAudibleRef.current?.(audible);
+    };
+
     void import('hls.js').then(({default: Hls}) => {
       if (disposed || !videoRef.current) return;
       if (!Hls.isSupported()) {
-        // Safari يدعم HLS أصلًا عبر <video src>.
         video.src = src;
       } else {
         const hls = new Hls({enableWorker: true, lowLatencyMode: false, backBufferLength: 90});
@@ -45,6 +61,8 @@ export default function HaramainHls({src, onFatalError}: Props) {
         destroy = () => {hls.destroy()};
       }
       video.addEventListener('playing', onPlaying);
+      video.addEventListener('pause', notifyAudible);
+      video.addEventListener('volumechange', notifyAudible);
     }).catch(() => {
       if (!failedRef.current) {
         failedRef.current = true;
@@ -53,16 +71,21 @@ export default function HaramainHls({src, onFatalError}: Props) {
       }
     });
 
-    function onPlaying() {setState('playing')}
+    function onPlaying() {
+      setState('playing');
+      notifyAudible();
+    }
 
     return () => {
       disposed = true;
       videoRef.current?.removeEventListener('playing', onPlaying);
+      videoRef.current?.removeEventListener('pause', notifyAudible);
+      videoRef.current?.removeEventListener('volumechange', notifyAudible);
       destroy?.();
     };
-  }, [src]);
+  }, [src, forceMuted]);
 
-  if (state === 'error') return null; // الأعلى يعرض الصفحة الرسمية بدلًا منه
+  if (state === 'error') return null;
 
   return <div className="haramain-hls">
     <video ref={videoRef} className="haramain-video" autoPlay playsInline controls muted/>

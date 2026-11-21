@@ -1,0 +1,411 @@
+{
+  "version": 1,
+  "dataDate": "2026-11-21",
+  "attribution": "© مساهمو OpenStreetMap — قد تكون البيانات غير مكتملة",
+  "totalCount": 83846,
+  "fields": [
+    "id",
+    "name",
+    "lat",
+    "lon",
+    "loc?"
+  ],
+  "countries": {
+    "SA": {
+      "code": "SA",
+      "nameAr": "السعودية",
+      "count": 16428,
+      "file": "sa.json",
+      "rawBytes": 858817,
+      "gzipBytes": 294795,
+      "bbox": [
+        16.376,
+        34.743,
+        31.813,
+        51.5
+      ],
+      "center": [
+        23.8859,
+        45.0792
+      ]
+    },
+    "DZ": {
+      "code": "DZ",
+      "nameAr": "الجزائر",
+      "count": 10020,
+      "file": "dz.json",
+      "rawBytes": 561491,
+      "gzipBytes": 207759,
+      "bbox": [
+        19.563,
+        -8.148,
+        37.075,
+        10.931
+      ],
+      "center": [
+        28.0339,
+        1.6596
+      ]
+    },
+    "IQ": {
+      "code": "IQ",
+      "nameAr": "العراق",
+      "count": 6699,
+      "file": "iq.json",
+      "rawBytes": 467869,
+      "gzipBytes": 158071,
+      "bbox": [
+        29.93,
+        40.283,
+        37.328,
+        48.544
+      ],
+      "center": [
+        33.2232,
+        43.6793
+      ]
+    },
+    "LY": {
+      "code": "LY",
+      "nameAr": "ليبيا",
+      "count": 6411,
+      "file": "ly.json",
+      "rawBytes": 333646,
+      "gzipBytes": 113975,
+      "bbox": [
+        21.665,
+        9.487,
+        33.152,
+        25.096
+      ],
+      "center": [
+        26.3351,
+        17.2283
+      ]
+    },
+    "MA": {
+      "code": "MA",
+      "nameAr": "المغرب",
+      "count": 5008,
+      "file": "ma.json",
+      "rawBytes": 271759,
+      "gzipBytes": 105828,
+      "bbox": [
+        21.366,
+        -16.961,
+        35.916,
+        -1.219
+      ],
+      "center": [
+        31.7917,
+        -7.0926
+      ]
+    },
+    "EG": {
+      "code": "EG",
+      "nameAr": "مصر",
+      "count": 4921,
+      "file": "eg.json",
+      "rawBytes": 438392,
+      "gzipBytes": 155461,
+      "bbox": [
+        22.004,
+        25.055,
+        31.6,
+        36.727
+      ],
+      "center": [
+        26.8206,
+        30.8025
+      ]
+    },
+    "SD": {
+      "code": "SD",
+      "nameAr": "السودان",
+      "count": 4610,
+      "file": "sd.json",
+      "rawBytes": 220185,
+      "gzipBytes": 74841,
+      "bbox": [
+        9.596,
+        21.889,
+        21.811,
+        38.372
+      ],
+      "center": [
+        12.8628,
+        30.2176
+      ]
+    },
+    "AE": {
+      "code": "AE",
+      "nameAr": "الإمارات",
+      "count": 4016,
+      "file": "ae.json",
+      "rawBytes": 200539,
+      "gzipBytes": 75049,
+      "bbox": [
+        22.764,
+        51.511,
+        26.198,
+        56.4
+      ],
+      "center": [
+        23.4241,
+        53.8478
+      ]
+    },
+    "YE": {
+      "code": "YE",
+      "nameAr": "اليمن",
+      "count": 3817,
+      "file": "ye.json",
+      "rawBytes": 185092,
+      "gzipBytes": 60010,
+      "bbox": [
+        12.186,
+        42.61,
+        18.168,
+        54.195
+      ],
+      "center": [
+        15.5527,
+        48.5164
+      ]
+    },
+    "SY": {
+      "code": "SY",
+      "nameAr": "سوريا",
+      "count": 3516,
+      "file": "sy.json",
+      "rawBytes": 191352,
+      "gzipBytes": 64001,
+      "bbox": [
+        32.408,
+        35.734,
+        37.253,
+        42.317
+      ],
+      "center": [
+        34.8021,
+        38.9968
+      ]
+    },
+    "TN": {
+      "code": "TN",
+      "nameAr": "تونس",
+      "count": 3485,
+      "file": "tn.json",
+      "rawBytes": 190163,
+      "gzipBytes": 70430,
+      "bbox": [
+        32.189,
+        7.829,
+        37.319,
+        11.296
+      ],
+      "center": [
+        33.8869,
+        9.5375
+      ]
+    },
+    "PS": {
+      "code": "PS",
+      "nameAr": "فلسطين",
+      "count": 2859,
+      "file": "ps.json",
+      "rawBytes": 158289,
+      "gzipBytes": 52211,
+      "bbox": [
+        31.149,
+        34.239,
+        33.349,
+        35.811
+      ],
+      "center": [
+        31.9522,
+        35.2332
+      ]
+    },
+    "OM": {
+      "code": "OM",
+      "nameAr": "عُمان",
+      "count": 2430,
+      "file": "om.json",
+      "rawBytes": 123308,
+      "gzipBytes": 44146,
+      "bbox": [
+        16.64,
+        52.49,
+        26.369,
+        59.8
+      ],
+      "center": [
+        21.4735,
+        55.9754
+      ]
+    },
+    "KW": {
+      "code": "KW",
+      "nameAr": "الكويت",
+      "count": 2015,
+      "file": "kw.json",
+      "rawBytes": 161882,
+      "gzipBytes": 48233,
+      "bbox": [
+        28.544,
+        46.531,
+        30.078,
+        48.408
+      ],
+      "center": [
+        29.3117,
+        47.4818
+      ]
+    },
+    "SO": {
+      "code": "SO",
+      "nameAr": "الصومال",
+      "count": 1837,
+      "file": "so.json",
+      "rawBytes": 70932,
+      "gzipBytes": 28068,
+      "bbox": [
+        -1.64,
+        40.994,
+        11.967,
+        51.133
+      ],
+      "center": [
+        5.1521,
+        46.1996
+      ]
+    },
+    "JO": {
+      "code": "JO",
+      "nameAr": "الأردن",
+      "count": 1495,
+      "file": "jo.json",
+      "rawBytes": 123222,
+      "gzipBytes": 42942,
+      "bbox": [
+        29.393,
+        34.967,
+        32.728,
+        37.625
+      ],
+      "center": [
+        30.5852,
+        36.2384
+      ]
+    },
+    "LB": {
+      "code": "LB",
+      "nameAr": "لبنان",
+      "count": 1260,
+      "file": "lb.json",
+      "rawBytes": 62264,
+      "gzipBytes": 23887,
+      "bbox": [
+        33.08,
+        35.139,
+        34.685,
+        36.55
+      ],
+      "center": [
+        33.8547,
+        35.8623
+      ]
+    },
+    "BH": {
+      "code": "BH",
+      "nameAr": "البحرين",
+      "count": 996,
+      "file": "bh.json",
+      "rawBytes": 82313,
+      "gzipBytes": 23528,
+      "bbox": [
+        25.718,
+        50.319,
+        26.306,
+        50.784
+      ],
+      "center": [
+        26.0667,
+        50.5577
+      ]
+    },
+    "MR": {
+      "code": "MR",
+      "nameAr": "موريتانيا",
+      "count": 961,
+      "file": "mr.json",
+      "rawBytes": 44811,
+      "gzipBytes": 15935,
+      "bbox": [
+        14.732,
+        -17.038,
+        25.229,
+        -5.51
+      ],
+      "center": [
+        21.0079,
+        -10.9408
+      ]
+    },
+    "QA": {
+      "code": "QA",
+      "nameAr": "قطر",
+      "count": 869,
+      "file": "qa.json",
+      "rawBytes": 45485,
+      "gzipBytes": 17071,
+      "bbox": [
+        24.553,
+        50.726,
+        26.13,
+        51.615
+      ],
+      "center": [
+        25.3548,
+        51.1839
+      ]
+    },
+    "DJ": {
+      "code": "DJ",
+      "nameAr": "جيبوتي",
+      "count": 183,
+      "file": "dj.json",
+      "rawBytes": 8377,
+      "gzipBytes": 2991,
+      "bbox": [
+        10.975,
+        41.838,
+        12.497,
+        43.333
+      ],
+      "center": [
+        11.8251,
+        42.5903
+      ]
+    },
+    "KM": {
+      "code": "KM",
+      "nameAr": "جزر القمر",
+      "count": 10,
+      "file": "km.json",
+      "rawBytes": 1012,
+      "gzipBytes": 586,
+      "bbox": [
+        -12.313,
+        43.243,
+        -11.389,
+        44.512
+      ],
+      "center": [
+        -11.6455,
+        43.3333
+      ]
+    }
+  }
+}

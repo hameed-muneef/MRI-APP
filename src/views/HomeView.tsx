@@ -1,16 +1,17 @@
 import {useEffect} from 'react';
-import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,Flower2,ShieldCheck,MonitorPlay,Compass} from 'lucide-react';
+import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,Flower2,ShieldCheck,MonitorPlay,Compass,MapPin} from 'lucide-react';
 import {type View} from '../app-state';
 import {type PrayerLocation} from '../prayer-location';
 import HomeDashboard from './HomeDashboard';
 import {type SectionId} from '../section-theme';
 
-const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla';title:string;icon:typeof CalendarDays;desc:string;section:SectionId}>= [
+const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string;icon:typeof CalendarDays;desc:string;section:SectionId}>= [
   {id:'day',title:'يومي مع الله',icon:CalendarDays,desc:'خطوات اليوم ومواعيده',section:'daily'},
   {id:'week',title:'أسبوعي مع الله',icon:CalendarDays,desc:'خطة الأسبوع',section:'planning'},
   {id:'month',title:'شهري مع الله',icon:CalendarDays,desc:'أهداف الشهر',section:'planning'},
   {id:'goals',title:'المؤمن القوي',icon:Target,desc:'أهداف نافعة وخطوات عملية',section:'strong'},
   {id:'qibla',title:'اتجاه القبلة',icon:Compass,desc:'بوصلة القبلة واتجاه الكعبة',section:'daily'},
+  {id:'mosques',title:'المساجد القريبة',icon:MapPin,desc:'أقرب المساجد إليك مع الاتجاهات',section:'daily'},
 ];
 
 export default function HomeView({navigate,admin=false,prayers={},prayerLocation}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation}) {

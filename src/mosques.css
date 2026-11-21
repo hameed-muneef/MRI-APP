@@ -1,0 +1,484 @@
+/* src/mosques.css — Nearby Mosques (المساجد القريبة) RTL & mobile-first styles */
+
+.mosques-page {
+  display: grid;
+  gap: 16px;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 4px 0 28px;
+}
+
+.mosques-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mosques-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: clamp(22px, 3vw, 28px);
+  color: var(--color-ink, #263C32);
+}
+
+.mosques-header p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.mosques-privacy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--color-surface-soft, #DCE5DC);
+  color: var(--color-primary, #244638);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mosques-controls {
+  background: var(--color-surface, #F2EFE5);
+  border: 1px solid var(--color-border, #D4DDD3);
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.mosques-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mosques-radius-group,
+.mosques-mode-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mosques-chip-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-strong, #B9CBBE);
+  background: var(--surface-card, #FAF8F2);
+  color: var(--color-ink, #263C32);
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mosques-chip-btn:hover {
+  background: var(--color-surface-soft, #DCE5DC);
+}
+
+.mosques-chip-btn.active {
+  background: var(--color-primary, #244638);
+  border-color: var(--color-primary, #244638);
+  color: #fff;
+}
+
+.mosques-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mosques-action-row .soft-btn,
+.mosques-action-row .primary {
+  min-height: 44px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mosques-location-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-muted, #718078);
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border, #D4DDD3);
+}
+
+.mosques-offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-strong, #B9CBBE);
+  background: var(--color-surface-soft, #DCE5DC);
+  color: var(--color-ink, #263C32);
+  font-size: 13px;
+}
+
+.mosques-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mosque-card {
+  background: var(--color-surface, #F2EFE5);
+  border: 1px solid var(--color-border, #D4DDD3);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 3px 14px #263c3208;
+}
+
+.mosque-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mosque-card-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mosque-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--color-surface-soft, #DCE5DC);
+  color: var(--color-primary, #244638);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.mosque-card-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.mosque-card-text h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-ink, #263C32);
+  word-break: break-word;
+}
+
+.mosque-card-loc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-muted, #718078);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.mosque-distance-badge {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--color-surface-soft, #DCE5DC);
+  color: var(--color-primary, #244638);
+  min-width: 72px;
+}
+
+.mosque-distance-badge strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.mosque-distance-badge small {
+  display: block;
+  font-size: 10px;
+  color: var(--color-muted, #718078);
+}
+
+.mosque-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.mosque-maps-btn {
+  min-height: 44px;
+  padding: 10px 16px;
+  flex: 1 1 200px;
+  justify-content: center;
+}
+
+.mosque-offline-hint {
+  font-size: 12px;
+  color: var(--color-warning, #805A38);
+}
+
+.mosque-state-card {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  text-align: start;
+}
+
+.mosque-state-card h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--color-ink, #263C32);
+}
+
+.mosque-state-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--color-body, #384C40);
+}
+
+.mosque-state-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--color-surface-soft, #DCE5DC);
+  color: var(--color-primary, #244638);
+  display: grid;
+  place-items: center;
+}
+
+.mosque-state-card.warn .mosque-state-icon {
+  background: color-mix(in srgb, #b8860b 16%, var(--color-surface, #F2EFE5));
+  color: var(--color-warning, #805A38);
+}
+
+.mosque-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.mosque-state-actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mosque-manual-picker {
+  background: var(--color-surface, #F2EFE5);
+  border: 1px solid var(--color-border, #D4DDD3);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.mosque-manual-block {
+  display: grid;
+  gap: 8px;
+}
+
+.mosque-manual-block label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink, #263C32);
+}
+
+.mosque-manual-block input,
+.mosque-manual-block select {
+  min-height: 44px;
+  width: 100%;
+}
+
+.mosque-city-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.mosque-city-list li button {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  text-align: start;
+}
+
+.mosque-city-list li button small {
+  color: var(--color-muted, #718078);
+  font-size: 11px;
+}
+
+.mosque-skeleton-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mosque-skeleton-card {
+  background: var(--color-surface, #F2EFE5);
+  border: 1px solid var(--color-border, #D4DDD3);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.mosque-skel-line,
+.mosque-skel-btn {
+  border-radius: 8px;
+  background: var(--color-surface-soft, #DCE5DC);
+  animation: mosque-pulse 1.3s ease-in-out infinite;
+}
+
+.mosque-skel-line.wide {
+  height: 18px;
+  width: 68%;
+}
+
+.mosque-skel-line.short {
+  height: 14px;
+  width: 42%;
+}
+
+.mosque-skel-btn {
+  height: 44px;
+  width: 100%;
+}
+
+@keyframes mosque-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
+}
+
+.mosques-attribution {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #D4DDD3);
+  background: var(--color-surface, #F2EFE5);
+  font-size: 12px;
+  color: var(--color-muted, #718078);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* Dark theme harmonization */
+[data-theme="dark"] .mosques-controls,
+[data-theme="dark"] .mosque-card,
+[data-theme="dark"] .mosque-manual-picker,
+[data-theme="dark"] .mosque-skeleton-card,
+[data-theme="dark"] .mosques-attribution {
+  background: var(--surface-card, #363029);
+  border-color: var(--border-default, #4f473c);
+}
+
+[data-theme="dark"] .mosques-chip-btn {
+  background: var(--surface-nested, #2e2822);
+  border-color: var(--border-default, #4f473c);
+  color: var(--text-primary, #f0ebe0);
+}
+
+[data-theme="dark"] .mosques-chip-btn.active {
+  background: var(--color-primary, #3f7a60);
+  border-color: var(--color-primary, #3f7a60);
+  color: #fff;
+}
+
+[data-theme="dark"] .mosque-distance-badge,
+[data-theme="dark"] .mosque-card-icon,
+[data-theme="dark"] .mosque-state-icon,
+[data-theme="dark"] .mosques-privacy-pill,
+[data-theme="dark"] .mosques-offline-banner {
+  background: var(--surface-nested, #2e2822);
+  color: var(--text-primary, #f0ebe0);
+}
+
+[data-theme="dark"] .mosque-card-text h3,
+[data-theme="dark"] .mosque-state-card h2,
+[data-theme="dark"] .mosques-header h1,
+[data-theme="dark"] .mosque-manual-block label {
+  color: var(--text-primary, #f0ebe0);
+}
+
+[data-theme="dark"] .mosque-state-card p {
+  color: var(--text-secondary, #d4cec2);
+}
+
+[data-theme="dark"] .mosque-card-loc,
+[data-theme="dark"] .mosque-distance-badge small,
+[data-theme="dark"] .mosques-location-bar,
+[data-theme="dark"] .mosques-attribution,
+[data-theme="dark"] .mosque-city-list li button small {
+  color: var(--text-muted, #afc0bb);
+}
+
+/* Small screens down to 320px */
+@media (max-width: 400px) {
+  .mosque-card {
+    padding: 13px;
+  }
+  .mosque-card-top {
+    gap: 8px;
+  }
+  .mosque-card-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .mosque-distance-badge {
+    min-width: 64px;
+    padding: 5px 8px;
+  }
+  .mosques-chip-btn {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Ensure bottom mobile nav scrolls cleanly down to 320px without overlapping labels */
+@media (max-width: 750px) {
+  .mobile-nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+    gap: 2px;
+    padding-inline: 6px;
+  }
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-nav button {
+    flex: 0 0 auto;
+    min-width: 58px;
+    min-height: 44px;
+    padding: 5px 7px;
+    white-space: nowrap;
+  }
+}

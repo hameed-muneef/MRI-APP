@@ -83,13 +83,14 @@ function isScheduledItemDone(
   todayYmd: string,
   tasks: readonly Task[],
   goals: readonly Goal[],
+  now: Date,
 ): boolean {
   if (id.startsWith('goal:')) {
     for (const goal of goals) {
       for (const step of goalSteps(goal)) {
         if (`goal:${goal.id}:${step.id}` === id) {
           if (step.period === 'daily' && scheduleDate !== todayYmd) return false;
-          return Boolean(step.done?.[goalStepCompletionKey(step)]);
+          return Boolean(step.done?.[goalStepCompletionKey(step, now)]);
         }
       }
     }
@@ -98,7 +99,7 @@ function isScheduledItemDone(
   const task = tasks.find(t => t.id === id);
   if (!task) return false;
   if (task.period === 'daily' && scheduleDate !== todayYmd) return false;
-  return isTaskDone(task);
+  return isTaskDone(task, now);
 }
 
 function clampLeadMinutes(minutes: number | undefined, fallback: number): number {
@@ -134,7 +135,7 @@ export function collectScheduledTasks(
       slotClockTime(schedule.confirmedSlot ?? schedule.initialSlot, prayers);
     if (!date || !time || !DATE_RE.test(date) || !TIME_RE.test(time)) continue;
     if (date < todayYmd || date > maxYmd) continue;
-    if (isScheduledItemDone(id, date, todayYmd, ctx.tasks ?? [], goals)) continue;
+    if (isScheduledItemDone(id, date, todayYmd, ctx.tasks ?? [], goals, now)) continue;
 
     entries.push({
       id,

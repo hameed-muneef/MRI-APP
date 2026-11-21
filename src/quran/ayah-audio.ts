@@ -69,6 +69,32 @@ export async function fetchChapterAudioUrl(recitationId: number, chapter: number
   }
 }
 
+const ALL_CHAPTERS_CACHE = new Map<number, Map<number, string>>();
+
+export async function fetchAllChapterAudioUrls(recitationId: number): Promise<Map<number, string>> {
+  const cached = ALL_CHAPTERS_CACHE.get(recitationId);
+  if (cached && cached.size > 0) return cached;
+  const map = new Map<number, string>();
+  try {
+    const res = await fetch(`https://api.quran.com/api/v4/chapter_recitations/${recitationId}`);
+    if (!res.ok) return map;
+    const json = await res.json();
+    for (const file of json?.audio_files ?? []) {
+      const ch = Number(file?.chapter_id);
+      const rawUrl = file?.audio_url;
+      if (Number.isFinite(ch) && ch >= 1 && ch <= 114 && rawUrl) {
+        const full = String(rawUrl).startsWith('http') ? String(rawUrl) : `https:${String(rawUrl)}`;
+        map.set(ch, full);
+        CACHE.set(`ch:${recitationId}:${ch}`, full);
+      }
+    }
+    if (map.size > 0) {
+      ALL_CHAPTERS_CACHE.set(recitationId, map);
+    }
+  } catch { /* ignore */ }
+  return map;
+}
+
 // Fetch a batch of ayahs for a surah (for sequential playback)
 export async function fetchSurahAyahAudioUrls(recitationId: number, surah: number, _ayahs: number[]): Promise<Map<number, string>> {
   const result = new Map<number, string>();

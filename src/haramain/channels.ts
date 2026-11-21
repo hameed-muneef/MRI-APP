@@ -20,8 +20,24 @@ export type HaramainChannel = {
 };
 
 export const HARAMAIN_FALLBACK_CHANNELS: HaramainChannel[] = [
-  {id: 'quran', title: 'قناة القرآن الكريم', subtitle: 'البث المباشر من الحرم المكي', official_url: 'https://aloula.sba.sa/live/quran?embed=true', hls_url: null, sort: 1, is_active: true},
-  {id: 'sunna', title: 'قناة السنة النبوية', subtitle: 'البث المباشر من المسجد النبوي', official_url: 'https://aloula.sba.sa/live/sunna?embed=true', hls_url: null, sort: 2, is_active: true},
+  {
+    id: 'quran',
+    title: 'قناة القرآن الكريم',
+    subtitle: 'البث المباشر من الحرم المكي',
+    official_url: 'https://aloula.sba.sa/live/quran?embed=true',
+    hls_url: 'https://cdn-globecast.akamaized.net/live/eds/saudi_quran/hls_roku/index.m3u8',
+    sort: 1,
+    is_active: true,
+  },
+  {
+    id: 'sunna',
+    title: 'قناة السنة النبوية',
+    subtitle: 'البث المباشر من المسجد النبوي',
+    official_url: 'https://aloula.sba.sa/live/sunna?embed=true',
+    hls_url: 'https://cdn-globecast.akamaized.net/live/eds/saudi_sunnah/hls_roku/index.m3u8',
+    sort: 2,
+    is_active: true,
+  },
 ];
 
 function sanitize(row: Partial<HaramainChannel> & {id?: string}, fallback: HaramainChannel): HaramainChannel | null {

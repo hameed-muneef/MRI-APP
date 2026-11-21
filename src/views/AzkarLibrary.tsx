@@ -1,5 +1,8 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {BookOpen, Search, Volume2, Square, RotateCcw, CheckCircle2} from 'lucide-react';
+import {backgroundAudio} from '../audio/background-player';
+import {useBackgroundAudio} from '../audio/useBackgroundAudio';
+import type {AudioTrack} from '../audio/types';
 import type {AzkarAsset, AzkarCategory} from '../azkar/types';
 import {loadAzkar, azkarAudioUrl, resetAzkarCache} from '../azkar/content';
 
@@ -19,11 +22,14 @@ export default function AzkarLibrary() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<Set<number>>(new Set());
   const [counts, setCounts] = useState<Record<string, number>>(readCounts);
-  // صوت واحد فقط في كل لحظة (نفس سلوك تلاوة القرآن): عنصر صوت واحد + عند انتهاء
-  // الذكر ينتقل تلقائيًا للذكر التالي في نفس الفئة.
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playingKey, setPlayingKey] = useState<string | null>(null);
-  const playTokenRef = useRef(0);
+  const audioState = useBackgroundAudio();
+
+  const playingKey =
+    audioState.category === 'azkar' &&
+    (audioState.status === 'playing' || audioState.status === 'loading') &&
+    audioState.currentTrack?.id.startsWith('azkar:')
+      ? audioState.currentTrack.id.slice('azkar:'.length)
+      : null;
 
   useEffect(() => {
     let active = true;
@@ -73,45 +79,30 @@ export default function AzkarLibrary() {
   };
 
   const stopAudio = () => {
-    playTokenRef.current += 1;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setPlayingKey(null);
+    void backgroundAudio.stop();
   };
 
   const play = (cat: AzkarCategory, itemId: number) => {
-    const idx = cat.array.findIndex(item => item.id === itemId);
-    if (idx < 0) return;
-    // إيقاف أي صوت جارٍ — صوت ذكر واحد فقط يعمل في أي لحظة.
-    stopAudio();
-    const url = azkarAudioUrl(cat.array[idx].audio);
-    if (!url) return;
-    const token = ++playTokenRef.current;
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    setPlayingKey(`${lang}:${cat.id}:${itemId}`);
-    audio.addEventListener('ended', () => {
-      if (token !== playTokenRef.current) return;
-      // عند الانتهاء: انتقل تلقائيًا للذكر التالي في نفس الفئة
-      // (وإن لم يملك صوتًا تجاوزه) حتى نهاية القائمة.
-      let next = idx + 1;
-      while (next < cat.array.length && !azkarAudioUrl(cat.array[next].audio)) next += 1;
-      if (next < cat.array.length) play(cat, cat.array[next].id);
-      else setPlayingKey(null);
-    });
-    audio.addEventListener('error', () => { if (token === playTokenRef.current) setPlayingKey(null); });
-    audio.play().catch(() => { if (token === playTokenRef.current) setPlayingKey(null); });
+    // تجهيز قائمة صوتية كاملة لأذكار هذه الفئة لكي ينتقل المشغّل تلقائيًا
+    // حتى عند مغادرة الصفحة أو إغلاق شاشة الهاتف.
+    const tracks: AudioTrack[] = [];
+    let startIndex = 0;
+    for (const item of cat.array) {
+      const url = azkarAudioUrl(item.audio);
+      if (!url) continue;
+      if (item.id === itemId) startIndex = tracks.length;
+      const snippet = item.text.length > 72 ? `${item.text.slice(0, 72)}…` : item.text;
+      tracks.push({
+        id: `azkar:${lang}:${cat.id}:${item.id}`,
+        title: cat.category,
+        subtitle: snippet,
+        url,
+        category: 'azkar',
+      });
+    }
+    if (!tracks.length) return;
+    void backgroundAudio.playQueue(tracks, startIndex, 'azkar');
   };
-
-  // إيقاف الصوت عند مغادرة الصفحة.
-  useEffect(() => {
-    return () => {
-      playTokenRef.current += 1;
-      if (audioRef.current) audioRef.current.pause();
-    };
-  }, []);
 
   if (loading) return <section className="panel"><p>جارٍ تحميل الأذكار…</p></section>;
   if (error) return <section className="panel quran-error"><h3>تعذر التحميل</h3><p>{error}</p><button className="soft-btn" onClick={() => { resetAzkarCache(); window.location.reload(); }}>إعادة المحاولة</button></section>;
@@ -121,7 +112,7 @@ export default function AzkarLibrary() {
       <div>
         <span className="eyebrow">حصن Muslim — Sheikh Sa'eed Al-Qahtani</span>
         <h2>أذكار</h2>
-        <p className="muted">132 فئة، 185 ذكرًا ودعاءً. الترخيص MIT (Yousef Asalya). الصوت يُجلب عند الطلب.</p>
+        <p className="muted">132 فئة، 185 ذكرًا ودعاءً. الصوت يعمل في الخلفية وينتقل تلقائيًا عبر أذكار الفئة.</p>
       </div>
       <div className="azkar-controls">
         <div className="azkar-lang">

@@ -17,7 +17,7 @@ export const SECTION_THEMES: SectionTheme[] = [
   {id: 'quran', label: 'القرآن والسنة', accent: '#174C3C', soft: '#9BBEC5', views: ['quran']},
   {id: 'haramain', label: 'من الحرمين الشريفين', accent: '#8A6A38', soft: '#E5D9C0', views: ['haramain']},
   {id: 'journey', label: 'السير إلى الله', accent: '#527F8B', soft: '#D3E2E0', views: []},
-  {id: 'daily', label: 'يومي مع الله', accent: '#32412F', soft: '#B99A5D', views: ['day', 'tasks']},
+  {id: 'daily', label: 'يومي مع الله', accent: '#32412F', soft: '#B99A5D', views: ['day', 'tasks', 'qibla', 'mosques']},
   {id: 'tazkiya', label: 'زكِّ نفسك', accent: '#294039', soft: '#A8B9A0', views: ['wird']},
   {id: 'accountability', label: 'حاسب نفسك', accent: '#876D83', soft: '#729EAA', views: ['reflect']},
   {id: 'planning', label: 'أسبوعي مع الله / شهري مع الله', accent: '#477A70', soft: '#C1D9DC', views: ['week', 'month']},
