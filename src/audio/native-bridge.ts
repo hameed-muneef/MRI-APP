@@ -1,5 +1,5 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
-import type { AudioCategory, AudioStatus, AudioTrack } from './types';
+import type { AudioCategory, AudioStatus } from './types';
 
 export interface NativeAudioStateSnapshot {
   status: AudioStatus;

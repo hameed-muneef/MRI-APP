@@ -2,7 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {
   Bookmark, BookmarkCheck, Copy, Share2, Search, StickyNote, Plus, Trash2,
   ChevronRight, ChevronLeft, Save, ListChecks, Play, Pause, Square, Loader2,
-  Repeat, RotateCcw
+  Repeat
 } from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
 import type {QuranLearningState, QuranReflection} from '../../quran/types';

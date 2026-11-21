@@ -149,6 +149,7 @@ export default function ProfileView({user,notify,onProfileSaved}:Props){
         <li>محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد، ولا تدخل في أي إجمالي.</li>
       </ul>
       <p className="muted small"><Mail size={14}/> للاستفسار عن بياناتك: <bdi dir="ltr">{user.email}</bdi></p>
+      <p className="muted small">سياسة الخصوصية: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a> — حذف الحساب: <a href="https://alrabbaniyun.com/delete-account.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/delete-account.html</a></p>
     </section>
   </div>;
 }

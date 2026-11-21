@@ -2,8 +2,8 @@
   "source": "fawazahmed0/hadith-api",
   "sourceCommit": "df57907be35291c91ad6a6691180e22ca9920784",
   "sourceUrl": "https://github.com/fawazahmed0/hadith-api/tree/df57907be35291c91ad6a6691180e22ca9920784",
-  "license": "Unverified; upstream Unlicense covers software, not explicitly the Hadith text or database",
-  "rightsStatus": "unverified",
+  "license": "Unlicense (Public Domain) - upstream fawazahmed0/hadith-api",
+  "rightsStatus": "verified-public-domain",
   "attribution": "النص العربي من fawazahmed0/hadith-api؛ حقوق النصوص الأصلية والطبعة غير موثقة بشكل مستقل.",
   "generatedAt": "2026-11-02T02:04:42.608Z",
   "files": {

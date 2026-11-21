@@ -272,7 +272,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
     <AdhanPlayer notify={notify}/>
     <AlarmTonePlayer notify={notify}/>
     <InstallGuidePanel/>
-    <section className='panel'><h3><Lock size={18}/> الخصوصية</h3><p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p></section>
+    <section className='panel'><h3><Lock size={18}/> الخصوصية</h3><p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p><p className="muted">الموقع يُستخدم على جهازك فقط لحساب أوقات الصلاة والقبلة والمساجد القريبة، ولا يُرسل إلى أي خادم. سياسة الخصوصية الكاملة: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a></p><p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p></section>
     <section className="panel"><h3>بياناتك على هذا الجهاز</h3><p className="muted">كل ما تكتبه — مهامك وأهدافك وأورادك ومحاسبتك وقراءتك — يُحفظ على هذا الجهاز فقط. لا يُرسل إلى خادم، ولا تُصدَّر نسخة احتياطية إلى ملف خارجي، ولا تُستورد نسخة من جهاز آخر. إن حذفت بيانات المتصفح أو التطبيق ضاعت بياناتك، فاحتفظ بجهازك آمنًا.</p><button className="outline-danger" onClick={reset}><RotateCcw size={17}/> حذف البيانات المحلية</button></section>
   </>;
 }

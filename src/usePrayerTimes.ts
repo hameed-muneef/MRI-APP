@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {prayerLocationKey,prayerTimingsQuery,type PrayerLocation} from './prayer-location';
+import {prayerLocationKey, type PrayerLocation} from './prayer-location';
 
 export function prayerDate(now = new Date()) {
   return `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
@@ -27,6 +27,8 @@ function loadPrayerTimesCache(context:{date:string;zone:string}):PrayerTimesCach
   }catch{return null}
 }
 
+// Prayer times are calculated on the device with the `adhan` library. No
+// coordinates or device location are sent to any server.
 export default function usePrayerTimes(enabled: boolean, saved?: PrayerLocation) {
   const [context,setContext] = useState(()=>({date:prayerDate(),zone:Intl.DateTimeFormat().resolvedOptions().timeZone}));
   const [attempt,setAttempt] = useState(0);
@@ -48,8 +50,6 @@ export default function usePrayerTimes(enabled: boolean, saved?: PrayerLocation)
   useEffect(()=>{
     if(!enabled) return;
     let active=true;
-    const controller=new AbortController();
-    let timeout: ReturnType<typeof setTimeout> | undefined;
     if(!attempt){
       const cached=loadPrayerTimesCache({date:context.date,zone:saved?savedKey:context.zone});
       if(cached){
@@ -59,69 +59,54 @@ export default function usePrayerTimes(enabled: boolean, saved?: PrayerLocation)
         return ()=>{active=false};
       }
     }
-    const computeOfflineFallback=async(loc:PrayerLocation):Promise<boolean>=>{
+    setPrayers({});
+    setLoading(true);
+    const fail=(message:string)=>{if(active){setStatus(message);setLoading(false)}};
+    const store=(times:Record<string,string>,cacheZone:string,label:string)=>{
+      if(!active)return;
+      setPrayers(times);
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify({date:context.date,zone:cacheZone,times}))}catch{}
+      setStatus(label);
+      setLoading(false);
+    };
+    const computeLocally=async(loc:PrayerLocation,cacheZone:string,label:string):Promise<boolean>=>{
       try{
-        const {computeDayPrayerStrings,mapAlAdhanMadhab,mapAlAdhanMethod}=await import('./lib/prayer-schedule');
+        const {computeDayPrayerStrings,defaultMethodForCoordinates,mapAlAdhanMadhab,mapAlAdhanMethod}=await import('./lib/prayer-schedule');
+        const method=loc.method===undefined?defaultMethodForCoordinates(loc.latitude,loc.longitude):mapAlAdhanMethod(loc.method);
         const times=computeDayPrayerStrings(
           {latitude:loc.latitude,longitude:loc.longitude},
           new Date(),
-          mapAlAdhanMethod(loc.method),
+          method,
           mapAlAdhanMadhab(loc.school),
           loc.timezone,
         );
         if(Object.keys(times).length>=5){
-          if(active){
-            setPrayers(times);
-            try{localStorage.setItem(CACHE_KEY,JSON.stringify({date:context.date,zone:savedKey,times}))}catch{}
-            setStatus(`مواقيت ${loc.name} (محسوبة محليًا بدون إنترنت) · ${context.date}`);
-            setLoading(false);
-          }
+          store(times,cacheZone,label);
           return true;
         }
-      }catch{}
+      }catch{/* fall through to the message below */}
       return false;
     };
-    if(saved && typeof navigator!=='undefined' && navigator.onLine===false){
-      setLoading(true);
-      void computeOfflineFallback(saved).then(ok=>{
-        if(!ok) fail('تعذر جلب المواقيت. تحقق من الاتصال ثم أعد المحاولة، أو أدخلها يدويًا.');
-      });
-      return ()=>{active=false};
-    }
-    setPrayers({});
-    setLoading(true);
-    const fail=(message:string)=>{if(active){setStatus(message);setLoading(false)}};
-    const fetchTimes=async(coords:{latitude:number;longitude:number},zone:string,options:{method?:number;school?:number},cacheZone:string,label:string)=>{
-      setStatus(saved?`جارٍ جلب مواقيت ${saved.name}…`:'جارٍ جلب مواقيت اليوم حسب موقعك…');
-      timeout=setTimeout(()=>controller.abort(),15000);
-      try {
-        const query=prayerTimingsQuery(coords,zone,options);
-        const response=await fetch(`https://api.aladhan.com/v1/timings/${context.date}?${query}`,{signal:controller.signal});
-        if(!response.ok) throw new Error('Request failed');
-        const body=await response.json();
-        if(body.code!==200 || body.data?.date?.gregorian?.date!==context.date) throw new Error('Invalid date');
-        const times=parsePrayerTimes(body.data?.timings);
-        if(active){setPrayers(times);try{localStorage.setItem(CACHE_KEY,JSON.stringify({date:context.date,zone:cacheZone,times}))}catch{}setStatus(label);setLoading(false)}
-      } catch {
-        if(!saved || !(await computeOfflineFallback(saved))){
-          fail('تعذر جلب المواقيت. تحقق من الاتصال ثم أعد المحاولة، أو أدخلها يدويًا.');
-        }
-      }
-      finally {clearTimeout(timeout)}
-    };
     if(saved){
-      void fetchTimes(saved,saved.timezone,{method:saved.method,school:saved.school},savedKey,`مواقيت ${saved.name}${saved.country?`، ${saved.country}`:''} · ${context.date}`);
+      const label=`مواقيت ${saved.name}${saved.country?`، ${saved.country}`:''} · ${context.date} · محسوبة على جهازك`;
+      void computeLocally(saved,savedKey,label).then(ok=>{
+        if(!ok) fail('تعذر حساب المواقيت لهذا الموقع. اختر مدينة أخرى أو أدخل المواقيت يدويًا.');
+      });
     } else {
-      setStatus('جارٍ تحديد موقعك من الجهاز أو المتصفح…');
+      setStatus('جارٍ تحديد موقعك من الجهاز…');
       const advice='ابحث عن مدينتك أدناه أو أدخل المواقيت يدويًا.';
       if(!navigator.geolocation || !window.isSecureContext){
         fail(`تحديد الموقع غير متاح. ${advice}`);
       } else navigator.geolocation.getCurrentPosition(position=>{
         if(!active) return;
-        void fetchTimes(position.coords,context.zone,{},context.zone,`مواقيت اليوم حسب موقعك · ${context.date} · توقيت الجهاز: ${context.zone}`);
+        const loc:PrayerLocation={name:'موقعي',country:'',latitude:position.coords.latitude,longitude:position.coords.longitude,timezone:context.zone};
+        const label=`مواقيت اليوم حسب موقعك · ${context.date} · توقيت الجهاز: ${context.zone} · محسوبة على جهازك`;
+        void computeLocally(loc,context.zone,label).then(ok=>{
+          if(!ok) fail(`تعذر حساب المواقيت. ${advice}`);
+        });
       },error=>fail(error.code===1?`لم يُسمح بالوصول للموقع. ${advice}`:`تعذر تحديد موقعك. ${advice}`),{timeout:10000,maximumAge:0,enableHighAccuracy:false});
     }
-    return ()=>{active=false;controller.abort();clearTimeout(timeout)};
+    return ()=>{active=false};
   },[enabled,context,attempt,savedKey]);
   return {prayers,status,loading,refresh:()=>setAttempt(value=>value+1)};
 }

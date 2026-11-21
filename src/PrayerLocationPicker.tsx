@@ -53,7 +53,7 @@ export default function PrayerLocationPicker({location,onChange}:Props){
       <button type="button" onClick={()=>choose(item)}><MapPin size={15}/> {item.name}{item.country?`، ${item.country}`:''} <small>{item.timezone}</small></button>
     </li>)}</ul>}
     {location&&<div className="prayer-city-selected">
-      <p><MapPin size={16}/> المدينة المحفوظة: <strong>{location.name}{location.country?`، ${location.country}`:''}</strong> · تُحفظ في حسابك وتعمل على كل أجهزتك.</p>
+      <p><MapPin size={16}/> المدينة المحفوظة: <strong>{location.name}{location.country?`، ${location.country}`:''}</strong> · تُحفظ على هذا الجهاز.</p>
       <div className="form-grid">
         <label>طريقة الحساب<select value={location.method??''} onChange={event=>onChange({...location,method:event.target.value===''?undefined:Number(event.target.value)})}>
           <option value="">تلقائية حسب الموقع</option>{prayerMethods.map(method=><option key={method.value} value={method.value}>{method.label}</option>)}

@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {Bookmark, BookmarkCheck, ExternalLink, Search, ShieldAlert} from 'lucide-react';
+import {Bookmark, BookmarkCheck, Search, ShieldAlert} from 'lucide-react';
 import type {QuranLearningState} from '../../quran/types';
 import {utcStamp} from '../../quran/learning';
 import {uid} from '../../id';
@@ -200,11 +200,10 @@ export default function HadithLibrary({collectionKey, mode, state, onState, noti
                 {item.arabicnumber !== item.number_in_collection && <span className="quran-hadith-reference">المرجع {item.arabicnumber}</span>}
               </header>
               <p className="quran-hadith-text" dir="rtl" lang="ar">{item.text_arabic}</p>
-              {item.grading_text && <p className="small muted">الحكم: {item.grading_text} {item.grading_source && `— ${item.grading_source}`}</p>}
+              {item.grading_text && <p className="small muted">الحكم: {item.grading_text}</p>}
               <div className="quran-hadith-actions">
                 <button className="soft-btn" type="button" onClick={() => toggleBookmark(item)}>{bookmarked ? <BookmarkCheck size={15}/> : <Bookmark size={15}/>} {bookmarked ? 'إزالة العلامة' : 'حفظ علامة'}</button>
                 <button className="soft-btn" type="button" onClick={() => addReflection(item)}>تأمل خاص</button>
-                <a className="soft-btn" href={item.reference_url} target="_blank" rel="noreferrer">المصدر <ExternalLink size={14}/></a>
               </div>
             </li>;
           })}

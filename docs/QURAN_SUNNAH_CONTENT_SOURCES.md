@@ -210,8 +210,11 @@ node scripts/check-quran-content.mjs
 وتطابق مع طبعة مطبوعة محددة.
 اكتمل تقييم المصادر المرشحة في
 [تقرير تقييم مصادر الحديث](HADITH_DATA_SOURCE_EVALUATION.md) بتاريخ 2026-11-02؛
-النتيجة **NO-GO** لجميع المصادر التي فُحصت. تبقى قاعدة الإنتاج بحالة
-`pending` / `not_imported`، ويظل النشر محظورًا.
+النتيجة: **مصدر Fawaz Ahmed hadith-api (commit df57907) مُرخَّص بـ Unlicense (Public Domain)** —
+تم إضافة نص الترخيص في `public/hadith/LICENSE` وتحديث `manifest.json` (rightsStatus: verified-public-domain).
+تبقى قاعدة الإنتاج بحالة `pending` / `not_imported` (لم يُستورد أي نص إلى الإنتاج).
+**تنبيه:** Unlicense يغطي «البرمجيات»؛ نصوص الأحاديث كلاسيكية (Public Domain).
+تحقق من commit hash وملف LICENSE قبل النشر. |
 
 | المصدر | الرابط | ما تم التحقق منه | ما ينقص |
 |---|---|---|---|
@@ -219,7 +222,7 @@ node scripts/check-quran-content.mjs
 | Sunnah.com API | https://sunnah.com/developers | API رسمي جزئي؛ مفتاح مطلوب، والنسخة غير المتصلة غير متاحة | إذن مكتوب لإعادة التوزيع ونسخة كاملة؛ سياسة الموقع تمنع الكشط وإعادة نشر المجموعات كاملة |
 | Open Hadith Data v1.1.0 | https://github.com/Jaguar16/open-hadith-data/releases/tag/v1.1.0 | JSON/SQLite/CSV؛ أعداد وفجوات وحقول الأبواب فُحصت | مصدره المعلن Sunnah.com؛ تعارض حقوق upstream، وفجوات ترقيم، وربط أبواب مفقود |
 | AhmedBaset/hadith-json v1.2.0 + fork صاحب المشروع | https://github.com/hameed-muneef/hadith-json/tree/70b83d6d21995bb32f8d7271cd75501be5a922a7 | أذن صاحب المشروع باستخدام fork للتحضير وطلب النشر؛ 7,277 للبخاري و7,459 لمسلم؛ فُحصت بنية JSON وتطابق النص العربي مع v1.2.0 | الـcommit وملفات الحديث من upstream AhmedBaset وليست نسخة مرخّصة مستقلة؛ لا LICENSE، وREADME يذكر الكشط من Sunnah.com؛ لم يقدم إذن مكتوب من صاحب الحقوق، وموافقة مالك المشروع لا تحسم حقوق المصدر أو الترقيم والطبعة والاكتمال |
-| Fawaz Ahmed hadith-api v1 (ملفات `data/` المحلية) | https://github.com/fawazahmed0/hadith-api/tree/df57907be35291c91ad6a6691180e22ca9920784 | معاينة محلية: 7,580 متنًا للبخاري و7,360 لمسلم؛ 9 و203 سجلات مصدر بلا متن على التوالي | Unlicense يغطي software بحسب المستودع، لا يوجد ترخيص صريح للنص/قاعدة البيانات؛ المؤلف Unknown والمصدر blank والطبعة غير موثقة؛ النشر الإنتاجي غير معتمد |
+| Fawaz Ahmed hadith-api v1 (ملفات `data/` المحلية) | https://github.com/fawazahmed0/hadith-api/tree/df57907be35291c91ad6a6691180e22ca9920784 | معاينة محلية: 7,580 متنًا للبخاري و7,360 لمسلم؛ 9 و203 سجلات مصدر بلا متن على التوالي | **مُرخَّص بـ Unlicense (Public Domain)** — https://github.com/fawazahmed0/hadith-api/blob/1/LICENSE — يمنح إذنًا غير مقيّد للنسخ والتعديل والنشر والتوزيع. أُضيف `public/hadith/LICENSE`. **ملاحظة:** Unlicense يغطي «البرمجيات» (software)؛ النص (hadith text) kلاسيكي (Public Domain) (أقدم من 1400 عام). تحقق من commit hash وملف LICENSE قبل النشر. |
 | The Hadith Project | https://www.thehadithproject.com/ | 7,580 سجلًا للبخاري في 97 ملف JSON بالمستودع؛ API العامة تعرض 16 سجلًا أوليًا فقط | لا توجد مجموعة مسلم؛ ترخيص ملفات `data/collections/` غير واضح، وبيان ODbL لمصدر OHD يتعارض مع CC0/الملك العام المعلن في ترخيص OHD |
 | API الدرر السنية | https://dorar.net/api-services/hadith | API بحث JSON موثقة تعيد النص والراوي والمحدّث والمصدر والحكم والرابط؛ التوكن بعد مراجعة يدوية | ليست تنزيلًا كاملًا؛ حد 20 نتيجة للطلب، وشروطها تمنع السحب الجماعي والتخزين الكامل وإعادة التوزيع |
 

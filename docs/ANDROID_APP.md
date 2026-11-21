@@ -52,3 +52,14 @@
 - روابط `/admin` و`/reset-password` تعمل داخل الويب فيو (SPA fallback).
 - تلاوة الآيات والمصحف تعمل كما في المتصفح؛ النقر مع الشاشة المغلقة (خلفية) يحتاج إضافة Capacitor لاحقًا.
 - إشعارات الأذان داخل التطبيق: لاحقًا عبر `@capacitor/push-notifications` + `google-services.json` (Firebase).
+
+## الخصوصية وجاهزية Google Play (2026-11-21)
+
+- نسخة Android محلية بالكامل: لا حساب، ولا Supabase، ولا تحليلات. LOCAL_ONLY مفروض عند التشغيل الأصلي.
+- المواقيت تُحسب على الجهاز عبر مكتبة dhan؛ لا تُرسل إحداثيات الموقع إلى أي خادم.
+- صلاحية الموقع تقريبية فقط (ACCESS_COARSE_LOCATION) وتُستخدم لأوقات الصلاة والقبلة والمساجد القريبة.
+- سياسة الخصوصية: `public/privacy.html` وتُربط داخل «الإعدادات ← الخصوصية» وفي Play Console. صفحة حذف حساب الويب: `public/delete-account.html`.
+- مجلد `dist/books` (PDFs) مستبعد من حزمة الأندرويد عبر `scripts/build-android.mjs`؛ حجم الأصول ≈ 45.9MB.
+- التوقيع: لا يوجد fallback لمفتاح debug. يلزم ضبط `KEYSTORE_BASE64` و`KEYSTORE_PASSWORD` و`KEY_ALIAS` و`KEY_PASSWORD` في GitHub Actions قبل بناء AAB قابل للنشر.
+- `versionCode` الحالي = 1 و`versionName` = 1.0. يجب زيادة `versionCode` قبل كل رفع إلى Play.
+- قبل النشر: نشر صفحتي الخصوصية/الحذف، تعبئة Data safety (لا جمع بيانات)، إعلان الخدمة الأمامية والمنبّهات الدقيقة، تقييم المحتوى، ثم الاختبار المغلق (12 مختبرًا × 14 يومًا) وتقرير ما قبل الإطلاق.

@@ -2,7 +2,7 @@
 
 ## 1. Prepare Supabase
 
-Apply the database migrations described in [DATABASE.md](DATABASE.md). The deployment needs `public.user_data`, `public.platform_curriculum`, `public.admin_accounts`, the `public.is_admin()` function, and the `journey-books` Storage bucket with its policies. Set `INITIAL_ADMIN_EMAIL` when running `npm run db:migrate` to approve the first administrator. That email must have a confirmed Supabase Auth account before it can open `/admin`. Database credentials belong on the operator's machine, never in Netlify's `VITE_` variables.
+Apply the database schema described in [DATABASE.md](DATABASE.md) to the Supabase project (via the SQL editor or the `supabase` CLI). The deployment needs `public.user_data`, `public.platform_curriculum`, `public.admin_accounts`, the `public.is_admin()` function, and the `journey-books` Storage bucket with its policies. The SQL migrations and the `npm run db:migrate` runner were removed from this repository on 2026-11-21 (local-only Android release); the hosted schema is now managed directly in Supabase. To approve the first administrator, insert their confirmed email into `private.admin_allowlist` and `public.admin_accounts` manually. Database credentials belong on the operator's machine, never in Netlify's `VITE_` variables.
 
 In Supabase **Authentication → URL Configuration**, set **Site URL** to the final Netlify URL (or custom domain). Add the same URL and `https://YOUR-SITE.netlify.app/admin` to **Redirect URLs**. Add local `http://localhost:5173/**` only for development. Confirm that email sign-up and confirmation are enabled. The app sends confirmation links back to the page where registration started.
 

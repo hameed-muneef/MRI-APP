@@ -32,5 +32,7 @@ Verify these URLs return their own HTML titles and headings:
 - `/learning-paths/`
 - `/robots.txt`
 - `/sitemap.xml`
+- `/privacy.html`
+- `/delete-account.html`
 
 Then purge Cloudflare cache if an older HTML shell remains, and submit `https://alrabbaniyun.com/sitemap.xml` in Google Search Console.

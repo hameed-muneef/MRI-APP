@@ -1,6 +1,7 @@
 export type PrayerLocation={name:string;country:string;latitude:number;longitude:number;timezone:string;method?:number;school?:0|1};
 
-// أرقام طرق الحساب في AlAdhan؛ غياب القيمة يترك للخدمة اختيار الطريقة الأنسب للموقع.
+// أرقام طرق الحساب في AlAdhan. غياب القيمة يعني «تلقائي حسب الموقع»، ويُحدَّد محليًا
+// عبر defaultMethodForCoordinates دون أي طلب شبكي.
 export const prayerMethods:{value:number;label:string}[]=[
   {value:4,label:'أم القرى (مكة المكرمة)'},
   {value:5,label:'الهيئة المصرية العامة للمساحة'},

@@ -91,36 +91,22 @@ These policies follow the [Supabase RLS guidance](https://supabase.com/docs/guid
 
 ## Apply
 
-Use Node.js from the application directory:
+> **Removed 2026-11-21.** The SQL migrations in `supabase/migrations/` and the
+> custom runner (`npm run db:plan` / `npm run db:migrate`) were deleted as part of
+> the local-only Android release. The Android build ships no Supabase dependency and
+> never contacts the database.
+>
+> The hosted schema for the optional web version is now managed directly in the
+> Supabase project (SQL editor / `supabase` CLI). This document remains as the
+> reference description of that schema and its RLS policies. If migrations are ever
+> reintroduced, restore them under `supabase/migrations/` and add a runner again —
+> the previous ledger is still present in the database as `private.schema_migrations`.
 
-```powershell
-npm run db:plan
-$env:SUPABASE_PROJECT_REF = '<project-ref>'
-$env:SUPABASE_POOLER_HOST = '<session-pooler-host>'
-$env:SUPABASE_DB_PASSWORD = '<database-password>'
-# Only when the server needs a project-specific trusted CA:
-$env:SUPABASE_DB_CA_FILE = 'C:\path\to\project-ca.crt'
-# Optional confirmed account to approve for administration:
-$env:INITIAL_ADMIN_EMAIL = '<admin-email>'
-npm run db:migrate
-```
+Keep database credentials out of `VITE_*` variables and out of source control. A
+public Supabase browser key is insufficient to change the schema.
 
-Keep database credentials in the process environment, never `VITE_*` variables or
-source control. The connection uses the session pooler on port 5432 with verified
-TLS. A public Supabase browser key is insufficient to apply SQL migrations.
-
-The runner applies the three legacy migrations in dependency order, then numbered
-additions. On its first run against an existing deployment it replays the legacy
-idempotent scripts once and records them. A transaction and advisory lock protect
-schema changes, ledger updates and seeding. Subsequent runs skip recorded files;
-edited applied files cause an error. Add new migrations instead of modifying them.
-Do not use alphabetical order for the legacy files. This custom ledger does not
-integrate with `supabase db push`; use this runner consistently.
-
-The seed only inserts a missing `platform_curriculum` document; it does not replace
-existing edits or populate the relational tables. Deployment is not claimed until
-the runner succeeds against the intended database. Take a database backup before
-production rollout; there is no destructive automatic down migration.
+Take a database backup before any schema change; there is no destructive automatic
+down migration.
 
 Weekly scheduling is live in the existing JSON client through optional task fields
 `weekStart` (ISO Monday date) and `scheduledDate` (a date within that week). The
@@ -144,12 +130,11 @@ npm test
 npm run build
 ```
 
-`tests/database-schema.test.mjs` uses PGlite (actual PostgreSQL in WASM) with minimal
-Supabase Auth/Storage stubs. It executes all migrations and tests owner isolation,
-admin privacy boundaries, anonymous denial, cross-user foreign keys, invalid
-counts/pages, non-forgeable learning progress, timestamps, account deletion,
-repeat deployment and checksum protection. It does not replace an integration
-test against hosted Supabase Auth, Storage, TLS and PostgREST.
+> **Removed 2026-11-21.** The PGlite-based schema tests (`tests/database-schema.test.mjs`
+> and the other 10 DB-dependent test files) were deleted together with the migrations.
+> The current suite (`npm test`) covers client-side behavior only; it does **not**
+> exercise the hosted database. Any schema verification must now be done against the
+> Supabase project directly.
 
 ## Findings and remaining product work
 

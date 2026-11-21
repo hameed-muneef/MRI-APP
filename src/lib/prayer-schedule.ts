@@ -61,6 +61,25 @@ export function mapAlAdhanMadhab(school?: 0 | 1): PrayerMadhab {
   return school === 1 ? 'Hanafi' : 'Shafi';
 }
 
+// When the user keeps "automatic" calculation, pick a regional convention
+// locally so no coordinates need to leave the device.
+export function defaultMethodForCoordinates(latitude: number, longitude: number): PrayerMethod {
+  const within = (minLat: number, maxLat: number, minLon: number, maxLon: number) =>
+    latitude >= minLat && latitude <= maxLat && longitude >= minLon && longitude <= maxLon;
+
+  if (within(22, 32, 24, 36)) return 'Egyptian';
+  if (within(24.4, 26.2, 50.7, 51.7)) return 'Qatar';
+  if (within(22.5, 26.5, 51, 56.5)) return 'Dubai';
+  if (within(28.5, 30.1, 46.5, 48.5)) return 'Kuwait';
+  if (within(16, 32.5, 34, 56.5)) return 'UmmAlQura';
+  if (within(35.5, 42.5, 25.5, 45)) return 'Turkey';
+  if (within(24, 40, 44, 63.5)) return 'Tehran';
+  if (within(5, 37, 60, 92)) return 'Karachi';
+  if (within(-11, 8, 94, 121)) return 'Singapore';
+  if (within(14, 73, -170, -50)) return 'NorthAmerica';
+  return 'MuslimWorldLeague';
+}
+
 export function prayerNameAr(p: ScheduledPrayer['prayer']): string {
   return PRAYER_NAMES_AR[p];
 }

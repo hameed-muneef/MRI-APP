@@ -82,7 +82,7 @@ export function useGeolocation(autoRequest = true): GeoState {
           setError('انتهت مهلة تحديد الموقع. أعد المحاولة.');
         }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 },
     );
   }, []);
 

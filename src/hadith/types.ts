@@ -6,18 +6,12 @@ export type HadithNarration = {
   text_arabic: string;
   narrator: string;
   grading_text: string;
-  grading_source: string;
-  reference_url: string;
 };
 
 export type HadithAsset = {
   collection: string;
   title: string;
   author: string;
-  source: string;
-  sourceUrl: string;
-  license: string;
-  attribution: string;
   counts: {
     hadiths: number;
     books: number;

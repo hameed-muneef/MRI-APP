@@ -2,7 +2,7 @@
 
 **Snapshot date:** 2026-11-01  
 **Automated test files:** 50  
-**Execution rule:** “Passed” below means included in the final `npm test` run recorded in [regression-test-report.md](./regression-test-report.md), not a claim that every possible behavior of that feature is covered.
+**Note (2026-11-21):** snapshot taken before the local-only Android release. The 11 DB-dependent test files (including `database-migrations.test.mjs` and `database-schema.test.mjs`) and all `supabase/migrations/` SQL were removed on 2026-11-21; the current suite is `npm test` = 148 tests (`tests/*.test.mjs`) plus `npm run test:unit` = 71 tests (Vitest under `src/`). Do not expect the files listed below for database/deployment controls to exist.
 
 ## Feature and test coverage
 

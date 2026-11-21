@@ -39,3 +39,6 @@ Record a 30–60s video showing:
 2. Exact-alarm explanation dialog opening Android's "Alarms & reminders" permission screen and granting it.
 3. Scheduled Adhan alarm firing at prayer time with locked screen, playing the selected Adhan with notification "إيقاف الأذان" stop action.
 4. Stopping/disabling prayer alerts in app settings.
+
+## 8) Location permission (approximate only)
+The Android build declares only `ACCESS_COARSE_LOCATION`. Location is used on-device for prayer times, Qibla and the bundled nearby-mosques dataset. Prayer times are computed locally with the `adhan` library; no coordinates are sent to any server. The city search box sends only the text the user types to Open-Meteo geocoding. Users may decline location and pick a city manually or enter times manually.

@@ -3,6 +3,7 @@
 // تعمل فقط في بيئة Capacitor (native). في الويب تُتجاهل (no-op).
 import {
   computePrayerSchedule,
+  defaultMethodForCoordinates,
   mapAlAdhanMadhab,
   mapAlAdhanMethod,
   prayerId,
@@ -174,7 +175,9 @@ export function buildNativeAdhanAlarmInputs(opts: {
   const now = opts.now ?? new Date();
   const nowMs = now.getTime();
   const days = Math.max(7, Math.min(14, opts.days ?? 10));
-  const method = opts.method ?? mapAlAdhanMethod(location.method);
+  const method = opts.method ?? (location.method === undefined
+    ? defaultMethodForCoordinates(location.latitude, location.longitude)
+    : mapAlAdhanMethod(location.method));
   const madhab = opts.madhab ?? mapAlAdhanMadhab(location.school);
   const fallbackAdhanId = opts.defaultAdhanId ?? getSelectedDefaultAdhanId();
 
@@ -242,7 +245,9 @@ export function buildNativeBeforeAfterPayloads(opts: {
   const now = opts.now ?? new Date();
   const nowMs = now.getTime();
   const days = Math.max(7, Math.min(14, opts.days ?? 10));
-  const method = opts.method ?? mapAlAdhanMethod(location.method);
+  const method = opts.method ?? (location.method === undefined
+    ? defaultMethodForCoordinates(location.latitude, location.longitude)
+    : mapAlAdhanMethod(location.method));
   const madhab = opts.madhab ?? mapAlAdhanMadhab(location.school);
   const generalChannelId = opts.generalChannelId ?? GENERAL_CHANNEL_ID;
   const isExact = opts.exactAlarm !== false;

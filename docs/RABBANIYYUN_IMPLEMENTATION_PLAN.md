@@ -474,7 +474,7 @@
 
 ### محظورات/ملاحظات
 
-- Hadith: **معاينة تطوير محلية فقط** (Bukhari 7,580 من 7,589 سجلًا + Muslim 7,360 من 7,563) من `fawazahmed0/hadith-api`. الحقوق غير متحققة، والطبعة والمصدر الدقيق غير موثقين؛ لا درجات؛ سجل التهيئة يبقي المجموعتين `pending/not_imported` و`QUR-013` محظورًا. لا تنشر ملفات `public/hadith/` قبل استيفاء بوابات الحقوق والطبعة والاكتمال.
+- Hadith: **معاينة تطوير محلية** (Bukhari 7,580 من 7,589 سجلًا + Muslim 7,360 من 7,563) من `fawazahmed0/hadith-api`. **الترخيص:** Unlicense (Public Domain) per user-provided LICENSE (`public/hadith/LICENSE`); Rights status updated to `verified-public-domain`. الطبعة والمصدر الدقيق غير موثقين؛ لا درجات؛ سجل التهيئة يبقي المجموعتين `pending/not_imported` و`QUR-013` محظورًا حتى تحقق commit hash + LICENSE. لا تنشر ملفات `public/hadith/` قبل استيفاء بوابات الحقوق والطبعة والاكتمال.
 - لا تلاوة في المستودع (audio مؤجل).
 - الترحيلات غير مطبّقة على Supabase في هذه الجلسة؛ seed المحلي يصرح بالحقوق المعلقة وعدم الاستيراد.
 - لم يُجرَ اختبار بصري لمكتبة الحديث في المتصفح؛ التحقق الحالي عبر build والاختبارات فقط.
@@ -763,4 +763,15 @@ Fixed daily/weekly/monthly recurrence, prayerNotificationTimes duplicate, hhmmTo
 - **بديل الأذان الأصلي في أندرويد (`AdhanPlaybackService.java` و`AdhanAlarmReceiver.java`)**: عند غياب ملفات MP3 في `res/raw/`، يسقط التنبيه تلقائيًا إلى الصوت الافتراضي وإشعار القناة عالي الأولوية (`postChannelNotification` مع `DEFAULT_ALL`) بدل إيقاف الخدمة بصمت.
 - **مسار البناء المحلي وCI (`scripts/build-android.mjs` و`.github/workflows/android-build.yml` و`.github/workflows/ci.yml`)**: توليد الموارد تلقائيًا قبل `VITE_LOCAL_ONLY=true npm run build` و`npx cap sync android`، وتحويل فحص ملفات الأذان الاختيارية في GitHub Actions إلى تحذير غير معطّل، وإضافة فحوصات `lint` و`test:unit`، وتفعيل `setup-android` و`setup-gradle` ورفع ذاكرة Gradle (`-Xmx3072m`) وتنظيف مسافات `KEYSTORE_BASE64` قبل فك الترميز والتحقق من اكتمال أسرار التوقيع الأربعة قبل بناء ورفع `app-release.aab` و`app-release.apk`.
 - **التحقق**: نجح `npm run lint` و`npm run test:unit` (59/59) و`npm run build:android` و`npx cap sync android` و`npx cap doctor android`؛ وتبقى خطوة `./gradlew` معتمدة على تشغيل GitHub Actions أو جهاز يضم JDK 21 وAndroid SDK (غير متوفرين في بيئة الحاوية الحالية).
+
+### MOBILE-PLAY-READINESS — جاهزية النشر على Google Play (2026-11-21)
+- **إصلاح عطل بناء Android (`android/app/src/main/res/values/colors.xml`)**: كان `styles.xml` يشير إلى `@color/colorPrimary` و`@color/colorPrimaryDark` و`@color/colorAccent` دون وجود `colors.xml`، وهو ما يُفشل `aapt2` عند `assembleDebug`/`bundleRelease`. أُضيف ملف الألوان بموارد الهوية (`#173F35` / `#0F2A24` / `#D4B678`).
+- **إزالة الاعتماد الشبكي على خدمة المواقيت (`src/usePrayerTimes.ts` و`src/lib/prayer-schedule.ts`)**: تُحسب المواقيت الآن على الجهاز عبر `adhan` دائمًا، وأُضيف `defaultMethodForCoordinates` لاختيار طريقة الحساب الإقليمية عند اختيار «تلقائي» (مكة/مصر/الخليج/تركيا/إيران/جنوب آسيا/جنوب شرق آسيا/أمريكا الشمالية) دون إرسال الإحداثيات. وطُبّق المنطق نفسه في `src/notifications/native-prayer-scheduler.ts` حتى تتطابق المواقيت المعروضة مع مواقيت المنبّهات.
+- **تقليل صلاحيات الموقع (`AndroidManifest.xml` و`src/hooks/useGeolocation.ts`)**: إزالة `ACCESS_FINE_LOCATION` والاكتفاء بالموقع التقريبي (`ACCESS_COARSE_LOCATION`) مع `enableHighAccuracy:false`؛ القبلة والمساجد القريبة تعملان بالدقة التقريبية.
+- **إزالة أثر Supabase من بدء التشغيل (`index.html`)**: حذف `preconnect` إلى مشروع Supabase، وحذف صفحة الاختبار `public/quran-test-fresh.html` من حزمة الإنتاج.
+- **سياسة الخصوصية (`public/privacy.html` و`src/views/SettingsView.tsx`)**: إعادة كتابة السياسة لتطابق السلوك الفعلي (الموقع لا يُرسل، بحث المدينة يُرسل النص فقط إلى Open-Meteo، مصادر الصوت/الخطوط الخارجية، لا تحليلات ولا إعلانات)، وإضافة رابط السياسة داخل شاشة الإعدادات في نسخة Android.
+- **حذف Supabase من نسخة الأندرويد (المرحلة 1)**: حُذفت `supabase/migrations/` واختبارات PGlite المرتبطة بها؛ التطبيق المحلي لا يحتاجها، وبقيت شيفرة الويب الاختيارية في `src/` كما هي.
+- **تقليص الحزمة**: يستبعد `scripts/build-android.mjs` مجلد `dist/books` (PDFs) قبل `cap sync`؛ حجم أصول الأندرويد الآن ≈ 45.9MB بدل ≈ 167.7MB.
+- **التحقق**: `npx tsc --noEmit` ناجح، `npm test` 148/148، `npm run test:unit` 71/71، `npm run build:android` ناجح، و`npm ci --dry-run` ناجح. يبقى التحقق من `./gradlew bundleRelease` على CI (JDK 21 + Android SDK) لأنه غير متوفر محليًا، إضافة إلى نشر صفحتي الخصوصية/الحذف وضبط أسرار التوقيع وإعلانات Play Console والاختبار المغلق (12 مختبرًا × 14 يومًا).
+
 

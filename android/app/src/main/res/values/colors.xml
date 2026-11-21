@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand palette used by AppTheme in styles.xml. -->
+    <color name="colorPrimary">#173F35</color>
+    <color name="colorPrimaryDark">#0F2A24</color>
+    <color name="colorAccent">#D4B678</color>
+</resources>

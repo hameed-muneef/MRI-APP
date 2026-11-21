@@ -5,6 +5,7 @@ import {
   computeDayPrayerStrings,
   mapAlAdhanMethod,
   mapAlAdhanMadhab,
+  defaultMethodForCoordinates,
   prayerNameAr,
   prayerId,
 } from './prayer-schedule';
@@ -73,6 +74,22 @@ describe('AlAdhan mappings & offline strings', () => {
     for (const v of Object.values(map)) {
       expect(v).toMatch(/^\d{2}:\d{2}$/);
     }
+  });
+});
+
+describe('defaultMethodForCoordinates', () => {
+  it('picks a regional convention without sending coordinates anywhere', () => {
+    expect(defaultMethodForCoordinates(21.4225, 39.8262)).toBe('UmmAlQura'); // Makkah
+    expect(defaultMethodForCoordinates(30.0444, 31.2357)).toBe('Egyptian'); // Cairo
+    expect(defaultMethodForCoordinates(25.2048, 55.2708)).toBe('Dubai'); // Dubai
+    expect(defaultMethodForCoordinates(25.2854, 51.5310)).toBe('Qatar'); // Doha
+    expect(defaultMethodForCoordinates(29.3759, 47.9774)).toBe('Kuwait'); // Kuwait City
+    expect(defaultMethodForCoordinates(41.0082, 28.9784)).toBe('Turkey'); // Istanbul
+    expect(defaultMethodForCoordinates(35.6892, 51.3890)).toBe('Tehran'); // Tehran
+    expect(defaultMethodForCoordinates(24.8607, 67.0011)).toBe('Karachi'); // Karachi
+    expect(defaultMethodForCoordinates(-6.2088, 106.8456)).toBe('Singapore'); // Jakarta
+    expect(defaultMethodForCoordinates(40.7128, -74.0060)).toBe('NorthAmerica'); // New York
+    expect(defaultMethodForCoordinates(51.5074, -0.1278)).toBe('MuslimWorldLeague'); // London
   });
 });
 
