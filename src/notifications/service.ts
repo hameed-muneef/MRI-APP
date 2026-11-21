@@ -124,7 +124,7 @@ export async function saveNotificationPreferences(prefs: Partial<NotificationPre
 // ---------- مكتبة الأصوات ----------
 
 export async function listAudioResources(): Promise<AudioResource[]> {
-  if (!authClient) throw new Error('خدمة قاعدة البيانات غير مفعّلة.');
+  if (!authClient) return [];
   const {data, error} = await authClient.from(AUDIO_TABLE).select('*').order('is_default', {ascending: false}).order('title', {ascending: true});
   if (error) throw error;
   return (data ?? []) as unknown as AudioResource[];

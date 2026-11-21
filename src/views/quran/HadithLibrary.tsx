@@ -43,6 +43,8 @@ export default function HadithLibrary({collectionKey, mode, state, onState, noti
   const [visibleCount, setVisibleCount] = useState(RESULTS_PAGE_SIZE);
   const [matchingCount, setMatchingCount] = useState(0);
   const [searched, setSearched] = useState(false);
+  const [reflectingId, setReflectingId] = useState<string | number | null>(null);
+  const [reflectionDraft, setReflectionDraft] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -84,8 +86,8 @@ export default function HadithLibrary({collectionKey, mode, state, onState, noti
     }
   };
 
-  const addReflection = (item: HadithNarration) => {
-    const text = window.prompt('تأمل شخصي خاص (ما العمل الذي ستطبقه؟)')?.trim();
+  const saveReflection = (item: HadithNarration) => {
+    const text = reflectionDraft.trim();
     if (!text) return;
     const stamp = utcStamp();
     patch({reflections: [{
@@ -93,6 +95,8 @@ export default function HadithLibrary({collectionKey, mode, state, onState, noti
       learned: '', meaning: '', action: text.slice(0, 2000), trait: '', intention: '', isPrivate: true,
       createdAt: stamp, updatedAt: stamp
     }, ...state.reflections]});
+    setReflectingId(null);
+    setReflectionDraft('');
     notify('حُفظ التأمل بشكل خاص.');
   };
 
@@ -203,8 +207,15 @@ export default function HadithLibrary({collectionKey, mode, state, onState, noti
               {item.grading_text && <p className="small muted">الحكم: {item.grading_text}</p>}
               <div className="quran-hadith-actions">
                 <button className="soft-btn" type="button" onClick={() => toggleBookmark(item)}>{bookmarked ? <BookmarkCheck size={15}/> : <Bookmark size={15}/>} {bookmarked ? 'إزالة العلامة' : 'حفظ علامة'}</button>
-                <button className="soft-btn" type="button" onClick={() => addReflection(item)}>تأمل خاص</button>
+                <button className="soft-btn" type="button" onClick={() => { setReflectingId(reflectingId === item.id ? null : item.id); setReflectionDraft(''); }}>تأمل خاص</button>
               </div>
+              {reflectingId === item.id && <div className="quran-inline-form">
+                <textarea value={reflectionDraft} onChange={event => setReflectionDraft(event.target.value)} maxLength={2000} placeholder="تأمل شخصي خاص (ما العمل الذي ستطبقه؟)"/>
+                <div>
+                  <button className="primary" type="button" onClick={() => saveReflection(item)}>حفظ التأمل</button>
+                  <button className="soft-btn" type="button" onClick={() => { setReflectingId(null); setReflectionDraft(''); }}>إلغاء</button>
+                </div>
+              </div>}
             </li>;
           })}
         </ul>}

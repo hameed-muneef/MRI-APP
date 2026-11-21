@@ -96,13 +96,11 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     savedPage && savedPage >= 1 && savedPage <= pages.length ? savedPage : 1);
   const [jumpKind, setJumpKind] = useState<'surah' | 'juz' | 'hizb' | 'page'>('surah');
   const [jumpValue, setJumpValue] = useState<string>('1');
-  const [fontSize, setFontSize] = useState<number>(() => state.settings?.fontSize ?? 26);
+  const [fontSize, setFontSize] = useState<number>(() => state.settings?.fontSize ?? 22);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [active, setActive] = useState<QuranVerse | null>(null);
   const [sheetTab, setSheetTab] = useState<'actions' | 'tafsir' | 'translation'>('tafsir');
-  const [popoverPos, setPopoverPos] = useState<{top: number; left: number; placement: 'below' | 'above'}>({top: 0, left: 0, placement: 'below'});
-  const [isMobileSheet, setIsMobileSheet] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 767 : false));
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const ayahRef = useRef<QuranVerse | null>(null);
   const [tafsirId, setTafsirId] = useState<number>(TAFSIRS[0].id);
@@ -141,6 +139,7 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   const currentStopSurahRef = useRef<number | undefined>(undefined);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [khatmahOpen, setKhatmahOpen] = useState(false);
+  const [confirmKhatmahReset, setConfirmKhatmahReset] = useState(false);
   const [khatmahPace, setKhatmahPace] = useState<number>(() => {
     try { const v = Number(localStorage.getItem('quran-khatmah-pace')); return Number.isFinite(v) && v > 0 ? v : 10; } catch { return 10; }
   });
@@ -548,122 +547,27 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     }
   };
 
-  // Track mobile breakpoint for sheet vs popover.
-  useEffect(() => {
-    const onResize = () => setIsMobileSheet(window.innerWidth <= 767);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  // Outside click / Esc / focus / swipe for ayah popover.
-  useEffect(() => {
-    if (!active) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { closePopover(); }
-    };
-    const onClickOutside = (e: MouseEvent) => {
-      if (isMobileSheet) return;
-      const pop = popoverRef.current;
-      if (pop && !pop.contains(e.target as Node)) { closePopover(); }
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onClickOutside);
-    // focus first focusable
-    const t = setTimeout(() => {
-      const pop = popoverRef.current;
-      if (pop) {
-        const focusable = pop.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        if (focusable) focusable.focus();
-      }
-    }, 50);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onClickOutside);
-      clearTimeout(t);
-    };
-  }, [active, isMobileSheet]);
-
-  // Compute popover position when active ayah changes.
-  const computePosition = useCallback(() => {
-    if (!active || isMobileSheet) return;
-    const ayahEl = document.querySelector(`[data-ayah="${active.s}:${active.a}"]`) as HTMLElement | null;
-    if (!ayahEl) return;
-    const rect = ayahEl.getBoundingClientRect();
-    const popWidth = Math.min(560, window.innerWidth - 32);
-    const col = document.querySelector('.mf-pages') as HTMLElement | null;
-    const colRect = col ? col.getBoundingClientRect() : {left: 0, width: window.innerWidth};
-    const colWidth = colRect.width > 0 ? colRect.width : Math.min(760, window.innerWidth);
-    const colLeft = colRect.left > 0 ? colRect.left : (window.innerWidth - colWidth) / 2;
-    let left = colLeft + (colWidth - popWidth) / 2;
-    left = Math.max(16, Math.min(left, window.innerWidth - popWidth - 16));
-    const gap = 12;
-    const pop = popoverRef.current;
-    const popH = pop ? pop.offsetHeight : 360;
-    const spaceBelow = window.innerHeight - rect.bottom - gap;
-    const spaceAbove = rect.top - gap;
-    let placement: 'below' | 'above' = 'below';
-    let top = rect.bottom + gap;
-    if (spaceBelow < popH && spaceAbove >= popH) {
-      placement = 'above';
-      top = rect.top - popH - gap;
-    } else if (spaceBelow < popH && spaceAbove < popH) {
-      placement = 'below';
-      top = Math.max(gap, window.innerHeight - popH - 16);
-    }
-    setPopoverPos({top, left, placement});
-  }, [active, isMobileSheet]);
-
+  // Always render mobile sheet inside 480px shell and scroll selected ayah into view.
   useEffect(() => {
     if (!active) return;
     ayahRef.current = active;
-    if (isMobileSheet) {
-      const ayahEl = document.querySelector(`[data-ayah="${active.s}:${active.a}"]`) as HTMLElement | null;
-      if (ayahEl) {
-        const rect = ayahEl.getBoundingClientRect();
-        const target = window.scrollY + rect.top - window.innerHeight / 3;
-        window.scrollTo({top: Math.max(0, target), behavior: 'smooth'});
-      }
-      return;
+    const ayahEl = document.querySelector(`[data-ayah="${active.s}:${active.a}"]`) as HTMLElement | null;
+    if (ayahEl) {
+      const rect = ayahEl.getBoundingClientRect();
+      const target = window.scrollY + rect.top - window.innerHeight / 3;
+      window.scrollTo({top: Math.max(0, target), behavior: 'smooth'});
     }
-    const t = setTimeout(computePosition, 0);
-    return () => clearTimeout(t);
-  }, [active, isMobileSheet, computePosition]);
-
-  useEffect(() => {
-    if (!active || isMobileSheet) return;
-    const onScrollResize = () => {
-      computePosition();
-    };
-    window.addEventListener('scroll', onScrollResize, {passive: true});
-    window.addEventListener('resize', onScrollResize);
-    return () => {
-      window.removeEventListener('scroll', onScrollResize);
-      window.removeEventListener('resize', onScrollResize);
-    };
-  }, [active, isMobileSheet, computePosition]);
-
-  // Track mobile breakpoint
-  useEffect(() => {
-    const onResize = () => setIsMobileSheet(window.innerWidth <= 767);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [active]);
 
   const results = useMemo(() => (search.trim().length >= 2 ? searchVerses(asset, search, 30) : []), [asset, search]);
 
-  // Outside click / Esc / focus / swipe for ayah popover.
+  // Esc / initial focus / swipe down for mobile ayah sheet.
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { closePopover(); }
     };
-    const onClickOutside = (e: MouseEvent) => {
-      if (isMobileSheet) return;
-      const pop = popoverRef.current;
-      if (pop && !pop.contains(e.target as Node)) { closePopover(); }
-    };
     document.addEventListener('keydown', onKey);
-    if (!isMobileSheet) document.addEventListener('mousedown', onClickOutside);
     const t = setTimeout(() => {
       const pop = popoverRef.current;
       if (pop) {
@@ -678,20 +582,19 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
       const endY = (e as TouchEvent).changedTouches[0].clientY;
       if (endY - startY > 60) { closePopover(); }
     };
-    if (isMobileSheet && handle) {
+    if (handle) {
       handle.addEventListener('touchstart', onTouchStart, {passive: true});
       handle.addEventListener('touchend', onTouchEnd, {passive: true});
     }
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onClickOutside);
       clearTimeout(t);
-      if (isMobileSheet && handle) {
+      if (handle) {
         handle.removeEventListener('touchstart', onTouchStart);
         handle.removeEventListener('touchend', onTouchEnd);
       }
     };
-  }, [active, isMobileSheet]);
+  }, [active, closePopover]);
 
   const meta = pageMeta.get(page);
   const progress = Math.round((page / pages.length) * 100);
@@ -831,24 +734,9 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
         <div className="mf-progress" aria-hidden="true"><span style={{width: `${progress}%`}}/></div>
       </div>
     </div>
+    {/* Mobile quick bottom bar */}
     <div className="mf-bottom-bar">
-      <button type="button" className={`mf-btn sm ${playState === 'playing' ? 'primary' : 'primary'}`} onClick={togglePlay} aria-pressed={playState === 'playing'} aria-label="تشغيل أو إيقاف القراءة">
-        {playState === 'playing' ? <Pause size={17}/> : <Play size={17}/>} {playState === 'playing' ? 'إيقاف مؤقت' : 'تشغيل'}
-      </button>
-      <button type="button" className={autoScroll ? 'mf-btn sm soft selected' : 'mf-btn sm soft'} onClick={() => setAutoScroll(value => !value)} aria-pressed={autoScroll} aria-label="تمرير تلقائي">
-        {autoScroll ? <Pause size={15}/> : <Play size={15}/>} {autoScroll ? 'إيقاف التمرير' : 'تمرير تلقائي'}
-      </button>
-      <button type="button" className={`mf-btn sm ${searchOpen ? 'primary' : 'soft'}`} onClick={() => setSearchOpen(value => !value)} aria-pressed={searchOpen} aria-label="بحث">
-        <Search size={16}/> بحث
-      </button>
-      <button type="button" className="mf-btn sm soft" onClick={() => setBookmarksOpen(true)} aria-label="علاماتي">
-        <Bookmark size={16}/> علاماتي
-      </button>
-    </div>
-
-    {/* Mobile sticky bottom bar */}
-    <div className="mf-bottom-bar">
-      <button type="button" className={`mf-btn sm ${playState === 'playing' ? 'primary' : 'primary'}`} onClick={togglePlay} aria-pressed={playState === 'playing'} aria-label="تشغيل أو إيقاف القراءة">
+      <button type="button" className="mf-btn sm primary" onClick={togglePlay} aria-pressed={playState === 'playing'} aria-label="تشغيل أو إيقاف القراءة">
         {playState === 'playing' ? <Pause size={17}/> : <Play size={17}/>} {playState === 'playing' ? 'إيقاف مؤقت' : 'تشغيل'}
       </button>
       <button type="button" className={autoScroll ? 'mf-btn sm soft selected' : 'mf-btn sm soft'} onClick={() => setAutoScroll(value => !value)} aria-pressed={autoScroll} aria-label="تمرير تلقائي">
@@ -876,19 +764,18 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     />
 
     {active && <div
-      className={isMobileSheet ? 'mf-sheet-backdrop mf-scrim-light' : 'mf-popover-anchor'}
-      onClick={isMobileSheet ? (e => { if (e.target === e.currentTarget) { closePopover(); } }) : undefined}
+      className="mf-sheet-backdrop mf-scrim-light"
+      onClick={e => { if (e.target === e.currentTarget) { closePopover(); } }}
     >
       <div
         ref={popoverRef}
-        className={isMobileSheet ? 'mf-sheet mf-sheet-mobile' : 'mf-popover'}
+        className="mf-sheet mf-sheet-mobile"
         role="dialog"
-        aria-modal={isMobileSheet ? 'true' : 'false'}
+        aria-modal="true"
         aria-label={`${surahInfo(asset, active.s)?.name ?? `سورة ${active.s}`}: ${toArabicNumber(active.a)}`}
-        style={isMobileSheet ? undefined : { top: popoverPos.top, left: popoverPos.left, width: Math.min(560, (typeof window !== 'undefined' ? window.innerWidth : 560) - 32), maxWidth: 560 }}
         onClick={event => event.stopPropagation()}
       >
-        {isMobileSheet && <div className="mf-drag-handle" aria-hidden="true"/>}
+        <div className="mf-drag-handle" aria-hidden="true"/>
         <div className="mf-sheet-head">
           <div>
             <strong>{surahInfo(asset, active.s)?.name ?? `سورة ${active.s}`}: {toArabicNumber(active.a)}</strong>
@@ -960,11 +847,11 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
       </div>
     </div>}
 
-    {khatmahOpen && <div className="mf-sheet-backdrop" onClick={() => setKhatmahOpen(false)}>
+    {khatmahOpen && <div className="mf-sheet-backdrop" onClick={() => { setKhatmahOpen(false); setConfirmKhatmahReset(false); }}>
       <div className="mf-sheet" role="dialog" aria-label="تقدم الختمة" onClick={event => event.stopPropagation()}>
         <div className="mf-sheet-head">
           <div><strong>تقدم الختمة</strong><small className="muted"> تتبّع تقدمك في المصحف (٦٠٤ صفحة)</small></div>
-          <button type="button" className="icon-btn" onClick={() => setKhatmahOpen(false)} aria-label="إغلاق"><X size={18}/></button>
+          <button type="button" className="icon-btn" onClick={() => { setKhatmahOpen(false); setConfirmKhatmahReset(false); }} aria-label="إغلاق"><X size={18}/></button>
         </div>
         <div className="mf-khatmah">
           <div className="mf-khatmah-bar" role="progressbar" aria-valuenow={Math.round(maxPage / 604 * 100)} aria-valuemin={0} aria-valuemax={100}>
@@ -979,7 +866,17 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
           </label>
           {maxPage < 604 && <p className="muted small">المتبقي {toArabicNumber(604 - maxPage)} صفحة ≈ {toArabicNumber(Math.ceil((604 - maxPage) / khatmahPace))} يومًا بوتيرتك.</p>}
           {maxPage >= 604 && <p className="mf-khatmah-done">أتممت ختمة — تهانينا. أعد الضبط لبدء ختمة جديدة.</p>}
-          <button type="button" className="soft-btn" onClick={() => { if (window.confirm('إعادة ضبط تقدم الختمة؟')) { setMaxPage(1); try { localStorage.setItem('quran-khatmah-maxpage', '1'); } catch { /* تجاهل */ } notify('أُعيد ضبط التقدم.'); } }}>إعادة ضبط</button>
+          {confirmKhatmahReset ? (
+            <div className="notif-confirm">
+              <p>هل تريد إعادة ضبط تقدم الختمة إلى صفحة ١؟</p>
+              <div style={{display: 'flex', gap: 8}}>
+                <button type="button" className="primary" onClick={() => { setMaxPage(1); try { localStorage.setItem('quran-khatmah-maxpage', '1'); } catch { /* تجاهل */ } setConfirmKhatmahReset(false); notify('أُعيد ضبط التقدم.'); }}>تأكيد إعادة الضبط</button>
+                <button type="button" className="soft-btn" onClick={() => setConfirmKhatmahReset(false)}>إلغاء</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" className="soft-btn" onClick={() => setConfirmKhatmahReset(true)}>إعادة ضبط</button>
+          )}
         </div>
       </div>
     </div>}

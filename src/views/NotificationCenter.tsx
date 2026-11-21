@@ -1,7 +1,16 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Bell,CheckCheck,Inbox,LoaderCircle,RefreshCw,ShieldCheck,Trash2} from 'lucide-react';
 import {authClient} from '../auth';
+import {LOCAL_ONLY} from '../config';
 import type {View} from '../app-state';
+import {
+  clearAllLocalNotifications,
+  listLocalNotifications,
+  LOCAL_NOTIFICATIONS_EVENT,
+  markAllLocalNotificationsRead,
+  markLocalNotificationRead,
+  unreadLocalNotificationCount,
+} from '../notifications/local-inbox';
 import '../notifications.css';
 
 type NotificationCategory='reminder'|'system';
@@ -17,7 +26,7 @@ type NotificationRow={
 };
 
 const PAGE_SIZE=20;
-const NOTIFICATION_TTL_MS=30*60*1000; // 30 minutes: unread notifications auto-become read (badge clears)
+const NOTIFICATION_TTL_MS=30*60*1000;
 const isExpired=(row:NotificationRow,nowMs:number)=>!row.read_at&&(nowMs-Date.parse(row.created_at)>NOTIFICATION_TTL_MS);
 const categories:[NotificationCategory|'all',string][] = [
   ['all','الكل'],
@@ -25,14 +34,11 @@ const categories:[NotificationCategory|'all',string][] = [
   ['system','النظام'],
 ];
 
-// Notification links are view keys, not free-form URLs. Unknown links are
-// shown as plain notifications and never navigated to.
 const viewLabels:Record<string,string>={
   home:'الرئيسية',day:'حياتي مع الله',tasks:'مركز المهام',week:'أسبوعي مع الله',month:'شهري مع الله',
   goals:'المؤمن القوي',reflect:'محاسبة النفس',wird:'زكِّ نفسك',profile:'حسابي',settings:'الإعدادات',
+  quran:'القرآن والسنة',haramain:'من الحرمين الشريفين',qibla:'اتجاه القبلة',mosques:'المساجد القريبة',
 };
-// Sections removed from the product keep their past notifications visible, but
-// no longer offer a navigation button to a page that does not exist.
 const targetLabel=(link:string)=>viewLabels[link];
 
 function categoryOf(kind:string):NotificationCategory{
@@ -57,6 +63,7 @@ type Props={
 };
 
 export default function NotificationCenter({user,profile,onNavigate}:Props){
+  const localMode=LOCAL_ONLY||!authClient||!user;
   const [open,setOpen]=useState(false);
   const [items,setItems]=useState<NotificationRow[]>([]);
   const [unread,setUnread]=useState(0);
@@ -67,9 +74,18 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   const [error,setError]=useState('');
   const [hasMore,setHasMore]=useState(false);
   const [legacy,setLegacy]=useState(false);
+  const [confirmClear,setConfirmClear]=useState(false);
   const rootRef=useRef<HTMLDivElement>(null);
   const [nowMs,setNowMs]=useState(()=>Date.now());
   const preferencesOff=profile?.notification_preferences?.enabled===false;
+
+  const loadLocal=useCallback(()=>{
+    const rows=listLocalNotifications();
+    setItems(rows);
+    setUnread(unreadLocalNotificationCount());
+    setHasMore(false);
+    setLegacy(true);
+  },[]);
 
   const legacyFallback=useCallback(async()=>{
     if(!authClient)return;
@@ -82,12 +98,12 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     setLegacy(true);
     setItems(rows);
     setHasMore(false);
-  },[setItems,setHasMore,setLegacy]);
+  },[]);
 
   const loadFirst=useCallback(async()=>{
-    if(!authClient||!user||preferencesOff){setItems([]);setUnread(0);return}
-    // The legacy feed has no server-side filters, so tabs and the unread toggle
-    // are applied to the already-loaded rows in visibleItems.
+    if(preferencesOff){setItems([]);setUnread(0);return}
+    if(localMode){loadLocal();return}
+    if(!authClient||!user){setItems([]);setUnread(0);return}
     if(legacy){await legacyFallback();return}
     setLoading(true);setError('');
     try{
@@ -95,8 +111,6 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
         p_limit:PAGE_SIZE,p_offset:0,p_category:category==='all'?null:category,p_unread_only:unreadOnly,
       });
       if(listError){
-        // The live backend may not have the newest migration yet; keep the bell
-        // usable with the old function and apply filters locally.
         if(category==='all'&&!unreadOnly){
           await legacyFallback();
           const {data:count}=await authClient.rpc('unread_notification_count');
@@ -113,10 +127,10 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     }catch(caught){
       setError(caught instanceof Error?caught.message:'تعذر تحميل الإشعارات.');
     }finally{setLoading(false)}
-  },[user,preferencesOff,category,unreadOnly,legacy,legacyFallback]);
+  },[localMode,loadLocal,user,preferencesOff,category,unreadOnly,legacy,legacyFallback]);
 
   const loadMore=useCallback(async()=>{
-    if(!authClient||loading||legacy)return;
+    if(localMode||!authClient||loading||legacy)return;
     setLoading(true);setError('');
     try{
       const {data,error:listError}=await authClient.rpc('list_notifications',{
@@ -128,37 +142,45 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       setHasMore(next.length===PAGE_SIZE);
     }catch(caught){setError(caught instanceof Error?caught.message:'تعذر تحميل المزيد.')}
     finally{setLoading(false)}
-  },[user?.id,category,unreadOnly,items.length,loading,legacy]);
+  },[localMode,category,unreadOnly,items.length,loading,legacy]);
 
   useEffect(()=>{void loadFirst()},[loadFirst]);
+
   useEffect(()=>{
-    if(!authClient||!user)return;
+    if(!localMode)return;
+    const onLocalUpdate=()=>loadLocal();
+    window.addEventListener(LOCAL_NOTIFICATIONS_EVENT,onLocalUpdate);
+    return()=>window.removeEventListener(LOCAL_NOTIFICATIONS_EVENT,onLocalUpdate);
+  },[localMode,loadLocal]);
+
+  useEffect(()=>{
+    if(localMode||!authClient||!user)return;
     void authClient.rpc('purge_my_old_notifications',{p_days:90}).then(()=>undefined,()=>undefined);
     void authClient.rpc('expire_my_notifications',{p_minutes:30}).then(()=>undefined,()=>undefined);
-  },[user?.id]);
+  },[localMode,user?.id]);
 
-  // Tick every 30s so stale items become read even while the panel stays open.
   useEffect(()=>{
     const timer=window.setInterval(()=>setNowMs(Date.now()),30000);
     return()=>window.clearInterval(timer);
   },[]);
 
-  // Auto-expire: unread >30min → mark read locally + server (badge clears after 30 min)
   useEffect(()=>{
-    if(!authClient||!user||preferencesOff)return;
+    if(preferencesOff)return;
+    if(localMode){
+      const stale=items.some(row=>isExpired(row,nowMs));
+      if(stale)loadLocal();
+      return;
+    }
+    if(!authClient||!user)return;
     const stale=items.filter(row=>isExpired(row,nowMs));
     if(!stale.length)return;
     setItems(current=>current.map(row=>isExpired(row,nowMs)?{...row,read_at:new Date(nowMs).toISOString()}:row));
     setUnread(value=>Math.max(0,value-stale.length));
-    // Server-side expiry (best-effort; ignore if RPC not yet deployed)
     void authClient.rpc('expire_my_notifications',{p_minutes:30}).then(()=>undefined,()=>undefined);
-  },[items,nowMs,user?.id,preferencesOff]);
+  },[localMode,loadLocal,items,nowMs,user?.id,preferencesOff]);
 
-  // Refresh only the light unread counter; the full list is fetched when the
-  // user opens the bell or the counter changes. Expire stale (>30min) first so
-  // the badge clears automatically even when the panel stays closed.
   useEffect(()=>{
-    if(!authClient||!user||preferencesOff)return;
+    if(localMode||!authClient||!user||preferencesOff)return;
     const client=authClient;
     const poll=async()=>{
       if(document.visibilityState!=='visible')return;
@@ -173,14 +195,14 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     document.addEventListener('visibilitychange',poll);
     window.addEventListener('focus',poll);
     return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',poll);window.removeEventListener('focus',poll)};
-  },[user?.id,preferencesOff,unread,open,loadFirst]);
+  },[localMode,user?.id,preferencesOff,unread,open,loadFirst]);
 
   useEffect(()=>{
     if(!open)return;
     const onPointer=(event:MouseEvent)=>{
-      if(rootRef.current&&!rootRef.current.contains(event.target as Node))setOpen(false);
+      if(rootRef.current&&!rootRef.current.contains(event.target as Node)){setOpen(false);setConfirmClear(false)}
     };
-    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setOpen(false)};
+    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'){setOpen(false);setConfirmClear(false)}};
     document.addEventListener('mousedown',onPointer);
     document.addEventListener('keydown',onKey);
     return()=>{document.removeEventListener('mousedown',onPointer);document.removeEventListener('keydown',onKey)};
@@ -194,8 +216,6 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     );
   },[items,legacy,category,unreadOnly,nowMs]);
 
-  // Server-side pages are replaced on filter change; legacy rows stay loaded so
-  // visibleItems can keep filtering them without another round trip.
   const pickCategory=(next:NotificationCategory|'all')=>{
     if(next===category)return;
     setError('');
@@ -209,9 +229,11 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   };
 
   const markRead=async(id:string)=>{
-    if(!authClient||busy)return;
+    if(busy)return;
     const target=items.find(row=>row.notification_id===id);
     if(!target||target.read_at)return;
+    if(localMode){markLocalNotificationRead(id);loadLocal();return}
+    if(!authClient)return;
     setBusy(true);
     try{
       const {error:rpcError}=await authClient.rpc('mark_notification_read',{p_notification_id:id});
@@ -223,7 +245,9 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   };
 
   const markAll=async()=>{
-    if(!authClient||busy)return;
+    if(busy)return;
+    if(localMode){markAllLocalNotificationsRead();loadLocal();return}
+    if(!authClient)return;
     setBusy(true);setError('');
     try{
       const {error:rpcError}=await authClient.rpc('mark_all_notifications_read');
@@ -235,8 +259,9 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   };
 
   const clearAll=async()=>{
-    if(!authClient||busy)return;
-    if(!window.confirm('سيتم حذف جميع الإشعارات (مقروءة وغير مقروءة). لا يمكن التراجع. متابعة؟'))return;
+    if(busy)return;
+    if(localMode){clearAllLocalNotifications();loadLocal();setConfirmClear(false);return}
+    if(!authClient)return;
     setBusy(true);setError('');
     try{
       const {error:rpcError}=await authClient.rpc('clear_all_my_notifications');
@@ -244,6 +269,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       setItems([]);
       setUnread(0);
       setHasMore(false);
+      setConfirmClear(false);
     }catch{setError('تعذر حذف الإشعارات.')}
     finally{setBusy(false)}
   };
@@ -256,10 +282,10 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     }
   };
 
-  if(!user||preferencesOff)return null;
+  if(preferencesOff)return null;
 
   return <div className="notif-center" ref={rootRef}>
-    <button type="button" className="notif-bell" onClick={()=>setOpen(value=>!value)} aria-label={`الإشعارات${unread?` (${unread} غير مقروءة)`:''}`} aria-expanded={open} aria-haspopup="dialog">
+    <button type="button" className="notif-bell" onClick={()=>setOpen(value=>{const next=!value;if(!next)setConfirmClear(false);return next})} aria-label={`الإشعارات${unread?` (${unread} غير مقروءة)`:''}`} aria-expanded={open} aria-haspopup="dialog">
       <Bell size={18}/>
       {unread>0&&<span className="notif-badge" aria-hidden="true">{unread>99?'99+':unread}</span>}
     </button>
@@ -267,8 +293,17 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       <header className="notif-head">
         <div><h3>الإشعارات</h3><p className="muted small">{unread>0?`${unread} غير مقروءة`:'كل الإشعارات مقروءة'}</p></div>
         <button type="button" className="soft-btn notif-mark-all" disabled={busy||unread===0} onClick={()=>void markAll()}><CheckCheck size={15}/> تعليم الكل كمقروء</button>
-        <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>void clearAll()}><Trash2 size={15}/> حذف الكل</button>
+        <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> حذف الكل</button>
       </header>
+      {confirmClear&&(
+        <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف جميع الإشعارات">
+          <p className="small">سيتم حذف جميع الإشعارات من هذا الجهاز. متابعة؟</p>
+          <div style={{display:'flex',gap:8}}>
+            <button type="button" className="soft-btn danger" disabled={busy} onClick={()=>void clearAll()}>تأكيد الحذف</button>
+            <button type="button" className="soft-btn" onClick={()=>setConfirmClear(false)}>إلغاء</button>
+          </div>
+        </div>
+      )}
       <div className="notif-filters" role="tablist" aria-label="تصنيفات الإشعارات">
         {categories.map(([id,label])=><button key={id} type="button" role="tab" aria-selected={category===id} className={category===id?'active':''} onClick={()=>pickCategory(id)}>{label}</button>)}
       </div>

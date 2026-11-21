@@ -1,6 +1,14 @@
 import {useEffect, useRef, useState} from 'react';
-import {Globe, Lock, Play, RotateCcw, Square, UserRound, Volume2} from 'lucide-react';
+import {Download, Globe, HardDrive, Lock, Play, RotateCcw, Square, Upload, UserRound, Volume2} from 'lucide-react';
 import {type State, createSeed} from '../app-state';
+import {
+  exportLocalBackup,
+  formatStorageBytes,
+  getLocalStorageSummary,
+  importLocalBackup,
+  requestPersistentStorage,
+  type LocalStorageSummary,
+} from '../local-backup';
 import NotificationSettings from './notifications/NotificationSettings';
 import {AppearancePanel} from '../AppearanceToggle';
 import {InstallGuidePanel} from '../InstallApp';
@@ -36,7 +44,14 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
   const [defaultAdhanId, setDefaultAdhanId] = useState<string>(() => getSelectedDefaultAdhanId());
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
+  const [storageSummary, setStorageSummary] = useState<LocalStorageSummary | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const backupFileRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    void getLocalStorageSummary().then(setStorageSummary);
+  }, [state]);
 
   useEffect(() => {
     let active = true;
@@ -174,11 +189,50 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
     }
   };
 
-  const reset = () => {
-    if (window.confirm('هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ لا يمكن التراجع.')) {
-      onReplace(createSeed());
-      notify('تمت إعادة الضبط');
+  const exportBackup = () => {
+    try {
+      const payload = exportLocalBackup();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rabbaniyun-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      notify('تم تصدير النسخة الاحتياطية المحلية');
+    } catch {
+      notify('تعذر تصدير النسخة الاحتياطية');
     }
+  };
+
+  const importBackup = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const restored = importLocalBackup(text);
+      if (restored) onReplace(restored);
+      void getLocalStorageSummary().then(setStorageSummary);
+      notify('تم استيراد النسخة الاحتياطية بنجاح');
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'تعذر قراءة ملف النسخة الاحتياطية');
+    }
+  };
+
+  const enablePersistentStorage = async () => {
+    const granted = await requestPersistentStorage();
+    void getLocalStorageSummary().then(setStorageSummary);
+    if (granted === true) notify('تم تثبيت التخزين المحلي الدائم على هذا الجهاز');
+    else if (granted === false) notify('المتصفح لم يمنح تثبيتًا تلقائيًا للتخزين الدائم، لكن البيانات تبقى محفوظة محليًا.');
+    else notify('التخزين المحلي يعمل على هذا الجهاز');
+  };
+
+  const reset = () => {
+    onReplace(createSeed());
+    setConfirmReset(false);
+    void getLocalStorageSummary().then(setStorageSummary);
+    notify('تمت إعادة ضبط البيانات المحلية');
   };
 
   const defaultAdhan = resolvePrayerAdhan(undefined, defaultAdhanId);
@@ -273,6 +327,44 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
     <AlarmTonePlayer notify={notify}/>
     <InstallGuidePanel/>
     <section className='panel'><h3><Lock size={18}/> الخصوصية</h3><p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p><p className="muted">الموقع يُستخدم على جهازك فقط لحساب أوقات الصلاة والقبلة والمساجد القريبة، ولا يُرسل إلى أي خادم. سياسة الخصوصية الكاملة: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a></p><p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p></section>
-    <section className="panel"><h3>بياناتك على هذا الجهاز</h3><p className="muted">كل ما تكتبه — مهامك وأهدافك وأورادك ومحاسبتك وقراءتك — يُحفظ على هذا الجهاز فقط. لا يُرسل إلى خادم، ولا تُصدَّر نسخة احتياطية إلى ملف خارجي، ولا تُستورد نسخة من جهاز آخر. إن حذفت بيانات المتصفح أو التطبيق ضاعت بياناتك، فاحتفظ بجهازك آمنًا.</p><button className="outline-danger" onClick={reset}><RotateCcw size={17}/> حذف البيانات المحلية</button></section>
+    <section className="panel">
+      <h3><HardDrive size={18}/> التخزين المحلي والنسخ الاحتياطي</h3>
+      <p className="muted">جميع بياناتك — مهامك، خططك، أهدافك، أورادك، محاسبتك، حفظ القرآن، الأذكار، المنبهات، والإشعارات — محفوظة محليًا بالكامل على هذا الجهاز فقط دون أي خادم خارجي.</p>
+      {storageSummary && (
+        <div className="hint" style={{display: 'grid', gap: 6, marginBottom: 16}}>
+          <div><strong>حالة الحفظ الدائم:</strong> {storageSummary.persisted === true ? 'مفعّل على الجهاز' : storageSummary.persisted === false ? 'تخزين محلي قياسي' : 'متاح محليًا'}</div>
+          <div><strong>السجلات المحلية المحفوظة:</strong> {storageSummary.localKeysCount} مفتاحًا {storageSummary.usageBytes !== null ? `· المساحة المستخدمة: ${formatStorageBytes(storageSummary.usageBytes)}` : ''}</div>
+        </div>
+      )}
+      <div style={{display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14}}>
+        <button type="button" className="primary" onClick={exportBackup}><Download size={16}/> تصدير نسخة احتياطية</button>
+        <button type="button" className="soft-btn" onClick={() => backupFileRef.current?.click()}><Upload size={16}/> استيراد نسخة احتياطية</button>
+        {storageSummary?.persisted !== true && (
+          <button type="button" className="soft-btn" onClick={() => void enablePersistentStorage()}>تثبيت التخزين الدائم</button>
+        )}
+        <input
+          ref={backupFileRef}
+          type="file"
+          accept="application/json,.json"
+          style={{display: 'none'}}
+          onChange={event => {
+            const file = event.target.files?.[0] ?? null;
+            event.target.value = '';
+            void importBackup(file);
+          }}
+        />
+      </div>
+      {!confirmReset ? (
+        <button type="button" className="outline-danger" onClick={() => setConfirmReset(true)}><RotateCcw size={17}/> حذف البيانات المحلية</button>
+      ) : (
+        <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف البيانات المحلية">
+          <p className="small">هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
+          <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+            <button type="button" className="outline-danger" onClick={reset}>تأكيد الحذف النهائي</button>
+            <button type="button" className="soft-btn" onClick={() => setConfirmReset(false)}>إلغاء</button>
+          </div>
+        </div>
+      )}
+    </section>
   </>;
 }

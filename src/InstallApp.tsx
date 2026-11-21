@@ -56,20 +56,44 @@ function useInstallCapability(): InstallCapability {
   return {promptEvent, ios: isIOS(), installed, setPromptEvent};
 }
 
-// زر أعلى الصفحة: يظهر فقط عندما يتيح المتصفح التثبيت البرمجي
+// زر أعلى الصفحة: يظهر عند إتاحة التثبيت البرمجي أو على iOS Safari لإرشاد المستخدم
 export function InstallAppButton(): JSX.Element | null {
-  const {promptEvent, installed, setPromptEvent} = useInstallCapability();
-  if (installed || !promptEvent) return null;
-  const install = async () => {
-    await promptEvent.prompt();
-    const {outcome} = await promptEvent.userChoice;
-    if (outcome === 'accepted') setPromptEvent(null);
-  };
-  return (
-    <button type="button" className="icon-btn install-app" aria-label="تثبيت التطبيق" title="تثبيت التطبيق" onClick={install}>
-      <Download size={18}/>
-    </button>
-  );
+  const {promptEvent, ios, installed, setPromptEvent} = useInstallCapability();
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const isNative = typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform === 'function'
+    && Boolean((window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform());
+  if (installed || isNative) return null;
+  if (promptEvent) {
+    const install = async () => {
+      await promptEvent.prompt();
+      const {outcome} = await promptEvent.userChoice;
+      if (outcome === 'accepted') setPromptEvent(null);
+    };
+    return (
+      <button type="button" className="icon-btn install-app" aria-label="تثبيت التطبيق" title="تثبيت التطبيق" onClick={install}>
+        <Download size={18}/>
+      </button>
+    );
+  }
+  if (ios) {
+    return (
+      <>
+        <button type="button" className="icon-btn install-app" aria-label="تثبيت التطبيق على الآيفون" title="تثبيت التطبيق" onClick={() => setShowIOSGuide(true)}>
+          <Download size={18}/>
+        </button>
+        {showIOSGuide && (
+          <div className="ios-install-backdrop" role="dialog" aria-modal="true" aria-label="تثبيت التطبيق على الآيفون والآيباد" onClick={() => setShowIOSGuide(false)}>
+            <div className="panel ios-install-modal" dir="rtl" onClick={e => e.stopPropagation()}>
+              <h3><Smartphone size={18}/> تثبيت التطبيق على الآيفون</h3>
+              <p className="muted">1. اضغط زر <strong>مشاركة</strong> (المربع والسهم) في شريط Safari.<br/>2. مرر للأسفل واختر <strong>«إضافة إلى الشاشة الرئيسية»</strong>.</p>
+              <button type="button" className="primary" onClick={() => setShowIOSGuide(false)}>إغلاق</button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+  return null;
 }
 
 // لوحة الإعدادات: تشرح التثبيت على كل منصة

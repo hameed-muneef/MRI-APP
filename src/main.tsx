@@ -22,6 +22,7 @@ import './mushaf.css';
 import './qibla.css';
 import './mosques.css';
 import './audio.css';
+import './ui-hardening.css';
 import {installSectionTheme} from './section-theme';
 import {installAppearance} from './appearance';
 // تسجيل service worker مع تحديث تلقائي (إعادة تحميل واحدة عند جاهزية نسخة جديدة).

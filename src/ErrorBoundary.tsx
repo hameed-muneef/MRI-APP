@@ -1,15 +1,14 @@
 import {Component, type ErrorInfo, type ReactNode} from 'react';
 
 type Props={children: ReactNode;fallback?:ReactNode};
-type State={hasError:boolean};
+type State={hasError:boolean;confirmReset:boolean};
 
 // حاجز أخطاء عام: عند أي خلل غير متوقع لا تتحول الصفحة إلى فراغ،
-// بل تتوفر شاشة استرجاع لإعادة التحميل أو إعادة الضبط. لا تصدير بيانات:
-// لا نسخ احتياطية خارجية في هذا المنتج.
+// بل تتوفر شاشة استرجاع لإعادة التحميل أو إعادة الضبط.
 export default class ErrorBoundary extends Component<Props,State> {
-  override state: State = {hasError:false};
+  override state: State = {hasError:false, confirmReset:false};
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): Partial<State> {
     return {hasError:true};
   }
 
@@ -19,11 +18,9 @@ export default class ErrorBoundary extends Component<Props,State> {
 
   private reload=()=>window.location.reload();
 
-  private reset=()=>{
-    if(window.confirm('هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ لا يمكن التراجع.')){
-      try{localStorage.removeItem('rabbani-v1')}catch{/* تجاهل */}
-      window.location.reload();
-    }
+  private confirmAndReset=()=>{
+    try{localStorage.removeItem('rabbani-v1')}catch{/* تجاهل */}
+    window.location.reload();
   };
 
   override render() {
@@ -33,10 +30,20 @@ export default class ErrorBoundary extends Component<Props,State> {
       <div style={{maxWidth:560,textAlign:'center',display:'grid',gap:16}}>
         <h1 style={{fontSize:24,margin:0}}>حدث خطأ غير متوقع</h1>
         <p style={{fontSize:15,lineHeight:1.8,margin:0}}>توقفت الواجهة عن العمل بسبب خلل تقني. بياناتك المحفوظة على هذا الجهاز لا تزال موجودة. أعد تحميل الصفحة، أو أعد الضبط إذا كانت بياناتك تالفة.</p>
-        <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-          <button onClick={this.reload} style={btn('#f4f1ea','#163d34')}>إعادة تحميل الصفحة</button>
-          <button onClick={this.reset} style={btn('transparent')}>حذف البيانات وإعادة الضبط</button>
-        </div>
+        {!this.state.confirmReset ? (
+          <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+            <button onClick={this.reload} style={btn('#f4f1ea','#163d34')}>إعادة تحميل الصفحة</button>
+            <button onClick={()=>this.setState({confirmReset:true})} style={btn('transparent')}>حذف البيانات وإعادة الضبط</button>
+          </div>
+        ) : (
+          <div style={{display:'grid',gap:10,padding:14,borderRadius:12,background:'rgba(0,0,0,0.22)'}}>
+            <p style={{margin:0,fontSize:14}}>هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ لا يمكن التراجع.</p>
+            <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+              <button onClick={this.confirmAndReset} style={btn('#fff','#a64137')}>تأكيد الحذف وإعادة الضبط</button>
+              <button onClick={()=>this.setState({confirmReset:false})} style={btn('transparent')}>إلغاء</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>;
   }

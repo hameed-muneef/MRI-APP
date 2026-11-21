@@ -2344,6 +2344,5 @@
 .quran-journey-backlog{display:flex;gap:8px;align-items:flex-start;margin:14px 0 0;padding:10px 12px;border-radius:12px;background:var(--q-pale);font-size:14px}
 @keyframes quran-journey-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.quran-journey{animation:none}.quran-journey-cta{transition:none}.quran-journey-cta:hover{transform:none}}
-n . q u r a n - s c r o l l - s l i d e r w i d t h : 1 2 0 p x ; v e r t i c a l - a l i g n : m i d d l e ; a c c e n t - c o l o r : v a r ( - - c o l o r - p r i m a r y ) n 
 
 .quran-scroll-slider{width:120px;vertical-align:middle;accent-color:var(--color-primary)}

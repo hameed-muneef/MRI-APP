@@ -69,7 +69,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 export function createQuranState(now = new Date()): QuranLearningState {
   const stamp = now.toISOString();
   return {
-    settings: {fontSize: 30, theme: initialReadingTheme()},
+    settings: {fontSize: 22, theme: initialReadingTheme()},
     bookmarks: [], notes: [], history: [], plans: [], passages: [],
     revisionEvents: [], reflections: [], routine: [], hadithBookmarks: [],
     activityLog: [], updatedAt: stamp

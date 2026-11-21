@@ -115,9 +115,8 @@ test.describe('Full Mobile App Walkthrough (All Views & Scenarios)', () => {
       await assertNoPageOverflow(page, 'wird');
     }
 
-    // 9. Settings + Theme Switch (Light -> Dark) + Notification drawer
-    const settingsBtn = page.locator('.mobile-nav button', { hasText: 'الإعدادات' });
-    await settingsBtn.scrollIntoViewIfNeeded();
+    // 9. Settings (in topbar) + Theme Switch (Light -> Dark) + Notification drawer
+    const settingsBtn = page.locator('.topbar-settings');
     await settingsBtn.click();
     await expect(page.locator('.crumb strong')).toContainText('الإعدادات');
     await assertNoPageOverflow(page, 'settings-light');

@@ -70,9 +70,1174 @@ img, video { height: auto; }
   .country-selector-control > input, .country-selector-search input {
     font-size: 16px;
   }
-  .mobile-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-  .content { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 }
+
+/* =========================================================================
+   Mobile-First App Shell (100% Mobile UX + 100% Local Storage Mode)
+   ========================================================================= */
+#root .app {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+  overflow-x: clip;
+  background: var(--bg-page, var(--color-canvas));
+  border-inline: 1px solid var(--border-subtle, #ddd9cc);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.10);
+}
+
+@media (max-width: 520px) {
+  #root .app {
+    max-width: 100%;
+    border-inline: 0;
+    box-shadow: none;
+  }
+}
+
+#root .app .sidebar,
+#root .app footer {
+  display: none !important;
+}
+
+#root .app .main {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-theme="light"] #root .app .topbar,
+html[data-theme="dark"] #root .app .topbar,
+#root .app .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  min-height: 60px;
+  height: auto;
+  padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+#root .app .topbar > .top-reminder {
+  display: none !important;
+}
+
+#root .app .topbar > .crumb {
+  font-size: 16px;
+  gap: 6px;
+  min-width: 0;
+}
+
+#root .app .topbar > .crumb > span:first-child,
+#root .app .topbar > .crumb > svg {
+  display: none;
+}
+
+#root .app .topbar > .crumb strong,
+#root .app .topbar > .crumb .crumb-home {
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+#root .app .topbar .top-actions {
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+#root .app .topbar .top-actions .top-date {
+  display: none;
+}
+
+#root .app .topbar .top-actions .top-clock {
+  width: auto;
+  margin-inline: 2px;
+  font-size: 12px;
+}
+
+#root .app .topbar .icon-btn,
+#root .app .topbar .notif-bell,
+#root .app .topbar .topbar-settings {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+#root .app .topbar .topbar-settings {
+  border: 1px solid var(--border-default, var(--color-border));
+  color: inherit;
+}
+
+#root .app .topbar .topbar-settings.active {
+  background: var(--state-selected, #dce8df);
+  border-color: var(--accent-primary, #1d4d50);
+  color: var(--accent-primary, #1d4d50);
+}
+
+#root .app .content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-x: clip;
+  margin: 0;
+  padding: 14px 12px calc(104px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  flex: 1;
+}
+
+#root .app .content > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile-native grids at every viewport inside the 480px mobile app frame */
+#root .app .hero {
+  min-height: 0;
+  padding: 22px 18px;
+  border-radius: 16px;
+}
+
+#root .app .hero h1 {
+  font-size: 26px;
+}
+
+#root .app .hero p {
+  font-size: 14px;
+}
+
+#root .app .hero-art {
+  display: none !important;
+}
+
+#root .app .section-title {
+  margin: 24px 0 12px;
+}
+
+#root .app .section-title h2 {
+  font-size: 21px;
+}
+
+#root .app .page-intro {
+  margin-bottom: 18px;
+}
+
+#root .app .page-intro h1 {
+  font-size: 25px;
+}
+
+#root .app .page-intro p {
+  font-size: 14px;
+}
+
+#root .app .panel,
+#root .app .wird-card {
+  padding: 16px 14px;
+  border-radius: 14px;
+}
+
+#root .app .feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px;
+}
+
+#root .app .feature-card {
+  min-height: 126px;
+  padding: 14px 12px;
+}
+
+#root .app .feature-card strong {
+  font-size: 15px;
+}
+
+#root .app .feature-card > span:nth-of-type(2) {
+  font-size: 11px;
+}
+
+#root .app .prayer-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px;
+}
+
+#root .app .large-grid,
+#root .app .wird-grid,
+#root .app .form-grid,
+#root .app .home-dashboard,
+#root .app .strong-goals-layout,
+#root .app .strong-goals-aside .goal-period-grid,
+#root .app .goal-period-grid,
+#root .app .goal-create-form,
+#root .app .goal-edit-form,
+#root .app .day-planner .tracking-list,
+#root .app .day-plan-content .day-timeline {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#root .app .goal-create-form label:nth-child(2),
+#root .app .goal-edit-form label:nth-child(2) {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+#root .app .wide-card {
+  min-height: 0;
+  padding: 16px 14px;
+  gap: 12px;
+}
+
+#root .app .day-page-header {
+  padding: 16px 14px;
+  gap: 12px;
+}
+
+#root .app .day-page-header .day-intro h1 {
+  font-size: 24px;
+}
+
+#root .app .day-header-date {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+#root .app .day-page-header .day-view-switch button {
+  flex: 1;
+  min-width: 0;
+}
+
+#root .app .goal-item,
+#root .app .goal-plan-head,
+#root .app .goal-history-heading {
+  flex-wrap: wrap;
+}
+
+#root .app .goal-head-actions,
+#root .app .goal-actions {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+#root .app .goal-add-step > * {
+  flex: 1 1 120px;
+}
+
+#root .app .switch-row button {
+  flex: 1;
+  justify-content: center;
+  padding: 10px 6px;
+  font-size: 13px;
+}
+
+/* Always-visible mobile bottom navigation (7 full-width tabs, zero clipping) */
+#root .app .mobile-nav {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  position: fixed !important;
+  bottom: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 950;
+  align-items: stretch;
+  overflow: hidden;
+  gap: 0;
+  padding: 6px 4px max(8px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+#root .app .mobile-nav button {
+  min-width: 0;
+  width: 100%;
+  min-height: 50px;
+  padding: 5px 2px;
+  font-size: clamp(9.5px, 2.4vw, 11px);
+  line-height: 1.25;
+  gap: 3px;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+}
+
+#root .app .mobile-nav button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Overlays & floating UI aligned cleanly to the 480px mobile frame */
+#root .app .notif-panel {
+  position: fixed !important;
+  top: 64px;
+  left: 50%;
+  right: auto;
+  inset-inline: auto;
+  transform: translateX(-50%);
+  width: min(456px, calc(100vw - 20px));
+  max-height: calc(100dvh - 144px);
+  z-index: 1200;
+}
+
+#root .app .mini-audio-player {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  inset-inline: auto;
+  transform: translateX(-50%);
+  width: min(456px, calc(100vw - 20px));
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  border-radius: 12px;
+  z-index: 940;
+}
+
+#root .app .toast {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(440px, calc(100vw - 24px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  z-index: 1100;
+  justify-content: center;
+}
+
+.offline-pill {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  z-index: 960;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--status-warning-bg, #f2ead6);
+  color: var(--status-warning, #765b26);
+  border: 1px solid var(--border-default, #c7c9bd);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(28, 49, 50, .08));
+  white-space: nowrap;
+  max-width: calc(100vw - 24px);
+}
+
+.ios-install-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(9, 27, 43, 0.56);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.ios-install-modal {
+  width: min(420px, 100%);
+  margin: 0;
+  background: var(--surface-modal, #fffdf9);
+  color: var(--text-primary, #17313a);
+  border: 1px solid var(--border-default, #c7c9bd);
+  border-radius: var(--radius-modal, 20px);
+  padding: 20px;
+  box-shadow: var(--shadow-modal, 0 24px 70px rgba(20, 39, 40, .22));
+}
+
+.notif-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--status-error, #a64137);
+  background: var(--status-error-bg, #f5e5e1);
+  color: var(--text-primary, #17313a);
+}
+
+.notif-confirm p {
+  margin: 0;
+}
+
+/* =========================================================================
+   Quran & Sunnah Mobile Refinement (overrides late-loaded quran.css/mushaf.css)
+   ========================================================================= */
+#root .app .quran-page {
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 10px;
+  --quran-verse-size: 20px;
+  --quran-line-height: 2;
+}
+
+#root .app .quran-page > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#root .app .quran-intro {
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+#root .app .quran-intro .eyebrow {
+  display: none;
+}
+
+#root .app .quran-intro h1 {
+  font-size: 19px;
+  margin: 0;
+  line-height: 1.35;
+}
+
+#root .app .quran-section-header {
+  margin-top: 2px;
+  padding: 0;
+}
+
+#root .app .quran-section-header h2,
+#root .app .quran-section-head h2 {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 0 0 2px;
+}
+
+#root .app .quran-section-header p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#root .app .quran-section-head {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#root .app .quran-section-head p {
+  font-size: 12px;
+  line-height: 1.65;
+  max-width: 100%;
+}
+
+#root .app .quran-section-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#root .app .quran-section-grid button {
+  padding: 7px 9px !important;
+  gap: 7px;
+  min-height: 42px;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: start;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+#root .app .quran-section-grid .quran-section-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex: none;
+}
+
+#root .app .quran-section-grid .quran-section-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+#root .app .quran-section-grid strong {
+  font-size: 12.5px;
+  line-height: 1.25;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#root .app .quran-section-grid small {
+  display: none !important;
+}
+
+/* Implicit single-column grid containers: always clamp with minmax(0, 1fr) */
+#root .app .mf-shell,
+#root .app .mf-toolbar,
+#root .app .mf-section,
+#root .app .mf-field,
+#root .app .mf-group,
+#root .app .mf-speed,
+#root .app .mf-search,
+#root .app .mf-sheet-content,
+#root .app .mf-sheet-note,
+#root .app .mf-khatmah,
+#root .app .offline-library,
+#root .app .azkar-page,
+#root .app .azkar-list,
+#root .app .quran-revision,
+#root .app .quran-practice,
+#root .app .quran-separation,
+#root .app .quran-create-plan,
+#root .app .quran-verses,
+#root .app .quran-mini-list,
+#root .app .quran-notes-list,
+#root .app .quran-plan-list,
+#root .app .quran-passage-list,
+#root .app .quran-today-list,
+#root .app .quran-routine-list,
+#root .app .quran-plan-progress,
+#root .app .quran-hadith-list,
+#root .app .quran-reflection-list,
+#root .app .ol-list {
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#root .app .mf-shell > *,
+#root .app .mf-toolbar > *,
+#root .app .mf-section > *,
+#root .app .mf-field > *,
+#root .app .mf-group > *,
+#root .app .mf-reading-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mushaf pages toolbar & reading sheet */
+#root .app .mf-toolbar {
+  position: static !important;
+  top: auto !important;
+  z-index: auto;
+  padding: 9px !important;
+  gap: 7px !important;
+  margin-bottom: 8px;
+  border-radius: 12px;
+}
+
+#root .app .mf-toolbar-head {
+  padding-bottom: 5px;
+}
+
+#root .app .mf-toolbar-title {
+  font-size: 15.5px !important;
+}
+
+#root .app .mf-toolbar-desc {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+#root .app .mf-grid-3 {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 7px !important;
+}
+
+#root .app .mf-sec-reading {
+  grid-column: auto !important;
+}
+
+#root .app .mf-section {
+  padding: 8px !important;
+  gap: 6px;
+  border-radius: 10px;
+}
+
+#root .app .mf-sec-title {
+  font-size: 12px;
+  padding-bottom: 4px;
+}
+
+#root .app .mf-row-nav {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr) !important;
+  gap: 6px !important;
+}
+
+#root .app .mf-row-audio {
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) !important;
+  gap: 6px !important;
+}
+
+#root .app .mf-row-audio > .mf-btn {
+  grid-column: 1 / -1;
+}
+
+#root .app .mf-reading-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+#root .app .mf-group {
+  min-width: 0;
+  gap: 3px;
+}
+
+#root .app .mf-group-label,
+#root .app .mf-field-label {
+  font-size: 11px;
+}
+
+#root .app .mf-select-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#root .app .mf-select-wrap select,
+#root .app .mf-toolbar select,
+#root .app .mf-toolbar input {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: 36px;
+  font-size: 13.5px !important;
+  padding: 0 8px 0 26px;
+  border-radius: 9px;
+  text-overflow: ellipsis;
+}
+
+#root .app .mf-btn {
+  height: 36px;
+  padding: 0 8px;
+  font-size: 12px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  gap: 4px;
+  border-radius: 9px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root .app .mf-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+#root .app .mf-font {
+  width: 100%;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 2px 4px;
+}
+
+#root .app .mf-font .mf-btn {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+}
+
+#root .app .mf-font-val {
+  font-size: 14px;
+  min-width: 22px;
+}
+
+#root .app .mf-statusbar {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 9px;
+}
+
+#root .app .mf-status-text {
+  font-size: 11.5px;
+}
+
+#root .app .mf-progress {
+  max-width: none !important;
+}
+
+#root .app .mf-bottom-bar {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 4px;
+  position: sticky;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  z-index: 40;
+  margin-bottom: 8px;
+}
+
+#root .app .mf-bottom-bar .mf-btn {
+  height: 38px;
+  font-size: 10.5px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#root .app .mf-pages,
+#root .app .mf-page,
+#root .app .mf-page-text,
+#root .app .mf-source {
+  width: 100%;
+  max-width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#root .app .mf-page {
+  padding: 12px 10px 18px !important;
+  margin-bottom: 10px;
+  contain-intrinsic-size: auto 560px;
+}
+
+#root .app .mf-page-head {
+  font-size: 10.5px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+#root .app .mf-page-foot {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+#root .app .mf-page-text {
+  line-height: 1.8;
+}
+
+#root .app .mf-surah-band {
+  margin: 6px 0 4px;
+}
+
+#root .app .mf-surah-band-inner {
+  padding: 3px 12px;
+  font-size: 0.62em;
+  max-width: 100%;
+}
+
+#root .app .mf-basmala {
+  margin: 4px 0 6px;
+  font-size: 0.85em;
+}
+
+#root .app .mf-sheet-backdrop {
+  position: fixed !important;
+  inset: 0;
+  z-index: 1250;
+  background: rgba(0, 0, 0, 0.36);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+#root .app .mf-sheet-mobile {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: min(464px, calc(100vw - 16px)) !important;
+  max-width: 100%;
+  max-height: 78dvh;
+  border-radius: 18px 18px 0 0;
+  padding: 12px 14px max(16px, env(safe-area-inset-bottom));
+  z-index: 1260;
+}
+
+#root .app .mf-sheet-backdrop > .mf-sheet:not(.mf-sheet-mobile) {
+  width: min(456px, calc(100vw - 20px)) !important;
+  max-height: 82dvh;
+  overflow-y: auto;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+#root .app .mf-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#root .app .mf-sheet-actions .mf-btn {
+  min-height: 38px;
+  height: auto;
+  padding: 6px 8px;
+  font-size: 12px;
+  flex: 1 1 82px;
+}
+
+/* Reflow Reader */
+#root .app .quran-reader {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+#root .app .quran-reader-toolbar {
+  grid-template-columns: minmax(0, 1fr) !important;
+  padding: 10px !important;
+  gap: 8px !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#root .app .quran-toolbar-column {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root .app .quran-nav-column {
+  border-inline-end: 0 !important;
+  padding-inline-end: 0 !important;
+  border-bottom: 1px solid #D8CDB8;
+  padding-bottom: 8px;
+}
+
+#root .app .quran-reader-toolbar > label,
+#root .app .quran-reader-toolbar > .quran-toolbar-group,
+#root .app .quran-jump {
+  grid-column: 1 / -1 !important;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root .app .quran-jump {
+  flex-wrap: wrap;
+}
+
+#root .app .quran-reader-toolbar select,
+#root .app .quran-reader-toolbar input {
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 38px;
+  font-size: 14px !important;
+}
+
+#root .app .quran-scroll-actions {
+  flex-wrap: wrap !important;
+  height: auto !important;
+}
+
+#root .app .quran-scroll-actions select {
+  min-width: 0 !important;
+  flex: 1 1 110px;
+}
+
+#root .app .quran-scroll-slider {
+  width: 100%;
+  max-width: 130px;
+  flex: 1 1 100px;
+}
+
+#root .app .quran-audio-controls {
+  padding: 8px !important;
+  gap: 6px !important;
+  justify-content: stretch !important;
+}
+
+#root .app .quran-audio-controls label {
+  flex: 1 1 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+#root .app .quran-audio-controls select {
+  min-width: 0 !important;
+  width: 100%;
+  max-width: 100%;
+}
+
+#root .app .quran-reader-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  width: 100%;
+  min-width: 0;
+}
+
+#root .app .quran-surah-list {
+  position: static !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 200px;
+  padding: 10px !important;
+  box-sizing: border-box;
+}
+
+#root .app .quran-side {
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-width: 0;
+}
+
+#root .app .quran-side > .panel {
+  padding: 12px !important;
+}
+
+#root .app .quran-mushaf {
+  padding: 12px 10px !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+#root .app .quran-surah-header h2 {
+  font-size: 19px !important;
+}
+
+#root .app .quran-verse-footer .soft-btn {
+  white-space: normal;
+  max-width: 100%;
+}
+
+#root .app .quran-continuous-flow {
+  font-size: clamp(19px, 5vw, 23px) !important;
+  line-height: 2 !important;
+  padding: 6px 2px !important;
+}
+
+#root .app .quran-verse {
+  padding: 6px 4px !important;
+}
+
+#root .app .quran-verse-actions {
+  opacity: 1 !important;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Memorization, Revision, Hadith, Progress, Journey, Routine & Azkar */
+#root .app .quran-stat-grid,
+#root .app .rev-stat-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+#root .app .quran-stat-grid > .panel,
+#root .app .rev-stat-card {
+  padding: 10px !important;
+  min-width: 0;
+}
+
+#root .app .quran-stat-grid strong {
+  font-size: 20px !important;
+}
+
+#root .app .rev-stat-value {
+  font-size: 22px !important;
+}
+
+#root .app .rev-ring-wrap,
+#root .app .rev-ring {
+  width: 48px;
+  height: 48px;
+}
+
+#root .app .rev-ring-value {
+  font-size: 12.5px;
+}
+
+#root .app .quran-two-col,
+#root .app .quran-separation-columns,
+#root .app .quran-form-row,
+#root .app .quran-hadith-search,
+#root .app .quran-hadith-book-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  min-width: 0;
+}
+
+#root .app .quran-form-row input,
+#root .app .quran-form-row select,
+#root .app .quran-hadith-search input,
+#root .app .quran-hadith-search select {
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+#root .app .quran-two-col > .panel {
+  padding: 12px !important;
+}
+
+#root .app .quran-practice-text {
+  font-size: 19px !important;
+  line-height: 1.95 !important;
+}
+
+#root .app .quran-practice-footer p {
+  min-width: 0 !important;
+}
+
+#root .app .quran-exercise-tabs {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#root .app .quran-blank input {
+  min-width: 100px !important;
+  max-width: 100%;
+}
+
+#root .app .quran-today-list li {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+#root .app .quran-routine-row > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root .app .quran-journey {
+  padding: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+#root .app .quran-journey-head {
+  gap: 8px;
+}
+
+#root .app .quran-journey-head h2 {
+  font-size: 17px !important;
+}
+
+#root .app .quran-journey-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+#root .app .rev-cta-banner {
+  flex-wrap: wrap;
+  padding: 10px !important;
+}
+
+#root .app .quran-hadith-books {
+  padding: 10px !important;
+}
+
+#root .app .quran-hadith-book-grid {
+  max-height: 260px;
+}
+
+#root .app .quran-hadith-book-grid button {
+  padding: 9px 10px !important;
+}
+
+#root .app .quran-hadith-search-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px;
+}
+
+#root .app .quran-hadith-list li {
+  padding: 10px !important;
+}
+
+#root .app .quran-hadith-list .quran-hadith-text {
+  font-size: 16.5px !important;
+  line-height: 1.9 !important;
+}
+
+#root .app .ol-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px !important;
+}
+
+#root .app .ol-info {
+  min-width: 0 !important;
+  flex-basis: auto;
+}
+
+#root .app .ol-scope select {
+  max-width: 100%;
+  width: 100%;
+}
+
+#root .app .azkar-head {
+  padding: 12px !important;
+  gap: 10px;
+}
+
+#root .app .azkar-head h2 {
+  font-size: 18px !important;
+}
+
+#root .app .azkar-search {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#root .app .azkar-search input {
+  min-width: 0 !important;
+  flex: 1 1 0;
+  width: 0;
+}
+
+#root .app .azkar-category-head {
+  padding: 10px 12px !important;
+}
+
+#root .app .azkar-items {
+  padding: 0 10px 10px !important;
+}
+
+#root .app .azkar-items li {
+  padding: 10px !important;
+  min-width: 0;
+}
+
+#root .app .azkar-text {
+  font-size: 15.5px !important;
+  line-height: 1.9 !important;
+}
+
 @media (pointer: coarse) {
   #root .app .topbar .icon-btn, #root .app .topbar .notif-bell,
   #root .app .mobile-nav button, #root .app .country-selector-toggle,

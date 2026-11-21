@@ -37,6 +37,7 @@ export default function QuranMemorization({asset, state, onState, notify}: Props
   const [targetDate, setTargetDate] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedPassage, setSelectedPassage] = useState<string | null>(null);
+  const [confirmDeletePlanId, setConfirmDeletePlanId] = useState<string | null>(null);
 
   const plans = state.plans.filter(plan => plan.contentType === 'quran');
   const selectedPlanValue = plans.find(plan => plan.id === selectedPlan) ?? plans[0];
@@ -85,10 +86,11 @@ export default function QuranMemorization({asset, state, onState, notify}: Props
   };
 
   const deletePlan = (plan: MemorizationPlan) => {
-    if (!window.confirm('حذف الخطة وكل مقاطعها؟ سيُحذف تقدم الحفظ المرتبط بها. الإيقاف يحفظ التقدم.')) return;
     patch({plans: state.plans.filter(item => item.id !== plan.id), passages: state.passages.filter(item => item.planId !== plan.id)});
     setSelectedPlan(null);
     setSelectedPassage(null);
+    setConfirmDeletePlanId(null);
+    notify('حُذفت الخطة ومقاطعها.');
   };
 
   const memorized = (item: MemorizationPassage) => {
@@ -149,7 +151,14 @@ export default function QuranMemorization({asset, state, onState, notify}: Props
               <div className="quran-plan-actions">
                 {plan.status === 'active' ? <button className="icon-btn" aria-label="إيقاف الخطة" onClick={() => updatePlan(plan, 'paused')}><Pause size={15}/></button>
                   : <button className="icon-btn" aria-label="استئناف الخطة" onClick={() => updatePlan(plan, 'active')}><Play size={15}/></button>}
-                <button className="icon-btn" aria-label="حذف الخطة" onClick={() => deletePlan(plan)}><Trash2 size={15}/></button>
+                {confirmDeletePlanId === plan.id ? (
+                  <>
+                    <button className="soft-btn" onClick={() => deletePlan(plan)}>تأكيد الحذف</button>
+                    <button className="soft-btn" onClick={() => setConfirmDeletePlanId(null)}>إلغاء</button>
+                  </>
+                ) : (
+                  <button className="icon-btn" aria-label="حذف الخطة" onClick={() => setConfirmDeletePlanId(plan.id)}><Trash2 size={15}/></button>
+                )}
               </div>
             </li>;
           })}

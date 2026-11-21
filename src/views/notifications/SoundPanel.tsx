@@ -8,7 +8,7 @@ import {playAudio, stopAudio} from '../../notifications/audio';
 import {listAudioResources, uploadAudioResource} from '../../notifications/service';
 import type {AudioResource, NotificationChannel} from '../../notifications/types';
 import {getCustomAlarmUrl, setCustomAlarmUrl} from '../../notifications/sound-selection';
-import {loadCustomSound, customSoundUrl} from '../../sounds/custom-store';
+import {loadCustomSound, customSoundUrl, saveCustomSound} from '../../sounds/custom-store';
 import {BUNDLED_ADHAN_SOUNDS} from '../../sounds/adhan-catalog';
 
 const ALLOWED_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/aac'];
@@ -129,16 +129,19 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
         setMessage(`تم إضافة «${stored.title}».`);
         notify('تم إضافة الصوت');
       } else {
+        await saveCustomSound('alarm', file);
+        const url = URL.createObjectURL(file);
+        setCustomAlarmUrl(url);
         soundLibraryCustom = [...soundLibraryCustom, {
-          id: `custom:${Date.now()}`,
+          id: 'custom:alarm',
           title,
           kind: 'custom',
-          url: URL.createObjectURL(file),
+          url,
           is_default: false,
           is_uploaded: true,
           created_at: new Date().toISOString(),
         }];
-        setMessage(`أُضيف «${title}» محليًا.`);
+        setMessage(`أُضيف «${title}» وحُفظ محليًا على الجهاز.`);
       }
     } catch (error) {
       setMessage(`تعذر إضافة الصوت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);

@@ -1,4 +1,3 @@
-import {useEffect} from 'react';
 import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,Flower2,ShieldCheck,MonitorPlay,Compass,MapPin} from 'lucide-react';
 import {type View} from '../app-state';
 import {type PrayerLocation} from '../prayer-location';
@@ -15,31 +14,6 @@ const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string
 ];
 
 export default function HomeView({navigate,admin=false,prayers={},prayerLocation}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation}) {
-  // أثناء عرض الرئيسية: السكرول داخل المحتوى (widget) فقط، وليس على مستوى المنصة.
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const content = document.querySelector('.content') as HTMLElement | null;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    const prevContentOverflow = content?.style.overflow ?? '';
-    const prevContentMaxH = content?.style.maxHeight ?? '';
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    if (content) {
-      content.style.overflowY = 'auto';
-      content.style.maxHeight = 'calc(100vh - 82px)';
-      (content.style as any).webkitOverflowScrolling = 'touch';
-    }
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-      if (content) {
-        content.style.overflowY = prevContentOverflow;
-        content.style.maxHeight = prevContentMaxH;
-      }
-    };
-  }, []);
   return <>
     <HomeDashboard prayers={prayers} prayerLocation={prayerLocation} navigate={navigate}/>
     <button className="home-today-entry" onClick={()=>navigate('tasks')}><CalendarClock size={22}/><span><strong>مهام اليوم</strong><small>اليوم · غدًا · المهام المتأخرة</small></span><ChevronLeft size={18}/></button>

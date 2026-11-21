@@ -43,6 +43,7 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
   const [runningId, setRunningId] = useState<number | null>(null);
   const [targetCount, setTargetCount] = useState<number>(TOTAL_CHAPTERS);
   const [usage, setUsage] = useState<number | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const sources = kind === 'tafsir' ? TAFSIRS : TRANSLATIONS;
@@ -106,10 +107,10 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
     setRunningId(null);
   };
 
-  const remove = async (id: number, name: string) => {
-    if (!window.confirm(`حذف ${name} المنزَّل من هذا الجهاز؟ ستحتاج إلى إنترنت لقراءته بعد ذلك.`)) return;
+  const remove = async (id: number) => {
     await deletePack(kind, id);
     await refresh();
+    setConfirmRemoveId(null);
     notify('حُذف المحتوى المنزَّل.');
   };
 
@@ -160,7 +161,16 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
               : <button type="button" className="soft-btn" onClick={() => void start(source)} disabled={runningId !== null}>
                 <Download size={15}/> {pack && pack.chapters.length > 0 && !done ? 'استئناف' : 'تنزيل'}
               </button>}
-            {pack && pack.entries > 0 && !running && <button type="button" className="icon-btn" aria-label={`حذف ${source.name}`} onClick={() => void remove(source.id, source.name)}><Trash2 size={15}/></button>}
+            {pack && pack.entries > 0 && !running && (
+              confirmRemoveId === source.id ? (
+                <>
+                  <button type="button" className="soft-btn" onClick={() => void remove(source.id)}>تأكيد الحذف</button>
+                  <button type="button" className="soft-btn" onClick={() => setConfirmRemoveId(null)}>إلغاء</button>
+                </>
+              ) : (
+                <button type="button" className="icon-btn" aria-label={`حذف ${source.name}`} onClick={() => setConfirmRemoveId(source.id)}><Trash2 size={15}/></button>
+              )
+            )}
           </div>
         </li>;
       })}

@@ -19,11 +19,16 @@ export default defineConfig({plugins:[react(),VitePWA({
       {urlPattern:({url})=>url.pathname.startsWith('/data/'),handler:'CacheFirst',options:{cacheName:'rabbani-mosques-data',expiration:{maxEntries:24,maxAgeSeconds:60*60*24*30}}},
       {urlPattern:({url})=>url.pathname.startsWith('/sounds/adhan/'),handler:'CacheFirst',options:{cacheName:'rabbani-adhan-audio',expiration:{maxEntries:12,maxAgeSeconds:60*60*24*365}}},
       {urlPattern:/\.(?:ttf|woff2?|otf)$/i,handler:'CacheFirst',options:{cacheName:'rabbani-fonts',expiration:{maxEntries:8,maxAgeSeconds:60*60*24*365}}},
+      {urlPattern:/^https:\/\/fonts\.googleapis\.com\/.*/i,handler:'CacheFirst',options:{cacheName:'google-fonts-cache',expiration:{maxEntries:10,maxAgeSeconds:60*60*24*365},cacheableResponse:{statuses:[0,200]}}},
+      {urlPattern:/^https:\/\/fonts\.gstatic\.com\/.*/i,handler:'CacheFirst',options:{cacheName:'gstatic-fonts-cache',expiration:{maxEntries:10,maxAgeSeconds:60*60*24*365},cacheableResponse:{statuses:[0,200]}}},
     ],
   },
   // الملفات الكبيرة (JSON ضخم والخط) تُستثنى من التخزين المسبق؛ كبيرة الحجم — تُخزَّن عند الطلب عبر runtimeCaching.
   includeAssets:['icons/app-icon.svg','brand/book-mark.svg','brand/logo-compact.svg','brand/logo-compact-dark.svg','brand/logo-full-vertical.svg','brand/logo-full-horizontal.svg','brand/logo-full-horizontal-dark.svg','books/manifest.json','azkar/ar.json','azkar/en.json','azkar/tr.json','azkar/manifest.json','quran/manifest.json','hadith/manifest.json'],
   manifest:{
+    id:'/',
+    start_url:'/',
+    scope:'/',
     name:'الربانيون | على هدي الكتاب والسنة',
     short_name:'الربانيون',
     description:'علمٌ نافع، وعملٌ صالح، وقلبٌ خاشع.',
@@ -39,6 +44,10 @@ export default defineConfig({plugins:[react(),VitePWA({
       {src:'icons/maskable-512.png',sizes:'512x512',type:'image/png',purpose:'maskable'},
       {src:'icons/app-icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'},
     ],
+  },
+  devOptions:{
+    enabled:true,
+    type:'module',
   },
 })],
   server: {

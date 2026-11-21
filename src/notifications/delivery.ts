@@ -3,6 +3,7 @@
 // تدعم المتصفح (إشعارات المتصفح، داخل التطبيق) ومستقبلاً التطبيقات الأصلية عبر محولات المنصة.
 
 import {authClient} from '../auth';
+import {addLocalNotification} from './local-inbox';
 import type {Reminder, NotificationChannel, NotificationCategory} from './types';
 
 let permissionState: NotificationPermission | null = null;
@@ -81,14 +82,18 @@ export function showBrowserNotification(
   fallbackWindowNotification();
 }
 
-/** يسجّل إشعارًا ذاتيًا في مركز الإشعارات فقط (بلا صوت أو إشعار نظام). يعيد false عند الفشل. */
+/** يسجّل إشعارًا ذاتيًا في مركز الإشعارات (محليًا عند عدم وجود حساب سحابي، أو عبر RPC). */
 export async function recordNotification(kind: string, title: string, body = '', link = ''): Promise<boolean> {
-  if (!authClient) return false;
+  if (!authClient) {
+    addLocalNotification(kind, title, body, link);
+    return true;
+  }
   try {
     const {error} = await authClient.rpc('notify_self', {p_kind: kind, p_title: title.slice(0, 200), p_body: body.slice(0, 2000), p_link: link});
     return !error;
   } catch {
-    return false;
+    addLocalNotification(kind, title, body, link);
+    return true;
   }
 }
 
