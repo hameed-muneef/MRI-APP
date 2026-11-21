@@ -44,3 +44,5 @@ tests/e2e/*.spec.ts-snapshots/
 _defs.sql
 *-redesign.html
 
+upload-keystore.jks
+keystore-base64.txt
