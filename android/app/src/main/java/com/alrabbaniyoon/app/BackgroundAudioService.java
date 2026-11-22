@@ -451,7 +451,8 @@ public class BackgroundAudioService extends Service {
             mp.prepareAsync();
         } catch (Exception ex) {
             Logger.error("BackgroundAudioService", "Failed preparing track " + track.url, ex);
-            handlePlaybackError("تعذر تحميل المقطع الصوتي.");
+            String detail = ex != null && ex.getMessage() != null ? ex.getMessage() : "";
+            handlePlaybackError("تعذر تحميل المقطع الصوتي." + (detail.isEmpty() ? "" : " (" + detail + ")"));
         }
     }
 
