@@ -1,0 +1,2 @@
+data/arab_mosques_final_clean.csv filter=lfs diff=lfs merge=lfs -text
+data/mosques_hf.json filter=lfs diff=lfs merge=lfs -text
