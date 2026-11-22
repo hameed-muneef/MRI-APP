@@ -1,4 +1,5 @@
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {useBackHandler} from '../navigation/useBackHandler';
 import {
   BookOpen, Brain, RotateCcw, Library, ScrollText, CalendarClock, TrendingUp,
   Flower2, BookType, Languages
@@ -51,6 +52,12 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, notify,
   const [error, setError] = useState('');
   const firstRender = useRef(true);
   const [navToken, setNavToken] = useState(0);
+
+  // الرجوع من أي قسم داخلي (تفسير، حفظ، أذكار...) يعود إلى المصحف.
+  useBackHandler(() => {
+    setSection('mushaf');
+    setNavToken(value => value + 1);
+  }, section !== 'mushaf');
 
   const handleSectionChange = (id: QuranSection) => {
     setSection(id);

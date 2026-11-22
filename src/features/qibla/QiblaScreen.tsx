@@ -1,7 +1,9 @@
 // src/features/qibla/QiblaScreen.tsx
 import { useEffect, useMemo, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Compass, MapPin, RotateCcw, Settings2 } from 'lucide-react';
 import { useGeolocation, type GeoStatus } from '../../hooks/useGeolocation';
+import { useBackHandler } from '../../navigation/useBackHandler';
 import { useCompassHeading } from '../../hooks/useCompassHeading';
 import { qiblaBearing, distanceToKaabaKm, turnInstruction, bearingToCardinal } from '../../lib/qibla';
 import { findNearestCity, searchCities, type QiblaCity } from '../../lib/qibla-cities';
@@ -16,6 +18,7 @@ export default function QiblaScreen({ notify }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const [digitalOnly, setDigitalOnly] = useState(false);
   const [showSteps, setShowSteps] = useState(true);
+  useBackHandler(() => setShowPicker(false), showPicker);
 
   // Effective coordinates: manual overrides GPS
   const coords = manualCity
@@ -147,6 +150,11 @@ export default function QiblaScreen({ notify }: Props) {
       )}
 
       <div className="qibla-actions">
+        {geo.status === 'denied' && Capacitor.isNativePlatform() && (
+          <button className="soft-btn" onClick={() => void geo.openSettings()}>
+            <Settings2 size={16} /> فتح إعدادات التطبيق
+          </button>
+        )}
         <button className="soft-btn" onClick={handleUseGps} disabled={geo.status === 'loading'}>
           <MapPin size={16} /> استخدام موقعي (GPS)
         </button>

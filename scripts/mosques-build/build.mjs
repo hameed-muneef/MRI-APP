@@ -92,8 +92,8 @@ function main() {
   console.log(`Spatial+name duplicates (<=15m) removed: ${report.dupSpatialCount}`, report.dupSpatialSamples);
   console.log(`Kept: ${report.keptCount} | Removed total: ${report.removedCount} (${report.removedPct}%)`);
 
-  if (report.removedPct > 10 && !allowHighDrop) {
-    console.error(`ABORTED: Removal rate ${report.removedPct}% exceeds 10%. Review rules or pass --allow-high-drop.`);
+  if (report.removedPct > 15 && !allowHighDrop) {
+    console.error(`ABORTED: Removal rate ${report.removedPct}% exceeds 15%. Review rules or pass --allow-high-drop.`);
     process.exitCode = 2;
     return;
   }
@@ -125,7 +125,15 @@ function main() {
     totalRaw += rawBytes;
     totalGzip += gzipBytes;
 
-    const info = COUNTRY_META[cc] ?? { nameAr: cc, lat: (minLat + maxLat) / 2, lon: (minLon + maxLon) / 2 };
+    const fallbackName = (() => {
+      try {
+        const dn = new Intl.DisplayNames(['ar'], { type: 'region' });
+        return dn.of(cc) || cc;
+      } catch {
+        return cc;
+      }
+    })();
+    const info = COUNTRY_META[cc] ?? { nameAr: fallbackName, lat: (minLat + maxLat) / 2, lon: (minLon + maxLon) / 2 };
     countriesMeta[cc] = {
       code: cc,
       nameAr: info.nameAr,

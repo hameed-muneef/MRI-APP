@@ -35,6 +35,8 @@ import {
 } from '../sounds/adhan-catalog';
 import AdhanPlayer from './AdhanPlayer';
 import AlarmTonePlayer from './AlarmTonePlayer';
+import AudioDiagnostics from './AudioDiagnostics';
+import {useBackHandler} from '../navigation/useBackHandler';
 
 type Props = {state: State; onReplace: (state: State) => void; notify: (message: string) => void; onOpenProfile?: () => void};
 
@@ -46,12 +48,33 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
   const [storageSummary, setStorageSummary] = useState<LocalStorageSummary | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const versionRef = useRef<HTMLSpanElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const backupFileRef = useRef<HTMLInputElement | null>(null);
+
+  // الرجوع يغلق تأكيد التصفير، ثم شاشة تشخيص الصوت.
+  useBackHandler(() => setConfirmReset(false), confirmReset);
+  useBackHandler(() => setShowDiagnostics(false), showDiagnostics);
 
   useEffect(() => {
     void getLocalStorageSummary().then(setStorageSummary);
   }, [state]);
+
+  // شاشة التشخيص — long-press على رقم الإصدار (أو long-press الوصفة أيضًا).
+  useEffect(() => {
+    const el = versionRef.current;
+    if (!el) return;
+    const onHold = () => setShowDiagnostics(true);
+    el.addEventListener('contextmenu', onHold);
+    el.addEventListener('touchstart', onHold, {passive: true});
+    el.addEventListener('mousedown', onHold, {passive: true});
+    return () => {
+      el.removeEventListener('contextmenu', onHold);
+      el.removeEventListener('touchstart', onHold);
+      el.removeEventListener('mousedown', onHold);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -366,5 +389,14 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         </div>
       )}
     </section>
+
+    {/* الشاشة التشخيصية: long-press على رقم الإصدار (أو التقليدي، سأضيفه) → زر على الجهاز */}
+    {showDiagnostics && <AudioDiagnostics />}
+
+    <div className="hint" style={{textAlign:'center', marginTop: 18}}>
+      <span ref={versionRef} className="muted small" style={{userSelect: 'none'}}>
+        الربانيون · إصدار Android 1.0.1
+      </span>
+    </div>
   </>;
 }

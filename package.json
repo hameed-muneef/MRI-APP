@@ -32,8 +32,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/app-launcher": "^8.0.1",
     "@capacitor/core": "^8.6.2",
+    "@capacitor/geolocation": "^8.2.5",
     "@capacitor/local-notifications": "^8.3.1",
     "@supabase/supabase-js": "^2.118.0",
     "geomagnetism": "^0.2.0",

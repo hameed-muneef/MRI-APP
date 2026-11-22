@@ -21,6 +21,7 @@ import {
   type TaskNotificationSettings,
 } from '../notifications/types';
 import {channelLabel} from './notifications/SoundPanel';
+import {useBackHandler} from '../navigation/useBackHandler';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
 
@@ -73,6 +74,7 @@ export default function TodayTasksView({
 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
   const [configOpen, setConfigOpen] = useState(false);
+  useBackHandler(() => setConfigOpen(false), configOpen);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [prefsDirty, setPrefsDirty] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | null>(() => getBrowserPermission());

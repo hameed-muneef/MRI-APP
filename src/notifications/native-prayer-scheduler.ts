@@ -90,7 +90,7 @@ export function channelIdForRawSound(rawName: string): string {
 
 let cachedChannelInfo: ActiveChannelInfo = {
   adhanChannelId: ADHAN_CHANNEL_ID,
-  soundFile: 'adhan_almulla.mp3',
+  soundFile: 'adhan_almulla.ogg',
   soundTitle: 'الملا',
   soundMode: 'adhan',
 };

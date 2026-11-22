@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -58,6 +59,8 @@ public class BackgroundAudioService extends Service {
     public static final String ACTION_NEXT = "com.alrabbaniyoon.app.action.BG_NEXT";
     public static final String ACTION_PREV = "com.alrabbaniyoon.app.action.BG_PREV";
     public static final String ACTION_SEEK = "com.alrabbaniyoon.app.action.BG_SEEK";
+    public static final String ACTION_SLEEP_TIMER = "com.alrabbaniyoon.app.action.BG_SLEEP_TIMER";
+    public static final String EXTRA_SLEEP_MS = "sleep_ms";
     public static final String ACTION_STOP = "com.alrabbaniyoon.app.action.BG_STOP";
 
     public static final String EXTRA_QUEUE_JSON = "queue_json";
@@ -68,6 +71,10 @@ public class BackgroundAudioService extends Service {
     private static final String MEDIA_CHANNEL_ID = "al-rabbani-media-playback-v1";
     private static final int MEDIA_NOTIF_ID = 90120;
     private static final long MAX_WAKELOCK_MS = 4 * 60 * 60 * 1000L; // 4-hour safety cap per acquire
+    private static final String PREFS_NAME = "RABBANI_BG_AUDIO_V1";
+    private static final String KEY_RESUME_TRACK_JSON = "resume_track_json";
+    private static final String KEY_RESUME_POSITION_MS = "resume_position_ms";
+    private static final String KEY_RESUME_CATEGORY = "resume_category";
 
     public interface StateListener {
         void onStateChanged(JSONObject state);
@@ -126,6 +133,11 @@ public class BackgroundAudioService extends Service {
     private String status = "idle"; // idle | loading | playing | paused | error
     private String lastError = null;
     private int prepareGeneration = 0;
+    private int retryCount = 0;
+    private static final int MAX_RETRIES = 2;
+
+    private final Runnable sleepTimerRunnable = () -> stopAllAndSelf();
+    private SharedPreferences prefs;
 
     private MediaPlayer mediaPlayer;
     private MediaSession mediaSession;
@@ -139,10 +151,13 @@ public class BackgroundAudioService extends Service {
     private Bitmap appIconBitmap;
 
     private final Runnable progressTicker = new Runnable() {
+        private int ticks = 0;
         @Override
         public void run() {
             if ("playing".equals(status) && mediaPlayer != null) {
                 emitState();
+                ticks++;
+                if (ticks % 5 == 0) saveResumePosition();
                 handler.postDelayed(this, 1000L);
             }
         }
@@ -208,6 +223,7 @@ public class BackgroundAudioService extends Service {
     public void onCreate() {
         super.onCreate();
         ensureChannel();
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         try {
             appIconBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
         } catch (Exception ignored) {}
@@ -297,6 +313,12 @@ public class BackgroundAudioService extends Service {
         } else if (ACTION_SEEK.equals(action)) {
             long seekMs = intent.getLongExtra(EXTRA_SEEK_MS, 0L);
             seekToMs((int) Math.max(0L, seekMs));
+        } else if (ACTION_SLEEP_TIMER.equals(action)) {
+            long sleepMs = intent.getLongExtra(EXTRA_SLEEP_MS, 0L);
+            handler.removeCallbacks(sleepTimerRunnable);
+            if (sleepMs > 0) {
+                handler.postDelayed(sleepTimerRunnable, sleepMs);
+            }
         } else {
             if (queue.isEmpty()) {
                 stopAllAndSelf();
@@ -372,10 +394,11 @@ public class BackgroundAudioService extends Service {
 
         try {
             AudioAttributes attrs = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .setUsage(AudioAttributes.USAGE_MEDIA_PLAYBACK)
                 .build();
             mp.setAudioAttributes(attrs);
+            mp.setVolume(1.0f, 1.0f);
             mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mp.setDataSource(track.url);
             mp.setOnPreparedListener(player -> {
@@ -383,6 +406,8 @@ public class BackgroundAudioService extends Service {
                 try {
                     player.start();
                     status = "playing";
+                    retryCount = 0;
+                    restoreResumePosition();
                     updateMediaSessionAndNotification();
                     startProgressTicker();
                     emitState();
@@ -434,6 +459,16 @@ public class BackgroundAudioService extends Service {
         stopProgressTicker();
         releasePlayerOnly();
         releaseLocks();
+        if (retryCount < MAX_RETRIES && currentIndex >= 0 && currentIndex < queue.size()) {
+            retryCount++;
+            Logger.warn("BackgroundAudioService", "Retrying track (attempt " + retryCount + "/" + MAX_RETRIES + "): " + msg);
+            lastError = null;
+            status = "loading";
+            emitState();
+            handler.postDelayed(() -> startTrackAt(currentIndex), 2000L);
+            return;
+        }
+        retryCount = 0;
         lastError = msg;
         status = "error";
         updateMediaSessionAndNotification();
@@ -442,6 +477,7 @@ public class BackgroundAudioService extends Service {
 
     private void pausePlayback() {
         stopProgressTicker();
+        saveResumePosition();
         if (mediaPlayer != null) {
             try {
                 if (mediaPlayer.isPlaying()) {
@@ -455,6 +491,41 @@ public class BackgroundAudioService extends Service {
         releaseLocks();
         updateMediaSessionAndNotification();
         emitState();
+    }
+
+    private void saveResumePosition() {
+        if (prefs == null || currentIndex < 0 || currentIndex >= queue.size()) return;
+        AudioTrackItem track = queue.get(currentIndex);
+        if (track == null || track.isLive) return;
+        try {
+            int posMs = 0;
+            if (mediaPlayer != null) {
+                try { posMs = Math.max(0, mediaPlayer.getCurrentPosition()); } catch (Exception ignored) {}
+            }
+            prefs.edit()
+                .putString(KEY_RESUME_TRACK_JSON, track.toJson().toString())
+                .putInt(KEY_RESUME_POSITION_MS, posMs)
+                .putString(KEY_RESUME_CATEGORY, track.category)
+                .apply();
+        } catch (Exception ignored) {}
+    }
+
+    private void restoreResumePosition() {
+        if (prefs == null || currentIndex < 0 || currentIndex >= queue.size()) return;
+        AudioTrackItem track = queue.get(currentIndex);
+        if (track == null || track.isLive) return;
+        if (mediaPlayer == null) return;
+        String savedJson = prefs.getString(KEY_RESUME_TRACK_JSON, null);
+        if (savedJson == null) return;
+        try {
+            JSONObject saved = new JSONObject(savedJson);
+            String savedUrl = saved.optString("url", "");
+            if (!savedUrl.equals(track.url)) return; // different track — don't restore
+            int savedPos = prefs.getInt(KEY_RESUME_POSITION_MS, 0);
+            if (savedPos > 0) {
+                try { mediaPlayer.seekTo(savedPos); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
     }
 
     private void resumePlayback() {
@@ -519,6 +590,7 @@ public class BackgroundAudioService extends Service {
 
     private void stopAllAndSelf() {
         stopProgressTicker();
+        saveResumePosition();
         prepareGeneration++;
         releasePlayerOnly();
         unregisterNoisyReceiver();
@@ -872,6 +944,23 @@ public class BackgroundAudioService extends Service {
             snapshot.put("duration", durationSec);
             snapshot.put("error", lastError != null ? lastError : JSONObject.NULL);
             snapshot.put("queueLength", queue.size());
+
+            // --- diagnostics ---
+            double volL = -1, volR = -1;
+            boolean prepared = mediaPlayer != null;
+            try {
+                if (mediaPlayer != null) {
+                    try { volL = mediaPlayer.getVolume(); volR = mediaPlayer.getVolume(); } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+            snapshot.put("volumeL", volL);
+            snapshot.put("volumeR", volR);
+            snapshot.put("hasFocus", hasAudioFocus);
+            snapshot.put("prepared", prepared);
+            if (audioManager != null) {
+                snapshot.put("audioVolumeMusic", audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
+                snapshot.put("audioVolumeMaxMusic", audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+            }
         } catch (JSONException ignored) {}
 
         lastSnapshot = snapshot;

@@ -1,7 +1,14 @@
 // src/hooks/useGeolocation.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  requestDeviceLocation,
+  checkLocationPermission,
+  openLocationSettings as openLocSettings,
+  hasAskedLocation,
+} from '../lib/device-location';
 
 export type GeoStatus = 'idle' | 'loading' | 'ready' | 'denied' | 'unsupported' | 'error';
+export type GeoPermission = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 export interface GeoCoords {
   latitude: number;
@@ -13,7 +20,10 @@ export interface GeoState {
   status: GeoStatus;
   coords: GeoCoords | null;
   error: string | null;
+  permission: GeoPermission;
+  permanentlyDenied: boolean;
   request: () => void;
+  openSettings: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'rabbani-qibla-location-v1';
@@ -42,58 +52,70 @@ export function useGeolocation(autoRequest = true): GeoState {
   const [status, setStatus] = useState<GeoStatus>('idle');
   const [coords, setCoords] = useState<GeoCoords | null>(loadSavedLocation());
   const [error, setError] = useState<string | null>(null);
+  const [permission, setPermission] = useState<GeoPermission>('prompt');
+  const [permanentlyDenied, setPermanentlyDenied] = useState(false);
   const mounted = useRef(true);
 
   const request = useCallback(() => {
-    if (!navigator.geolocation) {
-      setStatus('unsupported');
-      setError('تحديد الموقع غير مدعوم في هذا المتصفح.');
-      return;
-    }
-    if (!window.isSecureContext) {
-      setStatus('unsupported');
-      setError('تحديد الموقع يتطلب اتصالًا آمنًا (HTTPS).');
-      return;
-    }
     setStatus('loading');
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (!mounted.current) return;
+    void requestDeviceLocation({ timeout: 15000, maximumAge: 0 }).then((res) => {
+      if (!mounted.current) return;
+      if (res.ok) {
         const c: GeoCoords = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy ?? 0,
+          latitude: res.coords.latitude,
+          longitude: res.coords.longitude,
+          accuracy: res.coords.accuracy,
         };
         setCoords(c);
         saveLocation(c);
         setStatus('ready');
-      },
-      (err) => {
-        if (!mounted.current) return;
-        if (err.code === err.PERMISSION_DENIED) {
+        setPermission('granted');
+        setPermanentlyDenied(false);
+      } else {
+        const denied = res.reason === 'denied' || res.reason === 'permanently-denied';
+        if (res.reason === 'unsupported') {
+          setStatus('unsupported');
+        } else if (denied) {
           setStatus('denied');
-          setError('لم يُسمح بالوصول للموقع. يمكنك اختيار مدينتك يدويًا.');
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setStatus('error');
-          setError('تعذر تحديد موقعك. تحقق من GPS ثم أعد المحاولة.');
         } else {
           setStatus('error');
-          setError('انتهت مهلة تحديد الموقع. أعد المحاولة.');
         }
-      },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 },
-    );
+        setError(res.message);
+        setPermission(denied ? 'denied' : permission);
+        setPermanentlyDenied(res.reason === 'permanently-denied' || (res.reason === 'denied' && hasAskedLocation()));
+      }
+    });
+  }, [permission]);
+
+  const openSettings = useCallback(async () => {
+    const opened = await openLocSettings();
+    if (!opened) {
+      setError('افتح إعدادات الهاتف ← التطبيقات ← الربانيون ← الأذونات ← الموقع.');
+    }
   }, []);
 
   useEffect(() => {
     mounted.current = true;
-    if (autoRequest) request();
+    if (autoRequest) {
+      // Check permission first; only auto-request if not denied.
+      void checkLocationPermission().then((p) => {
+        if (!mounted.current) return;
+        setPermission(p);
+        if (p === 'granted' || p === 'prompt') {
+          request();
+        } else {
+          setStatus('denied');
+          setError('لم يُسمح بالوصول للموقع. يمكنك اختيار مدينتك يدويًا.');
+          setPermanentlyDenied(true);
+        }
+      });
+    }
     return () => {
       mounted.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { status, coords, error, request };
+  return { status, coords, error, permission, permanentlyDenied, request, openSettings };
 }

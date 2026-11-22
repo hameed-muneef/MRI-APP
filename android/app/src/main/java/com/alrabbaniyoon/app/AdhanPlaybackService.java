@@ -196,6 +196,7 @@ public class AdhanPlaybackService extends Service {
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .build();
             mp.setAudioAttributes(attrs);
+            mp.setVolume(1.0f, 1.0f);
             mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mp.setDataSource(getApplicationContext(), uri);
             mp.setOnCompletionListener(player -> stopPlaybackAndSelf());

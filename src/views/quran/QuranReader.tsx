@@ -5,6 +5,7 @@ import {
   Repeat
 } from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
+import {useBackHandler} from '../../navigation/useBackHandler';
 import type {QuranLearningState, QuranReflection} from '../../quran/types';
 import {
   basmalaText, findVerse, navigationTarget, referenceLabel, searchVerses,
@@ -95,6 +96,7 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
     try { const v = Number(localStorage.getItem('quran-autoscroll-speed')); return Number.isFinite(v) && v > 0 ? v : 240; } catch { return 240; }
   });
   const [scrollMenu, setScrollMenu] = useState<{x:number;y:number}|null>(null);
+  useBackHandler(() => setScrollMenu(null), Boolean(scrollMenu));
   const autoScrollSpeedRef = useRef(autoScrollSpeed);
 
   // Audio recitation backed by backgroundAudio (persists across tabs & screen lock)

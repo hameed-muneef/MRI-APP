@@ -11,26 +11,26 @@ export const SILENT_SOUND = 'builtin:silent';
 const DEFAULT_AT_SOUND = 'builtin:chime';
 const DEFAULT_REMINDER_SOUND = 'builtin:soft';
 
-// Self-contained map of bundled offline Adhan MP3 recordings (excludes Eid Takbeerat).
+// Self-contained map of bundled offline Adhan OGG recordings (excludes Eid Takbeerat).
 const BUNDLED_ADHAN_URLS: Record<string, string> = {
-  'almulla': '/sounds/adhan/adhan_almulla.mp3',
-  'adhan:almulla': '/sounds/adhan/adhan_almulla.mp3',
-  'adhan_almulla': '/sounds/adhan/adhan_almulla.mp3',
-  'ahmad': '/sounds/adhan/adhan_ahmad.mp3',
-  'adhan:ahmad': '/sounds/adhan/adhan_ahmad.mp3',
-  'adhan_ahmad': '/sounds/adhan/adhan_ahmad.mp3',
-  'madinah': '/sounds/adhan/adhan_madinah.mp3',
-  'adhan:madinah': '/sounds/adhan/adhan_madinah.mp3',
-  'adhan_madinah': '/sounds/adhan/adhan_madinah.mp3',
-  'madinah2': '/sounds/adhan/adhan_madinah2.mp3',
-  'adhan:madinah2': '/sounds/adhan/adhan_madinah2.mp3',
-  'adhan_madinah2': '/sounds/adhan/adhan_madinah2.mp3',
-  'mohammed': '/sounds/adhan/adhan_mohammed.mp3',
-  'adhan:mohammed': '/sounds/adhan/adhan_mohammed.mp3',
-  'adhan_mohammed': '/sounds/adhan/adhan_mohammed.mp3',
-  'hamad': '/sounds/adhan/adhan_hamad.mp3',
-  'adhan:hamad': '/sounds/adhan/adhan_hamad.mp3',
-  'adhan_hamad': '/sounds/adhan/adhan_hamad.mp3',
+  'almulla': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan:almulla': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan_almulla': '/sounds/adhan/adhan_almulla.ogg',
+  'ahmad': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan:ahmad': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan_ahmad': '/sounds/adhan/adhan_almulla.ogg',
+  'madinah': '/sounds/adhan/adhan_madinah.ogg',
+  'adhan:madinah': '/sounds/adhan/adhan_madinah.ogg',
+  'adhan_madinah': '/sounds/adhan/adhan_madinah.ogg',
+  'madinah2': '/sounds/adhan/adhan_madinah.ogg',
+  'adhan:madinah2': '/sounds/adhan/adhan_madinah.ogg',
+  'adhan_madinah2': '/sounds/adhan/adhan_madinah.ogg',
+  'mohammed': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan:mohammed': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan_mohammed': '/sounds/adhan/adhan_almulla.ogg',
+  'hamad': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan:hamad': '/sounds/adhan/adhan_almulla.ogg',
+  'adhan_hamad': '/sounds/adhan/adhan_almulla.ogg',
 };
 
 export type SoundPlan =

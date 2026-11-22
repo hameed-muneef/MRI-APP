@@ -18,7 +18,8 @@ import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
 import type {AudioTrack} from '../../audio/types';
 import {InternetBadge, useOnline} from '../../online';
 import {copyText, shareText} from './ui';
-import QuranReader from './QuranReader';
+import {useBackHandler} from '../../navigation/useBackHandler';
+
 
 const AUTO_SCROLL_SPEEDS = [
   {value: 90, label: 'بطيء جدًا'},
@@ -41,12 +42,6 @@ type PageBlock = {page: number; verses: QuranVerse[]};
 
 export default function MushafPages({asset, state, onState, notify}: Props) {
   const online = useOnline();
-  const [mode, setMode] = useState<'pages' | 'reflow'>(() => {
-    try { return localStorage.getItem('mushaf-mode') === 'reflow' ? 'reflow' : 'pages'; } catch { return 'pages'; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem('mushaf-mode', mode); } catch { /* تجاهل */ }
-  }, [mode]);
 
   // تجميع الآيات في صفحات المصحف المعتمدة (٦٠٤ صفحة) مرة واحدة.
   const pages = useMemo<PageBlock[]>(() => {
@@ -262,6 +257,14 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   const closePopover = useCallback(() => {
     setActive(null);
   }, []);
+
+  // الرجوع يغلق الطبقة المفتوحة في المصحف: بطاقة الآية، ثم الختمة، ثم العلامات، ثم البحث.
+  useBackHandler(() => {
+    if (active) { closePopover(); return; }
+    if (khatmahOpen) { setKhatmahOpen(false); setConfirmKhatmahReset(false); return; }
+    if (bookmarksOpen) { setBookmarksOpen(false); return; }
+    if (searchOpen) { setSearchOpen(false); }
+  }, Boolean(active || khatmahOpen || bookmarksOpen || searchOpen));
 
   const pauseContinuous = useCallback(() => {
     void backgroundAudio.pause();
@@ -610,16 +613,6 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     setNoteText('');
   }, [active]);
 
-  if (mode === 'reflow') {
-    return <div className="mf-reflow-wrap">
-      <div className="mf-mode-switch">
-        <button type="button" className="soft-btn" onClick={() => setMode('pages')}>← عرض صفحات المصحف</button>
-        <span className="muted small">الوضع الحالي: قراءة مرنة آية بآية</span>
-      </div>
-      <QuranReader asset={asset} state={state} onState={onState} notify={notify}/>
-    </div>;
-  }
-
   return <div className="mf-shell">
     <div className="mf-toolbar" role="toolbar" aria-label="أدوات المصحف">
       <div className="mf-toolbar-head">
@@ -700,10 +693,6 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
                 <span className="mf-font-val">{toArabicNumber(fontSize)}</span>
                 <button type="button" className="mf-btn sm" aria-label="تكبير الخط" onClick={() => setFontSize(value => Math.min(42, value + 1))}>+</button>
               </div>
-            </div>
-            <div className="mf-group">
-              <span className="mf-group-label">قراءة مرنة</span>
-              <button type="button" className="mf-btn soft" onClick={() => setMode('reflow')}><BookOpen size={16}/>قراءة مرنة</button>
             </div>
             <div className="mf-group">
               <span className="mf-group-label">علاماتي</span>

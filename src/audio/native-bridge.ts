@@ -1,5 +1,5 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
-import type { AudioCategory, AudioStatus } from './types';
+import type { AudioCategory, AudioStatus, AudioTrack } from './types';
 
 export interface NativeAudioStateSnapshot {
   status: AudioStatus;
@@ -32,6 +32,7 @@ export interface BackgroundAudioPluginInterface {
     startIndex: number;
     category: AudioCategory;
   }): Promise<{ started: boolean }>;
+  playSingle(track: AudioTrack): Promise<void>;
   pause(): Promise<void>;
   resume(): Promise<void>;
   stop(): Promise<void>;
@@ -39,6 +40,13 @@ export interface BackgroundAudioPluginInterface {
   previous(): Promise<void>;
   seekTo(options: { positionSec: number }): Promise<void>;
   getState(): Promise<NativeAudioStateSnapshot>;
+  setSleepTimer(options: { minutes: number }): Promise<{ minutes: number }>;
+  /** شاشة التشخيص — حالة المشغل (volume, status, error). */
+  diagnosticInfo(): Promise<NativeAudioStateSnapshot & {volumeL?: number; volumeR?: number; hasFocus?: boolean; prepared?: boolean; audioVolumeMusic?: number; audioVolumeMaxMusic?: number; audioVolumeWeb?: number; error?: string | null; currentTrack: NativeAudioStateSnapshot['currentTrack']}>;
+  /** إرسال إشعار تجريبي للأذان (بعد 10 ثوانٍ). */
+  testAdhanNotification(): Promise<{scheduled: boolean}>;
+  /** فتح إعدادات قناة الأذان (ACTION_CHANNEL_NOTIFICATION_SETTINGS). */
+  openAdhanChannelSettings(): Promise<{opened: boolean; error?: string}>;
   addListener(
     eventName: 'stateChange',
     listenerFunc: (state: NativeAudioStateSnapshot) => void,

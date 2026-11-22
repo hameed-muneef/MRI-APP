@@ -41,6 +41,7 @@ class BackgroundAudioEngine {
   private audioEl: HTMLAudioElement | null = null;
   private hlsInstance: HlsInstance | null = null;
   private webLoadToken = 0;
+  private sleepTimerHandle: ReturnType<typeof globalThis.setTimeout> | null = null;
   private nativeInitDone = false;
 
   constructor() {
@@ -251,10 +252,34 @@ class BackgroundAudioEngine {
     if (native) {
       await native.stop();
     }
+    this.clearSleepTimer();
     this.webLoadToken += 1;
     this.destroyWebAudio();
     this.clearWebMediaSession();
     this.setState({ ...INITIAL_STATE });
+  }
+
+  /** Sleep timer: stop playback after `minutes`. 0 = cancel. */
+  async setSleepTimer(minutes: number): Promise<{ minutes: number }> {
+    const native = getNativeBackgroundAudioPlugin();
+    if (native) {
+      return native.setSleepTimer({ minutes });
+    }
+    this.clearSleepTimer();
+    if (minutes > 0) {
+      this.sleepTimerHandle = globalThis.setTimeout(() => {
+        this.sleepTimerHandle = null;
+        void this.stop();
+      }, minutes * 60 * 1000);
+    }
+    return { minutes };
+  }
+
+  private clearSleepTimer() {
+    if (this.sleepTimerHandle != null) {
+      globalThis.clearTimeout(this.sleepTimerHandle);
+      this.sleepTimerHandle = null;
+    }
   }
 
   private destroyHls() {

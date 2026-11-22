@@ -5,6 +5,7 @@ import { formatArabicDistance } from '../../lib/geo';
 import { openAppSettings } from '../../lib/settings-opener';
 import { RADIUS_OPTIONS, useNearbyMosques } from '../../hooks/useNearbyMosques';
 import { useOnline } from '../../online';
+import { useBackHandler } from '../../navigation/useBackHandler';
 import type { QiblaCity } from '../../lib/qibla-cities';
 import MosqueCard from './MosqueCard';
 import { openMosqueDirections } from './maps-launcher';
@@ -47,6 +48,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
   } = useNearbyMosques();
 
   const [showManualPicker, setShowManualPicker] = useState(false);
+  useBackHandler(() => setShowManualPicker(false), showManualPicker);
   const [cityQuery, setCityQuery] = useState('');
   const isNative = Capacitor.isNativePlatform();
 

@@ -1,11 +1,11 @@
 // src/hooks/useCompassHeading.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as geomagnetism from 'geomagnetism';
+import { NativeCompass, isNativePlatform } from '../lib/native-compass';
 
 export type CompassStatus = 'idle' | 'loading' | 'ready' | 'unsupported' | 'needs-calibration' | 'weak';
-
 export interface CompassState {
-  heading: number | null; // magnetic/true heading in degrees [0,360), null if unavailable
+  heading: number | null;
   status: CompassStatus;
   tilt: { beta: number; gamma: number } | null;
   tooTilted: boolean;
@@ -13,7 +13,7 @@ export interface CompassState {
   hasSensor: boolean;
 }
 
-const SMOOTH = 0.18; // low-pass factor
+const SMOOTH = 0.18;
 
 function normalizeAngle(deg: number): number {
   let r = deg % 360;
@@ -21,7 +21,6 @@ function normalizeAngle(deg: number): number {
   return r;
 }
 
-// tilt-compensated heading from deviceorientation (alpha/beta/gamma)
 function headingFromOrientation(alpha: number, beta: number, gamma: number): number {
   const d2r = Math.PI / 180;
   const a = alpha * d2r;
@@ -111,6 +110,44 @@ class WebCompassProvider implements CompassProvider {
   }
 }
 
+class NativeCompassProvider implements CompassProvider {
+  private listener: { remove: () => Promise<void> } | null = null;
+  private running = false;
+
+  isSupported(): boolean {
+    return true;
+  }
+
+  start(cb: (h: number, beta: number, gamma: number, source: string) => void): void {
+    this.running = true;
+    void (async () => {
+      try {
+        const avail = await NativeCompass.isAvailable();
+        if (!avail.available) {
+          this.running = false;
+          return;
+        }
+        await NativeCompass.start();
+        this.listener = await NativeCompass.addListener('heading', (data) => {
+          if (!this.running) return;
+          cb(normalizeAngle(data.heading), data.pitch, data.roll, 'native');
+        });
+      } catch {
+        this.running = false;
+      }
+    })();
+  }
+
+  stop(): void {
+    this.running = false;
+    if (this.listener) {
+      void this.listener.remove();
+      this.listener = null;
+    }
+    void NativeCompass.stop();
+  }
+}
+
 export function useCompassHeading(enabled: boolean, coords: { latitude: number; longitude: number } | null): CompassState {
   const [heading, setHeading] = useState<number | null>(null);
   const [status, setStatus] = useState<CompassStatus>('idle');
@@ -124,10 +161,15 @@ export function useCompassHeading(enabled: boolean, coords: { latitude: number; 
   const mountedRef = useRef(true);
   const eventCountRef = useRef(0);
   const lastUpdateRef = useRef(0);
+  const noSensorTimerRef = useRef<number | null>(null);
 
-  // update declination when coords change
   useEffect(() => {
-    if (coords) declRef.current = magneticDeclination(coords.latitude, coords.longitude);
+    if (coords) {
+      declRef.current = magneticDeclination(coords.latitude, coords.longitude);
+      if (isNativePlatform()) {
+        void NativeCompass.setDeclination({ latitude: coords.latitude, longitude: coords.longitude, altitude: 0 });
+      }
+    }
   }, [coords]);
 
   const requestPermission = useCallback(async () => {
@@ -147,63 +189,83 @@ export function useCompassHeading(enabled: boolean, coords: { latitude: number; 
     if (!enabled) return;
     mountedRef.current = true;
     eventCountRef.current = 0;
-    const provider = new WebCompassProvider();
-    providerRef.current = provider;
+    smoothedRef.current = null;
 
-    if (!provider.isSupported()) {
-      setStatus('unsupported');
-      setHasSensor(false);
-      return;
-    }
+    let cancelled = false;
 
-    setStatus('loading');
-
-    const noSensorTimer = window.setTimeout(() => {
-      if (eventCountRef.current === 0) {
-        setHasSensor(false);
-        setStatus('unsupported');
-      }
-    }, 2500);
-
-    provider.start((h, beta, gamma, _source) => {
-      eventCountRef.current += 1;
-      if (!mountedRef.current) return;
-
-      // tilt check
-      const flat = (Math.abs(beta) < 30) || (Math.abs(beta) > 150);
-      const tooTilted = !flat || Math.abs(gamma) > 45;
-      setTooTilted(tooTilted);
-      setTilt({ beta, gamma });
-
-      // magnetic heading -> true heading via declination
-      const trueH = normalizeAngle(h + declRef.current);
-
-      // smoothing with wrap handling
-      const prev = smoothedRef.current;
-      let smoothed: number;
-      if (prev === null) {
-        smoothed = trueH;
+    const setup = async () => {
+      let provider: CompassProvider;
+      if (isNativePlatform()) {
+        try {
+          const avail = await NativeCompass.isAvailable();
+          provider = avail.available ? new NativeCompassProvider() : new WebCompassProvider();
+        } catch {
+          provider = new WebCompassProvider();
+        }
       } else {
-        let diff = trueH - prev;
-        if (diff > 180) diff -= 360;
-        if (diff < -180) diff += 360;
-        smoothed = normalizeAngle(prev + SMOOTH * diff);
+        provider = new WebCompassProvider();
       }
-      smoothedRef.current = smoothed;
+      if (cancelled || !mountedRef.current) return;
 
-      // throttle state updates to ~8Hz
-      const now = performance.now();
-      if (now - lastUpdateRef.current > 120) {
-        lastUpdateRef.current = now;
-        setHeading(smoothed);
-        setStatus('ready');
+      providerRef.current = provider;
+      if (!provider.isSupported()) {
+        setStatus('unsupported');
+        setHasSensor(false);
+        return;
       }
-    });
+
+      setStatus('loading');
+
+      const t = window.setTimeout(() => {
+        if (eventCountRef.current === 0) {
+          setHasSensor(false);
+          setStatus('unsupported');
+        }
+      }, 2500);
+      noSensorTimerRef.current = t;
+
+      provider.start((h, beta, gamma, source) => {
+        eventCountRef.current += 1;
+        if (!mountedRef.current) return;
+
+        const flat = (Math.abs(beta) < 30) || (Math.abs(beta) > 150);
+        const tooTilted = !flat || Math.abs(gamma) > 45;
+        setTooTilted(tooTilted);
+        setTilt({ beta, gamma });
+
+        const trueH = source === 'native' ? normalizeAngle(h) : normalizeAngle(h + declRef.current);
+
+        const prev = smoothedRef.current;
+        let smoothed: number;
+        if (prev === null) {
+          smoothed = trueH;
+        } else {
+          let diff = trueH - prev;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          smoothed = normalizeAngle(prev + SMOOTH * diff);
+        }
+        smoothedRef.current = smoothed;
+
+        const now = performance.now();
+        if (now - lastUpdateRef.current > 120) {
+          lastUpdateRef.current = now;
+          setHeading(smoothed);
+          setStatus('ready');
+        }
+      });
+    };
+
+    void setup();
 
     return () => {
+      cancelled = true;
       mountedRef.current = false;
-      window.clearTimeout(noSensorTimer);
-      provider.stop();
+      if (noSensorTimerRef.current !== null) {
+        window.clearTimeout(noSensorTimerRef.current);
+        noSensorTimerRef.current = null;
+      }
+      providerRef.current?.stop();
       providerRef.current = null;
     };
   }, [enabled]);

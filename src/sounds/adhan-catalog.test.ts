@@ -20,7 +20,7 @@ describe('adhan-catalog', () => {
     ]);
     for (const entry of BUNDLED_ADHAN_SOUNDS) {
       expect(entry.isEidTakbeer).toBe(false);
-      expect(entry.fileName).toMatch(/^[a-z0-9_]+\.mp3$/);
+      expect(entry.fileName).toMatch(/^[a-z0-9_]+\.ogg$/);
       expect(entry.url).toBe(`/sounds/adhan/${entry.fileName}`);
       expect(entry.name.trim().length).toBeGreaterThan(0);
     }

@@ -1,6 +1,8 @@
 import {useEffect,useState} from 'react';
-import {MapPin,Search} from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import {MapPin,Search,Settings2} from 'lucide-react';
 import {parseGeocodingResults,prayerMethods,sanitizePrayerLocation,type PrayerLocation} from './prayer-location';
+import {openAppSettings} from './lib/settings-opener';
 
 type Props={location?:PrayerLocation;onChange:(location?:PrayerLocation)=>void};
 
@@ -9,7 +11,8 @@ export default function PrayerLocationPicker({location,onChange}:Props){
   const [results,setResults]=useState<PrayerLocation[]>([]);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
-  useEffect(()=>{setResults([]);setMessage('')},[location]);
+  const [denied,setDenied]=useState(false);
+  useEffect(()=>{setResults([]);setMessage('');setDenied(false)},[location]);
   const search=async(event:React.FormEvent)=>{
     event.preventDefault();
     const name=query.trim();
@@ -29,21 +32,23 @@ export default function PrayerLocationPicker({location,onChange}:Props){
     const next=sanitizePrayerLocation({...item,method:location?.method,school:location?.school});
     if(next){onChange(next);setQuery('')}
   };
-  const detect=()=>{
-    if(!navigator.geolocation||!window.isSecureContext){setMessage('تحديد الموقع غير متاح في هذا المتصفح. ابحث عن مدينتك.');return}
-    setBusy(true);setMessage('جارٍ تحديد موقعك…');
-    navigator.geolocation.getCurrentPosition(position=>{
-      const next=sanitizePrayerLocation({name:'موقعي الحالي',country:'',latitude:position.coords.latitude,longitude:position.coords.longitude,
-        timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,method:location?.method,school:location?.school});
-      setBusy(false);
-      if(next){setMessage('');onChange(next)}else setMessage('تعذر تحديد موقعك. ابحث عن مدينتك.');
-    },error=>{
-      setBusy(false);
-      setMessage(error.code===1?'لم يُسمح بالوصول للموقع. اسمح به من إعدادات المتصفح أو ابحث عن مدينتك.':'تعذر تحديد موقعك. ابحث عن مدينتك.');
-    },{timeout:10000,maximumAge:600000,enableHighAccuracy:false});
+  const detect=async()=>{
+    setBusy(true);setMessage('جارٍ تحديد موقعك…');setDenied(false);
+    const {requestDeviceLocation}=await import('./lib/device-location');
+    const res=await requestDeviceLocation({timeout:10000,maximumAge:600000});
+    setBusy(false);
+    if(!res.ok){ setMessage(res.message); setDenied(res.reason==='denied'||res.reason==='permanently-denied'); return; }
+    const next=sanitizePrayerLocation({name:'موقعي الحالي',country:'',latitude:res.coords.latitude,longitude:res.coords.longitude,
+      timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,method:location?.method,school:location?.school});
+    if(next){setMessage('');onChange(next)}else setMessage('تعذر تحديد موقعك. ابحث عن مدينتك.');
+  };
+  const handleOpenSettings=async()=>{
+    const r=await openAppSettings();
+    if(!r.opened) setMessage('افتح إعدادات الهاتف ← التطبيقات ← الربانيون ← الأذونات ← الموقع.');
   };
   return <div className="prayer-city-picker">
     <button type="button" className="soft-btn" onClick={detect} disabled={busy}><MapPin size={16}/> ضبط المواقيت تلقائيًا من موقعي</button>
+    {denied && Capacitor.isNativePlatform() && <button type="button" className="soft-btn" onClick={handleOpenSettings}><Settings2 size={16}/> فتح إعدادات التطبيق</button>}
     <form onSubmit={search} role="search" aria-label="البحث عن مدينة لمواقيت الصلاة">
       <label>مدينتك<input type="search" value={query} maxLength={80} onChange={event=>setQuery(event.target.value)} placeholder="مثل: صنعاء، القاهرة، الرياض"/></label>
       <button type="submit" className="soft-btn" disabled={busy}><Search size={16}/> بحث</button>

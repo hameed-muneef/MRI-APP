@@ -12,6 +12,7 @@ import {
   unreadLocalNotificationCount,
 } from '../notifications/local-inbox';
 import '../notifications.css';
+import {useBackHandler} from '../navigation/useBackHandler';
 
 type NotificationCategory='reminder'|'system';
 type NotificationRow={
@@ -78,6 +79,9 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   const rootRef=useRef<HTMLDivElement>(null);
   const [nowMs,setNowMs]=useState(()=>Date.now());
   const preferencesOff=profile?.notification_preferences?.enabled===false;
+  // الرجوع يغلق تأكيد الحذف أولًا، ثم لوحة الإشعارات.
+  useBackHandler(()=>setConfirmClear(false),confirmClear);
+  useBackHandler(()=>{setOpen(false);setConfirmClear(false)},open);
 
   const loadLocal=useCallback(()=>{
     const rows=listLocalNotifications();

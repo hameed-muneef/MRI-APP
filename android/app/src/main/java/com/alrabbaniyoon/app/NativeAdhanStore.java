@@ -3,12 +3,15 @@ package com.alrabbaniyoon.app;
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.NotificationManagerCompat;
 import android.app.PendingIntent;
+import android.app.Settings;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 
@@ -116,7 +119,7 @@ public final class NativeAdhanStore {
     }
 
     public static String channelIdForRaw(String rawName) {
-        return "al-rabbani-adhan-" + sanitizeAdhanRawName(rawName) + "-v1";
+        return "al-rabbani-adhan-" + sanitizeAdhanRawName(rawName) + "-v2";
     }
 
     public static void ensurePlaybackServiceChannel(Context context) {
@@ -167,10 +170,28 @@ public final class NativeAdhanStore {
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .build();
             ch.setSound(soundUri, attrs);
+        } else {
+            // ملف الأدان المُحدّد غير موجود — تمرّر بلاذ. هذا يضمن أن يكون هناك صوت (حتى لو لم يكن بالأذان المختار)
+            // بدلاً من صامت تمامًا (خطأ شائع عند نقص الملفات المحلية).
+            Uri fallback = RingtoneManager.getActualDefaultRingtoneUri(
+                context, RingtoneManager.TYPE_NOTIFICATION
+            );
+            if (fallback != null) {
+                AudioAttributes attrs = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build();
+                ch.setSound(fallback, attrs);
+            }
         }
 
         nm.createNotificationChannel(ch);
         return channelId;
+    }
+
+    /** أسماء الملفات المحلية المُسموحة في res/raw. يُستخدم في الشاشة التشخيصية + المحاذاة. */
+    public static String[] adhanRawNames() {
+        return ALLOWED_ADHAN_RAW_NAMES.toArray(new String[0]);
     }
 
     public static boolean canScheduleExact(Context context) {

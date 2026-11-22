@@ -72,10 +72,10 @@ test.describe('Nearby Mosques (mobile viewport)', () => {
     await expect(page.locator('.mosque-manual-picker')).toBeVisible();
   });
 
-  test('shows outside-region state when coordinates are outside covered Arab countries', async ({ page, context }) => {
+  test('shows outside-region state when coordinates are far from any country', async ({ page, context }) => {
     await context.grantPermissions(['geolocation']);
-    // London
-    await context.setGeolocation({ latitude: 51.5074, longitude: -0.1278 });
+    // Middle of the South Pacific (no land/country within range)
+    await context.setGeolocation({ latitude: -30.0, longitude: -150.0 });
 
     await page.goto('/');
     await page.locator('.mobile-nav button', { hasText: 'المساجد' }).click();

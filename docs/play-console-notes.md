@@ -42,3 +42,50 @@ Record a 30–60s video showing:
 
 ## 8) Location permission (approximate only)
 The Android build declares only `ACCESS_COARSE_LOCATION`. Location is used on-device for prayer times, Qibla and the bundled nearby-mosques dataset. Prayer times are computed locally with the `adhan` library; no coordinates are sent to any server. The city search box sends only the text the user types to Open-Meteo geocoding. Users may decline location and pick a city manually or enter times manually.
+
+## 9) Media Playback Foreground Service (P1b — background audio)
+
+### Declaration (draft for Play Console)
+- **Core functionality:** Continue Quran recitation, Azkar audio, and live HLS streams playback while the screen is off or the app is in the background (music-app-like behavior).
+- **Service type:** `mediaPlayback` (`FOREGROUND_SERVICE_MEDIA_PLAYBACK`).
+- **Permissions declared:** `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK`, `POST_NOTIFICATIONS` (Android 13+).
+- **User impact if interrupted:** Playback stops; user can resume from the notification / lock screen.
+- **Start condition:** Only from a user action (tap Play) while the app is in the foreground (Android 12+ restriction).
+- **Doze behavior:** Playback continues under Doze via PARTIAL_WAKE_LOCK + WifiLock (Wi-Fi streaming).
+- **Stop condition:** User dismisses the notification, presses Stop, or swipes the app from recents (configurable).
+- **Adhan interaction:** When an Adhan alarm fires during playback, the app ducks the volume to 25% for the Adhan notification sound, then restores to 100% after 8 seconds. If the user has "short" adhan type, the notification plays the selected Adhan recording at full volume (no duck).
+
+### Screen-recording checklist (required video for Play Console)
+1. Open the app → Quran reader → tap Play on a Surah.
+2. Press Home (app goes to background) → audio keeps playing.
+3. Lock the screen → audio keeps playing, lock-screen controls visible.
+4. Use notification controls (play/pause/next/prev/seek).
+5. Press a Bluetooth headset button → controls the playback.
+6. Incoming call → playback pauses, resumes after call.
+7. Unplug headphones → playback pauses.
+8. Airplane mode mid-stream → buffering + retry.
+9. Reboot → alarms restore, playback state persists.
+10. Low memory → service survives (foreground).
+
+### Trade-off: Media3 (ExoPlayer) vs current MediaPlayer
+- **Current (MediaPlayer):** Works now, no new dependency, audio focus + noisy + wake locks already implemented. HLS support via MediaPlayer (acceptable but less reliable on slow networks).
+- **Media3 (ExoPlayer):** Better HLS reliability, adaptive streaming, better media notification integration, smaller APK if HLS disabled. Requires migration to a plugin (Capgo Native Audio recommended — Cap 8 compatible, MIT/MPL-2.0, actively maintained, free) or hand-written ExoPlayer service (~weeks of work + testing).
+- **Decision:** Keep MediaPlayer for now (P1 just fixed). Media3 migration is a future option — document in P1b §1 evaluation.
+
+### Capacitor plugin evaluation (P1b §1)
+- **Capawesome Audio Player** (Media3 ExoPlayer, HLS, background playback, metadata): Cap 8 compatible, but **paid (Insiders only)** — not acceptable.
+- **Capgo Native Audio** (`@capgo/capacitor-native-audio`): Cap 8 compatible, actively maintained, MIT/MPL-2.0, Media3 ExoPlayer, HLS (optional, ~4MB), background playback, foreground service, audio focus, metadata. **Recommended if Media3 migration is wanted.**
+- **Capgo Media Session** (`@capgo/capacitor-media-session`): MediaSession + foreground service; good for keeping existing HTMLAudioElement + adding system controls.
+- **@dwbn/capacitor-plugin-playlist**: Media3 MediaSessionService, HLS, DRM, offline downloads. Overkill for our needs.
+- **Hand-written ExoPlayer**: full control, most code.
+- **Decision:** Keep existing MediaPlayer-based service (already works, P1 fixed). Media3 migration (Capgo recommended) is a future option.
+
+### Features added in P1b (this release)
+- Sleep timer (auto-stop after N minutes): native service + web fallback, exposed via `backgroundAudio.setSleepTimer({minutes})`.
+- Resume position persistence: saves currentIndex + currentTime to SharedPreferences on pause/stop; restores on next play of the same track.
+- Retry on error: up to 2 retries with 2s backoff before surfacing the error.
+- Unit tests: `src/audio/background-player.test.ts` (16 tests — queue, pause/resume, next/prev, stop, seek, sleep timer, state machine).
+- MediaSession already wired (play/pause/next/prev/seek/stop) — headset/Bluetooth buttons route to the active session.
+- Audio focus: duck on transient loss, pause on loss, resume on gain (already implemented).
+- Noisy receiver: pause on headphones unplugged (already implemented).
+- Wake lock + WifiLock: acquired during playback (already implemented).

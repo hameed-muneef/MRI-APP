@@ -3,6 +3,7 @@ import {CalendarDays,Check,ChevronDown,Plus,Search,Target,Trash2} from 'lucide-r
 import {daysToGoal,goalPeriodKey,goalStepCompleted,goalStepCompletionKey,goalSteps,isGoalDateInRange,localGoalDate,type Goal,type GoalPeriod} from './goal-plan';
 import GoalPeriodCards from './GoalPeriodCards';
 import GoalHistory from './GoalHistory';
+import {useBackHandler} from './navigation/useBackHandler';
 
 type Props={goals:Goal[];onGoals:(goals:Goal[])=>void};
 const periodLabel:Record<GoalPeriod,string>={daily:'يوميًا',weekly:'أسبوعيًا',monthly:'شهريًا',yearly:'سنويًا',custom:'تاريخ مخصص'};
@@ -16,6 +17,11 @@ export default function StrongGoals({goals,onGoals}:Props){
   const [confirmDeleteGoalId,setConfirmDeleteGoalId]=useState<string|null>(null);
   const [goalError,setGoalError]=useState<string>('');
   const [goalQuery,setGoalQuery]=useState('');
+  // الرجوع يتراجع عن الطبقة الأعلى داخل الهدف: تأكيد الحذف ← التعديل ← إضافة خطوة ← طي البطاقة.
+  useBackHandler(()=>setExpandedGoalId(null),Boolean(expandedGoalId));
+  useBackHandler(()=>setEditingStep(null),Boolean(editingStep));
+  useBackHandler(()=>setEditing(null),Boolean(editing));
+  useBackHandler(()=>setConfirmDeleteGoalId(null),Boolean(confirmDeleteGoalId));
   useEffect(()=>{const check=()=>setToday(localGoalDate());const timer=window.setInterval(check,30000);window.addEventListener('focus',check);return ()=>{clearInterval(timer);window.removeEventListener('focus',check)}},[]);
   const update=(goalId:string,change:(goal:Goal)=>Goal)=>onGoals(goals.map(goal=>goal.id===goalId?change(goal):goal));
   const create=(event:React.FormEvent)=>{event.preventDefault();if(!title.trim()||!intention.trim()||!targetDate||targetDate<today)return;const id=crypto.randomUUID();onGoals([...goals,{id,title:title.trim(),benefit:intention.trim(),targetDate,createdAt:today,steps:[]}]);setExpandedGoalId(id);setGoalError('');setGoalQuery('');setTitle('');setIntention('');setTargetDate('')};

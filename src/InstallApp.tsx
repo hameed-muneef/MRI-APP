@@ -2,6 +2,7 @@
 // على iPhone لا يوجد مربّع تثبيت برمجي — الإرشاد يظهر في لوحة «تثبيت التطبيق» بالإعدادات.
 import {useEffect, useState, type JSX} from 'react';
 import {Download, Smartphone} from 'lucide-react';
+import {useBackHandler} from './navigation/useBackHandler';
 
 type BIPEvent = Event & {prompt: () => Promise<void>; userChoice: Promise<{outcome: string}>};
 
@@ -60,6 +61,7 @@ function useInstallCapability(): InstallCapability {
 export function InstallAppButton(): JSX.Element | null {
   const {promptEvent, ios, installed, setPromptEvent} = useInstallCapability();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  useBackHandler(() => setShowIOSGuide(false), showIOSGuide);
   const isNative = typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform === 'function'
     && Boolean((window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform());
   if (installed || isNative) return null;

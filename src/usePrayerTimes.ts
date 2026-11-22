@@ -95,16 +95,15 @@ export default function usePrayerTimes(enabled: boolean, saved?: PrayerLocation)
     } else {
       setStatus('جارٍ تحديد موقعك من الجهاز…');
       const advice='ابحث عن مدينتك أدناه أو أدخل المواقيت يدويًا.';
-      if(!navigator.geolocation || !window.isSecureContext){
-        fail(`تحديد الموقع غير متاح. ${advice}`);
-      } else navigator.geolocation.getCurrentPosition(position=>{
+      void (async () => {
+        const {requestDeviceLocation}=await import('./lib/device-location');
+        const res=await requestDeviceLocation({timeout:10000,maximumAge:0});
         if(!active) return;
-        const loc:PrayerLocation={name:'موقعي',country:'',latitude:position.coords.latitude,longitude:position.coords.longitude,timezone:context.zone};
+        if(!res.ok){ fail(`${res.message} ${advice}`); return; }
+        const loc:PrayerLocation={name:'موقعي',country:'',latitude:res.coords.latitude,longitude:res.coords.longitude,timezone:context.zone};
         const label=`مواقيت اليوم حسب موقعك · ${context.date} · توقيت الجهاز: ${context.zone} · محسوبة على جهازك`;
-        void computeLocally(loc,context.zone,label).then(ok=>{
-          if(!ok) fail(`تعذر حساب المواقيت. ${advice}`);
-        });
-      },error=>fail(error.code===1?`لم يُسمح بالوصول للموقع. ${advice}`:`تعذر تحديد موقعك. ${advice}`),{timeout:10000,maximumAge:0,enableHighAccuracy:false});
+        void computeLocally(loc,context.zone,label).then(ok=>{ if(!ok&&active) fail(`تعذر حساب المواقيت. ${advice}`); });
+      })();
     }
     return ()=>{active=false};
   },[enabled,context,attempt,savedKey]);

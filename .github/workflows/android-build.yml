@@ -40,16 +40,16 @@ jobs:
           npm run lint
           npm run test:unit
 
-      - name: Check optional bundled Adhan audio assets
+      - name: Check optional bundled Adhan audio assets (bundled in public/sounds/adhan + res/raw)
         run: |
           missing=0
-          for f in adhan_ahmad.mp3 adhan_madinah.mp3 adhan_madinah2.mp3 adhan_mohammed.mp3 adhan_almulla.mp3 adhan_hamad.mp3 takbeerat_eid.mp3; do
+          for f in adhan_almulla.ogg adhan_madinah.ogg adhan_madinah2.ogg adhan_mohammed.ogg adhan_ahmad.ogg adhan_hamad.ogg takbeerat_eid.ogg; do
             if [ ! -s "public/sounds/adhan/$f" ] || [ ! -s "android/app/src/main/res/raw/$f" ]; then
-              echo "::warning::Optional Adhan audio '$f' is missing; app falls back to built-in/system alert sound."
+              echo "::warning::Optional Adhan audio '$f' is missing (expected both public/sounds/adhan and res/raw); app falls back to default notification sound or built-in chime."
               missing=$((missing + 1))
             fi
           done
-          echo "Optional missing Adhan MP3 checks: $missing"
+          echo "Optional missing Adhan audio checks: $missing"
 
       - name: Build web assets, generate icons/splash, and sync Capacitor (Local-Only)
         env:

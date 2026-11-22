@@ -113,89 +113,64 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   }, [provider]);
 
   const requestGps = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setStage('unsupported');
-      setGeoError('تحديد الموقع غير مدعوم في هذا الجهاز أو المتصفح.');
-      return;
-    }
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      setStage('unsupported');
-      setGeoError('تحديد الموقع يتطلب اتصالًا آمنًا (HTTPS).');
-      return;
-    }
-
     setStage('locating');
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (!mountedRef.current) return;
+    void (async () => {
+      const { requestDeviceLocation } = await import('../lib/device-location');
+      const res = await requestDeviceLocation({ timeout: 15000, maximumAge: 0 });
+      if (!mountedRef.current) return;
+      if (res.ok) {
         setCountryOverride('');
         setCoords({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy ?? undefined,
+          latitude: res.coords.latitude,
+          longitude: res.coords.longitude,
+          accuracy: res.coords.accuracy,
           source: 'gps',
         });
         setStage('ready');
-      },
-      (err) => {
-        if (!mountedRef.current) return;
-        if (err.code === err.PERMISSION_DENIED) {
-          setStage('denied');
-          setGeoError('تم رفض إذن الموقع. يمكنك فتح الإعدادات لتفعيله أو اختيار دولة ومدينة يدويًا.');
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setStage('geo-error');
-          setGeoError('تعذر تحديد موقعك حاليًا. تحقق من تفعيل GPS ثم أعد المحاولة.');
-        } else {
-          setStage('geo-error');
-          setGeoError('انتهت مهلة تحديد الموقع. أعد المحاولة أو اختر موقعًا يدويًا.');
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
+        return;
+      }
+      if (res.reason === 'denied' || res.reason === 'permanently-denied') {
+        setStage('denied');
+        setGeoError('تم رفض إذن الموقع. يمكنك فتح الإعدادات لتفعيله أو اختيار دولة ومدينة يدويًا.');
+      } else if (res.reason === 'unsupported') {
+        setStage('unsupported');
+        setGeoError(res.message);
+      } else {
+        setStage('geo-error');
+        setGeoError(res.message);
+      }
+    })();
   }, []);
 
   // When returning from Android App Settings after granting location permission, retry GPS automatically.
   useEffect(() => {
     if (stage !== 'denied' || coords) return;
     return addAppResumeListener(() => {
-      const perms = typeof navigator !== 'undefined' ? navigator.permissions : undefined;
-      if (!perms?.query) {
-        requestGps();
-        return;
-      }
-      perms
-        .query({ name: 'geolocation' })
-        .then((res) => {
-          if (res.state === 'granted' || res.state === 'prompt') {
-            requestGps();
-          }
-        })
-        .catch(() => {
+      void (async () => {
+        const { checkLocationPermission } = await import('../lib/device-location');
+        const p = await checkLocationPermission();
+        if (p === 'granted' || p === 'prompt') {
           requestGps();
-        });
+        }
+      })();
     });
   }, [stage, coords, requestGps]);
 
   // If browser/WebView permission is already granted, locate right away without extra tap.
   useEffect(() => {
     let cancelled = false;
-    const perms = typeof navigator !== 'undefined' ? navigator.permissions : undefined;
-    if (!perms?.query) return;
-    perms
-      .query({ name: 'geolocation' })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.state === 'granted') {
-          requestGps();
-        } else if (res.state === 'denied') {
-          setStage('denied');
-          setGeoError('تم رفض إذن الموقع. يمكنك فتح الإعدادات لتفعيله أو اختيار دولة ومدينة يدويًا.');
-        }
-      })
-      .catch(() => {
-        /* ignore if Permissions API doesn't support geolocation query */
-      });
+    void (async () => {
+      const { checkLocationPermission } = await import('../lib/device-location');
+      const p = await checkLocationPermission();
+      if (cancelled) return;
+      if (p === 'granted') {
+        requestGps();
+      } else if (p === 'denied') {
+        setStage('denied');
+        setGeoError('تم رفض إذن الموقع. يمكنك فتح الإعدادات لتفعيله أو اختيار دولة ومدينة يدويًا.');
+      }
+    })();
     return () => {
       cancelled = true;
     };

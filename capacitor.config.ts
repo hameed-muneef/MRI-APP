@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#D4B678',
-      sound: 'adhan_almulla.mp3',
+      sound: 'adhan_almulla.ogg',
     },
   },
   // الإضافات الرسمية تُقرأ من package.json تلقائيًا عند إضافتها لاحقًا (push، إلخ)
