@@ -1,6 +1,6 @@
 package com.alrabbaniyoon.app;
 
-import android.app.Settings;
+import android.provider.Settings;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;

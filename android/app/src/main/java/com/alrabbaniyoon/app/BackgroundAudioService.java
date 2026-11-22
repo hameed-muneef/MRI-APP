@@ -395,7 +395,7 @@ public class BackgroundAudioService extends Service {
         try {
             AudioAttributes attrs = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .setUsage(AudioAttributes.USAGE_MEDIA_PLAYBACK)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .build();
             mp.setAudioAttributes(attrs);
             mp.setVolume(1.0f, 1.0f);
@@ -950,7 +950,7 @@ public class BackgroundAudioService extends Service {
             boolean prepared = mediaPlayer != null;
             try {
                 if (mediaPlayer != null) {
-                    try { volL = mediaPlayer.getVolume(); volR = mediaPlayer.getVolume(); } catch (Exception ignored) {}
+                    try { if (audioManager != null) { volL = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC); volR = volL; } } catch (Exception ignored) {}
                 }
             } catch (Exception ignored) {}
             snapshot.put("volumeL", volL);
