@@ -34,12 +34,19 @@ test('reminders use their own sound, then the default sound', () => {
   assert.deepEqual(soundPlanForReminder(undefined, prefs('full'), library), {mode: 'tone', id: 'builtin:asc'});
 });
 
-test('bundled local Adhan IDs resolve offline to packaged /sounds/adhan/*.ogg files', () => {
-  assert.deepEqual(planSound('adhan:almulla', [], 'builtin:chime'), {
-    mode: 'file',
-    id: 'adhan:almulla',
-    url: '/sounds/adhan/adhan_almulla.ogg',
-  });
+test('bundled local Adhan IDs resolve offline to 6 unique /sounds/adhan/*.ogg files', () => {
+  const ids = ['almulla', 'ahmad', 'madinah', 'madinah2', 'mohammed', 'hamad'];
+  const urls = new Set();
+  for (const id of ids) {
+    const planned = planSound(`adhan:${id}`, [], 'builtin:chime');
+    assert.deepEqual(planned, {
+      mode: 'file',
+      id: `adhan:${id}`,
+      url: `/sounds/adhan/adhan_${id}.ogg`,
+    });
+    urls.add(planned.url);
+  }
+  assert.equal(urls.size, 6);
   assert.deepEqual(soundPlanForPrayer({prayer: 'الفجر', kind: 'at'}, prefs('full', 'adhan:madinah'), []), {
     mode: 'file',
     id: 'adhan:madinah',

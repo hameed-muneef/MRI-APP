@@ -5,6 +5,7 @@
 import {authClient} from '../auth';
 import {addLocalNotification} from './local-inbox';
 import type {Reminder, NotificationChannel, NotificationCategory} from './types';
+import {resolveAudioUrlForWeb} from '../audio/url-resolver';
 
 let permissionState: NotificationPermission | null = null;
 
@@ -150,15 +151,17 @@ export function resumeAudioContext(): void {
 }
 
 export function playSound(url: string): void {
+  const safeUrl = resolveAudioUrlForWeb(url);
+  if (!safeUrl) return;
   const ctx = getAudioContext();
   if (!ctx) {
     // fallback: عنصر صوت بسيط
-    const audio = new Audio(url);
+    const audio = new Audio(safeUrl);
     void audio.play().catch(() => {});
     return;
   }
   resumeAudioContext();
-  fetch(url)
+  fetch(safeUrl)
     .then(r => r.arrayBuffer())
     .then(buf => ctx!.decodeAudioData(buf))
     .then(buffer => {
@@ -169,7 +172,7 @@ export function playSound(url: string): void {
     })
     .catch(() => {
       // fallback إذا فشل الفك
-      const audio = new Audio(url);
+      const audio = new Audio(safeUrl);
       void audio.play().catch(() => {});
     });
 }

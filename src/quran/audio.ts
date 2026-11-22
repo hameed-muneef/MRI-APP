@@ -51,7 +51,10 @@ export async function loadReciters(): Promise<Reciter[]> {
 
 export function audioUrl(moshaf: ReciterMoshaf, surah: number): string {
   const padded = String(surah).padStart(3, '0');
-  return `${moshaf.server}${padded}.mp3`;
+  let server = moshaf.server.trim().replace(/\/+$/, '');
+  if (server.startsWith('//')) server = `https:${server}`;
+  else if (/^http:\/\//i.test(server)) server = `https://${server.slice('http://'.length)}`;
+  return `${server}/${padded}.mp3`.replace(/ /g, '%20');
 }
 
 export function reciterHasSurah(moshaf: ReciterMoshaf, surah: number): boolean {

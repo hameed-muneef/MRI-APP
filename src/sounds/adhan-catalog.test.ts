@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   BUNDLED_ADHAN_SOUNDS,
@@ -6,6 +9,9 @@ import {
   findOrdinaryAdhan,
   resolvePrayerAdhan,
 } from './adhan-catalog';
+
+const sha256 = (filePath: string) =>
+  createHash('sha256').update(readFileSync(filePath)).digest('hex');
 
 describe('adhan-catalog', () => {
   it('contains the 6 official ordinary Adhan recordings with Arabic labels and Android raw filenames', () => {
@@ -20,10 +26,38 @@ describe('adhan-catalog', () => {
     ]);
     for (const entry of BUNDLED_ADHAN_SOUNDS) {
       expect(entry.isEidTakbeer).toBe(false);
-      expect(entry.fileName).toMatch(/^[a-z0-9_]+\.ogg$/);
+      expect(entry.fileName).toBe(`${entry.rawName}.ogg`);
       expect(entry.url).toBe(`/sounds/adhan/${entry.fileName}`);
       expect(entry.name.trim().length).toBeGreaterThan(0);
     }
+    expect(new Set(BUNDLED_ADHAN_SOUNDS.map((s) => s.fileName)).size).toBe(6);
+    expect(new Set(BUNDLED_ADHAN_SOUNDS.map((s) => s.url)).size).toBe(6);
+  });
+
+  it('has 6 unique on-disk OGG files matching between public/sounds/adhan and android res/raw', () => {
+    const publicHashes = new Set<string>();
+    const rawHashes = new Set<string>();
+
+    for (const entry of BUNDLED_ADHAN_SOUNDS) {
+      const publicPath = resolve(process.cwd(), 'public/sounds/adhan', entry.fileName);
+      const rawPath = resolve(process.cwd(), 'android/app/src/main/res/raw', entry.fileName);
+      expect(existsSync(publicPath)).toBe(true);
+      expect(existsSync(rawPath)).toBe(true);
+
+      const pHash = sha256(publicPath);
+      const rHash = sha256(rawPath);
+      expect(rHash).toBe(pHash);
+      publicHashes.add(pHash);
+      rawHashes.add(rHash);
+    }
+
+    expect(publicHashes.size).toBe(6);
+    expect(rawHashes.size).toBe(6);
+
+    const eidPublicPath = resolve(process.cwd(), 'public/sounds/adhan', EID_TAKBEERAT_SOUND.fileName);
+    const eidRawPath = resolve(process.cwd(), 'android/app/src/main/res/raw', EID_TAKBEERAT_SOUND.fileName);
+    expect(existsSync(eidPublicPath)).toBe(true);
+    expect(existsSync(eidRawPath)).toBe(false);
   });
 
   it('keeps Eid Takbeerat separated and never resolves it as an ordinary prayer Adhan', () => {

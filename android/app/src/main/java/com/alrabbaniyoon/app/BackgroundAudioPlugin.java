@@ -49,7 +49,6 @@ public class BackgroundAudioPlugin extends Plugin {
 
     @PluginMethod
     public void playQueue(PluginCall call) {
-        Context context = getContext();
         JSArray queue = call.getArray("queue");
         if (queue == null || queue.length() == 0) {
             call.reject("queue must be non-empty");
@@ -57,14 +56,36 @@ public class BackgroundAudioPlugin extends Plugin {
         }
         int startIndex = call.getInt("startIndex", 0);
         String category = call.getString("category", "quran");
+        startPlaybackService(queue.toString(), startIndex, category);
+        call.resolve(new JSObject().put("started", true));
+    }
 
+    @PluginMethod
+    public void playSingle(PluginCall call) {
+        JSObject trackObj = call.getObject("track");
+        if (trackObj == null) {
+            trackObj = call.getData();
+        }
+        if (trackObj == null || trackObj.optString("url", "").trim().isEmpty()) {
+            call.reject("track url must be non-empty");
+            return;
+        }
+        String category = trackObj.optString("category", "quran");
+        JSArray queue = new JSArray();
+        queue.put(trackObj);
+        startPlaybackService(queue.toString(), 0, category);
+        call.resolve(new JSObject().put("started", true));
+    }
+
+    private void startPlaybackService(String queueJson, int startIndex, String category) {
+        Context context = getContext();
+        BackgroundAudioService.setPendingQueueJson(queueJson);
         Intent intent = new Intent(context, BackgroundAudioService.class);
         intent.setAction(BackgroundAudioService.ACTION_PLAY_QUEUE);
-        intent.putExtra(BackgroundAudioService.EXTRA_QUEUE_JSON, queue.toString());
+        intent.putExtra(BackgroundAudioService.EXTRA_USE_PENDING, true);
         intent.putExtra(BackgroundAudioService.EXTRA_START_INDEX, startIndex);
         intent.putExtra(BackgroundAudioService.EXTRA_CATEGORY, category);
         ContextCompat.startForegroundService(context, intent);
-        call.resolve(new JSObject().put("started", true));
     }
 
     @PluginMethod

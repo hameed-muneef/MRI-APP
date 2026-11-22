@@ -26,7 +26,7 @@ export default function AudioDiagnostics() {
   const [note, setNote] = useState('');
 
   const items: Item[] = [
-    {id: 'quran', label: 'قراءة قرآن (صوت مذاقرشم)', url: 'https://api.quran.com/api/v4/chapter_recitations/1/1', category: 'quran'},
+    {id: 'quran', label: 'قراءة قرآن (سورة الفاتحة - العفاسي)', url: 'https://download.quranicaudio.com/qdc/mishari_al_afasy/murattal/1.mp3', category: 'quran'},
     {id: 'adhan', label: 'أذان (الملا)', url: '/sounds/adhan/adhan_almulla.ogg', category: 'quran'},
     {id: 'azkar', label: 'أذكار', url: 'builtin:chime', category: 'azkar', note: 'نغمة مدمجة (Web Audio API)'},
     {id: 'hls', label: 'بث مباشر الحرمين (HLS)', url: 'https://aloula.sba.sa/live/quran?embed=true', category: 'haramain'},

@@ -214,7 +214,10 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
         meta: {mode: 'reader-ayah', surah: surahNumber, ayah: aNum},
       });
     }
-    if (!tracks.length) return;
+    if (!tracks.length) {
+      notify('تعذر جلب تلاوة الآية. تحقق من الاتصال بالإنترنت وأعد المحاولة.');
+      return;
+    }
     await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
 
@@ -256,8 +259,9 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
     const pauseOnManualScroll=()=>setAutoScroll(false);
     window.addEventListener('wheel',pauseOnManualScroll,{passive:true});
     window.addEventListener('touchstart',pauseOnManualScroll,{passive:true});
+    window.addEventListener('rabbani:scroll-top',pauseOnManualScroll);
     frame=requestAnimationFrame(tick);
-    return ()=>{cancelAnimationFrame(frame);window.removeEventListener('wheel',pauseOnManualScroll);window.removeEventListener('touchstart',pauseOnManualScroll);root.style.scrollBehavior='smooth'; if (wakeLock) try { wakeLock.release(); } catch {}};
+    return ()=>{cancelAnimationFrame(frame);window.removeEventListener('wheel',pauseOnManualScroll);window.removeEventListener('touchstart',pauseOnManualScroll);window.removeEventListener('rabbani:scroll-top',pauseOnManualScroll);root.style.scrollBehavior='smooth'; if (wakeLock) try { wakeLock.release(); } catch {}};
   },[autoScroll]);
   useEffect(()=>{setAutoScroll(false)},[surahNumber]);
 

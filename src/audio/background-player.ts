@@ -1,5 +1,14 @@
 import { getNativeBackgroundAudioPlugin, type NativeAudioStateSnapshot } from './native-bridge';
 import type { AudioCategory, AudioPlayerState, AudioTrack } from './types';
+import {
+  expandAudioFallbackUrls,
+  isBundledWebAssetUrl,
+  isLocalOrBundledAudioUrl,
+  isWebOnlyAudioUrl,
+  loadLocalAudioObjectUrlForWebView,
+  resolveAudioUrlForNative,
+  resolveAudioUrlForWeb,
+} from './url-resolver';
 
 type HlsInstance = {
   loadSource(url: string): void;
@@ -43,6 +52,9 @@ class BackgroundAudioEngine {
   private webLoadToken = 0;
   private sleepTimerHandle: ReturnType<typeof globalThis.setTimeout> | null = null;
   private nativeInitDone = false;
+  private usingWebFallback = false;
+  private nativeFallbackAttemptKey: string | null = null;
+  private activeWebBlobRevoke: (() => void) | null = null;
 
   constructor() {
     this.initNativeSync();
@@ -66,6 +78,10 @@ class BackgroundAudioEngine {
   }
 
   private applyNativeSnapshot(snap: NativeAudioStateSnapshot) {
+    if ((this.usingWebFallback || this.audioEl) && (snap.status === 'idle' || snap.status === 'error')) {
+      return;
+    }
+
     if (snap.status === 'idle') {
       this.setState({ ...INITIAL_STATE });
       return;
@@ -86,6 +102,30 @@ class BackgroundAudioEngine {
           isLive: snap.currentTrack.isLive,
         }
       : null);
+
+    if (snap.status === 'error' && track?.url) {
+      const attemptKey = `${idx}:${track.id}:${track.url}`;
+      const canTryWeb = isLocalOrBundledAudioUrl(track.url) || typeof navigator === 'undefined' || navigator.onLine !== false;
+      if (canTryWeb && this.nativeFallbackAttemptKey !== attemptKey && typeof Audio !== 'undefined') {
+        this.nativeFallbackAttemptKey = attemptKey;
+        this.usingWebFallback = true;
+        const fallbackQueue = this.state.queue.length > 0 ? this.state.queue : [track];
+        const fallbackIdx = idx >= 0 && idx < fallbackQueue.length ? idx : 0;
+        this.state = {
+          ...this.state,
+          category: snap.category ?? track.category ?? this.state.category,
+          queue: fallbackQueue,
+        };
+        void getNativeBackgroundAudioPlugin()?.stop().catch(() => {});
+        void this.startWebTrack(fallbackIdx);
+        return;
+      }
+    }
+
+    if (snap.status === 'playing') {
+      this.usingWebFallback = false;
+      this.nativeFallbackAttemptKey = null;
+    }
 
     this.setState({
       ...this.state,
@@ -119,41 +159,63 @@ class BackgroundAudioEngine {
 
   async playQueue(tracks: AudioTrack[], startIndex = 0, category?: AudioCategory): Promise<void> {
     if (!tracks.length) return;
-    const idx = Math.max(0, Math.min(startIndex, tracks.length - 1));
-    const resolvedCategory = category ?? tracks[idx].category;
+    const sanitizedTracks: AudioTrack[] = tracks.map((t) => {
+      const safeWeb = resolveAudioUrlForWeb(t.url) ?? t.url;
+      const expandedWeb = expandAudioFallbackUrls(t.url, t.fallbackUrls, 'web');
+      return {
+        ...t,
+        url: safeWeb,
+        fallbackUrls: expandedWeb.slice(1),
+      };
+    });
+    const idx = Math.max(0, Math.min(startIndex, sanitizedTracks.length - 1));
+    const resolvedCategory = category ?? sanitizedTracks[idx].category;
 
-    const native = getNativeBackgroundAudioPlugin();
+    this.usingWebFallback = false;
+    this.nativeFallbackAttemptKey = null;
+
+    const hasWebOnlyTrack = sanitizedTracks.some((t) => isWebOnlyAudioUrl(t.url) || !resolveAudioUrlForNative(t.url));
+    const native = !hasWebOnlyTrack ? getNativeBackgroundAudioPlugin() : null;
     if (native) {
       this.destroyWebAudio();
       this.setState({
         status: 'loading',
         category: resolvedCategory,
-        queue: tracks,
+        queue: sanitizedTracks,
         currentIndex: idx,
-        currentTrack: tracks[idx],
+        currentTrack: sanitizedTracks[idx],
         currentTime: 0,
         duration: 0,
         error: null,
       });
-      await native.playQueue({
-        queue: tracks.map((t) => ({
-          id: t.id,
-          title: t.title,
-          subtitle: t.subtitle ?? '',
-          url: t.url,
-          category: t.category,
-          isLive: Boolean(t.isLive),
-        })),
-        startIndex: idx,
-        category: resolvedCategory,
-      });
-      return;
+      try {
+        await native.playQueue({
+          queue: sanitizedTracks.map((t, i) => {
+            const orig = tracks[i] ?? t;
+            const nativeCandidates = expandAudioFallbackUrls(orig.url, orig.fallbackUrls, 'native');
+            return {
+              id: t.id,
+              title: t.title,
+              subtitle: t.subtitle ?? '',
+              url: nativeCandidates[0] ?? resolveAudioUrlForNative(orig.url) ?? t.url,
+              fallbackUrls: nativeCandidates.slice(1),
+              category: t.category,
+              isLive: Boolean(t.isLive),
+            };
+          }),
+          startIndex: idx,
+          category: resolvedCategory,
+        });
+        return;
+      } catch {
+        this.usingWebFallback = true;
+      }
     }
 
     this.state = {
       ...this.state,
       category: resolvedCategory,
-      queue: tracks,
+      queue: sanitizedTracks,
     };
     await this.startWebTrack(idx);
   }
@@ -164,7 +226,7 @@ class BackgroundAudioEngine {
 
   async pause(): Promise<void> {
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       await native.pause();
       return;
     }
@@ -179,7 +241,7 @@ class BackgroundAudioEngine {
 
   async resume(): Promise<void> {
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       await native.resume();
       return;
     }
@@ -207,7 +269,7 @@ class BackgroundAudioEngine {
 
   async next(): Promise<void> {
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       await native.next();
       return;
     }
@@ -218,7 +280,7 @@ class BackgroundAudioEngine {
 
   async previous(): Promise<void> {
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       await native.previous();
       return;
     }
@@ -237,7 +299,7 @@ class BackgroundAudioEngine {
     if (!track || track.isLive) return;
     const clamped = Math.max(0, positionSec);
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       await native.seekTo({ positionSec: clamped });
       return;
     }
@@ -248,9 +310,11 @@ class BackgroundAudioEngine {
   }
 
   async stop(): Promise<void> {
+    this.usingWebFallback = false;
+    this.nativeFallbackAttemptKey = null;
     const native = getNativeBackgroundAudioPlugin();
     if (native) {
-      await native.stop();
+      await native.stop().catch(() => {});
     }
     this.clearSleepTimer();
     this.webLoadToken += 1;
@@ -262,7 +326,7 @@ class BackgroundAudioEngine {
   /** Sleep timer: stop playback after `minutes`. 0 = cancel. */
   async setSleepTimer(minutes: number): Promise<{ minutes: number }> {
     const native = getNativeBackgroundAudioPlugin();
-    if (native) {
+    if (native && !this.usingWebFallback && !this.audioEl) {
       return native.setSleepTimer({ minutes });
     }
     this.clearSleepTimer();
@@ -291,6 +355,13 @@ class BackgroundAudioEngine {
     }
   }
 
+  private revokeWebBlobUrl() {
+    if (this.activeWebBlobRevoke) {
+      try { this.activeWebBlobRevoke(); } catch { /* ignore */ }
+      this.activeWebBlobRevoke = null;
+    }
+  }
+
   private destroyWebAudio() {
     this.destroyHls();
     if (this.audioEl) {
@@ -301,9 +372,10 @@ class BackgroundAudioEngine {
       } catch { /* ignore */ }
       this.audioEl = null;
     }
+    this.revokeWebBlobUrl();
   }
 
-  private async startWebTrack(index: number): Promise<void> {
+  private async startWebTrack(index: number, candidateIndex = 0): Promise<void> {
     const queue = this.state.queue;
     if (index < 0 || index >= queue.length) {
       await this.stop();
@@ -315,25 +387,66 @@ class BackgroundAudioEngine {
     const token = ++this.webLoadToken;
     this.destroyWebAudio();
 
+    const candidates = expandAudioFallbackUrls(track.url, track.fallbackUrls, 'web');
+    const resolvedUrl = candidates[candidateIndex] ?? resolveAudioUrlForWeb(track.url);
+    if (!resolvedUrl) {
+      this.setState({
+        status: 'error',
+        category: track.category,
+        queue,
+        currentIndex: index,
+        currentTrack: track,
+        currentTime: 0,
+        duration: 0,
+        error: 'مسار الصوت غير صالح.',
+      });
+      this.updateWebMediaSessionPlaybackState();
+      return;
+    }
+
     const audio = new Audio();
     audio.preload = 'auto';
     this.audioEl = audio;
 
-    this.setState({
-      status: 'loading',
-      category: track.category,
-      queue,
-      currentIndex: index,
-      currentTrack: track,
-      currentTime: 0,
-      duration: 0,
-      error: null,
-    });
+    if (candidateIndex === 0) {
+      this.setState({
+        status: 'loading',
+        category: track.category,
+        queue,
+        currentIndex: index,
+        currentTrack: track,
+        currentTime: 0,
+        duration: 0,
+        error: null,
+      });
+      this.installWebMediaSession(track);
+    }
 
-    this.installWebMediaSession(track);
+    let attemptSettled = false;
+    const handleAttemptFailure = (reason?: unknown) => {
+      if (attemptSettled || token !== this.webLoadToken) return;
+      attemptSettled = true;
+      if (candidateIndex + 1 < candidates.length) {
+        void this.startWebTrack(index, candidateIndex + 1);
+        return;
+      }
+      const errName = reason instanceof Error ? reason.name : '';
+      const offline = !isLocalOrBundledAudioUrl(resolvedUrl) && typeof navigator !== 'undefined' && navigator.onLine === false;
+      this.setState({
+        ...this.state,
+        status: 'error',
+        error: offline
+          ? 'لا يوجد اتصال بالإنترنت لتشغيل هذا المقطع.'
+          : errName === 'NotAllowedError'
+            ? 'اضغط زر التشغيل لبدء الاستماع.'
+            : 'تعذر تحميل أو تشغيل الصوت. تحقق من الاتصال ثم أعد المحاولة.',
+      });
+      this.updateWebMediaSessionPlaybackState();
+    };
 
     audio.addEventListener('playing', () => {
       if (token !== this.webLoadToken) return;
+      attemptSettled = true;
       this.setState({
         ...this.state,
         status: 'playing',
@@ -377,47 +490,44 @@ class BackgroundAudioEngine {
     });
 
     audio.addEventListener('error', () => {
-      if (token !== this.webLoadToken) return;
-      this.setState({
-        ...this.state,
-        status: 'error',
-        error: 'تعذر تشغيل الصوت. تحقق من الاتصال بالإنترنت.',
-      });
-      this.updateWebMediaSessionPlaybackState();
+      handleAttemptFailure();
     });
 
     try {
-      if (isHlsUrl(track.url)) {
+      let effectiveUrl = resolvedUrl;
+      if (!isHlsUrl(effectiveUrl) && isBundledWebAssetUrl(effectiveUrl)) {
+        const localBlob = await loadLocalAudioObjectUrlForWebView(effectiveUrl);
+        if (token !== this.webLoadToken) {
+          localBlob?.revoke();
+          return;
+        }
+        if (localBlob) {
+          this.activeWebBlobRevoke = localBlob.revoke;
+          effectiveUrl = localBlob.url;
+        }
+      }
+
+      if (isHlsUrl(effectiveUrl)) {
         const { default: Hls } = await import('hls.js');
         if (token !== this.webLoadToken) return;
         if (Hls.isSupported()) {
           const hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 60 });
           this.hlsInstance = hls as unknown as HlsInstance;
-          hls.loadSource(track.url);
+          hls.loadSource(effectiveUrl);
           hls.attachMedia(audio);
           hls.on(Hls.Events.ERROR, (_ev, data) => {
             if (token !== this.webLoadToken || !data.fatal) return;
-            this.setState({
-              ...this.state,
-              status: 'error',
-              error: 'تعذر تشغيل البث المباشر حاليًا.',
-            });
+            handleAttemptFailure();
           });
         } else {
-          audio.src = track.url;
+          audio.src = effectiveUrl;
         }
       } else {
-        audio.src = track.url;
+        audio.src = effectiveUrl;
       }
       await audio.play();
-    } catch {
-      if (token !== this.webLoadToken) return;
-      this.setState({
-        ...this.state,
-        status: 'error',
-        error: 'تعذر تشغيل الصوت. اضغط للمحاولة مرة أخرى.',
-      });
-      this.updateWebMediaSessionPlaybackState();
+    } catch (err) {
+      handleAttemptFailure(err);
     }
   }
 

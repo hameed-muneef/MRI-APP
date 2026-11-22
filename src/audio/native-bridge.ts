@@ -26,6 +26,7 @@ export interface BackgroundAudioPluginInterface {
       title: string;
       subtitle?: string;
       url: string;
+      fallbackUrls?: string[];
       category: AudioCategory;
       isLive?: boolean;
     }>;

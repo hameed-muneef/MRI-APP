@@ -1242,6 +1242,80 @@ html[data-theme="dark"] #root .app .topbar,
   line-height: 1.9 !important;
 }
 
+/* Scroll-to-Top Floating Action Button inside 480px mobile shell */
+#root .app .scroll-top-fab-dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  padding-inline: 14px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: 930;
+  transition: bottom .2s ease;
+}
+
+#root .app:has(.mf-bottom-bar) .scroll-top-fab-dock {
+  bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+}
+
+body.has-mini-player #root .app .scroll-top-fab-dock {
+  bottom: calc(146px + env(safe-area-inset-bottom, 0px));
+}
+
+#root .app .scroll-top-fab {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--accent-cream, #d7bd7c) 48%, transparent);
+  background: var(--section-strong, var(--accent-primary, #1d4d50));
+  color: var(--section-on-strong, #fffaf0);
+  box-shadow: var(--shadow-elevated, 0 10px 26px rgba(20, 39, 40, .22));
+  opacity: 0;
+  transform: translateY(14px) scale(0.9);
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity .22s ease, transform .22s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+#root .app .scroll-top-fab-dock.is-visible .scroll-top-fab {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+#root .app .scroll-top-fab-dock.is-visible .scroll-top-fab:hover {
+  background: var(--section-strong-hover, var(--accent-primary-hover, #143b40));
+  transform: translateY(-2px) scale(1.03);
+}
+
+#root .app .scroll-top-fab-dock.is-visible .scroll-top-fab:active {
+  transform: translateY(0) scale(0.95);
+}
+
+#root .app .scroll-top-fab:focus-visible {
+  outline: 2px solid var(--border-focus, #9a742f);
+  outline-offset: 3px;
+}
+
+#root .app:has(.mf-sheet-backdrop) .scroll-top-fab-dock,
+body:has(.ios-install-backdrop) #root .app .scroll-top-fab-dock {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#root .app:has(.mf-sheet-backdrop) .scroll-top-fab,
+body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
+  pointer-events: none !important;
+}
+
 @media (pointer: coarse) {
   #root .app .topbar .icon-btn, #root .app .topbar .notif-bell,
   #root .app .mobile-nav button, #root .app .country-selector-toggle,

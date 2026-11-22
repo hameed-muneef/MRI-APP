@@ -30,8 +30,8 @@ export const BUNDLED_ADHAN_SOUNDS: readonly AdhanCatalogEntry[] = [
     soundId: 'adhan:ahmad',
     name: 'أحمد العمادي',
     rawName: 'adhan_ahmad',
-    fileName: 'adhan_almulla.ogg',
-    url: '/sounds/adhan/adhan_almulla.ogg',
+    fileName: 'adhan_ahmad.ogg',
+    url: '/sounds/adhan/adhan_ahmad.ogg',
     isEidTakbeer: false,
   },
   {
@@ -48,8 +48,8 @@ export const BUNDLED_ADHAN_SOUNDS: readonly AdhanCatalogEntry[] = [
     soundId: 'adhan:madinah2',
     name: 'أذان الحرم المدني 2',
     rawName: 'adhan_madinah2',
-    fileName: 'adhan_madinah.ogg',
-    url: '/sounds/adhan/adhan_madinah.ogg',
+    fileName: 'adhan_madinah2.ogg',
+    url: '/sounds/adhan/adhan_madinah2.ogg',
     isEidTakbeer: false,
   },
   {
@@ -57,8 +57,8 @@ export const BUNDLED_ADHAN_SOUNDS: readonly AdhanCatalogEntry[] = [
     soundId: 'adhan:mohammed',
     name: 'أذان محمد رمضان (الحرم)',
     rawName: 'adhan_mohammed',
-    fileName: 'adhan_almulla.ogg',
-    url: '/sounds/adhan/adhan_almulla.ogg',
+    fileName: 'adhan_mohammed.ogg',
+    url: '/sounds/adhan/adhan_mohammed.ogg',
     isEidTakbeer: false,
   },
   {
@@ -66,8 +66,8 @@ export const BUNDLED_ADHAN_SOUNDS: readonly AdhanCatalogEntry[] = [
     soundId: 'adhan:hamad',
     name: 'حمد الدغريري',
     rawName: 'adhan_hamad',
-    fileName: 'adhan_almulla.ogg',
-    url: '/sounds/adhan/adhan_almulla.ogg',
+    fileName: 'adhan_hamad.ogg',
+    url: '/sounds/adhan/adhan_hamad.ogg',
     isEidTakbeer: false,
   },
 ];
@@ -77,8 +77,8 @@ export const EID_TAKBEERAT_SOUND: AdhanCatalogEntry = {
   soundId: 'takbeer:eid',
   name: 'تكبيرات العيد',
   rawName: 'takbeerat_eid',
-  fileName: 'takbeerat_eid.mp3',
-  url: '/sounds/adhan/takbeerat_eid.mp3',
+  fileName: 'takbeerat_eid.ogg',
+  url: '/sounds/adhan/takbeerat_eid.ogg',
   isEidTakbeer: true,
 };
 

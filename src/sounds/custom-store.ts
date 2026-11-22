@@ -4,7 +4,15 @@ const DB_NAME = 'rabbani-sounds';
 const DB_VERSION = 1;
 const STORE = 'sounds';
 
-export type SoundSlot = 'adhan' | 'alarm';
+export type SoundSlot = 'adhan' | 'alarm' | `adhan:item:${string}`;
+
+export interface StoredCustomSound {
+  slot: SoundSlot;
+  name: string;
+  type: string;
+  data: ArrayBuffer;
+  updatedAt?: string;
+}
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -39,10 +47,10 @@ export async function saveCustomSound(slot: SoundSlot, file: File): Promise<void
 export async function loadCustomSound(slot: SoundSlot): Promise<{name: string; type: string; data: ArrayBuffer} | null> {
   try {
     const db = await openDb();
-    const rec = await new Promise<any>((resolve, reject) => {
+    const rec = await new Promise<StoredCustomSound | undefined>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readonly');
       const req = tx.objectStore(STORE).get(slot);
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => resolve(req.result as StoredCustomSound | undefined);
       req.onerror = () => reject(req.error);
     });
     if (!rec) return null;
@@ -50,6 +58,30 @@ export async function loadCustomSound(slot: SoundSlot): Promise<{name: string; t
   } catch {
     return null;
   }
+}
+
+export async function listCustomAdhans(): Promise<StoredCustomSound[]> {
+  try {
+    const db = await openDb();
+    const all = await new Promise<StoredCustomSound[]>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve((req.result ?? []) as StoredCustomSound[]);
+      req.onerror = () => reject(req.error);
+    });
+    return all
+      .filter(item => item.slot === 'adhan' || String(item.slot).startsWith('adhan:item:'))
+      .sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? '')));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCustomAdhanEntry(file: File): Promise<SoundSlot> {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const slot: SoundSlot = `adhan:item:${id}`;
+  await saveCustomSound(slot, file);
+  return slot;
 }
 
 export async function deleteCustomSound(slot: SoundSlot): Promise<void> {

@@ -37,6 +37,7 @@ import AdhanPlayer from './AdhanPlayer';
 import AlarmTonePlayer from './AlarmTonePlayer';
 import AudioDiagnostics from './AudioDiagnostics';
 import {useBackHandler} from '../navigation/useBackHandler';
+import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
 
 type Props = {state: State; onReplace: (state: State) => void; notify: (message: string) => void; onOpenProfile?: () => void};
 
@@ -51,6 +52,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const versionRef = useRef<HTMLSpanElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewBlobRevokeRef = useRef<(() => void) | null>(null);
+  const previewTokenRef = useRef(0);
   const backupFileRef = useRef<HTMLInputElement | null>(null);
 
   // الرجوع يغلق تأكيد التصفير، ثم شاشة تشخيص الصوت.
@@ -95,13 +98,23 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   }, []);
 
   useEffect(() => () => {
+    previewTokenRef.current += 1;
     previewAudioRef.current?.pause();
     previewAudioRef.current = null;
+    if (previewBlobRevokeRef.current) {
+      try { previewBlobRevokeRef.current(); } catch { /* ignore */ }
+      previewBlobRevokeRef.current = null;
+    }
   }, []);
 
   const stopPreview = () => {
+    previewTokenRef.current += 1;
     previewAudioRef.current?.pause();
     previewAudioRef.current = null;
+    if (previewBlobRevokeRef.current) {
+      try { previewBlobRevokeRef.current(); } catch { /* ignore */ }
+      previewBlobRevokeRef.current = null;
+    }
     setPreviewPlayingId(null);
   };
 
@@ -112,24 +125,55 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
       return;
     }
     stopPreview();
-    const audio = new Audio(resolved.url);
+    const safeUrl = resolveAudioUrlForWeb(resolved.url);
+    if (!safeUrl) {
+      playBuiltInTone('builtin:chime');
+      return;
+    }
+    const token = ++previewTokenRef.current;
+    const audio = new Audio();
     previewAudioRef.current = audio;
     setPreviewPlayingId(resolved.soundId);
     let handledError = false;
     const onUnavailable = () => {
-      if (handledError) return;
+      if (handledError || token !== previewTokenRef.current) return;
       handledError = true;
       setPreviewPlayingId(null);
       previewAudioRef.current = null;
+      if (previewBlobRevokeRef.current) {
+        try { previewBlobRevokeRef.current(); } catch { /* ignore */ }
+        previewBlobRevokeRef.current = null;
+      }
       playBuiltInTone('builtin:chime');
       notify('ملف الأذان غير متوفر في هذه الحزمة؛ شُغِّلت نغمة تنبيه بديلة.');
     };
     audio.addEventListener('ended', () => {
+      if (token !== previewTokenRef.current) return;
       setPreviewPlayingId(null);
       previewAudioRef.current = null;
+      if (previewBlobRevokeRef.current) {
+        try { previewBlobRevokeRef.current(); } catch { /* ignore */ }
+        previewBlobRevokeRef.current = null;
+      }
     }, {once: true});
     audio.addEventListener('error', onUnavailable, {once: true});
-    void audio.play().catch(onUnavailable);
+    void loadLocalAudioObjectUrlForWebView(safeUrl).then(localBlob => {
+      if (token !== previewTokenRef.current) {
+        localBlob?.revoke();
+        return;
+      }
+      if (localBlob) {
+        previewBlobRevokeRef.current = localBlob.revoke;
+        audio.src = localBlob.url;
+      } else {
+        audio.src = safeUrl;
+      }
+      void audio.play().catch(onUnavailable);
+    }).catch(() => {
+      if (token !== previewTokenRef.current) return;
+      audio.src = safeUrl;
+      void audio.play().catch(onUnavailable);
+    });
   };
 
   const handleDefaultAdhanChange = (nextId: string) => {

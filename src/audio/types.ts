@@ -7,6 +7,7 @@ export interface AudioTrack {
   title: string;
   subtitle?: string;
   url: string;
+  fallbackUrls?: string[];
   category: AudioCategory;
   isLive?: boolean;
   meta?: Record<string, string | number>;

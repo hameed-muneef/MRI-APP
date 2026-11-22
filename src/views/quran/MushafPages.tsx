@@ -421,12 +421,14 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     const pause = () => setAutoScroll(false);
     window.addEventListener('wheel', pause, {passive: true});
     window.addEventListener('touchstart', pause, {passive: true});
+    window.addEventListener('rabbani:scroll-top', pause);
     frame = requestAnimationFrame(tick);
     return () => {
       autoScrollingRef.current = false;
       cancelAnimationFrame(frame);
       window.removeEventListener('wheel', pause);
       window.removeEventListener('touchstart', pause);
+      window.removeEventListener('rabbani:scroll-top', pause);
       root.style.scrollBehavior = prevBehavior;
       if (wakeLock) void wakeLock.release().catch(() => undefined);
     };

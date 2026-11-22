@@ -2,10 +2,19 @@
 // مكتبة الأصوات المركزية، المعاينة، والتحميل الآمن للملفات المخصصة.
 
 import {authClient} from '../auth';
+import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
 import type {AudioResource} from './types';
 
 let audioEl: HTMLAudioElement | null = null;
+let activeObjectUrlRevoke: (() => void) | null = null;
 let playToken = 0;
+
+function revokeActiveBlob(): void {
+  if (activeObjectUrlRevoke) {
+    try { activeObjectUrlRevoke(); } catch { /* ignore */ }
+    activeObjectUrlRevoke = null;
+  }
+}
 
 export function getAudioElement(): HTMLAudioElement {
   if (!audioEl) audioEl = new Audio();
@@ -21,24 +30,52 @@ export function stopAudio(): void {
     audioEl.removeAttribute('src');
     audioEl.load();
   }
+  revokeActiveBlob();
 }
 
 export function playAudio(url: string, onFallback?: () => void): void {
   stopAudio();
   const token = ++playToken;
+  const resolved = resolveAudioUrlForWeb(url);
+  if (!resolved) {
+    onFallback?.();
+    return;
+  }
   const el = getAudioElement();
   let fellBack = false;
   const triggerFallback = () => {
     if (fellBack || token !== playToken) return;
     fellBack = true;
     el.onerror = null;
+    revokeActiveBlob();
     onFallback?.();
   };
   el.onerror = onFallback ? triggerFallback : null;
-  el.src = url;
-  void el.play().catch(() => {
-    // قد يُمنع التشغيل التلقائي أو يفشل تحميل الملف — فعّل البديل المدمج إن وُجد
-    triggerFallback();
+  el.onended = () => {
+    if (token === playToken) revokeActiveBlob();
+  };
+
+  void loadLocalAudioObjectUrlForWebView(resolved).then(localBlob => {
+    if (token !== playToken) {
+      localBlob?.revoke();
+      return;
+    }
+    if (localBlob) {
+      activeObjectUrlRevoke = localBlob.revoke;
+      el.src = localBlob.url;
+    } else {
+      el.src = resolved;
+    }
+    void el.play().catch(() => {
+      // قد يُمنع التشغيل التلقائي أو يفشل تحميل الملف — فعّل البديل المدمج إن وُجد
+      triggerFallback();
+    });
+  }).catch(() => {
+    if (token !== playToken) return;
+    el.src = resolved;
+    void el.play().catch(() => {
+      triggerFallback();
+    });
   });
 }
 

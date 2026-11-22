@@ -4,7 +4,7 @@ import {backgroundAudio} from '../audio/background-player';
 import {useBackgroundAudio} from '../audio/useBackgroundAudio';
 import type {AudioTrack} from '../audio/types';
 import type {AzkarAsset, AzkarCategory} from '../azkar/types';
-import {loadAzkar, azkarAudioUrl, resetAzkarCache} from '../azkar/content';
+import {loadAzkar, azkarAudioUrl, azkarAudioFallbackUrls, resetAzkarCache} from '../azkar/content';
 
 type Lang = 'ar' | 'en' | 'tr';
 
@@ -97,6 +97,7 @@ export default function AzkarLibrary() {
         title: cat.category,
         subtitle: snippet,
         url,
+        fallbackUrls: azkarAudioFallbackUrls(item.audio),
         category: 'azkar',
       });
     }

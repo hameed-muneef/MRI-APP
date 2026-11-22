@@ -26,6 +26,21 @@ export const QURAN_COM_RECITERS: QuranComReciter[] = [
 
 export const DEFAULT_RECITATION_ID = 7;
 
+export function normalizeQuranAudioUrl(raw: unknown, base = BASE_AUDIO): string | null {
+  if (!raw) return null;
+  let full = String(raw).trim();
+  if (!full || /^(?:javascript|vbscript|data):/i.test(full)) return null;
+  if (full.startsWith('//')) {
+    full = `https:${full}`;
+  } else if (/^http:\/\//i.test(full)) {
+    full = `https://${full.slice('http://'.length)}`;
+  } else if (!/^https:\/\//i.test(full)) {
+    const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+    full = `${normalizedBase}${full.replace(/^\/+/, '')}`;
+  }
+  return full.replace(/([^:])\/\/+/g, '$1/').replace(/ /g, '%20');
+}
+
 export async function fetchAyahAudioUrl(recitationId: number, surah: number, ayah: number): Promise<string | null> {
   const key = `${recitationId}:${surah}:${ayah}`;
   if (CACHE.has(key)) return CACHE.get(key)!;
@@ -33,13 +48,8 @@ export async function fetchAyahAudioUrl(recitationId: number, surah: number, aya
     const res = await fetch(`https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah/${surah}:${ayah}`);
     if (!res.ok) return null;
     const json = await res.json();
-    const url = json?.audio_files?.[0]?.url;
-    if (url) {
-      let full = String(url);
-      if (full.startsWith('//')) full = 'https:' + full;
-      else if (!full.startsWith('http')) full = `${BASE_AUDIO}${full.replace(/^\/+/, '')}`;
-      // collapse accidental triple slashes in the path
-      full = full.replace(/([^:])\/\/+/g, '$1/');
+    const full = normalizeQuranAudioUrl(json?.audio_files?.[0]?.url);
+    if (full) {
       CACHE.set(key, full);
       return full;
     }
@@ -57,9 +67,8 @@ export async function fetchChapterAudioUrl(recitationId: number, chapter: number
     const res = await fetch(`https://api.quran.com/api/v4/chapter_recitations/${recitationId}/${chapter}`);
     if (!res.ok) return null;
     const json = await res.json();
-    const url = json?.audio_file?.audio_url;
-    if (url) {
-      const full = String(url).startsWith('http') ? String(url) : `https:${String(url)}`;
+    const full = normalizeQuranAudioUrl(json?.audio_file?.audio_url, 'https://download.quranicaudio.com/');
+    if (full) {
       CACHE.set(key, full);
       return full;
     }
@@ -81,9 +90,8 @@ export async function fetchAllChapterAudioUrls(recitationId: number): Promise<Ma
     const json = await res.json();
     for (const file of json?.audio_files ?? []) {
       const ch = Number(file?.chapter_id);
-      const rawUrl = file?.audio_url;
-      if (Number.isFinite(ch) && ch >= 1 && ch <= 114 && rawUrl) {
-        const full = String(rawUrl).startsWith('http') ? String(rawUrl) : `https:${String(rawUrl)}`;
+      const full = normalizeQuranAudioUrl(file?.audio_url, 'https://download.quranicaudio.com/');
+      if (Number.isFinite(ch) && ch >= 1 && ch <= 114 && full) {
         map.set(ch, full);
         CACHE.set(`ch:${recitationId}:${ch}`, full);
       }
@@ -105,8 +113,9 @@ export async function fetchSurahAyahAudioUrls(recitationId: number, surah: numbe
     const json = await res.json();
     for (const af of json?.audio_files ?? []) {
       const ak = af.verse_key?.split(':')[1];
-      if (ak && af.url) {
-        result.set(Number(ak), af.url.startsWith('http') ? af.url : `${BASE_AUDIO}${af.url}`);
+      const full = normalizeQuranAudioUrl(af?.url);
+      if (ak && full) {
+        result.set(Number(ak), full);
       }
     }
   } catch { /* ignore */ }

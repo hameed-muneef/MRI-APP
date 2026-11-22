@@ -289,7 +289,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       <details className="qibla-steps" style={{ marginTop: 8 }}>
         <summary><strong>أصوات الأذان المدمجة وتشغيل الخلفية</strong></summary>
         <ol style={{ paddingInlineStart: 20, fontSize: 13 }}>
-          <li>التطبيق يضم 6 تسجيلات أذان كاملة مدمجة محليًا في `res/raw/adhan_*.mp3` (تعمل دون إنترنت)، إضافة إلى ملف `takbeerat_eid.mp3` المستقل لتكبيرات العيد.</li>
+          <li>التطبيق يضم 6 تسجيلات أذان كاملة مدمجة محليًا في `res/raw/adhan_*.ogg` (تعمل دون إنترنت)، إضافة إلى ملف `takbeerat_eid.ogg` المستقل لتكبيرات العيد.</li>
           <li>يُشغّل الأذان الكامل في الخلفية أو أثناء قفل الشاشة عبر خدمة `AdhanPlaybackService` (MediaPlayback Foreground Service) مع زر «إيقاف الأذان» وإغلاق تلقائي مضبوط، مع قناة إشعار مخصصة لكل مؤذن في Android 8+.</li>
           <li>لتبديل صوت الأذان، اختر المؤذن من قسم «الأذان» أو من «إعدادات الأصوات» لكل صلاة، وستُحدّث قناة ومنبهات الأذان تلقائيًا.</li>
         </ol>

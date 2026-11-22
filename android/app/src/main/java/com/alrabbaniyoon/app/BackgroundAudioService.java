@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -22,6 +23,7 @@ import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
@@ -38,8 +40,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Foreground MediaPlayback Service for continuous background audio across:
@@ -64,6 +81,7 @@ public class BackgroundAudioService extends Service {
     public static final String ACTION_STOP = "com.alrabbaniyoon.app.action.BG_STOP";
 
     public static final String EXTRA_QUEUE_JSON = "queue_json";
+    public static final String EXTRA_USE_PENDING = "use_pending_queue";
     public static final String EXTRA_START_INDEX = "start_index";
     public static final String EXTRA_CATEGORY = "category";
     public static final String EXTRA_SEEK_MS = "seek_ms";
@@ -71,10 +89,21 @@ public class BackgroundAudioService extends Service {
     private static final String MEDIA_CHANNEL_ID = "al-rabbani-media-playback-v1";
     private static final int MEDIA_NOTIF_ID = 90120;
     private static final long MAX_WAKELOCK_MS = 4 * 60 * 60 * 1000L; // 4-hour safety cap per acquire
+    private static final long MAX_CACHE_BYTES = 60L * 1024L * 1024L; // 60 MB local audio cache
+    private static final long MAX_CACHE_FILE_BYTES = 25L * 1024L * 1024L; // 25 MB max per cached file
+    private static final int CONNECT_TIMEOUT_MS = 15000;
+    private static final int READ_TIMEOUT_MS = 25000;
+    private static final int MAX_REDIRECTS = 6;
     private static final String PREFS_NAME = "RABBANI_BG_AUDIO_V1";
     private static final String KEY_RESUME_TRACK_JSON = "resume_track_json";
     private static final String KEY_RESUME_POSITION_MS = "resume_position_ms";
     private static final String KEY_RESUME_CATEGORY = "resume_category";
+
+    private static volatile String pendingQueueJson = null;
+
+    public static void setPendingQueueJson(String json) {
+        pendingQueueJson = json;
+    }
 
     public interface StateListener {
         void onStateChanged(JSONObject state);
@@ -85,14 +114,28 @@ public class BackgroundAudioService extends Service {
         public final String title;
         public final String subtitle;
         public final String url;
+        public final List<String> fallbackUrls;
         public final String category;
         public final boolean isLive;
 
         public AudioTrackItem(String id, String title, String subtitle, String url, String category, boolean isLive) {
+            this(id, title, subtitle, url, null, category, isLive);
+        }
+
+        public AudioTrackItem(
+            String id,
+            String title,
+            String subtitle,
+            String url,
+            List<String> fallbackUrls,
+            String category,
+            boolean isLive
+        ) {
             this.id = id;
             this.title = title;
             this.subtitle = subtitle;
             this.url = url;
+            this.fallbackUrls = fallbackUrls != null ? fallbackUrls : new ArrayList<>();
             this.category = category;
             this.isLive = isLive;
         }
@@ -104,6 +147,11 @@ public class BackgroundAudioService extends Service {
                 obj.put("title", title);
                 obj.put("subtitle", subtitle);
                 obj.put("url", url);
+                if (!fallbackUrls.isEmpty()) {
+                    JSONArray fb = new JSONArray();
+                    for (String f : fallbackUrls) fb.put(f);
+                    obj.put("fallbackUrls", fb);
+                }
                 obj.put("category", category);
                 obj.put("isLive", isLive);
             } catch (JSONException ignored) {}
@@ -119,7 +167,49 @@ public class BackgroundAudioService extends Service {
             String subtitle = obj.optString("subtitle", "");
             String cat = obj.optString("category", fallbackCategory);
             boolean live = obj.optBoolean("isLive", false);
-            return new AudioTrackItem(id, title, subtitle, url, cat, live);
+            List<String> fallbacks = new ArrayList<>();
+            JSONArray fbArr = obj.optJSONArray("fallbackUrls");
+            if (fbArr != null) {
+                for (int i = 0; i < fbArr.length(); i++) {
+                    String f = fbArr.optString(i, "").trim();
+                    if (!f.isEmpty() && !f.equals(url)) {
+                        fallbacks.add(f);
+                    }
+                }
+            }
+            return new AudioTrackItem(id, title, subtitle, url, fallbacks, cat, live);
+        }
+    }
+
+    private static final class ResolvedSource {
+        final File localFile;
+        final String assetPath;
+        final Uri contentUri;
+        final String streamUrl;
+        final Map<String, String> headers;
+
+        private ResolvedSource(File localFile, String assetPath, Uri contentUri, String streamUrl, Map<String, String> headers) {
+            this.localFile = localFile;
+            this.assetPath = assetPath;
+            this.contentUri = contentUri;
+            this.streamUrl = streamUrl;
+            this.headers = headers;
+        }
+
+        static ResolvedSource file(File file) {
+            return new ResolvedSource(file, null, null, null, null);
+        }
+
+        static ResolvedSource asset(String assetPath) {
+            return new ResolvedSource(null, assetPath, null, null, null);
+        }
+
+        static ResolvedSource contentUri(Uri uri) {
+            return new ResolvedSource(null, null, uri, null, null);
+        }
+
+        static ResolvedSource stream(String url, Map<String, String> headers) {
+            return new ResolvedSource(null, null, null, url, headers);
         }
     }
 
@@ -127,14 +217,16 @@ public class BackgroundAudioService extends Service {
     private static volatile JSONObject lastSnapshot = defaultIdleSnapshot();
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private final ExecutorService loaderExecutor = Executors.newSingleThreadExecutor();
     private final List<AudioTrackItem> queue = new ArrayList<>();
     private int currentIndex = -1;
     private String currentCategory = null;
     private String status = "idle"; // idle | loading | playing | paused | error
     private String lastError = null;
-    private int prepareGeneration = 0;
+    private volatile int prepareGeneration = 0;
     private int retryCount = 0;
     private static final int MAX_RETRIES = 2;
+    private Runnable pendingRetryRunnable = null;
 
     private final Runnable sleepTimerRunnable = () -> stopAllAndSelf();
     private SharedPreferences prefs;
@@ -290,7 +382,13 @@ public class BackgroundAudioService extends Service {
         }
 
         if (ACTION_PLAY_QUEUE.equals(action)) {
-            String queueJson = intent.getStringExtra(EXTRA_QUEUE_JSON);
+            String queueJson = intent.getBooleanExtra(EXTRA_USE_PENDING, false)
+                ? pendingQueueJson
+                : intent.getStringExtra(EXTRA_QUEUE_JSON);
+            pendingQueueJson = null;
+            if (queueJson == null) {
+                queueJson = intent.getStringExtra(EXTRA_QUEUE_JSON);
+            }
             String category = intent.getStringExtra(EXTRA_CATEGORY);
             int startIndex = intent.getIntExtra(EXTRA_START_INDEX, 0);
             loadAndStartQueue(queueJson, startIndex, category);
@@ -336,7 +434,16 @@ public class BackgroundAudioService extends Service {
         ServiceCompat.startForeground(this, MEDIA_NOTIF_ID, notification, fgsType);
     }
 
+    private void cancelPendingRetry() {
+        if (pendingRetryRunnable != null) {
+            handler.removeCallbacks(pendingRetryRunnable);
+            pendingRetryRunnable = null;
+        }
+    }
+
     private void loadAndStartQueue(String queueJson, int startIndex, String category) {
+        cancelPendingRetry();
+        retryCount = 0;
         List<AudioTrackItem> parsed = new ArrayList<>();
         if (queueJson != null && !queueJson.isEmpty()) {
             try {
@@ -367,6 +474,15 @@ public class BackgroundAudioService extends Service {
     }
 
     private void startTrackAt(int index) {
+        retryCount = 0;
+        startTrackAtInternal(index, false);
+    }
+
+    private void startTrackAtInternal(int index, boolean isRetry) {
+        cancelPendingRetry();
+        if (!isRetry) {
+            retryCount = 0;
+        }
         if (index < 0 || index >= queue.size()) {
             stopAllAndSelf();
             return;
@@ -378,6 +494,7 @@ public class BackgroundAudioService extends Service {
         lastError = null;
         status = "loading";
 
+        stopProgressTicker();
         releasePlayerOnly();
         acquireLocks();
         registerNoisyReceiver();
@@ -389,6 +506,364 @@ public class BackgroundAudioService extends Service {
         }
 
         final int gen = ++prepareGeneration;
+        updateMediaSessionAndNotification();
+        emitState();
+
+        loaderExecutor.submit(() -> {
+            try {
+                if (gen != prepareGeneration) return;
+                ResolvedSource resolved = resolveAudioSource(track, gen);
+                if (gen != prepareGeneration) return;
+                handler.post(() -> {
+                    if (gen != prepareGeneration) return;
+                    prepareMediaPlayerWithResolvedSource(track, resolved, gen);
+                });
+            } catch (Exception ex) {
+                if (gen != prepareGeneration) return;
+                Logger.error("BackgroundAudioService", "Failed resolving track " + track.url, ex);
+                String detail = ex.getMessage() != null ? ex.getMessage().trim() : "";
+                String message = "تعذر تحميل المقطع الصوتي." + (detail.isEmpty() ? "" : " (" + detail + ")");
+                handler.post(() -> {
+                    if (gen != prepareGeneration) return;
+                    handlePlaybackError(message, track.url);
+                });
+            }
+        });
+    }
+
+    private Map<String, String> buildHttpHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
+        headers.put("Accept", "audio/mpeg, audio/ogg, audio/mp4, audio/*;q=0.9, */*;q=0.8");
+        return headers;
+    }
+
+    private File getAudioCacheDir() {
+        File dir = new File(getCacheDir(), "audio_cache");
+        if (!dir.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
+    private File getCacheFile(String url) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(url.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(String.format(Locale.US, "%02x", b));
+            }
+            return new File(getAudioCacheDir(), hex.toString() + ".audio");
+        } catch (Exception e) {
+            return new File(getAudioCacheDir(), Integer.toHexString(url.hashCode()) + ".audio");
+        }
+    }
+
+    private void trimCacheIfNeeded(File cacheDir) {
+        File[] files = cacheDir.listFiles();
+        if (files == null || files.length == 0) return;
+        long total = 0L;
+        for (File f : files) {
+            if (f.isFile()) total += f.length();
+        }
+        if (total <= MAX_CACHE_BYTES) return;
+        Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+        for (File f : files) {
+            if (total <= (MAX_CACHE_BYTES * 3L) / 4L) break;
+            if (!f.isFile()) continue;
+            long len = f.length();
+            if (f.delete()) {
+                total -= len;
+            }
+        }
+    }
+
+    private ResolvedSource resolveAudioSource(AudioTrackItem track, int gen) throws IOException {
+        List<String> candidates = new ArrayList<>();
+        if (track.url != null && !track.url.trim().isEmpty()) {
+            candidates.add(track.url.trim());
+        }
+        for (String fb : track.fallbackUrls) {
+            if (fb != null && !fb.trim().isEmpty() && !candidates.contains(fb.trim())) {
+                candidates.add(fb.trim());
+            }
+        }
+        if (candidates.isEmpty()) {
+            throw new IOException("Empty audio URL");
+        }
+
+        IOException lastEx = null;
+        for (String candidate : candidates) {
+            if (gen != prepareGeneration) {
+                throw new IOException("Cancelled");
+            }
+            try {
+                return resolveSingleAudioSource(candidate, track.isLive, gen);
+            } catch (IOException ex) {
+                lastEx = ex;
+                Logger.warn("BackgroundAudioService", "Source candidate failed [" + candidate + "]: " + ex.getMessage());
+            }
+        }
+        throw lastEx != null ? lastEx : new IOException("Failed resolving audio source");
+    }
+
+    private static String stripQueryAndFragment(String path) {
+        if (path == null) return "";
+        int q = path.indexOf('?');
+        int h = path.indexOf('#');
+        int cut = -1;
+        if (q >= 0 && h >= 0) cut = Math.min(q, h);
+        else if (q >= 0) cut = q;
+        else if (h >= 0) cut = h;
+        return cut >= 0 ? path.substring(0, cut) : path;
+    }
+
+    private ResolvedSource resolveSingleAudioSource(String rawInput, boolean isLive, int gen) throws IOException {
+        String rawUrl = rawInput != null ? rawInput.trim() : "";
+        if (rawUrl.isEmpty()) {
+            throw new IOException("Empty audio URL");
+        }
+
+        String lower = rawUrl.toLowerCase(Locale.US);
+        if (lower.startsWith("javascript:") || lower.startsWith("vbscript:") || lower.startsWith("blob:") || lower.startsWith("data:")) {
+            throw new IOException("Unsupported WebView-only audio scheme");
+        }
+
+        if (lower.startsWith("content://")) {
+            return ResolvedSource.contentUri(Uri.parse(rawUrl));
+        }
+
+        // Unwrap Capacitor WebView local-server origin URLs (https://localhost/..., capacitor://localhost/..., etc.)
+        if (lower.startsWith("https://localhost")
+            || lower.startsWith("http://localhost")
+            || lower.startsWith("capacitor://localhost")
+            || lower.startsWith("https://127.0.0.1")
+            || lower.startsWith("http://127.0.0.1")) {
+            Uri uri = Uri.parse(rawUrl);
+            String hostPath = uri.getPath();
+            if (hostPath != null && !hostPath.isEmpty()) {
+                if (hostPath.startsWith("/_capacitor_file_/")) {
+                    rawUrl = "/" + hostPath.substring("/_capacitor_file_/".length()).replaceFirst("^/+", "");
+                } else {
+                    rawUrl = hostPath;
+                }
+                lower = rawUrl.toLowerCase(Locale.US);
+            }
+        }
+
+        if (lower.startsWith("file:///android_asset/public/")) {
+            rawUrl = "/" + rawUrl.substring("file:///android_asset/public/".length()).replaceFirst("^/+", "");
+            lower = rawUrl.toLowerCase(Locale.US);
+        } else if (lower.startsWith("file://")) {
+            String filePath = Uri.parse(rawUrl).getPath();
+            if (filePath != null && !filePath.isEmpty()) {
+                File direct = new File(filePath);
+                if (direct.isFile() && direct.canRead()) {
+                    return ResolvedSource.file(direct);
+                }
+            }
+            throw new IOException("Local audio file not readable");
+        }
+
+        if (rawUrl.startsWith("//")) {
+            rawUrl = "https:" + rawUrl;
+            lower = rawUrl.toLowerCase(Locale.US);
+        }
+
+        boolean isHttp = lower.startsWith("http://") || lower.startsWith("https://");
+        if (!isHttp) {
+            String cleanPath = stripQueryAndFragment(rawUrl).replaceFirst("^(?:\\./)+", "");
+            // Check real device file path first (e.g. /data/user/0/... or /storage/...)
+            if (cleanPath.startsWith("/")) {
+                File directFile = new File(cleanPath);
+                if (directFile.isFile() && directFile.canRead()) {
+                    return ResolvedSource.file(directFile);
+                }
+            }
+            String assetPath = "public/" + cleanPath.replaceFirst("^/+", "");
+            try (AssetFileDescriptor afd = getAssets().openFd(assetPath)) {
+                if (afd.getLength() > 0) {
+                    return ResolvedSource.asset(assetPath);
+                }
+            } catch (IOException assetEx) {
+                File cachedAsset = getCacheFile("asset://" + assetPath);
+                if (cachedAsset.exists() && cachedAsset.length() > 0) {
+                    return ResolvedSource.file(cachedAsset);
+                }
+                File tempAsset = new File(cachedAsset.getParentFile(), cachedAsset.getName() + ".part");
+                try (InputStream in = getAssets().open(assetPath);
+                     FileOutputStream out = new FileOutputStream(tempAsset)) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) != -1) {
+                        if (gen != prepareGeneration) {
+                            //noinspection ResultOfMethodCallIgnored
+                            tempAsset.delete();
+                            throw new IOException("Cancelled");
+                        }
+                        out.write(buf, 0, n);
+                    }
+                    out.flush();
+                }
+                if (tempAsset.exists() && tempAsset.length() > 0 && tempAsset.renameTo(cachedAsset)) {
+                    return ResolvedSource.file(cachedAsset);
+                }
+                if (tempAsset.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    tempAsset.delete();
+                }
+                throw assetEx;
+            }
+            return ResolvedSource.asset(assetPath);
+        }
+
+        String normalizedHttp = rawUrl.replace(" ", "%20");
+        if (!isLive) {
+            File cached = getCacheFile(normalizedHttp);
+            if (cached.exists() && cached.length() > 128) {
+                //noinspection ResultOfMethodCallIgnored
+                cached.setLastModified(System.currentTimeMillis());
+                return ResolvedSource.file(cached);
+            }
+        }
+
+        return downloadOrResolveHttpSource(normalizedHttp, isLive, gen);
+    }
+
+    private ResolvedSource downloadOrResolveHttpSource(String initialUrl, boolean isLive, int gen) throws IOException {
+        Map<String, String> headers = buildHttpHeaders();
+        URL currentUrl = new URL(initialUrl);
+        HttpURLConnection conn = null;
+
+        try {
+            for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
+                if (gen != prepareGeneration) {
+                    throw new IOException("Cancelled");
+                }
+                conn = (HttpURLConnection) currentUrl.openConnection();
+                conn.setInstanceFollowRedirects(false);
+                conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+                conn.setReadTimeout(READ_TIMEOUT_MS);
+                conn.setRequestMethod("GET");
+                for (Map.Entry<String, String> e : headers.entrySet()) {
+                    conn.setRequestProperty(e.getKey(), e.getValue());
+                }
+
+                int code = conn.getResponseCode();
+                if (code == HttpURLConnection.HTTP_MOVED_PERM
+                    || code == HttpURLConnection.HTTP_MOVED_TEMP
+                    || code == HttpURLConnection.HTTP_SEE_OTHER
+                    || code == 307
+                    || code == 308) {
+                    String location = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    conn = null;
+                    if (location == null || location.trim().isEmpty()) {
+                        throw new IOException("Redirect without Location (HTTP " + code + ")");
+                    }
+                    currentUrl = new URL(currentUrl, location.trim());
+                    continue;
+                }
+
+                if (code < 200 || code >= 300) {
+                    throw new IOException("HTTP " + code);
+                }
+
+                String contentType = conn.getContentType();
+                if (contentType != null) {
+                    String ctLower = contentType.toLowerCase(Locale.US);
+                    boolean invalidNonLive = !isLive && (ctLower.startsWith("text/plain")
+                        || ctLower.contains("application/xml")
+                        || ctLower.contains("text/xml"));
+                    if (ctLower.startsWith("text/html") || ctLower.contains("application/json") || invalidNonLive) {
+                        throw new IOException("Invalid audio content-type: " + contentType);
+                    }
+                }
+
+                long contentLength = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                    ? conn.getContentLengthLong()
+                    : conn.getContentLength();
+
+                if (isLive || (contentLength > 0 && contentLength > MAX_CACHE_FILE_BYTES)) {
+                    String resolvedUrl = currentUrl.toString();
+                    conn.disconnect();
+                    conn = null;
+                    return ResolvedSource.stream(resolvedUrl, headers);
+                }
+
+                File cacheFile = getCacheFile(initialUrl);
+                File tempFile = new File(cacheFile.getParentFile(), cacheFile.getName() + "." + gen + ".part");
+                long totalBytes = 0L;
+                boolean exceededCacheCap = false;
+
+                try (InputStream in = conn.getInputStream();
+                     FileOutputStream out = new FileOutputStream(tempFile)) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) != -1) {
+                        if (gen != prepareGeneration) {
+                            //noinspection ResultOfMethodCallIgnored
+                            tempFile.delete();
+                            throw new IOException("Cancelled");
+                        }
+                        totalBytes += n;
+                        if (totalBytes > MAX_CACHE_FILE_BYTES) {
+                            exceededCacheCap = true;
+                            break;
+                        }
+                        out.write(buf, 0, n);
+                    }
+                    out.flush();
+                }
+
+                if (exceededCacheCap) {
+                    //noinspection ResultOfMethodCallIgnored
+                    tempFile.delete();
+                    return ResolvedSource.stream(currentUrl.toString(), headers);
+                }
+
+                if (totalBytes <= 0) {
+                    //noinspection ResultOfMethodCallIgnored
+                    tempFile.delete();
+                    throw new IOException("Empty audio response");
+                }
+
+                if (cacheFile.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    cacheFile.delete();
+                }
+                if (!tempFile.renameTo(cacheFile)) {
+                    // Fallback copy if rename fails
+                    try (FileInputStream copyIn = new FileInputStream(tempFile);
+                         FileOutputStream copyOut = new FileOutputStream(cacheFile)) {
+                        byte[] buf = new byte[8192];
+                        int n;
+                        while ((n = copyIn.read(buf)) != -1) {
+                            copyOut.write(buf, 0, n);
+                        }
+                        copyOut.flush();
+                    } finally {
+                        //noinspection ResultOfMethodCallIgnored
+                        tempFile.delete();
+                    }
+                }
+                trimCacheIfNeeded(getAudioCacheDir());
+                return ResolvedSource.file(cacheFile);
+            }
+
+            throw new IOException("Too many redirects");
+        } finally {
+            if (conn != null) {
+                try { conn.disconnect(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    private void prepareMediaPlayerWithResolvedSource(AudioTrackItem track, ResolvedSource resolved, int gen) {
+        if (gen != prepareGeneration) return;
+        releasePlayerOnly();
         MediaPlayer mp = new MediaPlayer();
         mediaPlayer = mp;
 
@@ -400,7 +875,23 @@ public class BackgroundAudioService extends Service {
             mp.setAudioAttributes(attrs);
             mp.setVolume(1.0f, 1.0f);
             mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-            mp.setDataSource(track.url);
+
+            if (resolved.localFile != null) {
+                try (FileInputStream fis = new FileInputStream(resolved.localFile)) {
+                    mp.setDataSource(fis.getFD());
+                }
+            } else if (resolved.assetPath != null) {
+                try (AssetFileDescriptor afd = getAssets().openFd(resolved.assetPath)) {
+                    mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                }
+            } else if (resolved.contentUri != null) {
+                mp.setDataSource(getApplicationContext(), resolved.contentUri);
+            } else if (resolved.headers != null && !resolved.headers.isEmpty()) {
+                mp.setDataSource(getApplicationContext(), Uri.parse(resolved.streamUrl), resolved.headers);
+            } else {
+                mp.setDataSource(resolved.streamUrl);
+            }
+
             mp.setOnPreparedListener(player -> {
                 if (gen != prepareGeneration || mediaPlayer != player) return;
                 try {
@@ -412,7 +903,7 @@ public class BackgroundAudioService extends Service {
                     startProgressTicker();
                     emitState();
                 } catch (Exception e) {
-                    handlePlaybackError("تعذر بدء التشغيل الصوتي.");
+                    handlePlaybackError("تعذر بدء التشغيل الصوتي.", track.url);
                 }
             });
             mp.setOnCompletionListener(player -> {
@@ -428,8 +919,13 @@ public class BackgroundAudioService extends Service {
             });
             mp.setOnErrorListener((player, what, extra) -> {
                 if (gen != prepareGeneration || mediaPlayer != player) return true;
-                Logger.error("BackgroundAudioService", "MediaPlayer error what=" + what + " extra=" + extra, null);
-                handlePlaybackError("تعذر تشغيل الصوت. تحقق من الاتصال بالإنترنت.");
+                Logger.error("BackgroundAudioService", "MediaPlayer error what=" + what + " extra=" + extra + " url=" + track.url, null);
+                if (resolved.localFile != null && resolved.localFile.exists()) {
+                    // Remove potentially corrupt cached audio file before retry
+                    //noinspection ResultOfMethodCallIgnored
+                    resolved.localFile.delete();
+                }
+                handlePlaybackError("تعذر تشغيل الصوت. تحقق من الاتصال بالإنترنت. (" + what + "/" + extra + ")", track.url);
                 return true;
             });
             mp.setOnInfoListener((player, what, extra) -> {
@@ -446,27 +942,35 @@ public class BackgroundAudioService extends Service {
                 return false;
             });
 
-            updateMediaSessionAndNotification();
-            emitState();
             mp.prepareAsync();
         } catch (Exception ex) {
             Logger.error("BackgroundAudioService", "Failed preparing track " + track.url, ex);
+            if (resolved.localFile != null && resolved.localFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                resolved.localFile.delete();
+            }
             String detail = ex != null && ex.getMessage() != null ? ex.getMessage() : "";
-            handlePlaybackError("تعذر تحميل المقطع الصوتي." + (detail.isEmpty() ? "" : " (" + detail + ")"));
+            handlePlaybackError("تعذر تحميل المقطع الصوتي." + (detail.isEmpty() ? "" : " (" + detail + ")"), track.url);
         }
     }
 
-    private void handlePlaybackError(String msg) {
+    private void handlePlaybackError(String msg, String failedUrl) {
+        cancelPendingRetry();
         stopProgressTicker();
         releasePlayerOnly();
         releaseLocks();
         if (retryCount < MAX_RETRIES && currentIndex >= 0 && currentIndex < queue.size()) {
             retryCount++;
-            Logger.warn("BackgroundAudioService", "Retrying track (attempt " + retryCount + "/" + MAX_RETRIES + "): " + msg);
+            final int targetIndex = currentIndex;
+            Logger.warn("BackgroundAudioService", "Retrying track (attempt " + retryCount + "/" + MAX_RETRIES + ") [" + failedUrl + "]: " + msg);
             lastError = null;
             status = "loading";
             emitState();
-            handler.postDelayed(() -> startTrackAt(currentIndex), 2000L);
+            pendingRetryRunnable = () -> {
+                pendingRetryRunnable = null;
+                startTrackAtInternal(targetIndex, true);
+            };
+            handler.postDelayed(pendingRetryRunnable, 1500L);
             return;
         }
         retryCount = 0;
@@ -477,6 +981,7 @@ public class BackgroundAudioService extends Service {
     }
 
     private void pausePlayback() {
+        cancelPendingRetry();
         stopProgressTicker();
         saveResumePosition();
         if (mediaPlayer != null) {
@@ -590,9 +1095,12 @@ public class BackgroundAudioService extends Service {
     }
 
     private void stopAllAndSelf() {
+        cancelPendingRetry();
+        handler.removeCallbacks(sleepTimerRunnable);
         stopProgressTicker();
         saveResumePosition();
         prepareGeneration++;
+        retryCount = 0;
         releasePlayerOnly();
         unregisterNoisyReceiver();
         abandonAudioFocus();
@@ -683,7 +1191,7 @@ public class BackgroundAudioService extends Service {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AudioAttributes attrs = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .build();
             focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -973,9 +1481,12 @@ public class BackgroundAudioService extends Service {
 
     @Override
     public void onDestroy() {
+        cancelPendingRetry();
+        handler.removeCallbacks(sleepTimerRunnable);
         stopProgressTicker();
         prepareGeneration++;
         releasePlayerOnly();
+        loaderExecutor.shutdownNow();
         unregisterNoisyReceiver();
         abandonAudioFocus();
         releaseLocks();
