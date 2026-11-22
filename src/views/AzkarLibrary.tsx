@@ -111,7 +111,7 @@ export default function AzkarLibrary() {
   return <div className="azkar-page">
     <section className="panel azkar-head">
       <div>
-        <span className="eyebrow">حصن Muslim — Sheikh Sa'eed Al-Qahtani</span>
+        <span className="eyebrow">حصن المسلم — الشيخ سعيد القحطاني</span>
         <h2>أذكار</h2>
         <p className="muted">132 فئة، 185 ذكرًا ودعاءً. الصوت يعمل في الخلفية وينتقل تلقائيًا عبر أذكار الفئة.</p>
       </div>

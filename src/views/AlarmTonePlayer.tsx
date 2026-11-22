@@ -74,14 +74,14 @@ export default function AlarmTonePlayer({notify}: {notify: (text: string) => voi
       <div className="adhan-row">
         {external ? (
           <>
-            <span className="muted small" style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{external.name}</span>
+            <span className="muted small alarm-file-name">{external.name}</span>
             <button type="button" className={playing ? 'soft-btn selected' : 'primary'} onClick={toggle} aria-pressed={playing}>
               {playing ? <Square size={16}/> : <Play size={16}/>} {playing ? 'إيقاف' : 'تشغيل'}
             </button>
             <button type="button" className="soft-btn" onClick={remove} aria-label="حذف النغمة"><Trash2 size={15}/> حذف</button>
           </>
         ) : (
-          <label className="adhan-file-label" style={{flex: 1}}>
+          <label className="adhan-file-label adhan-file-grow">
             اختر ملف صوتي (MP3/OGG/WAV)
             <input ref={pickerRef} type="file" accept="audio/*" onChange={event => void onFile(event.target.files?.[0] ?? null)} />
           </label>

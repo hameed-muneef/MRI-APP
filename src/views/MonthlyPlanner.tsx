@@ -30,8 +30,10 @@ export default function MonthlyPlanner({tasks,onTasks}:Props){
         <label>الشهر<select aria-label="الشهر" value={month} onChange={event=>changeMonth(String(year)+'-'+event.target.value.padStart(2,'0'))}>{monthNames.map((name,i)=><option key={i+1} value={i+1}>{name} · {(i+1).toLocaleString('ar-EG')}</option>)}</select></label>
         <button type="button" className="soft-btn" onClick={()=>changeMonth(goalPeriodKey('monthly'))}>الشهر الحالي</button>
       </div>
-      <p className="week-range">{dateLabel(days[0])} — {dateLabel(days[days.length-1])}</p>
-      {hijriDate(days[0])&&<p className="week-hijri">الموافق هجريًا: {hijriDate(days[0])} — {hijriDate(days[days.length-1])}</p>}
+      <div className="week-range-box">
+        <p className="week-range">{dateLabel(days[0])} — {dateLabel(days[days.length-1])}</p>
+        {hijriDate(days[0])&&<p className="week-hijri">الموافق هجريًا: {hijriDate(days[0])} — {hijriDate(days[days.length-1])}</p>}
+      </div>
       <p className="muted small">الشهور بالتقويم الميلادي. يظهر التاريخ بجوار كل يوم، مع مراعاة عدد أيام الشهر والسنة الكبيسة.</p>
     </section>
     <section className="panel" aria-label="مهام الشهر المختار">
@@ -49,6 +51,6 @@ export default function MonthlyPlanner({tasks,onTasks}:Props){
           <label>نقل إلى شهر<input aria-label={`شهر ${task.title}`} type="month" min="1970-01" max="9998-12" value={monthKey} onChange={event=>{const value=event.target.value;if(monthDays(value).length)changeTask(moveMonthlyTask(task,value))}}/></label></div>
       </div>)}</div>
     </section>
-    {unscheduled.length>0&&<section className="panel"><h2>مهام سابقة دون شهر محدد</h2><p className="muted">مهامك القديمة محفوظة؛ حدّد الشهر أعلاه ثم انقل المهمة إليه.</p>{unscheduled.map(task=><div className="task" key={task.id}><span className={isTaskDone(task)?'completed':''}>{task.title}</span><button type="button" className="soft-btn" onClick={()=>changeTask(scheduleMonthlyTask(task,monthKey))}>إلى الشهر المختار</button><button className="icon-btn danger" aria-label={`حذف ${task.title}`} onClick={()=>onTasks(tasks.filter(item=>item.id!==task.id))}><Trash2 size={17}/></button></div>)}</section>}
+    {unscheduled.length>0&&<section className="panel"><h2>مهام سابقة دون شهر محدد</h2><p className="muted">مهامك القديمة محفوظة؛ حدّد الشهر أعلاه ثم انقل المهمة إليه.</p>{unscheduled.map(task=><div className="weekly-unscheduled-card" key={task.id}><span className={`weekly-unscheduled-title${isTaskDone(task)?' completed':''}`}>{task.title}</span><div className="weekly-unscheduled-actions"><button type="button" className="soft-btn" onClick={()=>changeTask(scheduleMonthlyTask(task,monthKey))}>إلى الشهر المختار</button><button className="icon-btn danger" aria-label={`حذف ${task.title}`} onClick={()=>onTasks(tasks.filter(item=>item.id!==task.id))}><Trash2 size={17}/></button></div></div>)}</section>}
   </div>;
 }

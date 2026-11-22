@@ -795,18 +795,16 @@ html[data-theme="dark"] #root .app .home-today-entry svg {
 .admin-user-role.admin { background: var(--status-info-bg); color: var(--status-info); }
 .admin-permission-current.is-unavailable { background: var(--status-error-bg); border-inline-start-color: var(--status-error); }
 
-/* Goals and progress cards */
+/* Goals and progress cards (base fallbacks without !important so strong-goals.css and dark-auto-sweep.css control surfaces cleanly) */
 .goal-period-card,
 .goal-plan-card,
 .goal-history,
-.goal-period-icon,
-.goal-period-count,
 .goal-plan-body,
 .goal-step-edit,
 .goal-edit-form,
 .goal-history-period-picker {
-  background: var(--surface-card) !important;
-  border-color: var(--border-default) !important;
+  background: var(--surface-card);
+  border-color: var(--border-default);
   color: var(--text-secondary);
 }
 
@@ -825,9 +823,6 @@ html[data-theme="dark"] #root .app .home-today-entry svg {
 .goal-plan-head p,
 .goal-history-heading p,
 .goal-history-note { color: var(--text-muted); }
-.goal-meta span,
-.goal-period-badge,
-.goal-history-total,
 .goal-history-empty,
 .goal-history-list li { background: var(--surface-nested); color: var(--text-secondary); }
 .goal-history-filters button,
@@ -1095,43 +1090,7 @@ html[data-theme="light"] #root .app .learning-inline-reader {
   color: var(--text-secondary) !important;
 }
 
-html[data-theme="dark"] #root .app .day-page-header,
-html[data-theme="dark"] #root .app .day-view-switch,
-html[data-theme="dark"] #root .app .day-start-bar,
-html[data-theme="dark"] #root .app .tracking-header,
-html[data-theme="dark"] #root .app .prayer-log,
-html[data-theme="dark"] #root .app .tracking-progress {
-  background: var(--surface-card) !important;
-  border-color: var(--border-default) !important;
-  color: var(--text-secondary) !important;
-}
-
-html[data-theme="dark"] #root .app .day-page-header h1,
-html[data-theme="dark"] #root .app .day-page-header h2,
-html[data-theme="dark"] #root .app .day-page-header h3,
-html[data-theme="dark"] #root .app .day-page-header p,
-html[data-theme="dark"] #root .app .day-view-switch button,
-html[data-theme="dark"] #root .app .day-start-bar p,
-html[data-theme="dark"] #root .app .tracking-header p,
-html[data-theme="dark"] #root .app .tracking-header label {
-  color: var(--text-secondary) !important;
-}
-
-html[data-theme="dark"] #root .app .day-view-switch button.selected {
-  background: var(--accent-primary) !important;
-  color: var(--text-on-accent) !important;
-}
-
-html[data-theme="light"] #root .app .day-page-header,
-html[data-theme="light"] #root .app .day-view-switch,
-html[data-theme="light"] #root .app .day-start-bar,
-html[data-theme="light"] #root .app .tracking-header,
-html[data-theme="light"] #root .app .prayer-log,
-html[data-theme="light"] #root .app .tracking-progress {
-  background: var(--surface-card) !important;
-  border-color: var(--border-default) !important;
-  color: var(--text-secondary) !important;
-}
+/* Day planner and tracker surfaces are styled directly in day-planner.css and dark-auto-sweep.css */
 
 /* Admin route controls: override the legacy brown dark-mode form palette. */
 html[data-theme="dark"] #root .app .admin-page input,

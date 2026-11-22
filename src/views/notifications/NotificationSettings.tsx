@@ -11,25 +11,29 @@ import SoundPanel from './SoundPanel';
 import TaskNotificationsPanel from './TaskNotificationsPanel';
 import type {PrayerLocation} from '../../prayer-location';
 
+import {isNativePlatform} from '../../notifications/native-prayer-scheduler';
+
 const PERMISSION_TEXT: Record<string, string> = {
-  granted: 'مسموح: تصلك إشعارات الدفع ما دام المتصفح أو التطبيق يعمل.',
-  denied: 'محظور: فعّل الإشعارات لهذا الموقع من إعدادات المتصفح (رمز القفل بجوار العنوان) ثم أعد تحميل الصفحة.',
-  default: 'لم يُطلب الإذن بعد. اضغط الزر أدناه لتفعيل إشعارات الدفع.',
+  granted: 'مسموح: ستصلك تنبيهات الجهاز ما دام المتصفح أو التطبيق يعمل.',
+  denied: 'محظور: لتصلك الإشعارات خارج التطبيق، فعّل الإذن من إعدادات الموقع (رمز القفل بجوار عنوان الصفحة) ثم أعد تحميل الصفحة.',
+  default: 'لم يُمنح الإذن بعد. اضغط الزر أدناه لتفعيل تنبيهات المتصفح.',
 };
 
 function PermissionStatus() {
+  const nativeApp = isNativePlatform();
   const [permission, setPermission] = useState<NotificationPermission | null>(() => getBrowserPermission());
   useEffect(() => {
     setPermission(getBrowserPermission());
   }, []);
-  if (!isBrowserNotificationSupported()) return <p className="muted">هذا المتصفح لا يدعم إشعارات الدفع النظامية؛ ستظهر التنبيهات داخل المنصة فقط.</p>;
+  if (nativeApp) return <p className="muted">الإشعارات والتنبيهات في التطبيق تعمل مباشرة عبر نظام الهاتف.</p>;
+  if (!isBrowserNotificationSupported()) return <p className="muted">هذا المتصفح لا يدعم تنبيهات الجهاز؛ ستظهر التنبيهات داخل التطبيق فقط أثناء فتحه.</p>;
   return (
     <div>
       <p role="status">{PERMISSION_TEXT[permission ?? 'default']}</p>
       {permission !== 'granted' && permission !== 'denied' && (
-        <button type="button" className="primary" onClick={() => void requestBrowserPermission().then(setPermission)}>تفعيل إشعارات الدفع</button>
+        <button type="button" className="primary" onClick={() => void requestBrowserPermission().then(setPermission)}>تفعيل إشعارات المتصفح</button>
       )}
-      <p className="muted small">المتصفحات لا تضمن التنبيه في الخلفية أو والصفحة مغلقة؛ يصبح ذلك ممكنًا بدقة أعلى عند تثبيت التطبيق أو في تطبيق الجوال.</p>
+      <p className="muted small">المتصفحات لا تضمن التنبيه في الخلفية والصفحة مغلقة؛ يصبح ذلك ممكنًا بدقة أعلى عند تثبيت التطبيق أو في تطبيق الجوال.</p>
     </div>
   );
 }
@@ -63,9 +67,9 @@ export default function NotificationSettings({notify, goals, prayerLocation, onP
   return (
     <section ref={ref} className="panel notif-settings" aria-labelledby="notif-settings-title">
       <h3 id="notif-settings-title"><Bell size={18}/> الإشعارات والتنبيهات</h3>
-      <details open={target ? undefined : true}><summary>أذونات المتصفح وإشعارات الدفع</summary><PermissionStatus/></details>
+      <details open={target ? undefined : true}><summary>إذن الإشعارات والتشغيل</summary><PermissionStatus/></details>
       <details><summary>الإعدادات العامة وعدم الإزعاج</summary><GeneralNotifications notify={notify}/></details>
-      <details open={target === 'tasks' || undefined}><summary>تنبيهات المهام اليومية المجدولة (Push)</summary><TaskNotificationsPanel notify={notify} taskContext={taskContext}/></details>
+      <details open={target === 'tasks' || undefined}><summary>تذكيرات المهام اليومية المجدولة</summary><TaskNotificationsPanel notify={notify} taskContext={taskContext}/></details>
       <details open={target === 'prayer' || undefined}><summary>أوقات الصلاة والأذان</summary><PrayerNotifications notify={notify} prayerLocation={prayerLocation} onPrayerLocation={onPrayerLocation}/></details>
       <details open={target === 'reminders' || undefined}><summary>المنبهات الشخصية</summary><RemindersPanel notify={notify} goals={goals}/></details>
       <details><summary>مكتبة الأصوات</summary><SoundPanel notify={notify}/></details>

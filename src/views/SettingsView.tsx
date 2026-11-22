@@ -308,11 +308,26 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   return <>
     <div className="page-intro"><span className="eyebrow">المنصة</span><h1>الإعدادات والبيانات</h1><p>{LOCAL_ONLY?'نسخة محلية تعمل على هذا الجهاز وحده: لا حساب ولا مزامنة سحابية ولا نسخ احتياطية خارجية.':'نسخة تجريبية تعمل محليًا في المتصفح، وتُزامَن بيانات حسابك في السحابة عند تسجيل الدخول.'}</p></div>
     {!LOCAL_ONLY&&onOpenProfile&&<section className='panel'><h3><UserRound size={18}/> الملف الشخصي وإعدادات الحساب</h3><p className="muted">اسمك وبلدك، والمنطقة الزمنية واللغة والمدينة ومواعيد اليوم، وتفضيلات الإشعارات، وحذف الحساب.</p><button className="primary" onClick={onOpenProfile}><Globe size={17}/> فتح حسابي</button></section>}
+    <AppearancePanel/>
+    <NotificationSettings
+      notify={notify}
+      prayerLocation={state.prayerLocation}
+      onPrayerLocation={prayerLocation=>onReplace({...state,prayerLocation})}
+      goals={state.goals.map(goal=>({id:String(goal.id),title:String((goal as {title?:string}).title??'')}))}
+      taskContext={{
+        tasks: state.tasks,
+        goals: state.goals,
+        taskSchedules: state.taskSchedules ?? {},
+        dayPlan: state.dayPlan,
+        prayers: state.prayers,
+      }}
+    />
     <section className="panel adhan-player" dir="rtl" aria-labelledby="offline-adhan-select-title">
       <h3 id="offline-adhan-select-title"><Volume2 size={18}/> اختيار صوت الأذان (يعمل بدون إنترنت)</h3>
       <p className="muted">اختر صوت الأذان المفضل من الملفات المدمجة محليًا في التطبيق لكل وقت صلاة أو للمنبهات دون الحاجة لاتصال بالإنترنت.</p>
-      <div className="adhan-row" style={{marginBottom: 14}}>
+      <div className="adhan-row adhan-default-row">
         <select
+          className="adhan-select"
           aria-label="الأذان الافتراضي للصلوات"
           value={defaultAdhanId}
           onChange={event => handleDefaultAdhanChange(event.target.value)}
@@ -376,34 +391,18 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         </label>
       </div>
     </section>
-    <NotificationSettings
-      notify={notify}
-      prayerLocation={state.prayerLocation}
-      onPrayerLocation={prayerLocation=>onReplace({...state,prayerLocation})}
-      goals={state.goals.map(goal=>({id:String(goal.id),title:String((goal as {title?:string}).title??'')}))}
-      taskContext={{
-        tasks: state.tasks,
-        goals: state.goals,
-        taskSchedules: state.taskSchedules ?? {},
-        dayPlan: state.dayPlan,
-        prayers: state.prayers,
-      }}
-    />
-    <AppearancePanel/>
     <AdhanPlayer notify={notify}/>
     <AlarmTonePlayer notify={notify}/>
-    <InstallGuidePanel/>
-    <section className='panel'><h3><Lock size={18}/> الخصوصية</h3><p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p><p className="muted">الموقع يُستخدم على جهازك فقط لحساب أوقات الصلاة والقبلة والمساجد القريبة، ولا يُرسل إلى أي خادم. سياسة الخصوصية الكاملة: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a></p><p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p></section>
     <section className="panel">
       <h3><HardDrive size={18}/> التخزين المحلي والنسخ الاحتياطي</h3>
       <p className="muted">جميع بياناتك — مهامك، خططك، أهدافك، أورادك، محاسبتك، حفظ القرآن، الأذكار، المنبهات، والإشعارات — محفوظة محليًا بالكامل على هذا الجهاز فقط دون أي خادم خارجي.</p>
       {storageSummary && (
-        <div className="hint" style={{display: 'grid', gap: 6, marginBottom: 16}}>
+        <div className="hint settings-storage-hint">
           <div><strong>حالة الحفظ الدائم:</strong> {storageSummary.persisted === true ? 'مفعّل على الجهاز' : storageSummary.persisted === false ? 'تخزين محلي قياسي' : 'متاح محليًا'}</div>
           <div><strong>السجلات المحلية المحفوظة:</strong> {storageSummary.localKeysCount} مفتاحًا {storageSummary.usageBytes !== null ? `· المساحة المستخدمة: ${formatStorageBytes(storageSummary.usageBytes)}` : ''}</div>
         </div>
       )}
-      <div style={{display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14}}>
+      <div className="settings-backup-actions">
         <button type="button" className="primary" onClick={exportBackup}><Download size={16}/> تصدير نسخة احتياطية</button>
         <button type="button" className="soft-btn" onClick={() => backupFileRef.current?.click()}><Upload size={16}/> استيراد نسخة احتياطية</button>
         {storageSummary?.persisted !== true && (
@@ -411,9 +410,9 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         )}
         <input
           ref={backupFileRef}
+          className="hidden-file-input"
           type="file"
           accept="application/json,.json"
-          style={{display: 'none'}}
           onChange={event => {
             const file = event.target.files?.[0] ?? null;
             event.target.value = '';
@@ -426,19 +425,28 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
       ) : (
         <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف البيانات المحلية">
           <p className="small">هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
-          <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+          <div className="settings-confirm-actions">
             <button type="button" className="outline-danger" onClick={reset}>تأكيد الحذف النهائي</button>
             <button type="button" className="soft-btn" onClick={() => setConfirmReset(false)}>إلغاء</button>
           </div>
         </div>
       )}
     </section>
+    <InstallGuidePanel/>
+    <details className="panel settings-collapsible">
+      <summary><Lock size={18}/> الخصوصية ومصادر المحتوى</summary>
+      <div className="settings-collapsible-body">
+        <p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p>
+        <p className="muted">الموقع يُستخدم على جهازك فقط لحساب أوقات الصلاة والقبلة والمساجد القريبة، ولا يُرسل إلى أي خادم. سياسة الخصوصية الكاملة: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a></p>
+        <p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p>
+      </div>
+    </details>
 
     {/* الشاشة التشخيصية: long-press على رقم الإصدار (أو التقليدي، سأضيفه) → زر على الجهاز */}
     {showDiagnostics && <AudioDiagnostics />}
 
-    <div className="hint" style={{textAlign:'center', marginTop: 18}}>
-      <span ref={versionRef} className="muted small" style={{userSelect: 'none'}}>
+    <div className="hint settings-version-bar">
+      <span ref={versionRef} className="muted small">
         الربانيون · إصدار Android 1.0.1
       </span>
     </div>

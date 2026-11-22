@@ -1,110 +1,845 @@
-.strong-goals{max-width:none}
-.strong-goals-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
-.strong-goals-main,.strong-goals-aside{min-width:0}
-.strong-goals-aside .goal-period-grid{grid-template-columns:1fr}
-.strong-goals-aside .goal-period-section{margin:0}
-.goal-period-section{margin:0 0 28px}
-.goal-period-heading{margin-bottom:14px}
-.goal-period-heading h2{font-size:22px;line-height:1.5;color:var(--color-ink);margin:4px 0}
-.goal-period-heading p{font-size:13px;color:var(--color-muted);margin:0;line-height:1.8}
-.goal-period-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.goal-period-card{--period-accent:#244638;--period-tint:#dce5dc;--period-border:#c5d4c7;min-width:0;background:linear-gradient(180deg,var(--period-tint),#f2efe5 130px);border:1px solid var(--period-border);border-inline-start:4px solid var(--period-accent);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-soft)}
-.goal-period-card-weekly{--period-accent:#4e6953;--period-tint:#e2e9dc;--period-border:#cbd8c8}
-.goal-period-card-monthly{--period-accent:#786137;--period-tint:#eee9da;--period-border:#ded2ba}
-.goal-period-card-yearly{--period-accent:#718078;--period-tint:#e5ebe3;--period-border:#cbd8cd}
-.goal-period-card-head{display:flex;align-items:center;gap:12px;padding-bottom:15px;border-bottom:1px solid var(--period-border)}
-.goal-period-icon{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;background:#f2efe5;color:var(--period-accent);border:1px solid var(--period-border);border-radius:12px}
-.goal-period-title{min-width:0}
-.goal-period-card-head h3{font-size:19px;font-weight:800;line-height:1.4;color:var(--period-accent);margin:0}
-.goal-period-card-head small{display:block;color:#66766a;font-size:12px;font-weight:600;line-height:1.5;margin-top:3px}
-.goal-period-count{margin-inline-start:auto;color:var(--period-accent);background:#f2efe5;border:1px solid var(--period-border);border-radius:20px;padding:5px 11px;font-size:14px;font-weight:800;white-space:nowrap}
-.goal-period-count span{font-size:11px;font-weight:600;color:#68776c}
-.goal-period-card-list{max-height:280px;overflow:auto;scrollbar-color:#c6d5c6 transparent}
-.goal-period-empty{font-size:14px;color:#67746b;line-height:1.8;margin:15px 0 2px}
-.goal-period-item{display:flex;align-items:flex-start;gap:11px;border-bottom:1px solid #edf0ea;padding:12px 1px;cursor:pointer}
-.goal-period-item:last-child{border:0}
-.goal-period-item input{width:20px;height:20px;flex-shrink:0;margin-top:3px;accent-color:var(--period-accent)}
-.goal-period-item span{min-width:0}
-.goal-period-item strong{display:block;color:var(--color-ink);font-size:15px;line-height:1.65;font-weight:700;overflow-wrap:anywhere}
-.goal-period-item small{display:block;color:#657469;font-size:12px;line-height:1.6;margin-top:3px;overflow-wrap:anywhere}
-.goal-section-heading{display:flex;align-items:center;gap:12px;margin-bottom:19px}
-.goal-section-heading h2{margin:0;color:var(--color-ink);font-size:21px;line-height:1.5}
-.goal-section-heading p{margin:3px 0 0;color:var(--color-muted);font-size:13px;line-height:1.8}
-.goal-step-number{width:36px;height:36px;display:grid;place-items:center;flex-shrink:0;background:#e8efe8;color:#245747;border-radius:10px;font-weight:800}
-.goal-create{background:var(--color-surface)}
-.goal-create-form{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;align-items:end}
-.goal-create-form label,.goal-edit-form label{display:flex;flex-direction:column;gap:7px;color:var(--color-body);font-weight:700;font-size:13px}
-.goal-create-form label:nth-child(2){grid-column:1/-1;grid-row:2}
-.goal-create-form button{justify-self:start}
-.goal-list-heading{margin:30px 0 16px}
-.goal-empty{display:grid;justify-items:center;gap:8px;background:var(--color-surface);border:1px dashed var(--color-border-strong);border-radius:14px;padding:30px;color:var(--color-primary);text-align:center}
-.goal-empty p{font-size:13px;color:var(--color-muted);margin:0}
-.goal-cards{display:grid;gap:18px;margin-bottom:20px}
-.goal-search{display:flex;align-items:center;gap:10px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:5px 12px;margin-bottom:16px;color:var(--color-primary)}
-.goal-search input{flex:1;min-width:0;border:0!important;box-shadow:none!important;background:transparent!important}
-.goal-search span{font-size:12px;color:var(--color-muted);white-space:nowrap}
-.goal-plan-card{background:var(--color-surface);border:1px solid var(--color-border);border-inline-start:4px solid #a58b5e;border-radius:16px;padding:17px 20px;box-shadow:var(--shadow-soft)}
-.goal-plan-card.is-expanded{border-inline-start-color:var(--color-primary)}
-.goal-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
-.goal-plan-identity{min-width:0}
-.goal-plan-head h3{font-size:22px;line-height:1.45;color:var(--color-ink);margin:5px 0}
-.goal-plan-head p{color:var(--color-body);line-height:1.8;margin:0;font-size:14px}
-.goal-plan-head p strong{color:var(--color-primary)}
-.goal-summary-count{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:#7b683d;background:#f8f3e7;border-radius:20px;padding:4px 10px}
-.goal-head-actions{display:flex;align-items:center;gap:5px;flex-shrink:0}
-.goal-head-actions .soft-btn{font-size:12px}
-.goal-expand-btn{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.goal-plan-card.is-expanded .goal-expand-btn svg{transform:rotate(180deg)}
-.goal-details{margin-top:16px;border-top:1px solid var(--color-border);padding-top:15px}
-.goal-detail-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
-.goal-meta{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--color-border);padding:14px 0;margin-bottom:14px}
-.goal-meta span{display:inline-flex;align-items:center;gap:6px;background:#f4f6f1;color:#506a56;border-radius:20px;padding:5px 11px;font-size:12px}
-.goal-meta span:last-child{background:#f4efdf;color:#6f5a2d}
-.goal-plan-body{background:#F2EFE5;border:1px solid #e5ece2;border-radius:12px;padding:14px;margin-top:14px}
-.goal-plan-body h4{color:var(--color-primary);font-size:16px;margin:0 0 8px}
-.goal-action-row{display:flex;align-items:center;gap:10px;min-height:52px;padding:7px 0;border-bottom:1px solid #edf0ea}
-.goal-action-row label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;color:var(--color-ink);font-weight:600;line-height:1.6}
-.goal-action-row label span{overflow-wrap:anywhere}
-.goal-action-row input{accent-color:#245747;width:19px;height:19px;flex-shrink:0}
-.goal-period-badge{font-size:11px;color:#5f735d;background:#edf3eb;border-radius:20px;padding:4px 10px;white-space:nowrap}
-.goal-add-step{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px}
-.goal-add-step input{flex:1;min-width:180px}
-.goal-add-step select{min-width:115px}
-.goal-add-step button{display:flex;align-items:center;gap:5px;white-space:nowrap}
-.goal-step-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;background:#F2EFE5;border-radius:8px}
-.goal-step-edit input{flex:1;min-width:160px}
-.goal-step-edit select{min-width:110px}
-.goal-custom-date{display:flex;align-items:center;gap:8px;color:var(--color-ink,#244638);font-size:13px}.goal-custom-date input{min-width:150px}.goal-period-card-custom{--period-accent:#786137;--period-tint:#eee9da;--period-border:#ded2ba}
-.goal-step-history{padding:5px 29px 9px;color:#5e735f;font-size:12px}
-.goal-step-history summary{cursor:pointer;width:fit-content}
-.goal-step-history ul{margin:7px 0;padding-inline-start:21px;line-height:1.9}
-.goal-edit-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#F2EFE5;padding:16px;border-radius:10px;margin-top:15px}
-.goal-edit-form label:nth-child(2){grid-column:1/-1;grid-row:2}
-.goal-edit-form>div{display:flex;gap:8px;align-items:end}
-.goal-history{background:#F8F6EF;border:1px solid var(--color-border);border-radius:18px;padding:24px;margin:8px 0 20px;box-shadow:var(--shadow-soft)}
-.goal-history-heading{display:flex;align-items:center;gap:13px}
-.goal-history-icon{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;background:#e8f0e8;color:var(--color-primary);border-radius:12px}
-.goal-history-heading h2{margin:0;color:var(--color-ink);font-size:22px}
-.goal-history-heading p{margin:3px 0 0;color:var(--color-muted);font-size:13px;line-height:1.7}
-.goal-history-total{margin-inline-start:auto;background:#eef4ec;color:var(--color-primary);border-radius:20px;padding:6px 12px;font-weight:800;font-size:13px;white-space:nowrap}
-.goal-history-filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
-.goal-history-filters button{border:1px solid var(--color-border);background:#f8faf7;color:var(--color-body);border-radius:20px;padding:7px 15px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.goal-history-filters button.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
-.goal-history-period-picker{display:flex;align-items:end;gap:12px;flex-wrap:wrap;background:#F2EFE5;border:1px solid #e5ece2;border-radius:12px;padding:12px 14px;margin-bottom:16px}
-.goal-history-period-picker label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;color:var(--color-ink)}
-.goal-history-period-picker input,.goal-history-period-picker select{min-height:40px;min-width:150px;border:1px solid var(--color-border);border-radius:8px;background:#F8F6EF;color:var(--color-ink);padding:5px 9px;font:inherit}
-.goal-history-selected{margin-inline-start:auto;align-self:center;color:var(--color-primary);font-size:14px;line-height:1.6}
-.goal-history-empty{color:var(--color-muted);font-size:14px;background:#f8faf7;padding:18px;border-radius:10px;line-height:1.8}
-.goal-history-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.goal-history-list li{display:flex;align-items:flex-start;gap:11px;background:#f8faf7;border:1px solid #e9eee6;border-radius:10px;padding:11px 14px}
-.goal-history-list li>svg{color:var(--color-primary);flex-shrink:0;margin-top:3px}
-.goal-history-list li>div{min-width:0;flex:1}
-.goal-history-list strong{display:block;color:var(--color-ink);font-size:15px;line-height:1.6;overflow-wrap:anywhere}
-.goal-history-list small{display:block;color:var(--color-muted);font-size:12px;line-height:1.5;margin-top:2px}
-.goal-history-list li>span{font-size:12px;font-weight:700;color:#66745d;white-space:nowrap}
-.goal-history-more{margin-top:14px}
-.goal-history-note{color:var(--color-muted);font-size:12px;line-height:1.7;margin:15px 0 0}
-@media(max-width:1100px){.strong-goals-layout{grid-template-columns:1fr}.strong-goals-aside .goal-period-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:750px){.goal-period-grid{grid-template-columns:1fr}.goal-period-card{padding:15px}.goal-create-form,.goal-edit-form{grid-template-columns:1fr}.goal-create-form label:nth-child(2),.goal-edit-form label:nth-child(2){grid-column:auto;grid-row:auto}.goal-plan-card{padding:18px 16px}.goal-plan-head{flex-wrap:wrap}.goal-head-actions{width:100%}.goal-add-step>*{flex:1}.goal-add-step button{justify-content:center}.goal-meta{gap:7px}.goal-meta span{font-size:11px}}
-@media(max-width:750px){.strong-goals-aside .goal-period-grid{grid-template-columns:1fr}.goal-plan-head{align-items:stretch}.goal-head-actions{justify-content:flex-start}.goal-search span{display:none}}
-@media(max-width:750px){.goal-history{padding:18px 15px}.goal-history-heading{flex-wrap:wrap}.goal-history-total{margin-inline-start:0}.goal-history-list li{flex-wrap:wrap}.goal-history-list li>span{width:100%;padding-inline-start:30px}}
+/* ===== المؤمن القوي — تصميم متناسق للهاتف ===== */
+#root .app .strong-goals {
+  max-width: none;
+}
+
+#root .app main[data-section] .strong-goals .soft-btn {
+  background: #edf2f6;
+  color: #233b6b;
+  border: 1px solid #c9d5e4;
+  border-radius: 10px;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+#root .app main[data-section] .strong-goals .soft-btn:hover {
+  background: #e1eaf3;
+}
+
+#root .app .strong-goals-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+#root .app .strong-goals-main,
+#root .app .strong-goals-aside {
+  min-width: 0;
+}
+
+/* عناوين الأقسام والنماذج */
+#root .app .goal-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+#root .app .goal-section-heading h2 {
+  margin: 0;
+  color: #193129;
+  font-size: 19px;
+  line-height: 1.45;
+}
+
+#root .app .goal-section-heading p {
+  margin: 3px 0 0;
+  color: #55675f;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+#root .app .goal-step-number {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: #eaf0f6;
+  border: 1px solid #cdd9e7;
+  color: #233b6b;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+#root .app .goal-list-heading {
+  margin: 22px 0 12px;
+}
+
+#root .app .goal-create {
+  background: #fffdf9;
+  border: 1px solid #d5dfd7;
+  border-radius: 16px;
+}
+
+#root .app .goal-create-form,
+#root .app .goal-edit-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+#root .app .goal-create-form label,
+#root .app .goal-edit-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #4f625a;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+#root .app .goal-create-form input,
+#root .app .goal-create-form textarea,
+#root .app .goal-edit-form input,
+#root .app .goal-edit-form textarea,
+#root .app .goal-add-step input,
+#root .app .goal-add-step select,
+#root .app .goal-step-edit input,
+#root .app .goal-step-edit select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #c8d5cd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #193129;
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+#root .app .goal-create-form textarea,
+#root .app .goal-edit-form textarea {
+  min-height: 76px;
+}
+
+#root .app .goal-create-form button.primary {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* البحث والحالة الفارغة */
+#root .app .goal-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  background: #fffdf9;
+  border: 1px solid #d5dfd7;
+  border-radius: 12px;
+  padding: 4px 12px;
+  margin-bottom: 14px;
+  color: #233b6b;
+}
+
+#root .app .goal-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+#root .app .goal-search span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5d6f67;
+  white-space: nowrap;
+}
+
+#root .app .goal-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  background: #fffdf9;
+  border: 1px dashed #c8d5cd;
+  border-radius: 16px;
+  padding: 26px 18px;
+  color: #233b6b;
+  text-align: center;
+}
+
+#root .app .goal-empty p {
+  font-size: 13px;
+  color: #55675f;
+  margin: 0;
+}
+
+/* بطاقات الأهداف */
+#root .app .goal-cards {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+#root .app .goal-plan-card {
+  min-width: 0;
+  background: #fffdf9;
+  border: 1px solid #d5dfd7;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(24, 56, 46, .05);
+}
+
+#root .app .goal-plan-card.is-expanded {
+  border-color: #9cb2c9;
+  box-shadow: 0 4px 14px rgba(35, 59, 107, .08);
+}
+
+#root .app .goal-plan-head {
+  display: grid;
+  gap: 12px;
+}
+
+#root .app .goal-plan-identity {
+  min-width: 0;
+}
+
+#root .app .goal-plan-head h3 {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #193129;
+  margin: 4px 0 6px;
+}
+
+#root .app .goal-plan-head p {
+  color: #4f625a;
+  line-height: 1.75;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+#root .app .goal-plan-head p strong {
+  color: #233b6b;
+}
+
+#root .app .goal-summary-count {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #233b6b;
+}
+
+#root .app .goal-head-actions {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+#root .app .goal-expand-btn {
+  width: 100%;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13.5px;
+}
+
+#root .app .goal-plan-card.is-expanded .goal-expand-btn svg {
+  transform: rotate(180deg);
+}
+
+#root .app .goal-details {
+  margin-top: 14px;
+  border-top: 1px solid #e6ebe6;
+  padding-top: 14px;
+}
+
+#root .app .goal-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#root .app .goal-detail-actions .soft-btn {
+  flex: 1;
+  justify-content: center;
+}
+
+#root .app .goal-detail-actions .icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+}
+
+#root .app .goal-delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#root .app .goal-edit-form {
+  background: #f5f7f4;
+  border: 1px solid #dce5de;
+  padding: 14px;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+#root .app .goal-edit-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#root .app .goal-edit-actions button {
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* بيانات الهدف بدون حبوب دائرية */
+#root .app .goal-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  border-bottom: 1px solid #e7ece7;
+  padding: 12px 0;
+  margin-bottom: 12px;
+}
+
+#root .app .goal-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #55675f;
+}
+
+#root .app .goal-meta span + span::before {
+  content: '·';
+  margin-inline-end: 6px;
+  color: #8f9e95;
+}
+
+#root .app .goal-meta span:last-child {
+  color: #233b6b;
+  font-weight: 700;
+}
+
+/* خطة المتابعة والخطوات */
+#root .app .goal-plan-body {
+  background: #f6f8f5;
+  border: 1px solid #dfe7e0;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+#root .app .goal-plan-body h4 {
+  color: #193129;
+  font-size: 15.5px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+#root .app .goal-step-wrap {
+  padding: 10px 0;
+  border-bottom: 1px solid #e4eae4;
+}
+
+#root .app .goal-step-wrap:last-of-type {
+  border-bottom: 0;
+}
+
+#root .app .goal-action-row {
+  display: grid;
+  gap: 4px;
+}
+
+#root .app .goal-step-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#root .app .goal-step-top label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 0;
+  min-width: 0;
+  cursor: pointer;
+  color: #193129;
+  font-weight: 700;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+#root .app .goal-step-top label span {
+  overflow-wrap: anywhere;
+}
+
+#root .app .goal-step-top input[type=checkbox] {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #233b6b;
+}
+
+#root .app .goal-step-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+#root .app .goal-step-actions .icon-btn {
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 9px;
+}
+
+#root .app .goal-period-badge {
+  display: inline-block;
+  padding-inline-start: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5d6f67;
+}
+
+#root .app .goal-step-history {
+  padding: 6px 30px 4px;
+  color: #55675f;
+  font-size: 12px;
+}
+
+#root .app .goal-step-history summary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: 700;
+}
+
+#root .app .goal-step-history ul {
+  margin: 6px 0;
+  padding-inline-start: 20px;
+  line-height: 1.8;
+}
+
+#root .app .goal-add-step,
+#root .app .goal-step-edit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#root .app .goal-add-step > input:first-child,
+#root .app .goal-step-edit > input:first-child {
+  grid-column: 1 / -1;
+}
+
+#root .app .goal-add-step .goal-custom-date,
+#root .app .goal-step-edit > label {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f625a;
+}
+
+#root .app .goal-add-step button {
+  min-height: 44px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+#root .app .goal-step-edit {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #d5dfd7;
+  border-radius: 12px;
+}
+
+#root .app .goal-step-edit-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#root .app .goal-step-edit-actions button {
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* ===== بطاقات الخطوات حسب الفترة (GoalPeriodCards) ===== */
+#root .app .goal-period-section {
+  margin: 0;
+}
+
+#root .app .goal-period-heading {
+  margin-bottom: 12px;
+}
+
+#root .app .goal-period-heading h2 {
+  font-size: 19px;
+  line-height: 1.45;
+  color: #193129;
+  margin: 4px 0;
+}
+
+#root .app .goal-period-heading p {
+  font-size: 13px;
+  color: #55675f;
+  margin: 0;
+  line-height: 1.7;
+}
+
+#root .app .goal-period-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+#root .app .goal-period-card {
+  --period-accent: #1e4b3b;
+  --period-tint: #edf3ef;
+  --period-border: #d5dfd7;
+  min-width: 0;
+  background: #fffdf9;
+  border: 1px solid var(--period-border);
+  border-radius: 16px;
+  padding: 15px;
+  box-shadow: 0 2px 10px rgba(24, 56, 46, .05);
+}
+
+#root .app .goal-period-card-weekly {
+  --period-accent: #2c5b4a;
+  --period-tint: #eaf2ed;
+}
+
+#root .app .goal-period-card-monthly {
+  --period-accent: #7b602b;
+  --period-tint: #f6f1e4;
+}
+
+#root .app .goal-period-card-yearly {
+  --period-accent: #233b6b;
+  --period-tint: #edf1f7;
+}
+
+#root .app .goal-period-card-custom {
+  --period-accent: #7b602b;
+  --period-tint: #f6f1e4;
+}
+
+#root .app .goal-period-card-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7ece7;
+}
+
+#root .app .goal-period-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--period-tint);
+  color: var(--period-accent);
+  border-radius: 11px;
+}
+
+#root .app .goal-period-title {
+  min-width: 0;
+  flex: 1;
+}
+
+#root .app .goal-period-card-head h3 {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #193129;
+  margin: 0;
+}
+
+#root .app .goal-period-card-head small {
+  display: block;
+  color: #5d6f67;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+#root .app .goal-period-count {
+  margin-inline-start: auto;
+  color: var(--period-accent);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#root .app .goal-period-count span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #60726a;
+}
+
+#root .app .goal-period-card-list {
+  max-height: 280px;
+  overflow: auto;
+  scrollbar-color: #c6d5c6 transparent;
+}
+
+#root .app .goal-period-empty {
+  font-size: 13.5px;
+  color: #5d6f67;
+  line-height: 1.75;
+  margin: 12px 0 2px;
+}
+
+#root .app .goal-period-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-bottom: 1px solid #ecf0ec;
+  padding: 11px 0;
+  cursor: pointer;
+}
+
+#root .app .goal-period-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+#root .app .goal-period-item input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--period-accent);
+}
+
+#root .app .goal-period-item span {
+  min-width: 0;
+}
+
+#root .app .goal-period-item strong {
+  display: block;
+  color: #193129;
+  font-size: 14.5px;
+  line-height: 1.55;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+#root .app .goal-period-item small {
+  display: block;
+  color: #5d6f67;
+  font-size: 12px;
+  line-height: 1.55;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* ===== سجل الإنجاز (GoalHistory) ===== */
+#root .app .goal-history {
+  background: #fffdf9;
+  border: 1px solid #d5dfd7;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0 16px;
+  box-shadow: 0 2px 10px rgba(24, 56, 46, .05);
+}
+
+#root .app .goal-history-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+#root .app .goal-history-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #edf1f7;
+  color: #233b6b;
+  border-radius: 11px;
+}
+
+#root .app .goal-history-heading h2 {
+  margin: 0;
+  color: #193129;
+  font-size: 18px;
+}
+
+#root .app .goal-history-heading p {
+  margin: 2px 0 0;
+  color: #55675f;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+#root .app .goal-history-total {
+  margin-inline-start: auto;
+  color: #233b6b;
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+#root .app .goal-history-filters {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 14px 0 12px;
+}
+
+#root .app .goal-history-filters button {
+  min-height: 40px;
+  border: 1px solid #ccd7e3;
+  background: #f5f7fa;
+  color: #364964;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#root .app .goal-history-filters button.active {
+  background: #233b6b;
+  color: #ffffff;
+  border-color: #233b6b;
+}
+
+#root .app .goal-history-period-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  background: #f5f7f4;
+  border: 1px solid #dce5de;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+#root .app .goal-history-period-picker label {
+  display: grid;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4f625a;
+}
+
+#root .app .goal-history-period-picker input,
+#root .app .goal-history-period-picker select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #c8d5cd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #193129;
+  padding: 8px 11px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+#root .app .goal-history-selected {
+  color: #233b6b;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+#root .app .goal-history-empty {
+  color: #55675f;
+  font-size: 13.5px;
+  background: #f6f8f5;
+  border: 1px dashed #d5dfd7;
+  padding: 16px;
+  border-radius: 12px;
+  line-height: 1.75;
+}
+
+#root .app .goal-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+#root .app .goal-history-list li {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  background: #f6f8f5;
+  border: 1px solid #dfe7e0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+#root .app .goal-history-list li > svg {
+  color: #1e4b3b;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+#root .app .goal-history-list li > div {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+#root .app .goal-history-list strong {
+  display: block;
+  color: #193129;
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#root .app .goal-history-list small {
+  display: block;
+  color: #5d6f67;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+#root .app .goal-history-list li > span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #233b6b;
+  padding-inline-start: 29px;
+  width: 100%;
+}
+
+#root .app .goal-history-more {
+  width: 100%;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+#root .app .goal-history-note {
+  color: #5d6f67;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 12px 0 0;
+}

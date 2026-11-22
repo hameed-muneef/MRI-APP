@@ -14,13 +14,23 @@ import {BUNDLED_ADHAN_SOUNDS} from '../../sounds/adhan-catalog';
 const ALLOWED_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/aac'];
 const MAX_SIZE = 10 * 1024 * 1024;
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
-  in_app: 'داخل التطبيق',
-  system: 'إشعار النظام',
-  both: 'داخل التطبيق + إشعار النظام',
+  in_app: 'داخل التطبيق فقط',
+  system: 'إشعار على الجهاز فقط',
+  both: 'داخل التطبيق + إشعار على الجهاز',
+};
+
+const CHANNEL_DESCRIPTIONS: Record<NotificationChannel, string> = {
+  both: 'يظهر في جرس الإشعارات داخل التطبيق، ويصلك إشعار على الهاتف أو المتصفح.',
+  system: 'يصلك إشعار على الهاتف أو المتصفح خارج التطبيق، دون إضافته لجرس الإشعارات بالداخل.',
+  in_app: 'يظهر في جرس الإشعارات داخل التطبيق فقط أثناء فتحه (دون إشعار خارجي على الجهاز).',
 };
 
 export function channelLabel(channel: NotificationChannel): string {
   return CHANNEL_LABELS[channel] ?? channel;
+}
+
+export function channelDescription(channel: NotificationChannel): string {
+  return CHANNEL_DESCRIPTIONS[channel] ?? '';
 }
 
 let cloudSounds: AudioResource[] = [];

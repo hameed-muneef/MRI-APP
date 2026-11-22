@@ -39,8 +39,8 @@
   - تحديث `src/sounds/adhan-catalog.ts` و`src/notifications/sound-selection.ts` لربط كل مؤذن بملفه المستقل 1-إلى-1.
   - إضافة `listCustomAdhans()` و`saveCustomAdhanEntry()` في `src/sounds/custom-store.ts` وتحديث `src/views/AdhanPlayer.tsx` لدعم إضافة وتشغيل وحذف عدة ملفات أذان خارجية من الجهاز دون استبدال الملفات السابقة.
 - **الملفات**: `public/sounds/adhan/*.ogg`, `android/app/src/main/res/raw/adhan_*.ogg`, `src/sounds/adhan-catalog.ts`, `src/notifications/sound-selection.ts`, `src/sounds/custom-store.ts`, `src/views/AdhanPlayer.tsx`, `src/sounds/adhan-catalog.test.ts`, `tests/sound-selection.test.mjs`, `src/views/notifications/NativeAdhanPanel.tsx`.
-- **التحقق**: يتم تشغيل `npm test` و`npm run test:unit` و`tsc --noEmit` و`vite build` بعد آخر تعديل، والتحقق من تفرّد بصمات SHA-256 لجميع ملفات `.ogg` الستة.
-- **غير متحقق على جهاز**: إعادة بناء APK (`npm run build:android` + Gradle/CI) لاختبار سماع كل مؤذن في منبه النظام على هاتف أندرويد فعليًا.
+- **التحقق**: تم نقل وفحص تسجيلات الأذان الحقيقية السبعة (الملا، أحمد العمادي، الحرم المدني، الحرم المدني 2، محمد رمضان، حمد الدغريري، وتكبيرات العيد) المرفوعة من المستخدم بصيغة OGG في المجلدات المناسبة (`public/sounds/adhan/` و`android/app/src/main/res/raw/` مع إبقاء تكبيرات العيد في الويب فقط)، والتأكد من تفرّد بصمات SHA-256 ومطابقتها بين الويب والأندرويد، وتنظيف الملفات المؤقتة من `src/sounds/`؛ واختبار `npm run test:unit` (121/121 ناجحة بما فيها `adhan-catalog.test.ts`)، و`npm run lint` (`tsc --noEmit` ناجح)، و`npm run build:android` ناجح ومزامنة Capacitor مكتملة.
+- **غير متحقق على جهاز**: إعادة بناء APK (عبر Gradle/CI) لاختبار سماع كل مؤذن في منبه النظام على هاتف أندرويد فعليًا.
 
 ### MOBILE-WEBVIEW-AUDIO-PATH-SAFETY — معالجة مسارات الصوت والتحميل الآمن في WebView ومشغل الخلفية (2026-11-22)
 - **المشكلة**:

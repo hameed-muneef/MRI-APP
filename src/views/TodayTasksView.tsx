@@ -11,7 +11,7 @@ import {
   isBrowserNotificationSupported,
   requestBrowserPermission,
 } from '../notifications/delivery';
-import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
+import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
 import {loadPrefs, savePrefs} from '../notifications/prefs-store';
 import {
   DEFAULT_NOTIFICATION_PREFERENCE,
@@ -20,18 +20,18 @@ import {
   type NotificationPreference,
   type TaskNotificationSettings,
 } from '../notifications/types';
-import {channelLabel} from './notifications/SoundPanel';
+import {channelDescription, channelLabel} from './notifications/SoundPanel';
 import {useBackHandler} from '../navigation/useBackHandler';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
 
 const LEAD_OPTIONS = [
-  {value: 0, label: 'عند الموعد فقط (0 د)'},
-  {value: 5, label: 'قبل 5 دقائق'},
-  {value: 10, label: 'قبل 10 دقائق'},
-  {value: 15, label: 'قبل 15 دقيقة'},
-  {value: 30, label: 'قبل 30 دقيقة'},
-  {value: 60, label: 'قبل ساعة (60 د)'},
+  {value: 0, label: 'عند الموعد', fullLabel: 'عند الموعد فقط (0 د)'},
+  {value: 5, label: 'قبل 5 د', fullLabel: 'قبل 5 دقائق'},
+  {value: 10, label: 'قبل 10 د', fullLabel: 'قبل 10 دقائق'},
+  {value: 15, label: 'قبل 15 د', fullLabel: 'قبل 15 دقيقة'},
+  {value: 30, label: 'قبل 30 د', fullLabel: 'قبل 30 دقيقة'},
+  {value: 60, label: 'قبل ساعة', fullLabel: 'قبل ساعة (60 د)'},
 ];
 
 const dateAfter = (date: string, days: number) => {
@@ -130,7 +130,7 @@ export default function TodayTasksView({
       setPrefs(merged);
       setPrefsDirty(false);
       notifyNativePrefsChanged();
-      const msg = 'حُفظت إعدادات تنبيهات المهام المجدولة';
+      const msg = 'حُفظت إعدادات تذكير المهام المجدولة';
       setNotice(msg);
       notify?.(msg);
     } finally {
@@ -142,7 +142,7 @@ export default function TodayTasksView({
     const next = await requestBrowserPermission();
     setPermission(next);
     if (next === 'granted') {
-      const msg = 'تم تفعيل إشعارات الدفع (Push) للمهام المجدولة';
+      const msg = 'تم تفعيل إشعارات المتصفح للمهام المجدولة';
       setNotice(msg);
       notify?.(msg);
     } else if (next === 'denied') {
@@ -378,13 +378,15 @@ export default function TodayTasksView({
     }
   };
 
+  const nativeApp = isNativePlatform();
+  const browserSupported = !nativeApp && isBrowserNotificationSupported();
   const globalPaused = !prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false;
   const activeSummary =
     globalPaused || !taskSettings.enabled
-      ? 'تنبيهات المهام موقوفة حاليًا'
+      ? 'تذكير المهام موقوف حاليًا'
       : taskSettings.remind_before_minutes > 0
-        ? `تنبيه دفع قبل الموعد بـ ${taskSettings.remind_before_minutes} دقيقة${taskSettings.notify_at_time ? ' وعند الموعد' : ''}`
-        : 'تنبيه دفع عند حلول موعد المهمة';
+        ? `تذكير قبل الموعد بـ ${taskSettings.remind_before_minutes} دقيقة${taskSettings.notify_at_time ? ' وعند الموعد' : ''}`
+        : 'تذكير عند حلول موعد المهمة';
 
   return (
     <div className="today-tasks-view">
@@ -395,22 +397,22 @@ export default function TodayTasksView({
         <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
       </div>
 
-      <section className="panel task-notif-banner" aria-label="إدارة تنبيهات الدفع للمهام المجدولة">
+      <section className="panel task-notif-banner" aria-label="إعدادات تذكير المهام المجدولة">
         <div className="task-notif-banner-head">
           <div className="task-notif-banner-status">
             <BellRing size={19}/>
             <div>
-              <strong>تنبيهات اقتراب المهام المجدولة (Push)</strong>
+              <strong>تذكير المهام المجدولة</strong>
               <p className="muted small">
                 {activeSummary}
-                {isBrowserNotificationSupported() && permission !== 'granted' && ' · إذن المتصفح غير مفعّل بعد'}
+                {browserSupported && permission !== 'granted' && ' · إشعارات المتصفح غير مفعّلة'}
               </p>
             </div>
           </div>
           <div className="task-notif-banner-actions">
-            {isBrowserNotificationSupported() && permission === 'default' && (
+            {browserSupported && permission === 'default' && (
               <button type="button" className="primary" onClick={() => void handleEnablePush()}>
-                <Bell size={15}/> تفعيل إشعارات الدفع
+                <Bell size={15}/> تفعيل إشعارات المتصفح
               </button>
             )}
             <button
@@ -419,7 +421,7 @@ export default function TodayTasksView({
               aria-expanded={configOpen}
               onClick={() => setConfigOpen(open => !open)}
             >
-              <SlidersHorizontal size={15}/> {configOpen ? 'إخفاء التخصيص' : 'تخصيص التنبيهات'}
+              <SlidersHorizontal size={15}/> {configOpen ? 'إخفاء الإعدادات' : 'تخصيص التنبيهات'}
             </button>
             {onOpenNotificationSettings && (
               <button type="button" className="soft-btn" onClick={onOpenNotificationSettings}>
@@ -431,8 +433,13 @@ export default function TodayTasksView({
 
         {configOpen && (
           <div className="task-notif-quick-config">
-            {isBrowserNotificationSupported() && permission === 'denied' && (
-              <p className="muted small">إشعارات الدفع محظورة في إعدادات المتصفح؛ فعّل الإذن من رمز القفل بجانب عنوان الصفحة.</p>
+            {browserSupported && permission === 'denied' && (
+              <div className="task-perm-callout is-denied" role="note">
+                <strong>إشعارات المتصفح محظورة حاليًا</strong>
+                <p>
+                  ستظل التنبيهات تظهر لك داخل التطبيق أثناء استخدامه. لتصلك خارج التطبيق أيضًا، فعّل إذن الإشعارات من إعدادات الموقع (رمز القفل بجانب عنوان الصفحة) ثم أعد التحميل.
+                </p>
+              </div>
             )}
             <label className="notif-switch">
               <input
@@ -440,46 +447,44 @@ export default function TodayTasksView({
                 checked={taskSettings.enabled}
                 onChange={event => patchTaskSettings({enabled: event.target.checked})}
               />
-              تفعيل تنبيهات الدفع للمهام المجدولة
+              <span>تفعيل تذكير المهام المجدولة</span>
             </label>
             <fieldset disabled={!taskSettings.enabled} className="task-notif-quick-grid">
-              <label>
-                وقت التنبيه قبل المهمة
-                <select
-                  aria-label="وقت التنبيه الافتراضي قبل المهمة"
-                  value={LEAD_OPTIONS.some(o => o.value === taskSettings.remind_before_minutes) ? String(taskSettings.remind_before_minutes) : 'custom'}
-                  onChange={event => {
-                    if (event.target.value !== 'custom') {
-                      patchTaskSettings({remind_before_minutes: Number(event.target.value)});
-                    }
-                  }}
-                >
+              <div className="task-quick-field">
+                <span className="task-quick-label">متى يصلك التذكير قبل المهمة؟</span>
+                <div className="task-preset-chips" role="group" aria-label="اختيارات سريعة لوقت التذكير">
                   {LEAD_OPTIONS.map(opt => (
-                    <option key={opt.value} value={String(opt.value)}>{opt.label}</option>
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={taskSettings.remind_before_minutes === opt.value ? 'primary' : 'soft-btn'}
+                      aria-pressed={taskSettings.remind_before_minutes === opt.value}
+                      onClick={() => patchTaskSettings({remind_before_minutes: opt.value})}
+                    >
+                      {opt.label}
+                    </button>
                   ))}
-                  {!LEAD_OPTIONS.some(o => o.value === taskSettings.remind_before_minutes) && (
-                    <option value="custom">مخصص ({taskSettings.remind_before_minutes} د)</option>
-                  )}
-                </select>
-              </label>
-              <label>
-                أو أدخل الدقائق (0–180)
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={180}
-                  value={taskSettings.remind_before_minutes}
-                  onChange={event => {
-                    const parsed = Math.round(Number(event.target.value));
-                    patchTaskSettings({
-                      remind_before_minutes: Number.isFinite(parsed) ? Math.max(0, Math.min(180, parsed)) : 0,
-                    });
-                  }}
-                />
-              </label>
-              <label>
-                قناة التوصيل
+                </div>
+                <label className="task-custom-minutes">
+                  <span>أو أدخل الدقائق يدويًا (0–180):</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={180}
+                    aria-label="دقائق التذكير قبل المهمة (0 إلى 180)"
+                    value={taskSettings.remind_before_minutes}
+                    onChange={event => {
+                      const parsed = Math.round(Number(event.target.value));
+                      patchTaskSettings({
+                        remind_before_minutes: Number.isFinite(parsed) ? Math.max(0, Math.min(180, parsed)) : 0,
+                      });
+                    }}
+                  />
+                </label>
+              </div>
+              <label className="task-quick-field">
+                <span className="task-quick-label">طريقة وصول التنبيه</span>
                 <select
                   value={taskSettings.channel}
                   onChange={event => patchTaskSettings({channel: event.target.value as NotificationChannel})}
@@ -488,6 +493,7 @@ export default function TodayTasksView({
                     <option key={key} value={key}>{channelLabel(key)}</option>
                   ))}
                 </select>
+                <small className="task-channel-hint">{channelDescription(taskSettings.channel)}</small>
               </label>
             </fieldset>
             <label className="notif-switch">
@@ -497,7 +503,7 @@ export default function TodayTasksView({
                 checked={taskSettings.notify_at_time}
                 onChange={event => patchTaskSettings({notify_at_time: event.target.checked})}
               />
-              التنبيه أيضًا عند حلول وقت المهمة بالضبط
+              <span>إرسال تذكير إضافي عند حلول وقت المهمة بالضبط</span>
             </label>
             <label className="notif-switch">
               <input
@@ -506,7 +512,7 @@ export default function TodayTasksView({
                 checked={taskSettings.include_initial}
                 onChange={event => patchTaskSettings({include_initial: event.target.checked})}
               />
-              تضمين المواعيد المبدئية قبل التأكيد
+              <span>تذكير المهام ذات الموعد المبدئي أيضًا (قبل تأكيدها)</span>
             </label>
             <div className="task-notif-quick-save">
               <button
@@ -515,7 +521,7 @@ export default function TodayTasksView({
                 disabled={savingPrefs || !prefsDirty}
                 onClick={() => void saveTaskNotificationConfig()}
               >
-                {savingPrefs ? 'جارٍ الحفظ…' : 'حفظ التخصيص'}
+                {savingPrefs ? 'جارٍ الحفظ…' : prefsDirty ? 'حفظ التغييرات' : 'تم الحفظ'}
               </button>
             </div>
           </div>
@@ -543,87 +549,144 @@ export default function TodayTasksView({
               const itemLeadMinutes = item.id in leadDraftByTask ? leadDraftByTask[item.id] : schedule?.remindBeforeMinutes;
               const effectiveLead = itemLeadMinutes ?? taskSettings.remind_before_minutes;
               const hasSchedule = Boolean(schedule?.confirmedDate || schedule?.initialDate);
+              const showMeta = Boolean(
+                ('scheduledDate' in item && item.scheduledDate) ||
+                  schedule?.confirmedDate ||
+                  schedule?.initialDate ||
+                  hasSchedule,
+              );
               return (
-                <li key={item.id}>
-                  <div className="today-task-info">
-                    <strong>{item.title}</strong>
-                    <span className="today-task-source">
-                      {isGoal ? 'خطوة هدف' : `مهمة ${item.period === 'daily' ? 'يومية' : item.period === 'weekly' ? 'أسبوعية' : 'شهرية'}`} · المصدر: {itemSource}
-                    </span>
-                    {'scheduledDate' in item && item.scheduledDate && (
-                      <small><Clock3 size={13}/>الاستحقاق: {item.scheduledDate}</small>
-                    )}
-                    {schedule?.initialDate && (
-                      <small>الموعد المبدئي: {schedule.initialDate}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</small>
-                    )}
-                    {schedule?.confirmedDate && (
-                      <small>الموعد المؤكد: {schedule.confirmedDate}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</small>
-                    )}
-                    {hasSchedule && (
-                      <small className={itemNotifyEnabled ? 'task-notify-meta active' : 'task-notify-meta muted'}>
-                        {itemNotifyEnabled ? <Bell size={13}/> : <BellOff size={13}/>}
-                        {!itemNotifyEnabled
-                          ? 'التنبيه موقوف لهذه المهمة'
-                          : effectiveLead > 0
-                            ? `تنبيه دفع قبل الموعد بـ ${effectiveLead} د`
-                            : 'تنبيه دفع عند الموعد'}
-                      </small>
-                    )}
-                  </div>
-                  <div className="today-task-actions">
-                    <button className="soft-btn" onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : complete(item as Task))}>
-                      <CheckCircle2 size={15}/>إنجاز
-                    </button>
-                    <label>
-                      اليوم المقترح
-                      <input
-                        type="date"
-                        aria-label={`اليوم المقترح لـ ${item.title}`}
-                        min={now}
-                        value={dateByTask[item.id] ?? schedule?.initialDate ?? schedule?.confirmedDate ?? (filter === 'tomorrow' ? tomorrow : now)}
-                        onChange={event => setDateByTask(current => ({...current, [item.id]: event.target.value}))}
-                      />
-                    </label>
-                    <label>
-                      الوقت
-                      <TaskTimeSelect
-                        value={timeByTask[item.id] ?? (timeOfTask(taskSchedules[item.id]) || currentTime())}
-                        label={`الوقت المختار لـ ${item.title}`}
-                        onChange={value => setTimeByTask(current => ({...current, [item.id]: value}))}
-                      />
-                    </label>
-                    <label>
-                      تنبيه قبل الموعد
-                      <select
-                        aria-label={`تنبيه قبل الموعد لـ ${item.title}`}
-                        value={itemLeadMinutes === undefined ? '' : String(itemLeadMinutes)}
-                        onChange={event => changeItemLeadMinutes(item.id, item.title, event.target.value)}
-                      >
-                        <option value="">الافتراضي ({taskSettings.remind_before_minutes} د)</option>
-                        {LEAD_OPTIONS.map(opt => (
-                          <option key={opt.value} value={String(opt.value)}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </label>
+                <li key={item.id} className="today-task-card">
+                  <div className="today-task-head">
+                    <div className="today-task-info">
+                      <strong className="today-task-title">{item.title}</strong>
+                      <span className="today-task-source">
+                        <span>{isGoal ? 'خطوة هدف' : `مهمة ${item.period === 'daily' ? 'يومية' : item.period === 'weekly' ? 'أسبوعية' : 'شهرية'}`}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{itemSource}</span>
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      className="soft-btn"
-                      aria-pressed={itemNotifyEnabled}
-                      title={itemNotifyEnabled ? 'إيقاف التنبيه لهذه المهمة' : 'تفعيل التنبيه لهذه المهمة'}
-                      onClick={() => toggleItemNotify(item.id, item.title)}
+                      className="today-task-complete-btn"
+                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : complete(item as Task))}
                     >
-                      {itemNotifyEnabled ? <Bell size={15}/> : <BellOff size={15}/>}
-                      {itemNotifyEnabled ? 'التنبيه مفعّل' : 'التنبيه موقوف'}
+                      <CheckCircle2 size={16} aria-hidden="true"/>
+                      <span>إنجاز</span>
                     </button>
-                    <button className="soft-btn" onClick={() => saveInitial(item.id, item.title, itemSource)}>حفظ مبدئي</button>
-                    <button className="primary" onClick={() => confirmSchedule(item.id, item.title, itemSource)}>تأكيد الجدولة</button>
+                  </div>
+
+                  {showMeta && (
+                    <div className="today-task-meta">
+                      {'scheduledDate' in item && item.scheduledDate && (
+                        <span className="today-task-meta-item">
+                          <Clock3 size={13} aria-hidden="true"/>
+                          <span>الاستحقاق: {item.scheduledDate}</span>
+                        </span>
+                      )}
+                      {schedule?.confirmedDate && (
+                        <span className="today-task-meta-item is-confirmed">
+                          <CalendarClock size={13} aria-hidden="true"/>
+                          <span>مؤكد: {schedule.confirmedDate}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</span>
+                        </span>
+                      )}
+                      {!schedule?.confirmedDate && schedule?.initialDate && (
+                        <span className="today-task-meta-item">
+                          <CalendarClock size={13} aria-hidden="true"/>
+                          <span>مبدئي: {schedule.initialDate}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</span>
+                        </span>
+                      )}
+                      {hasSchedule && (
+                        <span className={`today-task-meta-item task-notify-meta ${itemNotifyEnabled ? 'active' : 'muted'}`}>
+                          {itemNotifyEnabled ? <Bell size={13} aria-hidden="true"/> : <BellOff size={13} aria-hidden="true"/>}
+                          <span>
+                            {!itemNotifyEnabled
+                              ? 'التنبيه موقوف'
+                              : effectiveLead > 0
+                                ? `تنبيه قبل ${effectiveLead} د`
+                                : 'تنبيه عند الموعد'}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="today-task-schedule">
+                    <div className="today-task-fields">
+                      <label className="today-task-field today-task-field-date">
+                        <span>اليوم المقترح</span>
+                        <input
+                          type="date"
+                          aria-label={`اليوم المقترح لـ ${item.title}`}
+                          min={now}
+                          value={dateByTask[item.id] ?? schedule?.initialDate ?? schedule?.confirmedDate ?? (filter === 'tomorrow' ? tomorrow : now)}
+                          onChange={event => setDateByTask(current => ({...current, [item.id]: event.target.value}))}
+                        />
+                      </label>
+
+                      <label className="today-task-field today-task-field-time">
+                        <span>الوقت</span>
+                        <TaskTimeSelect
+                          value={timeByTask[item.id] ?? (timeOfTask(taskSchedules[item.id]) || currentTime())}
+                          label={`الوقت المختار لـ ${item.title}`}
+                          onChange={value => setTimeByTask(current => ({...current, [item.id]: value}))}
+                        />
+                      </label>
+
+                      <div className="today-task-alert-row">
+                        <label className="today-task-field today-task-field-lead">
+                          <span>تنبيه قبل الموعد</span>
+                          <select
+                            aria-label={`تنبيه قبل الموعد لـ ${item.title}`}
+                            value={itemLeadMinutes === undefined ? '' : String(itemLeadMinutes)}
+                            onChange={event => changeItemLeadMinutes(item.id, item.title, event.target.value)}
+                          >
+                            <option value="">الافتراضي ({taskSettings.remind_before_minutes} د)</option>
+                            {LEAD_OPTIONS.map(opt => (
+                              <option key={opt.value} value={String(opt.value)}>{opt.fullLabel}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <button
+                          type="button"
+                          className={`today-task-notify-btn${itemNotifyEnabled ? ' is-on' : ''}`}
+                          aria-pressed={itemNotifyEnabled}
+                          aria-label={itemNotifyEnabled ? `إيقاف التنبيه لـ ${item.title}` : `تفعيل التنبيه لـ ${item.title}`}
+                          title={itemNotifyEnabled ? 'إيقاف التنبيه لهذه المهمة' : 'تفعيل التنبيه لهذه المهمة'}
+                          onClick={() => toggleItemNotify(item.id, item.title)}
+                        >
+                          {itemNotifyEnabled ? <Bell size={16} aria-hidden="true"/> : <BellOff size={16} aria-hidden="true"/>}
+                          <span>{itemNotifyEnabled ? 'مفعّل' : 'موقوف'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="today-task-footer">
+                      <button
+                        type="button"
+                        className="today-task-draft-btn"
+                        onClick={() => saveInitial(item.id, item.title, itemSource)}
+                      >
+                        حفظ مبدئي
+                      </button>
+                      <button
+                        type="button"
+                        className="primary today-task-confirm-btn"
+                        onClick={() => confirmSchedule(item.id, item.title, itemSource)}
+                      >
+                        تأكيد الجدولة
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
             })}
           </ul>
         )}
-        <button className="soft-btn" onClick={onBack}>العودة إلى يومي مع الله</button>
+        <div className="today-tasks-back">
+          <button type="button" className="soft-btn" onClick={onBack}>العودة إلى يومي مع الله</button>
+        </div>
       </section>
     </div>
   );

@@ -127,8 +127,8 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
       )}
 
       {stage === 'locating' && !coords && (
-        <section className="panel" role="status">
-          <p className="muted" style={{ margin: 0 }}>جارٍ تحديد موقعك من الجهاز…</p>
+        <section className="panel mosque-locating-card" role="status">
+          <p className="muted">جارٍ تحديد موقعك من الجهاز…</p>
         </section>
       )}
 

@@ -302,7 +302,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       {confirmClear&&(
         <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف جميع الإشعارات">
           <p className="small">سيتم حذف جميع الإشعارات من هذا الجهاز. متابعة؟</p>
-          <div style={{display:'flex',gap:8}}>
+          <div className="notif-confirm-actions">
             <button type="button" className="soft-btn danger" disabled={busy} onClick={()=>void clearAll()}>تأكيد الحذف</button>
             <button type="button" className="soft-btn" onClick={()=>setConfirmClear(false)}>إلغاء</button>
           </div>

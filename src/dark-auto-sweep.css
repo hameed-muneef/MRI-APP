@@ -521,104 +521,233 @@
 [data-theme="dark"] .resource-dialog{color:var(--dark-body)}
 [data-theme="dark"] .resource-dialog small{color:var(--dark-body)}
 
-/* Day planner dark-mode polish: separate the timeline layers without
-   sacrificing the calm palette or reducing text contrast. */
-[data-theme="dark"] #root .app .day-planner,
-[data-theme="dark"] #root .app .day-plan-content{
-  background:linear-gradient(160deg,color-mix(in srgb,var(--section-accent,#527F8B) 9%,var(--dark-surface-raised)) 0%,var(--dark-surface) 62%,var(--dark-surface-sunken) 100%);
-  border-color:color-mix(in srgb,var(--section-accent,#527F8B) 34%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .day-page-header,
-[data-theme="dark"] #root .app .day-planner .day-header-date{
-  background:linear-gradient(135deg,color-mix(in srgb,var(--section-accent,#527F8B) 22%,var(--dark-surface-raised)),var(--dark-surface));
-  border-color:color-mix(in srgb,var(--section-accent,#527F8B) 42%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .day-view-switch{
-  background:color-mix(in srgb,var(--section-accent,#527F8B) 10%,var(--dark-surface-sunken));
-  border-color:var(--dark-line-card);
-}
-[data-theme="dark"] #root .app .day-planner .day-view-switch button.active{
-  background:color-mix(in srgb,var(--section-accent,#527F8B) 32%,var(--dark-surface-raised));
-  color:var(--dark-body);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--section-accent,#527F8B) 60%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .slot-body,
-[data-theme="dark"] #root .app .day-planner .slot-activity,
-[data-theme="dark"] #root .app .day-plan-content .planned-activity-card{
-  background:linear-gradient(145deg,color-mix(in srgb,var(--section-accent,#527F8B) 8%,var(--dark-surface-raised)),var(--dark-surface-raised));
-  border-color:color-mix(in srgb,var(--section-accent,#527F8B) 28%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .prayer-slot .slot-body,
-[data-theme="dark"] #root .app .day-plan-content .fixed-prayer-bar{
-  background:linear-gradient(105deg,color-mix(in srgb,#527F8B 22%,var(--dark-surface-raised)),color-mix(in srgb,#2F7D72 16%,var(--dark-surface)));
-  border-color:color-mix(in srgb,#6FA7B0 48%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .slot-marker{
-  background:color-mix(in srgb,var(--section-accent,#527F8B) 18%,var(--dark-surface));
-  border-color:color-mix(in srgb,var(--section-accent,#527F8B) 44%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-planner .slot-activity:hover,
-[data-theme="dark"] #root .app .day-plan-content .planned-activity-card:hover{
-  background:color-mix(in srgb,var(--section-accent,#527F8B) 18%,var(--dark-surface-raised));
-  border-color:color-mix(in srgb,var(--section-accent,#527F8B) 52%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot):nth-child(4n+1){--slot-accent:#5B9276}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot):nth-child(4n+2){--slot-accent:#78A88A}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot):nth-child(4n+3){--slot-accent:#9AAA73}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot):nth-child(4n){--slot-accent:#6A9B91}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot) .slot-body{
-  border-inline-start:4px solid var(--slot-accent,#527F8B);
-  background:linear-gradient(145deg,color-mix(in srgb,var(--slot-accent,#527F8B) 13%,var(--dark-surface-raised)),var(--dark-surface-raised));
-}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot) .slot-marker{
-  background:color-mix(in srgb,var(--slot-accent,#527F8B) 30%,var(--dark-surface));
-  border-color:var(--slot-accent,#527F8B);
-  color:var(--dark-body);
-}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot:not(.prayer-slot) .slot-activity{
-  border-inline-start:3px solid color-mix(in srgb,var(--slot-accent,#527F8B) 78%,var(--dark-line-card));
-}
-[data-theme="dark"] #root .app .day-plan-content .day-timeline > .day-slot.prayer-slot .slot-body{
-  background:linear-gradient(115deg,color-mix(in srgb,#D4B678 22%,var(--dark-surface-raised)),color-mix(in srgb,#527F8B 14%,var(--dark-surface)));
-  border:1px solid color-mix(in srgb,#D4B678 55%,var(--dark-line-card));
-  border-inline-start:5px solid #D4B678;
-}
-[data-theme="dark"] #root .app .day-plan-content > .prayer-timeline .half-hour-row:nth-child(4n+1){border-inline-start:3px solid #5B9276}
-[data-theme="dark"] #root .app .day-plan-content > .prayer-timeline .half-hour-row:nth-child(4n+2){border-inline-start:3px solid #78A88A}
-[data-theme="dark"] #root .app .day-plan-content > .prayer-timeline .half-hour-row:nth-child(4n+3){border-inline-start:3px solid #9AAA73}
-[data-theme="dark"] #root .app .day-plan-content > .prayer-timeline .half-hour-row:nth-child(4n){border-inline-start:3px solid #6A9B91}
-[data-theme="dark"] #root .app .day-plan-content .prayer-interval{background:#1F3A32;border-color:#527C6A}
-[data-theme="dark"] #root .app .day-plan-content .half-hour-row{background:#29483B;border-color:#527C6A}
-[data-theme="dark"] #root .app .day-plan-content .half-hour-content{background:transparent}
-[data-theme="dark"] #root .app .day-plan-content .planned-activity-card{background:#315744;border-color:#6C9A78;border-inline-start-color:#9AAA73;color:#EDEDED}
-[data-theme="dark"] #root .app .day-plan-content .planned-activity-card:hover{background:#3A6650;border-color:#9BC5AA}
-[data-theme="dark"] #root .app .day-plan-content .task-time-selects select{background:#315744;border-color:#6C9A78;color:#EDEDED}
+/* ===== تخطيط يومي ومتابعة اليوم (وضع داكن متناسق) ===== */
+[data-theme="dark"] #root .app main[data-section] :is(.day-planner,.day-tracker) .soft-btn{background:#24463C;border-color:#527C6A;color:#D9E5DC}
+[data-theme="dark"] #root .app main[data-section] :is(.day-planner,.day-tracker) .soft-btn:hover{background:#2E574A}
+[data-theme="dark"] #root .app .day-planner .day-page-header{background:#1F3A32;border-color:#4A7260}
+[data-theme="dark"] #root .app .day-planner .day-intro h1{color:#F1F6F2}
+[data-theme="dark"] #root .app .day-planner .day-intro p{color:#C8D8CE}
+[data-theme="dark"] #root .app .day-planner .day-header-date{background:#244236;border-color:#527C6A;color:#C8D8CE}
+[data-theme="dark"] #root .app .day-planner .day-header-date strong{color:#F1F6F2}
+[data-theme="dark"] #root .app .day-planner .day-header-date .hijri-inline{color:#A9D4B8}
+[data-theme="dark"] #root .app .day-planner .day-view-switch{background:#172C25;border-color:#4A7260}
+[data-theme="dark"] #root .app .day-planner .day-view-switch button{color:#B8C9BF}
+[data-theme="dark"] #root .app .day-planner .day-view-switch button.selected{background:#264D40;color:#F1F6F2;border-color:#689C81;box-shadow:0 2px 6px rgba(0,0,0,.22)}
+[data-theme="dark"] #root .app .day-start-bar,
+[data-theme="dark"] #root .app .day-plan-content .day-start-bar{background:#244236;border-color:#527C6A;color:#EDEDED}
+[data-theme="dark"] #root .app .day-start-bar strong,
+[data-theme="dark"] #root .app .day-plan-content .day-start-bar strong{color:#F1F6F2}
+[data-theme="dark"] #root .app .day-start-bar p,
+[data-theme="dark"] #root .app .day-start-bar label,
+[data-theme="dark"] #root .app .day-plan-content .day-start-bar p,
+[data-theme="dark"] #root .app .day-plan-content .day-start-bar label{color:#C8D8CE}
+[data-theme="dark"] #root .app .day-start-bar input[type=date]{background:#2E5343;border-color:#6C9A78;color:#F1F6F2}
+[data-theme="dark"] #root .app .intention-card{background:linear-gradient(155deg,#1F4537 0%,#152E25 100%);border-color:#4B7562}
+[data-theme="dark"] #root .app .intention-prompts{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.14)}
+[data-theme="dark"] #root .app .intention-prompts span{background:transparent;border-color:rgba(255,255,255,.12);color:#EBF2ED}
+[data-theme="dark"] #root .app .day-settings{background:#223E34;border-color:#4F7765}
+[data-theme="dark"] #root .app .day-settings summary{color:#E6F0EA}
+[data-theme="dark"] #root .app .prayer-location-controls label{color:#E6F0EA}
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer{background:#1D3346;border-color:#365570}
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-name,
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-time-text{color:#EDF3F8}
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-sunrise{background:#2B261C;border-color:#7A663B}
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-sunrise .prayer-name,
+[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-sunrise .prayer-time-text{color:#E8CE8E}
+[data-theme="dark"] #root .app .personal-times label{color:#C8D8CE}
+[data-theme="dark"] #root .app .schedule-warning{background:#3C2623;border-color:#7A4B42;color:#F3C5BA}
+[data-theme="dark"] #root .app .day-planner #day-timeline h2{color:#F1F6F2}
+[data-theme="dark"] #root .app .day-planner #day-timeline p{color:#C8D8CE}
+[data-theme="dark"] #root .app .day-plan-content .prayer-interval{background:#162837;border-color:#2D4B63;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+[data-theme="dark"] #root .app .day-plan-content .fixed-prayer-bar{background:linear-gradient(115deg,#1C3A4E 0%,#142B3B 100%);border-bottom:1px solid #32546D}
+[data-theme="dark"] #root .app .day-plan-content .prayer-interval-heading{background:#1A3042;border-bottom-color:#2E4D64}
+[data-theme="dark"] #root .app .day-plan-content .prayer-interval-heading h3{color:#F1F5F8}
+[data-theme="dark"] #root .app .day-plan-content .prayer-interval-heading span{color:#C3D4E0}
+[data-theme="dark"] #root .app .day-plan-content .prayer-note.sunrise-marker,
+[data-theme="dark"] #root .app .day-plan-content .sunrise-in-slot{background:#2B261C;border-color:#705D36;color:#E6CF95}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-card{background:#1D3346;border-color:#365570;color:#F1F5F8;box-shadow:0 3px 10px rgba(0,0,0,.22)}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-title-wrap>strong{color:#F1F5F8}
+[data-theme="dark"] #root .app .day-plan-content .schedule-badge.initial{color:#E8CE8E}
+[data-theme="dark"] #root .app .day-plan-content .schedule-badge.confirmed{color:#9ED3B7}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-head-actions .icon-btn{color:#C3D4E0}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-head-actions .icon-btn:hover{background:#254259;border-color:#4B718F;color:#F1F5F8}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-head-actions .icon-btn.danger:hover{background:#472926;border-color:#874E45;color:#F2B8AD}
+[data-theme="dark"] #root .app .day-plan-content .rename-activity input{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-controls{border-top-color:#2C4960}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-controls>label{color:#C3D4E0}
+[data-theme="dark"] #root .app .day-plan-content .planned-activity-controls>label .time-text{color:#9ED3B7}
+[data-theme="dark"] #root .app .day-plan-content .task-time-selects select{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .day-plan-content .task-time-selects>span{color:#C3D4E0}
+[data-theme="dark"] #root .app .day-plan-content .group-add-trigger{background:#192E3F;border-color:#365570;color:#DCE8F0}
+[data-theme="dark"] #root .app .day-plan-content .group-add-trigger:hover{background:#223D52;border-color:#4E7594}
+[data-theme="dark"] #root .app .day-plan-content .group-activity-add{background:#1D3346;border-color:#365570}
+[data-theme="dark"] #root .app .day-plan-content .group-activity-add label{color:#C3D4E0}
+[data-theme="dark"] #root .app .day-plan-content .group-activity-add input{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .tracking-header,
+[data-theme="dark"] #root .app .prayer-log,
+[data-theme="dark"] #root .app .tracking-progress,
+[data-theme="dark"] #root .app .tracking-item,
+[data-theme="dark"] #root .app .tracking-empty,
+[data-theme="dark"] #root .app .day-review{background:#1D3346;border-color:#365570;color:#F1F5F8}
+[data-theme="dark"] #root .app .tracking-header h2,
+[data-theme="dark"] #root .app .prayer-log h3,
+[data-theme="dark"] #root .app .prayer-log-row>span,
+[data-theme="dark"] #root .app .tracking-progress strong,
+[data-theme="dark"] #root .app .tracking-item .task-main strong,
+[data-theme="dark"] #root .app .tracking-empty h3,
+[data-theme="dark"] #root .app .day-review-heading h3,
+[data-theme="dark"] #root .app .day-review-fields label{color:#F1F5F8}
+[data-theme="dark"] #root .app .tracking-header p,
+[data-theme="dark"] #root .app .tracking-header .hijri-date,
+[data-theme="dark"] #root .app .tracking-header label,
+[data-theme="dark"] #root .app .tracking-progress span,
+[data-theme="dark"] #root .app .tracking-progress label,
+[data-theme="dark"] #root .app .tracking-item .task-main small,
+[data-theme="dark"] #root .app .tracking-item-footer>span,
+[data-theme="dark"] #root .app .tracking-empty,
+[data-theme="dark"] #root .app .day-review>p,
+[data-theme="dark"] #root .app .day-review-actions span,
+[data-theme="dark"] #root .app .day-review>small{color:#C3D4E0}
+[data-theme="dark"] #root .app .tracking-header input[type=date],
+[data-theme="dark"] #root .app .day-review-fields textarea{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .prayer-log-row{background:#172B3C;border-color:#32506A}
+[data-theme="dark"] #root .app .prayer-chip{background:#1D3346;border-color:#365570;color:#C3D4E0}
+[data-theme="dark"] #root .app .prayer-chip.selected{background:#235D4B;border-color:#6CA58B;color:#F4F8F5}
+[data-theme="dark"] #root .app .tracking-progress progress,
+[data-theme="dark"] #root .app .tracking-progress progress::-webkit-progress-bar{background:#11212E}
+[data-theme="dark"] #root .app .tracking-progress progress::-webkit-progress-value{background:#6CA58B}
+[data-theme="dark"] #root .app .tracking-status{background:#172B3C;color:#C3D4E0}
+[data-theme="dark"] #root .app .tracking-done{background:#1A3530;border-color:#3F7363}
+[data-theme="dark"] #root .app .tracking-done .task-main strong{color:#A9BFC0}
+[data-theme="dark"] #root .app .tracking-done .tracking-status{background:#235D4B;color:#D6F0E1}
+[data-theme="dark"] #root .app .tracking-deferred .tracking-status{background:#3B311D;color:#E8CE8E}
+[data-theme="dark"] #root .app .tracking-item-footer{border-top-color:#2C4960}
+[data-theme="dark"] #root .app .tracking-item-footer button{background:#362E1D;border-color:#6D5D37;color:#E8CE8E}
+[data-theme="dark"] #root .app .day-review-mark{background:#172B3C;border-color:#365570;color:#E6CF95}
 
-/* ===== سحب يدوي إضافي: مركز المهام وسطوح بقيت بيضاء في الداكن =====
-   نفس عائلة البطاقات الخضراء الداكنة لمخطط اليوم (#29483B/#315744). */
-[data-theme="dark"] .today-task-list>li{background:#29483B;border-color:#527C6A;color:#EDEDED}
-[data-theme="dark"] .today-task-info strong{color:#F1F6F2}
-[data-theme="dark"] .today-task-source{color:#C8D8CE}
-[data-theme="dark"] .today-task-info small{color:#C8D8CE}
-[data-theme="dark"] .today-task-actions label{color:#C8D8CE}
-[data-theme="dark"] #root .app .today-task-actions .soft-btn{background:#24463C;border-color:#527C6A;min-height:42px;height:42px;border-radius:10px;color:#D9E5DC;white-space:nowrap}
-[data-theme="dark"] #root .app .today-task-actions .soft-btn:hover{background:#2E574A}
-[data-theme="dark"] #root .app .today-task-actions button.primary,[data-theme="dark"] #root .app .today-task-list>li button.primary{background:linear-gradient(160deg,#2C624E,#1E4D3D);border:1px solid #79A98F;border-radius:10px;color:#F4E8C7;min-height:42px;height:42px;white-space:nowrap}
-[data-theme="dark"] #root .app .today-task-filters button{min-height:42px;border-radius:10px}
-[data-theme="dark"] .today-task-actions select,[data-theme="dark"] .today-task-actions input[type=date]{background:#315744;border-color:#6C9A78;color:#EDEDED}
-[data-theme="dark"] .today-task-filters button{color:#D9E5DC}
-[data-theme="dark"] .today-task-filters button.soft-btn{background:#24463C;border-color:#527C6A;color:#D9E5DC}
-[data-theme="dark"] .today-task-filters button.soft-btn:hover{background:#2E574A}
-[data-theme="dark"] .today-task-actions select,[data-theme="dark"] .today-task-actions input[type=date]{background:#315744;border-color:#6C9A78;color:#EDEDED}
-[data-theme="dark"] .today-task-actions .task-time-selects select{background:#315744;border-color:#6C9A78;color:#EDEDED}
-[data-theme="dark"] .prayer-log{background:#29483B;color:#EDEDED}
-[data-theme="dark"] .tracking-progress{background:#29483B;color:#EDEDED}
-[data-theme="dark"] .tracking-message{color:#EDEDED}
-[data-theme="dark"] .task-push-permission-bar{background:#24463C;border-color:#527C6A;color:#EDEDED}
+/* ===== أسبوعي مع الله وشهري مع الله (وضع داكن) ===== */
+[data-theme="dark"] #root .app main[data-section] .weekly-planner .soft-btn{background:#223B4E;border-color:#3B5C75;color:#E6EFF5}
+[data-theme="dark"] #root .app main[data-section] .weekly-planner .soft-btn:hover{background:#2A485E}
+[data-theme="dark"] #root .app .week-picker label,
+[data-theme="dark"] #root .app .weekly-add label,
+[data-theme="dark"] #root .app .week-task-schedule label{color:#C3D4E0}
+[data-theme="dark"] #root .app .week-picker input,
+[data-theme="dark"] #root .app .week-picker select,
+[data-theme="dark"] #root .app .weekly-add input,
+[data-theme="dark"] #root .app .weekly-add select,
+[data-theme="dark"] #root .app .week-task-schedule input,
+[data-theme="dark"] #root .app .week-task-schedule select{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .week-range-box{background:#172B3C;border-color:#32506A}
+[data-theme="dark"] #root .app .week-range{color:#E6EFF5}
+[data-theme="dark"] #root .app .week-hijri{color:#E6CA85}
+[data-theme="dark"] #root .app .weekly-task,
+[data-theme="dark"] #root .app .weekly-unscheduled-card{background:#1D3346;border-color:#365570;color:#F1F5F8;box-shadow:0 3px 10px rgba(0,0,0,.22)}
+[data-theme="dark"] #root .app .weekly-task>.task span,
+[data-theme="dark"] #root .app .weekly-unscheduled-title{color:#F1F5F8}
+[data-theme="dark"] #root .app .week-task-schedule{border-top-color:#2C4960}
+[data-theme="dark"] #root .app .weekly-due{background:#1D3346;border-color:#365570;color:#F1F5F8}
+[data-theme="dark"] #root .app .weekly-due h2{color:#F1F5F8}
+
+/* ===== المؤمن القوي (وضع داكن) ===== */
+[data-theme="dark"] #root .app main[data-section] .strong-goals .soft-btn{background:#233853;border-color:#4A688C;color:#DCE7F5}
+[data-theme="dark"] #root .app main[data-section] .strong-goals .soft-btn:hover{background:#2B4567}
+[data-theme="dark"] #root .app .goal-section-heading h2,
+[data-theme="dark"] #root .app .goal-period-heading h2,
+[data-theme="dark"] #root .app .goal-plan-head h3,
+[data-theme="dark"] #root .app .goal-plan-body h4,
+[data-theme="dark"] #root .app .goal-period-card-head h3,
+[data-theme="dark"] #root .app .goal-period-item strong,
+[data-theme="dark"] #root .app .goal-history-heading h2,
+[data-theme="dark"] #root .app .goal-history-list strong{color:#F1F6F2}
+[data-theme="dark"] #root .app .goal-section-heading p,
+[data-theme="dark"] #root .app .goal-period-heading p,
+[data-theme="dark"] #root .app .goal-plan-head p,
+[data-theme="dark"] #root .app .goal-meta span,
+[data-theme="dark"] #root .app .goal-period-badge,
+[data-theme="dark"] #root .app .goal-step-history,
+[data-theme="dark"] #root .app .goal-period-card-head small,
+[data-theme="dark"] #root .app .goal-period-empty,
+[data-theme="dark"] #root .app .goal-period-item small,
+[data-theme="dark"] #root .app .goal-history-heading p,
+[data-theme="dark"] #root .app .goal-history-note,
+[data-theme="dark"] #root .app .goal-history-list small{color:#C8D6DF}
+[data-theme="dark"] #root .app .goal-step-number{background:#233853;border-color:#4A688C;color:#DCE7F5}
+[data-theme="dark"] #root .app .goal-create,
+[data-theme="dark"] #root .app .goal-plan-card,
+[data-theme="dark"] #root .app .goal-period-card,
+[data-theme="dark"] #root .app .goal-history,
+[data-theme="dark"] #root .app .goal-search,
+[data-theme="dark"] #root .app .goal-empty{background:#213640;border-color:#476572;color:#EDEDED}
+[data-theme="dark"] #root .app .goal-plan-card.is-expanded{border-color:#6C92BA}
+[data-theme="dark"] #root .app .goal-plan-head p strong,
+[data-theme="dark"] #root .app .goal-summary-count,
+[data-theme="dark"] #root .app .goal-meta span:last-child,
+[data-theme="dark"] #root .app .goal-history-total,
+[data-theme="dark"] #root .app .goal-history-selected,
+[data-theme="dark"] #root .app .goal-history-list li>span{color:#B5D0F2}
+[data-theme="dark"] #root .app .goal-search span{color:#B8C9D4}
+[data-theme="dark"] #root .app .goal-create-form label,
+[data-theme="dark"] #root .app .goal-edit-form label,
+[data-theme="dark"] #root .app .goal-add-step .goal-custom-date,
+[data-theme="dark"] #root .app .goal-step-edit>label,
+[data-theme="dark"] #root .app .goal-history-period-picker label{color:#C8D6DF}
+[data-theme="dark"] #root .app .goal-create-form input,
+[data-theme="dark"] #root .app .goal-create-form textarea,
+[data-theme="dark"] #root .app .goal-edit-form input,
+[data-theme="dark"] #root .app .goal-edit-form textarea,
+[data-theme="dark"] #root .app .goal-add-step input,
+[data-theme="dark"] #root .app .goal-add-step select,
+[data-theme="dark"] #root .app .goal-step-edit input,
+[data-theme="dark"] #root .app .goal-step-edit select,
+[data-theme="dark"] #root .app .goal-history-period-picker input,
+[data-theme="dark"] #root .app .goal-history-period-picker select{background:#2A4552;border-color:#5A7F91;color:#F1F6F2}
+[data-theme="dark"] #root .app .goal-details,
+[data-theme="dark"] #root .app .goal-meta,
+[data-theme="dark"] #root .app .goal-step-wrap,
+[data-theme="dark"] #root .app .goal-period-card-head,
+[data-theme="dark"] #root .app .goal-period-item{border-color:#3B5866}
+[data-theme="dark"] #root .app .goal-plan-body,
+[data-theme="dark"] #root .app .goal-edit-form,
+[data-theme="dark"] #root .app .goal-history-period-picker,
+[data-theme="dark"] #root .app .goal-history-empty,
+[data-theme="dark"] #root .app .goal-history-list li{background:#1B2D36;border-color:#42606E}
+[data-theme="dark"] #root .app .goal-step-edit{background:#213640;border-color:#4A6D7D}
+[data-theme="dark"] #root .app .goal-step-top label{color:#F1F6F2}
+[data-theme="dark"] #root .app .goal-period-icon,
+[data-theme="dark"] #root .app .goal-history-icon{background:#233853;color:#B5D0F2}
+[data-theme="dark"] #root .app .goal-period-count{color:#B5D0F2}
+[data-theme="dark"] #root .app .goal-period-count span{color:#B8C9D4}
+[data-theme="dark"] #root .app .goal-history-filters button{background:#1D303A;border-color:#476572;color:#C8D6DF}
+[data-theme="dark"] #root .app .goal-history-filters button.active{background:#35598B;border-color:#749CD1;color:#FFFFFF}
+
+/* ===== مركز المهام ===== */
+[data-theme="dark"] #root .app main[data-section] .today-tasks-view .soft-btn{background:#223B4E;border-color:#3B5C75;color:#E6EFF5}
+[data-theme="dark"] #root .app main[data-section] .today-tasks-view .soft-btn:hover{background:#2B4960}
+[data-theme="dark"] #root .app .today-task-card{background:#1D3346;border-color:#365570;color:#F1F5F8;box-shadow:0 4px 14px rgba(0,0,0,.24)}
+[data-theme="dark"] #root .app .today-task-title{color:#F1F5F8}
+[data-theme="dark"] #root .app .today-task-source,[data-theme="dark"] #root .app .today-task-meta{color:#C3D4E0}
+[data-theme="dark"] #root .app .today-task-meta-item.is-confirmed,[data-theme="dark"] #root .app .task-notify-meta.active{color:#9ED3B7}
+[data-theme="dark"] #root .app .today-task-schedule{border-top-color:#2E4B63}
+[data-theme="dark"] #root .app .today-task-field{color:#C3D4E0}
+[data-theme="dark"] #root .app .today-task-field input[type=date],[data-theme="dark"] #root .app .today-task-field select,[data-theme="dark"] #root .app .today-task-field-time .task-time-selects select{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] #root .app .today-task-field-time .task-time-selects>span{color:#C3D4E0}
+[data-theme="dark"] #root .app .today-task-complete-btn{background:#1F453B;border-color:#4D8470;color:#E7F3EC}
+[data-theme="dark"] #root .app .today-task-complete-btn:hover{background:#27564A}
+[data-theme="dark"] #root .app .today-task-notify-btn{background:#172A39;border-color:#344F66;color:#BACAD6}
+[data-theme="dark"] #root .app .today-task-notify-btn.is-on{background:#1F453B;border-color:#538B76;color:#E7F3EC}
+[data-theme="dark"] #root .app .today-task-draft-btn{background:#192D3E;border-color:#3A5A74;color:#DCE8F0}
+[data-theme="dark"] #root .app .today-task-draft-btn:hover{background:#223B50}
+[data-theme="dark"] #root .app .today-task-confirm-btn,[data-theme="dark"] #root .app .today-task-list button.primary{background:linear-gradient(160deg,#255B49,#1B483A);border:1px solid #639E84;border-radius:10px;color:#F4E8C7}
+[data-theme="dark"] #root .app .today-task-filters button{min-height:40px;border-radius:10px}
+[data-theme="dark"] .prayer-log{background:#1D3346;color:#F1F5F8}
+[data-theme="dark"] .tracking-progress{background:#1D3346;color:#F1F5F8}
+[data-theme="dark"] .tracking-message{color:#F1F5F8}
+[data-theme="dark"] .task-push-permission-bar{background:#1B3042;border-color:#34526A;color:#F1F5F8}
 [data-theme="dark"] .task-push-ok{color:#9BC5AA}
-[data-theme="dark"] .task-alert-preview-list li{background:#29483B;border-color:#527C6A;color:#EDEDED}
-[data-theme="dark"] .task-alert-preview-list li small{color:#C8D8CE}
-[data-theme="dark"] .task-alert-time{color:#A9D4B8}
-[data-theme="dark"] .task-notif-quick-grid select,[data-theme="dark"] .task-notif-quick-grid input{background:#315744;border-color:#6C9A78;color:#EDEDED}
-[data-theme="dark"] .task-notify-meta.active{color:#A9D4B8}
+[data-theme="dark"] .task-alert-preview-list li{background:#1B3042;border-color:#34526A;color:#F1F5F8}
+[data-theme="dark"] .task-alert-preview-list li small{color:#C3D4E0}
+[data-theme="dark"] .task-alert-time{color:#9ED3B7}
+[data-theme="dark"] .task-notif-quick-grid select,[data-theme="dark"] .task-notif-quick-grid input{background:#11212E;border-color:#3B5B75;color:#F1F5F8}
+[data-theme="dark"] .task-notify-meta.active{color:#9ED3B7}
+
 

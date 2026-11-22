@@ -1,7 +1,7 @@
 // src/features/qibla/QiblaScreen.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { Compass, MapPin, RotateCcw, Settings2 } from 'lucide-react';
+import { Compass, MapPin, RotateCcw, Settings2, X } from 'lucide-react';
 import { useGeolocation, type GeoStatus } from '../../hooks/useGeolocation';
 import { useBackHandler } from '../../navigation/useBackHandler';
 import { useCompassHeading } from '../../hooks/useCompassHeading';
@@ -78,7 +78,7 @@ export default function QiblaScreen({ notify }: Props) {
         <div className="qibla-steps" role="note">
           <div className="qibla-steps-head">
             <strong>3 خطوات سريعة</strong>
-            <button className="qibla-steps-close" onClick={() => setShowSteps(false)} aria-label="إخفاء">✕</button>
+            <button className="qibla-steps-close" onClick={() => setShowSteps(false)} aria-label="إخفاء"><X size={16} aria-hidden="true" /></button>
           </div>
           <ol>
             <li>فعّل الموقع (أو اختر مدينتك).</li>
@@ -168,7 +168,7 @@ export default function QiblaScreen({ notify }: Props) {
 
       {geo.status === 'denied' || geo.status === 'unsupported' || geo.status === 'error' ? (
         <p className="muted small qibla-hint">
-          على Android: تأكد من تفعيل صلاحيات الموقع (Settings → Apps → Al-Rabbaniyyun → Permissions → Location).
+          على أندرويد: تأكد من تفعيل صلاحيات الموقع من إعدادات الهاتف ← التطبيقات ← الربانيون ← الأذونات ← الموقع.
         </p>
       ) : null}
 
@@ -202,7 +202,7 @@ export default function QiblaScreen({ notify }: Props) {
       )}
 
       <p className="muted small qibla-note">
-        ملاحظة: دقة البوصلة تعتمد على مستشعر جهازك وتجنب المعادن/المغناطيس. الاتجاه يُصحَّح إلى الشمال الحقيقي via نموذج WMM (geomagnetism). على بعض الأجهزة قد يلزم معايرة (حركة ∞).
+        ملاحظة: دقة البوصلة تعتمد على مستشعر جهازك وتجنب المعادن/المغناطيس. الاتجاه يُصحَّح إلى الشمال الحقيقي عبر النموذج المغناطيسي العالمي (WMM). على بعض الأجهزة قد يلزم معايرة (حركة ∞).
       </p>
     </div>
   );

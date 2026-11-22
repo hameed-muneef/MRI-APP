@@ -11,7 +11,7 @@ import {
 } from '../../notifications/delivery';
 import {playAudio, stopAudio} from '../../notifications/audio';
 import {playBuiltInTone} from '../../notifications/builtin-sounds';
-import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
+import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {listAudioResources} from '../../notifications/service';
 import {soundPlanForTask} from '../../notifications/sound-selection';
@@ -24,7 +24,7 @@ import {
   type NotificationPreference,
   type TaskNotificationSettings,
 } from '../../notifications/types';
-import {channelLabel, SoundSelectField} from './SoundPanel';
+import {channelDescription, channelLabel, SoundSelectField} from './SoundPanel';
 
 const LEAD_PRESETS = [
   {minutes: 0, label: 'عند الموعد فقط'},
@@ -95,9 +95,9 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
     const next = await requestBrowserPermission();
     setPermission(next);
     if (next === 'granted') {
-      notify('تم تفعيل إشعارات الدفع في المتصفح');
+      notify('تم تفعيل إشعارات المتصفح للمهام المجدولة');
     } else if (next === 'denied') {
-      notify('تم حظر إشعارات المتصفح؛ يمكنك تفعيلها من إعدادات الموقع');
+      notify('تم حظر إشعارات المتصفح؛ يمكنك السماح بها من إعدادات الموقع');
     }
   };
 
@@ -149,7 +149,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
         requireInteraction: false,
         link: 'tasks',
       });
-      notify('أُرسل إشعار دفع تجريبي');
+      notify('أُرسل إشعار تجريبي');
     } else {
       notify(`تنبيه تجريبي: ${leadText}`);
     }
@@ -162,25 +162,35 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
 
   if (loading) return <p className="muted" role="status">جارٍ تحميل إعدادات تنبيهات المهام…</p>;
 
+  const nativeApp = isNativePlatform();
+  const browserSupported = !nativeApp && isBrowserNotificationSupported();
   const globalPaused = !prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false;
 
   return (
     <div className="notif-task-panel">
-      {isBrowserNotificationSupported() ? (
+      {nativeApp ? (
+        <div className="task-push-permission-bar perm-granted">
+          <div>
+            <strong>تنبيهات الجهاز:</strong>{' '}
+            <span>تعمل التذكيرات عبر إشعارات النظام على جهازك.</span>
+          </div>
+          <span className="task-push-ok"><CheckCircle2 size={15}/> جاهزة</span>
+        </div>
+      ) : browserSupported ? (
         <div className={`task-push-permission-bar perm-${permission ?? 'default'}`}>
           <div>
-            <strong>حالة إشعارات الدفع (Push):</strong>{' '}
+            <strong>حالة إشعارات المتصفح:</strong>{' '}
             <span>
               {permission === 'granted'
-                ? 'مفعّلة وتصل على الجهاز والمتصفح.'
+                ? 'مفعّلة — ستصلك التنبيهات على جهازك وعبر المتصفح.'
                 : permission === 'denied'
-                  ? 'محظورة من المتصفح — فعّل الإذن من إعدادات الموقع.'
-                  : 'تحتاج إلى إذن المتصفح لإرسال إشعارات الدفع.'}
+                  ? 'محظورة من المتصفح — ستظهر داخل التطبيق فقط حتى تفعّل الإذن من إعدادات الموقع (رمز القفل بجانب الرابط).'
+                  : 'لم يُمنح الإذن بعد — فعّل الإذن لتصلك التنبيهات خارج التطبيق أيضًا.'}
             </span>
           </div>
           {permission === 'default' && (
             <button type="button" className="primary" onClick={() => void handleRequestPermission()}>
-              <BellRing size={15}/> تفعيل إشعارات الدفع
+              <BellRing size={15}/> تفعيل إشعارات المتصفح
             </button>
           )}
           {permission === 'granted' && (
@@ -188,12 +198,12 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
           )}
         </div>
       ) : (
-        <p className="muted small">المتصفح الحالي لا يدعم إشعارات الدفع النظامية؛ ستظهر التنبيهات داخل التطبيق.</p>
+        <p className="muted small">المتصفح الحالي لا يدعم إشعارات النظام؛ ستظهر التنبيهات داخل التطبيق أثناء فتحه.</p>
       )}
 
       {globalPaused && (
         <p className="notif-error" role="status">
-          تنبيه: إشعارات المهام متوقفة حاليًا من الإعدادات العامة (الإيقاف العام أو عدم الإزعاج أو فئة المهام).
+          تنبيه: تذكيرات المهام متوقفة حاليًا من الإعدادات العامة (الإيقاف العام أو عدم الإزعاج أو فئة المهام).
         </p>
       )}
 
@@ -203,12 +213,12 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
           checked={taskSettings.enabled}
           onChange={event => updateTaskSettings({enabled: event.target.checked})}
         />
-        تفعيل تنبيهات الدفع عند اقتراب وقت المهام اليومية المجدولة
+        <span>تفعيل التذكير عند اقتراب وقت المهام اليومية المجدولة</span>
       </label>
 
       <fieldset disabled={!taskSettings.enabled}>
-        <div className="task-lead-presets" role="group" aria-label="اختيارات سريعة لوقت التنبيه المسبق">
-          <span className="muted small">التنبيه قبل الموعد بـ:</span>
+        <div className="task-lead-presets" role="group" aria-label="اختيارات سريعة لوقت التذكير المسبق">
+          <span className="muted small">التذكير قبل الموعد بـ:</span>
           <div className="task-preset-chips">
             {LEAD_PRESETS.map(preset => (
               <button
@@ -226,7 +236,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
 
         <div className="form-grid">
           <label>
-            دقائق التنبيه المسبق (0 = بلا تنبيه مسبق)
+            دقائق التذكير المسبق (0 = عند الموعد فقط)
             <input
               type="number"
               inputMode="numeric"
@@ -242,7 +252,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
             />
           </label>
           <label>
-            قناة الإشعار
+            طريقة وصول التنبيه
             <select
               value={taskSettings.channel}
               onChange={event => updateTaskSettings({channel: event.target.value as NotificationChannel})}
@@ -251,6 +261,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
                 <option key={key} value={key}>{channelLabel(key)}</option>
               ))}
             </select>
+            <small className="task-channel-hint">{channelDescription(taskSettings.channel)}</small>
           </label>
           <label>
             صوت تنبيه المهام
@@ -267,7 +278,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
             checked={taskSettings.notify_at_time}
             onChange={event => updateTaskSettings({notify_at_time: event.target.checked})}
           />
-          إرسال تنبيه أيضًا عند حلول وقت المهمة بالضبط
+          <span>إرسال تذكير إضافي عند حلول وقت المهمة بالضبط</span>
         </label>
         <label className="notif-switch">
           <input
@@ -275,7 +286,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
             checked={taskSettings.include_initial}
             onChange={event => updateTaskSettings({include_initial: event.target.checked})}
           />
-          تضمين المهام ذات الموعد المبدئي (قبل التأكيد النهائي)
+          <span>تذكير المهام ذات الموعد المبدئي أيضًا (قبل تأكيدها)</span>
         </label>
         <label className="notif-switch">
           <input
@@ -283,16 +294,16 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
             checked={taskSettings.include_day_plan}
             onChange={event => updateTaskSettings({include_day_plan: event.target.checked})}
           />
-          تضمين الأنشطة المؤكدة في خطة «يومي مع الله»
+          <span>تذكير الأنشطة المؤكدة في خطة «يومي مع الله»</span>
         </label>
       </fieldset>
 
       <div className="notif-form-actions">
         <button type="button" className="primary" disabled={saving || !dirty} onClick={() => void save()}>
-          {saving ? 'جارٍ الحفظ…' : 'حفظ إعدادات تنبيهات المهام'}
+          {saving ? 'جارٍ الحفظ…' : dirty ? 'حفظ التغييرات' : 'تم الحفظ'}
         </button>
         <button type="button" className="soft-btn" onClick={() => void sendTestNotification()}>
-          <Send size={15}/> إرسال إشعار تجريبي
+          <Send size={15}/> إرسال تنبيه تجريبي
         </button>
       </div>
 

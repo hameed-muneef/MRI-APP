@@ -42,7 +42,7 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
   {id: 'sunnah', title: 'حفظ السنة', description: '', icon: ScrollText},
   {id: 'routine', title: 'وردي اليومي', description: 'جدولة القرآن والسنة داخل مهام اليوم نفسها.', icon: CalendarClock},
   {id: 'progress', title: 'سجل الإنجاز', description: 'قراءة وحفظ وإتقان وانتظام وتأملات خاصة.', icon: TrendingUp},
-  {id: 'azkar', title: 'أذكار', description: 'حصن Muslim — أذكار الصباح والمساء وسائر الأوقات، مع عداد تكرار وصوت.', icon: Flower2}
+  {id: 'azkar', title: 'أذكار', description: 'حصن المسلم — أذكار الصباح والمساء وسائر الأوقات، مع عداد تكرار وصوت.', icon: Flower2}
 ];
 
 export default function QuranSunnahView({state, onState, tasks, onTasks, notify, onOpenTasks, initialSection}: Props) {
@@ -99,7 +99,7 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, notify,
     <nav className="quran-section-grid" aria-label="أقسام القرآن والسنة">
       {SECTIONS.map(item => {
         const Icon = item.icon;
-        return <button key={item.id} className={section === item.id ? 'active' : ''} onClick={() => handleSectionChange(item.id)}>
+        return <button key={item.id} data-quran-tab={item.id} className={section === item.id ? 'active' : ''} onClick={() => handleSectionChange(item.id)}>
           <span className="quran-section-icon"><Icon size={22}/></span>
           <strong>{item.title}</strong>
           <small>{item.description}</small>

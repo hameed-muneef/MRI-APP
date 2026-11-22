@@ -107,7 +107,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
             <legend>{prayer}</legend>
             <label className="notif-switch">
               <input type="checkbox" checked={setting.enabled} onChange={event => update(prayer, {enabled: event.target.checked})}/>
-              تفعيل إشعار صلاة {prayer}
+              <span>تفعيل تنبيه صلاة {prayer}</span>
             </label>
             {setting.enabled && (
               <div className="form-grid">
@@ -116,7 +116,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
                     {(Object.keys(PRAYER_ADHAN_LABELS) as PrayerAdhanType[]).map(key => <option key={key} value={key}>{PRAYER_ADHAN_LABELS[key]}</option>)}
                   </select>
                 </label>
-                <label htmlFor={`${id}-channel`}>طريقة الإشعار
+                <label htmlFor={`${id}-channel`}>طريقة وصول التنبيه
                   <select id={`${id}-channel`} value={setting.channel} onChange={event => update(prayer, {channel: event.target.value as NotificationChannel})}>
                     {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => <option key={key} value={key}>{channelLabel(key)}</option>)}
                   </select>
@@ -142,7 +142,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
             )}
             <div className="notif-form-actions">
               <button type="button" className="primary" disabled={savingPrayer !== null || !dirtyPrayers.has(prayer)} onClick={() => void savePrayer(prayer)}>
-                {savingPrayer === prayer ? 'جارٍ الحفظ…' : `حفظ إعدادات ${prayer}`}
+                {savingPrayer === prayer ? 'جارٍ الحفظ…' : dirtyPrayers.has(prayer) ? `حفظ إعدادات ${prayer}` : 'تم الحفظ'}
               </button>
               <button type="button" className="soft-btn" disabled={savingPrayer !== null} onClick={() => restorePrayer(prayer)}>استعادة الافتراضي</button>
             </div>

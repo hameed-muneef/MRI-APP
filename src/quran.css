@@ -13,9 +13,9 @@
 
 /* ===== Spaced Review (المراجعة المتباعدة) premium tokens & layout ===== */
 .quran-revision {
-  --rev-bg: #0F1B2D; --rev-surface: #163A31; --rev-surface-2: #1D4A3E;
-  --rev-border: #4F9A82; --rev-border-subtle: #2F6B58; --rev-text: #F4EFE3;
-  --rev-text-muted: #B9C7BD; --rev-gold: #E3C170; --rev-gold-strong: #F0D58C;
+  --rev-bg: #0E1A24; --rev-surface: #172B3C; --rev-surface-2: #1D364A;
+  --rev-border: #527B96; --rev-border-subtle: #32506A; --rev-text: #F4EFE3;
+  --rev-text-muted: #C2D2DE; --rev-gold: #E3C170; --rev-gold-strong: #F0D58C;
   --rev-on-gold: #0F1B2D; --rev-success: #6FD9A0; --rev-danger: #F59A92;
   --rev-primary: #E3C170; --rev-on-primary: #0F1B2D;
   color: var(--rev-text); display: grid; gap: 18px;

@@ -210,6 +210,7 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
       <p className="muted">اختر صوت الأذان (محلي أو ملفات من جهازك) وشغّله.</p>
       <div className="adhan-row">
         <select
+          className="adhan-select"
           value={selected}
           onChange={event => {
             const nextId = event.target.value;
@@ -219,7 +220,6 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
             if (chosen) notify(`تم اختيار صوت الأذان: ${chosen.name}`);
           }}
           aria-label="صوت الأذان"
-          style={{flex: 1, minWidth: 0}}
         >
           <optgroup label="أصوات الأذان (يعمل بدون إنترنت)">
             {ADHAN_OPTIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -234,20 +234,19 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
         </button>
       </div>
       {selected === 'external' && (
-        <div className="adhan-external" style={{display: 'grid', gap: 8}}>
+        <div className="adhan-external">
           {externals.map(item => (
             <div className="adhan-ext-row" key={item.slot}>
               <button
                 type="button"
-                className={activeExternal?.slot === item.slot ? 'soft-btn selected' : 'soft-btn'}
+                className={activeExternal?.slot === item.slot ? 'soft-btn adhan-ext-row-main selected' : 'soft-btn adhan-ext-row-main'}
                 onClick={() => {
                   setSelectedExternalSlot(item.slot);
                   try { localStorage.setItem(EXTERNAL_SLOT_KEY, item.slot); } catch { /* ignore */ }
                   toggle(item.url);
                 }}
-                style={{flex: 1, minWidth: 0, textAlign: 'start', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}
               >
-                <Play size={14}/> {item.name}
+                <Play size={14}/> <span>{item.name}</span>
               </button>
               <button type="button" className="soft-btn" onClick={() => void removeExternal(item.slot)} aria-label={`حذف ${item.name}`}>
                 <Trash2 size={15}/> حذف

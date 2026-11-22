@@ -39,8 +39,8 @@ for (const key of ['bukhari', 'muslim']) {
 test('Hadith manifest records a pinned source and does not overstate text rights', () => {
   const manifest = JSON.parse(readFileSync(new URL('../public/hadith/manifest.json', import.meta.url), 'utf8'));
   assert.equal(manifest.sourceCommit, 'df57907be35291c91ad6a6691180e22ca9920784');
-  assert.equal(manifest.rightsStatus, 'verified-public-domain');
-  assert.match(manifest.license, /Unlicense/i);
+  assert.equal(manifest.rightsStatus, 'unverified');
+  assert.match(manifest.license, /Unverified/i);
   assert.match(manifest.attribution, /غير موثقة/);
   assert.ok(manifest.files.bukhari.hadiths >= 7000);
   assert.ok(manifest.files.muslim.hadiths >= 7000);

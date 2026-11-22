@@ -1,7 +1,78 @@
-.week-picker,.weekly-add,.week-task-schedule{display:flex;flex-wrap:wrap;align-items:end;gap:16px}
-.week-picker label,.weekly-add label,.week-task-schedule label{display:grid;gap:8px;font-size:14px;font-weight:600}
-.week-picker input,.week-picker select,.weekly-add input,.weekly-add select,.week-task-schedule input,.week-task-schedule select{min-height:44px;max-width:100%;border:1px solid #d8e2dc;border-radius:10px;padding:9px 12px;background:#F8F6EF;color:#193e33;font:inherit}
-.week-picker input{width:130px}.week-range{font-weight:700;color:#245b48}.week-hijri{font-size:12px;font-weight:600;color:#6a7d6f;margin:3px 0 0}.weekly-add label:first-child{flex:1;min-width:180px}.weekly-task{border-bottom:1px solid #e3eae5;padding:8px 0 18px}.week-task-schedule{padding-inline:8px}.week-task-schedule label{font-size:12px}.weekly-due{border:1px solid #b8d6c4;border-inline-start:5px solid #3b8061;background:#f1f8f3;border-radius:14px;padding:18px;margin-bottom:20px}.weekly-due h2{margin:0 0 8px;font-size:20px}.weekly-due ul{margin:10px 0;padding-inline-start:24px}.weekly-due li{padding:5px 0}.weekly-due p{margin:8px 0}
-@media(max-width:600px){.weekly-add{align-items:stretch}.weekly-add label,.weekly-add button,.week-task-schedule label{width:100%}.week-task-schedule select{width:100%}.week-range{line-height:1.9}.weekly-planner .task{flex-wrap:wrap}}
-.today-task-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.today-task-list{list-style:none;padding:0;display:grid;gap:12px}.today-task-list>li{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:16px;border:1px solid var(--color-border);border-radius:14px;background:#fff}.today-task-info{flex:1 1 260px;min-width:220px;display:grid;gap:6px;align-content:center}.today-task-source,.today-task-info small{display:flex;align-items:center;gap:5px;color:var(--color-muted);font-size:13px}.today-task-actions{display:flex;align-items:end;justify-content:flex-end;flex-wrap:wrap;gap:10px}.today-task-actions label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--color-muted)}.today-task-actions .soft-btn,.today-task-actions button.primary{height:42px;min-height:42px;padding:8px 14px;border-radius:10px;white-space:nowrap}.today-task-actions select,.today-task-actions input[type=date]{min-height:42px;max-width:230px;padding:7px;border:1px solid var(--color-border);border-radius:9px;background:white;font:inherit}.today-task-actions .task-time-selects select{min-height:42px;padding:7px 8px;border:1px solid var(--color-border);border-radius:9px;background:white;font:inherit;font-variant-numeric:tabular-nums}.today-task-actions .task-time-selects .task-time-period{min-width:62px}.today-tasks-view h1{display:flex;align-items:center;gap:10px}.task-notif-banner{display:grid;gap:12px;margin-bottom:16px}.task-notif-banner-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.task-notif-banner-status{display:flex;align-items:center;gap:10px}.task-notif-banner-status p{margin:3px 0 0}.task-notif-banner-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.task-notif-quick-config{border-top:1px solid var(--color-border);padding-top:12px;display:grid;gap:10px}.task-notif-quick-grid{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.task-notif-quick-grid label{display:grid;gap:6px;font-size:13px;font-weight:600}.task-notif-quick-grid select,.task-notif-quick-grid input{min-height:40px;padding:7px 10px;border:1px solid var(--color-border);border-radius:9px;background:white;font:inherit}.task-notif-quick-save{display:flex;justify-content:flex-start}.task-notify-meta.active{color:#1f5c4a;font-weight:600}@media(max-width:900px){.today-task-list>li{flex-direction:column;align-items:stretch}.today-task-actions{justify-content:flex-start}.today-task-info{min-width:0}}@media(max-width:650px){.today-task-actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.today-task-actions .soft-btn,.today-task-actions button.primary{width:100%}.today-task-actions select,.today-task-actions input[type=date],.today-task-actions .task-time-selects{width:100%;max-width:none;box-sizing:border-box}}
+#root .app main[data-section] .weekly-planner .soft-btn{background:#F0ECE2;color:#1D3F35;border:1px solid #D3CBB9;border-radius:10px;min-height:44px;font-weight:700}
+#root .app main[data-section] .weekly-planner .soft-btn:hover{background:#E7E1D3}
+#root .app .week-picker{display:grid;grid-template-columns:minmax(88px,.72fr) minmax(0,1.28fr);align-items:end;gap:10px}
+#root .app .week-picker label,#root .app .weekly-add label,#root .app .week-task-schedule label{display:grid;gap:6px;min-width:0;font-size:12.5px;font-weight:700;color:#4E5C60}
+#root .app .week-picker input,#root .app .week-picker select,#root .app .weekly-add input,#root .app .weekly-add select,#root .app .week-task-schedule input,#root .app .week-task-schedule select{width:100%;min-width:0;max-width:100%;min-height:44px;border:1px solid #D0C8B8;border-radius:10px;padding:8px 11px;background:#ffffff;color:#193129;font:inherit;font-size:14px;box-sizing:border-box;text-overflow:ellipsis}
+#root .app .week-picker .soft-btn{grid-column:1 / -1;width:100%;justify-content:center}
+#root .app .week-range-box{margin:14px 0 8px;padding:12px 14px;border:1px solid #DDD6C7;border-radius:12px;background:#F4F1E9;display:grid;gap:4px}
+#root .app .week-range{margin:0;font-size:13.5px;font-weight:700;line-height:1.7;color:#1D3F35}
+#root .app .week-hijri{margin:0;font-size:12px;font-weight:600;color:#5D696D;line-height:1.6}
+#root .app .weekly-add{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:10px}
+#root .app .weekly-add button.primary{width:100%;min-height:44px;justify-content:center;border-radius:10px;font-size:14px;font-weight:700}
+#root .app .weekly-planner .task-list{display:grid;gap:12px;margin-top:12px}
+#root .app .weekly-task{display:grid;gap:12px;padding:14px;border:1px solid #D6CFC0;border-radius:16px;background:#FFFFFF;box-shadow:0 2px 10px rgba(24,38,34,.05)}
+#root .app .weekly-task>.task{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0;border:0;background:transparent}
+#root .app .weekly-task>.task .task-main{display:flex;align-items:flex-start;gap:10px;flex:1 1 0;min-width:0;cursor:pointer}
+#root .app .weekly-task>.task input[type=checkbox]{width:20px;height:20px;margin-top:3px;flex-shrink:0;accent-color:#1e4b3b}
+#root .app .weekly-task>.task span{font-size:15.5px;font-weight:700;line-height:1.5;color:#193129;overflow-wrap:anywhere}
+#root .app .weekly-task>.task .icon-btn{min-width:38px;min-height:38px;border-radius:9px;flex-shrink:0}
+#root .app .week-task-schedule{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 0 0;border-top:1px solid #EBE6DB}
+#root .app .week-task-schedule label{font-size:12px}
+#root .app .weekly-unscheduled-card{display:grid;gap:10px;padding:14px;margin-top:10px;border:1px solid #D6CFC0;border-radius:14px;background:#FFFFFF}
+#root .app .weekly-unscheduled-title{font-size:15px;font-weight:700;color:#193129;line-height:1.5;overflow-wrap:anywhere}
+#root .app .weekly-unscheduled-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#root .app .weekly-unscheduled-actions .soft-btn{flex:1;justify-content:center}
+#root .app .weekly-unscheduled-actions .icon-btn{min-width:44px;min-height:44px;border-radius:10px}
+.weekly-due{border:1px solid #D6CFC0;background:#FFFFFF;border-radius:14px;padding:16px;margin-bottom:18px}.weekly-due h2{margin:0 0 8px;font-size:18px;color:#193129}.weekly-due ul{margin:10px 0;padding-inline-start:20px}.weekly-due li{padding:4px 0}.weekly-due p{margin:8px 0}
+@media(max-width:360px){#root .app .week-task-schedule{grid-template-columns:1fr}}
 
+#root .app .today-tasks-view h1{display:flex;align-items:center;gap:10px}
+#root .app main[data-section] .today-tasks-view .soft-btn{background:#eef3ef;color:#1e4b3b;border:1px solid #cbd8cf;border-radius:10px;min-height:42px;font-weight:700}
+#root .app main[data-section] .today-tasks-view .soft-btn:hover{background:#e2ece5}
+#root .app .today-task-filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+#root .app .today-task-filters button{min-height:40px;padding:7px 13px;border-radius:10px;font-size:13.5px;font-weight:700}
+#root .app .today-task-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+#root .app .today-task-card{display:grid;gap:12px;padding:16px;border:1px solid #D6CFC0;border-radius:16px;background:#FFFFFF;box-shadow:0 2px 10px rgba(24,38,34,.06)}
+#root .app .today-task-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#root .app .today-task-info{flex:1 1 0;min-width:0;display:grid;gap:4px}
+#root .app .today-task-title{font-size:16px;font-weight:700;line-height:1.45;color:#193129}
+#root .app .today-task-source{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:#5d6f67;font-size:12.5px;line-height:1.5}
+#root .app .today-task-complete-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #b6cec0;background:#ebf4ee;color:#1d4e3d;font-size:13.5px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background-color .16s ease,border-color .16s ease}
+#root .app .today-task-complete-btn:hover{background:#dcece2;border-color:#97bca7}
+#root .app .today-task-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12.5px;color:#566860}
+#root .app .today-task-meta-item{display:inline-flex;align-items:center;gap:5px;line-height:1.5}
+#root .app .today-task-meta-item.is-confirmed,#root .app .task-notify-meta.active{color:#1f5c4a;font-weight:600}
+#root .app .today-task-schedule{display:grid;gap:12px;padding-top:12px;border-top:1px solid #ebe6db}
+#root .app .today-task-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#root .app .today-task-field{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:700;color:#4e5c60}
+#root .app .today-task-field input[type=date],#root .app .today-task-field select{width:100%;min-width:0;max-width:100%;min-height:44px;padding:8px 11px;border:1px solid #d0c8b8;border-radius:10px;background:#ffffff;color:#193129;font:inherit;font-size:14px;box-sizing:border-box}
+#root .app .today-task-field-time .task-time-selects{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(68px,.85fr);align-items:center;gap:6px;width:100%;direction:ltr}
+#root .app .today-task-field-time .task-time-selects select{min-height:44px;padding:8px 6px;text-align:center;font-variant-numeric:tabular-nums}
+#root .app .today-task-field-time .task-time-selects>span{color:#5d6f67;font-weight:700}
+#root .app .today-task-alert-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}
+#root .app .today-task-notify-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 13px;border-radius:10px;border:1px solid #d3cbb9;background:#f3efe6;color:#505c58;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background-color .16s ease,border-color .16s ease,color .16s ease}
+#root .app .today-task-notify-btn.is-on{background:#e7f2eb;border-color:#9bc4ae;color:#1d4e3d}
+#root .app .today-task-notify-btn:hover{filter:brightness(.97)}
+#root .app .today-task-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:10px;padding-top:2px}
+#root .app .today-task-draft-btn{min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid #d0c8b8;background:#f4f0e7;color:#1d3f35;font-size:14px;font-weight:700;white-space:nowrap;cursor:pointer}
+#root .app .today-task-draft-btn:hover{background:#eae4d8}
+#root .app .today-task-confirm-btn{min-height:44px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;white-space:nowrap}
+#root .app .today-tasks-back{margin-top:16px;display:flex}
+#root .app .today-tasks-back .soft-btn{width:100%;justify-content:center;min-height:44px}
+#root .app .task-notif-banner{display:grid;gap:12px;margin-bottom:16px}
+#root .app .task-notif-banner-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+#root .app .task-notif-banner-status{display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1 1 200px}
+#root .app .task-notif-banner-status>svg{margin-top:3px;flex-shrink:0}
+#root .app .task-notif-banner-status p{margin:3px 0 0;line-height:1.5}
+#root .app .task-notif-banner-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+#root .app .task-notif-banner-actions button{min-height:42px;flex:1 1 auto;justify-content:center}
+#root .app .task-notif-quick-config{border-top:1px solid #dfd8c8;padding-top:14px;display:grid;gap:12px;min-width:0}
+#root .app .task-notif-quick-grid{border:0;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+#root .app .task-quick-field{display:grid;gap:8px;min-width:0;font-size:13px;font-weight:700;color:#2b473b}
+#root .app .task-quick-label{font-size:13px;font-weight:700;color:#1d352c}
+#root .app .task-custom-minutes{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:11px;border:1px solid #ddd6c7;background:#f4f1e9;font-size:12.5px;font-weight:600;color:#4a585c;min-width:0}
+#root .app .task-custom-minutes span{flex:1 1 auto;min-width:0;line-height:1.4}
+#root .app .task-custom-minutes input{width:84px;flex:0 0 84px;min-width:0;min-height:40px;padding:6px 8px;text-align:center;font-variant-numeric:tabular-nums;border:1px solid #cfc7b6;border-radius:9px;background:#ffffff;color:#193129;font:inherit;font-size:14px;font-weight:700;box-sizing:border-box}
+#root .app .task-quick-field select{width:100%;min-width:0;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cfc7b6;border-radius:10px;background:#ffffff;color:#193129;font:inherit;font-size:14px;box-sizing:border-box}
+#root .app .task-notif-quick-save{display:flex;justify-content:stretch;padding-top:2px}
+#root .app .task-notif-quick-save button{width:100%;min-height:44px;justify-content:center;border-radius:10px;font-size:14px;font-weight:700}
