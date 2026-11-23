@@ -1,3 +1,5 @@
+import {nativeMasteryReminders} from '../quran-mastery/reminders';
+import {loadMasteryState} from '../quran-mastery/storage';
 // src/notifications/native-prayer-scheduler.ts
 // جدولة أذان الصلاة (AlarmManager + AdhanPlaybackService) والمنبهات عبر @capacitor/local-notifications (Android/iOS).
 // تعمل فقط في بيئة Capacitor (native). في الويب تُتجاهل (no-op).
@@ -796,7 +798,7 @@ export async function scheduleNativePersonalReminders(
     if (perms.display !== 'granted') return 0;
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeReminderPayloads(reminders, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
     if (payloads.length === 0) return 0;
 
     try {
@@ -910,4 +912,4 @@ export async function syncAllNativeNotifications(opts: {
 
 export function isNativePlatform(): boolean {
   return isNative();
-    }
+  }
