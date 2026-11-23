@@ -57,7 +57,7 @@ test('mastery requires repeated success and is never granted by reading', () => 
   assert.equal(stats.masteredVerses, 0, 'قراءة السورة لا تمنح إتقانًا');
 });
 
-test('duePassages excludes mastered passages and sorts by due date', () => {
+test('duePassages includes due mastered passages and sorts by due date', () => {
   const date = '2026-11-02';
   const passages = [
     basePassage({id: 'a', dueDate: '2026-11-03', state: 'learning'}),
@@ -65,7 +65,7 @@ test('duePassages excludes mastered passages and sorts by due date', () => {
     basePassage({id: 'c', dueDate: '2026-10-01', state: 'mastered'}),
     basePassage({id: 'd', dueDate: date, state: 'needs_revision'})
   ];
-  assert.deepEqual(duePassages(passages, date).map(item => item.id), ['b', 'd']);
+  assert.deepEqual(duePassages(passages, date).map(item => item.id), ['c', 'b', 'd']);
   assert.equal(isDue(passages[0], date), false);
   assert.equal(isDue(passages[1], date), true);
   assert.equal(isDue(passages[3], date), true);
@@ -170,7 +170,7 @@ test('completing a memorization routine queues the next passage without mastery'
   const twice = logRoutineCompletion(once, activity, date, new Date(`${date}T10:00:00Z`));
   assert.equal(twice.activityLog.length, 1, 'إنجاز الورد اليومي لا يُكرر');
   const second = twice.passages.find(item => item.id === 'm2');
-  assert.equal(second.state, 'learning');
+  assert.equal(second.state, 'new', 'rechecking the same daily routine must not advance another passage');
   assert.equal(twice.passages.filter(item => item.state === 'mastered').length, 0);
 });
 
