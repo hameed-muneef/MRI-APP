@@ -32,7 +32,7 @@ A completed unassisted recall can advance the evidence ladder at most once on a 
 
 The recorder owns permission requests, tracks, MediaRecorder handlers, blobs and object URLs. A late permission result after disposal stops its tracks without recording. Backgrounding, pagehide, stage/passage exit and unmount clean up recording resources. Calls are handled when the browser emits its background/page lifecycle event; native call-interruption behavior still needs real-device checks in Phase 6.
 
-Audio is temporary in-memory by default and never uploaded. "Save on device" explicitly starts a local browser download; the UI asks the user to verify the downloaded file. Only metadata is stored in the learning root, not the blob. Temporary object URLs are revoked on discard/replacement/save/disposal. A downloaded file is managed by the device and cannot be deleted by this app. No microphone permission is required to finish a session.
+Audio is temporary in-memory by default and never uploaded. "Save on device" explicitly stores the blob in the separate IndexedDB database `rabbani-mastery-recordings-v1`. A private local recording list supports playback and per-item delete. Only metadata is stored in the learning root, not the blob. Temporary object URLs are revoked on discard/replacement/save/disposal. Clearing browser storage removes these local recordings. No microphone permission is required to finish a session.
 
 ## Honest content gates
 
@@ -42,6 +42,6 @@ Asbab does not substitute tafsir: it displays source-under-review. Understanding
 
 Run `npm run quran:check`, `npm run lint`, `npm run test:unit`, `npm test`, `npm run build`, and `npx playwright test tests/e2e/mastery-phase2.spec.ts tests/e2e/review-regressions.spec.ts --project=mobile-light`.
 
-Tests cover transitions/resume, completed-vs-interrupted repetition, connection order, same-day/early/assisted/self-report evidence rules, failed-recall reset, attempt-link rejection, masking escape hatches, storage isolation/quarantine, recorder tracks/URLs/background/late-permission cleanup, and full UI sessions at 360/1280px. Unit/mock/browser checks do not replace real-device microphone/call/download checks. Those remain explicitly unverified.
+Tests cover transitions/resume, completed-vs-interrupted repetition, connection order, same-day/early/assisted/self-report evidence rules, failed-recall reset, attempt-link rejection, masking escape hatches, storage isolation/quarantine, recorder tracks/URLs/background/late-permission cleanup, and full UI sessions at 360/1280px. Unit/mock/browser checks do not replace real-device microphone/call checks. Those remain explicitly unverified.
 
 Phase 2 review requires a walkthrough of the full local session and evidence records before acceptance. No merge and no Phase 3 work are included.
