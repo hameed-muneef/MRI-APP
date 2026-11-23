@@ -3,3 +3,5 @@
 body:has(.qm-steps) .mobile-nav{display:none!important}
 body:has(.qm-steps) .scroll-top-fab-dock{display:none!important}
 .qm-workspace .qm-footer{margin-bottom:12px}
+body:has(.qm-steps) #root .app .mobile-nav{display:none!important}
+body:has(.qm-steps) #root .scroll-top-fab-dock{display:none!important}
