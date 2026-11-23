@@ -56,7 +56,7 @@ export default function MasteryWorkspace({asset,purpose,notify}:Props){
     <header className="qm-heading"><span className="qm-kicker">مصحف الحفظ والإتقان · محلي على جهازك</span><h2>{purpose==='new'?'جلسة حفظ جديدة':'جلسة مراجعة واسترجاع'}</h2><p>استمع ← افهم ← احفظ ← اربط ← تلو ← قيّم. إكمال الجلسة لا يمنح الإتقان.</p></header>
     {storageError&&<p role="alert" className="qm-error">{storageError}</p>}
     {summary&&<div className="qm-notice" role="status">{summary}</div>}
-    <div className="qm-card"><h3>اختر مقطعًا حرًا</h3><div className="qm-fields">
+    <div className="qm-card"><h3>{summary?'ابدأ جلسة أخرى (اختياري)':'اختر مقطعًا حرًا'}</h3><div className="qm-fields">
       <label>السورة<select value={surah} onChange={e=>{setSurah(Number(e.target.value));setFrom(1);setTo(Math.min(3,asset.surahs.find(s=>s.n===Number(e.target.value))?.ayahs??1));}}>{asset.surahs.map(s=><option key={s.n} value={s.n}>{s.name}</option>)}</select></label>
       <label>من الآية<input type="number" min="1" max={max} value={from} onChange={e=>setFrom(Number(e.target.value))}/></label>
       <label>إلى الآية<input type="number" min={from} max={max} value={to} onChange={e=>setTo(Number(e.target.value))}/></label>
