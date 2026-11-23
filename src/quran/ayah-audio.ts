@@ -107,8 +107,10 @@ export async function fetchAyahAudioUrl(recitationId: number, surah: number, aya
   const key = `${recitationId}:${surah}:${ayah}`;
   if (CACHE.has(key)) return CACHE.get(key)!;
   try {
-    const res = await fetch(`https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah/${surah}:${ayah}`, {signal});
-    if (!res.ok) return null;
+    const endpoint=`https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah/${surah}:${ayah}`;
+    let res:Response|undefined;
+    if(typeof caches!=='undefined'){try{res=await (await caches.open('rabbani-quran-ayah-resolve-v1')).match(endpoint);}catch{/* network fallback */}}
+    if(!res){res=await fetch(endpoint,{signal});if(!res.ok)return null;if(typeof caches!=='undefined'){try{await (await caches.open('rabbani-quran-ayah-resolve-v1')).put(endpoint,res.clone());}catch{/* no false offline claim */}}}
     const json = await res.json();
     const full = normalizeQuranAudioUrl(json?.audio_files?.[0]?.url);
     if (full) {
