@@ -20,10 +20,6 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .quran-section-gri
   outline: 3px solid var(--qtab-icon-fg) !important; outline-offset: 3px;
 }
 
-/* Quran mastery card surfaces follow the same calm green family as its menu. */
-#root .app .qm-workspace .qm-card { background: #E0EEE5 !important; border-color: #6C907D !important; }
-[data-theme="dark"] #root .app .qm-workspace .qm-card { background: #203F35 !important; border-color: #6E9D88 !important; }
-
 /* Focus the learning journey: surrounding navigation returns on saved exit. */
 body:has(.qm-steps) .quran-page > :is(.quran-intro,.quran-section-grid,.quran-section-header) { display: none !important; }
 .qm-workspace { scroll-margin-top: 80px; }
