@@ -241,7 +241,9 @@ export function applyAssessment(root: MasteryStateRoot, args: {
   now?: Date;
 }): {root: MasteryStateRoot; outcome: AssessmentOutcome} {
   const now = args.now ?? new Date();
-  const today = dateKey(now);
+  const existingSchedule=root.schedules.find(s=>s.passageId===args.passageId);
+  const zone=existingSchedule?.timezone??root.plans.find(p=>p.id===root.passages.find(v=>v.id===args.passageId)?.planId)?.timezone;
+  const today=zone?new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now):dateKey(now);
   const attempt = root.recallAttempts.find(item => item.id === args.attemptId);
   const session = root.sessions.find(item => item.id === attempt?.sessionId);
   if (!attempt || !session || session.passageId !== args.passageId) throw new Error('محاولة الاسترجاع غير مرتبطة بالمقطع');
@@ -260,7 +262,7 @@ export function applyAssessment(root: MasteryStateRoot, args: {
   };
 
   const previousSchedule = root.schedules.find(item => item.passageId === args.passageId);
-  const scheduleBase = previousSchedule ?? defaultSchedule(args.passageId, now);
+  const scheduleBase = previousSchedule ?? {...defaultSchedule(args.passageId, now),...(zone?{timezone:zone,dueDate:today}:{})};
   const priorEvidenceDate = scheduleBase.lastEvidenceDate;
   const sameDayRetry = priorEvidenceDate === today;
   const eligible = unassisted && !sameDayRetry && (!priorEvidenceDate || scheduleBase.dueDate <= today);
@@ -317,17 +319,19 @@ export function buildMasteryPassages(plan: MasteryPlan, newId: () => string, now
   const stamp = now.toISOString();
   const size = Math.max(1, Math.round(plan.dailyTargetVerses));
   const passages: MasteryPassage[] = [];
-  let start = plan.range.ayahStart;
+  for (const planRange of plan.ranges??[plan.range]) {
+  let start = planRange.ayahStart;
   let order = 0;
-  while (start <= plan.range.ayahEnd) {
-    const end = Math.min(plan.range.ayahEnd, start + size - 1);
+  while (start <= planRange.ayahEnd) {
+    const end = Math.min(planRange.ayahEnd, start + size - 1);
     passages.push({
       id: newId(), planId: plan.id, order,
-      range: {surah: plan.range.surah, ayahStart: start, ayahEnd: end},
+      range: {surah: planRange.surah, ayahStart: start, ayahEnd: end},
       schemaVersion: plan.schemaVersion, createdAt: stamp, updatedAt: stamp,
     });
     start = end + 1;
     order += 1;
+  }
   }
   return passages;
 }
@@ -353,4 +357,4 @@ export function passageLabel(passage: MasteryPassage): string {
   return range.ayahStart === range.ayahEnd
     ? `آية ${range.ayahStart}`
     : `آية ${range.ayahStart}–${range.ayahEnd}`;
-            }
+}
