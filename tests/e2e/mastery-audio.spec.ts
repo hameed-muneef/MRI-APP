@@ -97,3 +97,24 @@ test('live source check: Quran.com per-ayah audio resolves and serves bytes',asy
  const bytes=await audio.body();
  expect(bytes.length).toBeGreaterThan(1000);
 });
+
+
+test('reciter change cancels a stale resolution, preserves verse and completed repeats',async({page})=>{
+ const requests:string[]=[];
+ await page.route('**/api.quran.com/api/v4/recitations/*/by_ayah/*',async route=>{
+  const url=route.request().url();requests.push(url);
+  if(url.includes('/recitations/7/')){await new Promise(r=>setTimeout(r,1000));if(route.request().failure())return;}
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({audio_files:[{url:'https://verses.quran.com/mock/switch.wav'}]})}).catch(()=>{});
+ });
+ await page.route('**/verses.quran.com/mock/**',route=>route.fulfill({status:200,contentType:'audio/wav',body:wavBytes()}));
+ const ui=await startListenStage(page);
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await expect.poll(()=>requests.length).toBeGreaterThan(0);
+ await ui.getByLabel('القارئ',{exact:true}).selectOption('6');
+ await expect(ui).toContainText('اكتمل التكرار المحدد.',{timeout:20000});
+ const events=await readEvents(page);
+ expect(events.map((e:{groupRefs:string[]})=>e.groupRefs)).toEqual([['1:1'],['1:2'],['1:3']]);
+ expect(events.every((e:{completed:number})=>e.completed===3)).toBe(true);
+ expect(events[0].reciterHistory.map((h:{reciterId:number})=>h.reciterId)).toEqual([7,6]);
+ expect(requests.some(u=>u.includes('/recitations/6/by_ayah/1:1'))).toBe(true);
+});
