@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { X } from 'lucide-react';
-import { fetchTafsir, fetchTranslation, fetchAsbabNuzul, TAFSIRS, TRANSLATIONS, ASBAB_ATTRIBUTION } from '../../quran/content-api';
+import { fetchTafsir, fetchTranslation, fetchAsbabNuzul, TAFSIRS, TRANSLATIONS, ASBAB_ATTRIBUTION, ASBAB_PROVIDER, tafsirProviderLabel } from '../../quran/content-api';
 import { getVerseNote, saveVerseNote, deleteVerseNote } from '../../quran/verse-notes';
 
 /** نص نسبة المصدر المعروض بجوار كل نص ديني. */
-export function attributionLabel(sourceName: string): string {
+export function attributionLabel(sourceName: string, provider?: string): string {
+  if (provider) return `المصدر: ${sourceName}، ${provider}`;
   return `المصدر: ${sourceName}، عبر Quran.com API v4، إصدار النص غير محدد من المزود`;
 }
 
@@ -100,13 +101,13 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
       </nav>
       {topic==='tafsir'&&<><label className="qm-field">التفسير
         <select aria-label="التفسير" value={tafsirId} onChange={e=>setTafsirId(Number(e.target.value))}>{TAFSIRS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
-      </label><p className="qm-attribution">{attributionLabel(tafsirName)}</p>
+      </label><p className="qm-attribution">{attributionLabel(tafsirName, tafsirProviderLabel(tafsirId))}</p>
       {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{tafsir??'تعذر جلب التفسير. تحقق من الاتصال.'}</p>}</>}
       {topic==='translation'&&<><label className="qm-field">الترجمة
         <select aria-label="الترجمة" value={translationId} onChange={e=>setTranslationId(Number(e.target.value))}>{TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </label><p className="qm-attribution">{attributionLabel(translationName)}</p>
       {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{translation??'تعذر جلب الترجمة. تحقق من الاتصال.'}</p>}</>}
-      {topic==='context'&&<><p className="qm-attribution">{attributionLabel(ASBAB_ATTRIBUTION)}</p>
+      {topic==='context'&&<><p className="qm-attribution">{attributionLabel(ASBAB_ATTRIBUTION, ASBAB_PROVIDER)}</p>
       {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{asbab??'لا يوجد سبب نزول لهذه الآية في هذا المصدر.'}</p>}</>}
       {topic!=='context'&&!loading&&!(topic==='tafsir'?tafsir:translation)&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}
       <details><summary>ملاحظاتي الخاصة</summary>
