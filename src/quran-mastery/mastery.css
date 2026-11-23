@@ -32,3 +32,14 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 #root .app:has(.qm-workspace)>.offline-pill{position:static;transform:none;width:fit-content;margin:12px auto 90px;white-space:normal}
 
 .qm-tajweed summary{font-weight:700;min-height:44px;cursor:pointer;color:#174a8c}.qm-external{display:inline-flex;align-items:center;min-height:44px;border:1px solid #9dbbd7;border-radius:10px;padding:10px 14px;background:#eaf3fb;color:#174a8c!important;text-decoration:underline}.qm-tajweed{overflow-wrap:anywhere}
+/* Explicit mastery control colors win over unrelated global details variants. */
+#root .app .qm-workspace summary{color:#174a8c!important;background:transparent!important}
+#root .app .qm-workspace input,#root .app .qm-workspace select{color:#12305a!important;background:#fff!important}
+[data-theme="dark"] #root .app .qm-workspace{--qm-ink:#d9e8fa;--qm-pale:#1a3553;--qm-blue:#8ebdff;background:#111f31;color:#d9e8fa;border-color:#3c5874}
+[data-theme="dark"] #root .app .qm-workspace .qm-card,[data-theme="dark"] #root .app .qm-workspace .qm-footer{background:#182b40;color:#d9e8fa;border-color:#3c5874}
+[data-theme="dark"] #root .app .qm-workspace :is(h2,h3,h4,summary,label,strong,.quran-verse-text){color:#d9e8fa!important}
+[data-theme="dark"] #root .app .qm-workspace :is(p,small,.qm-muted,.qm-kicker,.qm-steps li){color:#bed0e4!important}
+[data-theme="dark"] #root .app .qm-workspace :is(button,input,select,.qm-external){color:#d9e8fa!important;background:#203c59!important;border-color:#7999b9}
+[data-theme="dark"] #root .app .qm-workspace :is(.qm-primary,button[aria-pressed=true]){color:#10233b!important;background:#a6ccff!important}
+[data-theme="dark"] #root .app .qm-workspace :is(.qm-notice,.qm-metrics>div){background:#203c59;color:#d9e8fa!important}
+[data-theme="dark"] #root .app .qm-workspace .qm-steps li span{background:#203c59;color:#d9e8fa}
