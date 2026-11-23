@@ -12,7 +12,7 @@ import {
   showsBasmala, surahInfo, toArabicNumber, verseBody, verseMarker,
   searchVerses, basmalaText
 } from '../../quran/content';
-import {TRANSLATIONS, TAFSIRS, fetchTafsir, fetchTranslation, tafsirProviderLabel, type FetchState} from '../../quran/content-api';
+import {TRANSLATIONS, TAFSIRS, fetchTafsir, fetchTranslation, type FetchState} from '../../quran/content-api';
 import {
   audioUrl, defaultMoshaf, loadReciters, moshafCategory, type Reciter, type ReciterMoshaf
 } from '../../quran/audio';
@@ -913,7 +913,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
           {content.status === 'loading' && <p className="muted small">جارٍ التحميل…</p>}
           {content.status === 'error' && <p className="muted small" role="alert">{online ? content.error : 'غير متاح دون اتصال.'}</p>}
           {content.status === 'empty' && <p className="muted small">{sheetTab === 'tafsir' ? 'لا يوجد تفسير لهذه الآية في هذا المصدر.' : 'لا توجد ترجمة لهذه الآية في هذا المصدر.'}</p>}
-          {content.status === 'success' && <small>{attributionLabel((sheetTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name??'مصدر غير محدد', sheetTab==='tafsir'?tafsirProviderLabel(tafsirId):undefined)}</small>}
+          {content.status === 'success' && <small>{attributionLabel((sheetTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name??'مصدر غير محدد', undefined)}</small>}
           {content.status === 'success' && <p className="mf-content-text">{content.data}</p>}
         </div>}
 
@@ -1079,4 +1079,4 @@ const MushafPageList = function MushafPageList({asset, pages, surahStarts, sajda
     })}
     <p className="mf-source">النص العثماني من {asset.source} · رواية {asset.narration}. حدود الصفحات والأجزاء والأحزاب كما في مصدر المجمع. التلاوات المنزَّلة على الجهاز تعمل دون إنترنت، بينما البث المباشر والتلاوات غير المنزَّلة تحتاج اتصالًا.</p>
   </div>;
-            }
+                                                 }
