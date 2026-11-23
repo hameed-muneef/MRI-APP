@@ -1,6 +1,8 @@
 import {test,expect} from '@playwright/test';
 async function enter(page:import('@playwright/test').Page,tab='hifz'){
- await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator(`[data-quran-tab="${tab}"]`).click();return page.locator('.qm-workspace');
+ await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();const ui=page.locator('.qm-workspace');
+ if(tab==='revision')await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();
+ return ui;
 }
 test('progressive visible recall records self assessment without spaced evidence',async({page},info)=>{
  const ui=await enter(page,'revision');await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
@@ -12,7 +14,7 @@ test('progressive visible recall records self assessment without spaced evidence
 test('corrupt learning data stays recoverable and cannot be overwritten by a fresh session',async({page})=>{
  const ui=await enter(page);await page.evaluate(()=>localStorage.setItem('rabbani-mastery-v1','broken-private-learning'));await page.reload();
  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
- await expect(ui.getByRole('alert')).toContainText('غير قابلة للقراءة');await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();await expect(ui.locator('h2')).toHaveText('جلسة حفظ جديدة');
+ await expect(ui.getByRole('alert')).toContainText('غير قابلة للقراءة');await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();await expect(ui.locator('h2')).toHaveText('ابدأ حفظك خطوة بخطوة');
  expect(await page.evaluate(()=>localStorage.getItem('rabbani-mastery-v1'))).toBe('broken-private-learning');
  expect(await page.evaluate(()=>localStorage.getItem('rabbani-mastery-v1:quarantine'))).toBe('broken-private-learning');
 });
@@ -27,7 +29,7 @@ test('resuming an assessment requires a fresh recall, not reused prior-day compl
  const ui=await enter(page,'revision');await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
  await ui.getByRole('button',{name:'أنهيت محاولة الاسترجاع، انتقل للتقييم',exact:true}).click();
  await ui.getByRole('button',{name:'رجوع وحفظ الموضع',exact:true}).click();await ui.getByRole('button',{name:/استئناف/}).first().click();
- await expect(ui.locator('h2')).toHaveText('تلو');const r=await page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-mastery-v1')!));expect(r.recallAttempts.at(-1).completedAt).toBeUndefined();
+ await expect(ui.locator('h2')).toHaveText('سمّع من ذاكرتك');const r=await page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-mastery-v1')!));expect(r.recallAttempts.at(-1).completedAt).toBeUndefined();
 });
 test('no storage persistence API gives a clear unsupported state',async({page})=>{
  await page.addInitScript(()=>Object.defineProperty(navigator,'storage',{value:undefined,configurable:true}));const ui=await enter(page);
