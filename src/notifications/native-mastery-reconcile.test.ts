@@ -1,0 +1,13 @@
+import {it,expect,vi} from 'vitest';
+const mock=vi.hoisted(()=>({pending:[] as {id:number;extra?:{rabbaniKind:string}}[],display:'granted',cancel:vi.fn(async(_x:unknown)=>{}),schedule:vi.fn(async(x:{notifications:unknown[]})=>({notifications:x.notifications}))}));
+vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{checkPermissions:async()=>({display:mock.display}),checkExactNotificationSetting:async()=>({exact_alarm:'granted'}),listChannels:async()=>({channels:[{id:'al-rabbani-general'}]}),getPending:async()=>({notifications:mock.pending}),cancel:mock.cancel,schedule:mock.schedule}}));
+vi.mock('../lib/settings-opener',()=>({getAndroidEnvironmentStatus:async()=>({hasAdhanRawSound:true}),ensureNativeAdhanChannel:async()=>null}));
+import {scheduleNativePersonalReminders} from './native-prayer-scheduler';
+import {createEmptyMasteryState,saveMasteryState} from '../quran-mastery/storage';
+import {DEFAULT_NOTIFICATION_PREFERENCE,type Reminder} from './types';
+it('native reconciliation cancels stale reminders but not prayer/task alarms on due changes and permission loss',async()=>{
+ const data=new Map<string,string>();const store={getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>data.set(k,v),removeItem:(k:string)=>data.delete(k)};vi.stubGlobal('window',{localStorage:store,Capacitor:{isNativePlatform:()=>true},dispatchEvent:()=>{}});vi.stubGlobal('CustomEvent',class{});
+ const now=new Date(2026,10,23,7),root=createEmptyMasteryState(now);root.schedules=[{passageId:'x',dueDate:'2026-11-23',timezone:'UTC',intervalIndex:0,lapses:0,deferrals:[],updatedAt:''}];saveMasteryState(root);
+ const source:Reminder={id:'quran-mastery-daily-review',user_id:'',title:'Review',scheduled_at:new Date(2026,10,23,9).toISOString(),recurrence:'daily',category:'worship',enabled:true,created_at:'',updated_at:''};const prefs=structuredClone(DEFAULT_NOTIFICATION_PREFERENCE);
+ expect(await scheduleNativePersonalReminders([source],prefs,now)).toBeGreaterThan(0);const ids=mock.schedule.mock.calls[0][0].notifications as {id:number}[];mock.pending=[...ids.map(x=>({id:x.id,extra:{rabbaniKind:'reminder'}})),{id:1,extra:{rabbaniKind:'prayer'}},{id:2,extra:{rabbaniKind:'task'}}];root.schedules=[];saveMasteryState(root);expect(await scheduleNativePersonalReminders([source],prefs,now)).toBe(0);const cancelled=(mock.cancel.mock.calls[mock.cancel.mock.calls.length-1][0] as {notifications:{id:number}[]}).notifications.map(x=>x.id);expect(cancelled).toContain(ids[0].id);expect(cancelled).not.toContain(1);expect(cancelled).not.toContain(2);mock.display='denied';expect(await scheduleNativePersonalReminders([source],prefs,now)).toBe(0);expect(mock.schedule).toHaveBeenCalledTimes(1);
+});
