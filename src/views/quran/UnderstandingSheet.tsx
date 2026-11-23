@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { X } from 'lucide-react';
-import { fetchTafsir, fetchTranslation, TAFSIRS, TRANSLATIONS } from '../../quran/content-api';
+import { fetchTafsir, fetchTranslation, fetchAsbabNuzul, TAFSIRS, TRANSLATIONS, ASBAB_ATTRIBUTION } from '../../quran/content-api';
 import { getVerseNote, saveVerseNote, deleteVerseNote } from '../../quran/verse-notes';
 
 /** نص نسبة المصدر المعروض بجوار كل نص ديني. */
@@ -29,6 +29,7 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
   const [translationId, setTranslationId] = useState(TRANSLATIONS[0].id);
   const [tafsir, setTafsir] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
+  const [asbab, setAsbab] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState('');
   const [noteSavedAt, setNoteSavedAt] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
     setTranslation(null);
     const key = `${surah}:${ayah}`;
     const controller=new AbortController();
-    if(topic==='context'){setLoading(false);return()=>controller.abort();}
+    if(topic==='context'){setAsbab(null);void fetchAsbabNuzul(key).then(value=>{if(my!==seq.current)return;setAsbab(value);setLoading(false);}).catch(()=>{if(!controller.signal.aborted&&my===seq.current)setLoading(false);});return()=>controller.abort();}
     void (topic==='tafsir'?fetchTafsir(key,tafsirId,controller.signal):fetchTranslation(key,translationId,controller.signal)).then(value=>{
       if(my!==seq.current)return;
       if(topic==='tafsir')setTafsir(value);else setTranslation(value);
@@ -105,7 +106,9 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
         <select aria-label="الترجمة" value={translationId} onChange={e=>setTranslationId(Number(e.target.value))}>{TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </label><p className="qm-attribution">{attributionLabel(translationName)}</p>
       {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{translation??'تعذر جلب الترجمة. تحقق من الاتصال.'}</p>}</>}
-      {topic==='context'?<p className="qm-notice">أسباب النزول غير متاحة حاليًا. المصدر قيد المراجعة.</p>:!loading&&!(topic==='tafsir'?tafsir:translation)&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}
+      {topic==='context'&&<><p className="qm-attribution">{attributionLabel(ASBAB_ATTRIBUTION)}</p>
+      {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{asbab??'لا يوجد سبب نزول لهذه الآية في هذا المصدر.'}</p>}</>}
+      {topic!=='context'&&!loading&&!(topic==='tafsir'?tafsir:translation)&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}
       <details><summary>ملاحظاتي الخاصة</summary>
       <h4>ملاحظاتي الخاصة</h4>
       <p className="qm-muted">محلية على هذا الجهاز فقط، منفصلة عن سجلات الحفظ، ويمكن حذفها في أي وقت.</p>
@@ -126,4 +129,4 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
       {noteSavedAt && <p className="qm-muted">محفوظة على الجهاز.</p>}</details>
     </div></div>,document.body
   );
-    }
+}
