@@ -27,6 +27,11 @@ for(const width of [360,1280]){
   await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();
   await expect(ui.locator('.quran-verse-hidden')).toHaveCount(3);
   await ui.screenshot({path:`/downloads/mastery-recite-${width}.png`});
+  await expect(page.locator('.mobile-nav')).toBeHidden();
+  await ui.locator('.qm-verse-actions').first().scrollIntoViewIfNeeded();
+  await page.screenshot({path:`/downloads/mastery-viewport-verses-${width}.png`});
+  await ui.locator('.qm-footer').scrollIntoViewIfNeeded();
+  await page.screenshot({path:`/downloads/mastery-viewport-footer-${width}.png`});
   expect(await ui.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
   await ui.getByRole('button',{name:'أنهيت محاولة الاسترجاع، انتقل للتقييم',exact:true}).click();
   await expect(ui.locator('h2')).toHaveText('قيّم');
