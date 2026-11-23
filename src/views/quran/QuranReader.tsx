@@ -1,3 +1,4 @@
+import {attributionLabel} from './UnderstandingSheet';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {
   Bookmark, BookmarkCheck, Copy, Share2, Search, StickyNote, Plus, Trash2,
@@ -15,7 +16,8 @@ import {dateKey} from '../../quran/learning';
 import {uid} from '../../id';
 import {EmptyNote, QuranVerseText, ReferenceBadge, copyText, shareText} from './ui';
 import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, type FetchState} from '../../quran/content-api';
-import {loadReciters, audioUrl, defaultMoshaf, type Reciter} from '../../quran/audio';
+import {buildSequentialQueue} from '../../quran/audio-adapter';
+import {loadReciters, audioUrl, defaultMoshaf, moshafCategory, type Reciter} from '../../quran/audio';
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
 import {backgroundAudio} from '../../audio/background-player';
 import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
@@ -135,6 +137,7 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
 
   const playSurah = () => {
     if (!currentMoshaf) return;
+    if(moshafCategory(currentMoshaf.name)!=='hafs'){notify('الرواية غير حفص متاحة للاستماع فقط من مكتبة القراء، ولا تُربط بنص حفص المعروض.');return;}
     const url = audioUrl(currentMoshaf, surahNumber);
     const info = surahInfo(asset, surahNumber);
     void backgroundAudio.playSingle({
@@ -179,7 +182,10 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
     }
   };
 
+  const readerRequest=useRef(0);
+  useEffect(()=>{readerRequest.current++;return()=>{readerRequest.current++;};},[surahNumber,ayahReciterId,reciterId,moshafId]);
   const playAyah = async (ayah: number) => {
+    const request=++readerRequest.current;
     if (playingAyah === ayah) {
       void backgroundAudio.stop();
       return;
@@ -199,24 +205,23 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
       }
     }
 
+    if(request!==readerRequest.current)return;
     const info = surahInfo(asset, surahNumber);
-    const tracks: AudioTrack[] = [];
-    for (let i = startIdx; i < verses.length; i += 1) {
-      const aNum = verses[i].a;
-      const url = urlMap.get(aNum);
-      if (!url) continue;
-      tracks.push({
-        id: `quran:reader-ayah:${surahNumber}:${aNum}`,
-        title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(aNum)}`,
-        subtitle: 'تلاوة متتابعة',
-        url,
-        category: 'quran',
-        meta: {mode: 'reader-ayah', surah: surahNumber, ayah: aNum},
-      });
-    }
+    // لا تجاوز صامت: تتوقف القائمة عند أول آية بلا صوت وتُذكر صراحة.
+    const {tracks, firstMissingAyah} = buildSequentialQueue({
+      surah: surahNumber,
+      surahName: info?.name ?? `سورة ${surahNumber}`,
+      ayahs: verses.slice(startIdx).map(v => v.a),
+      urlFor: (a) => urlMap.get(a),
+      owner: 'reader-ayah',
+      titleFor: (a) => `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(a)}`,
+    });
     if (!tracks.length) {
       notify('تعذر جلب تلاوة الآية. تحقق من الاتصال بالإنترنت وأعد المحاولة.');
       return;
+    }
+    if (firstMissingAyah !== null) {
+      notify(`توقف التشغيل قبل الآية ${toArabicNumber(firstMissingAyah)} لتعذر جلب صوتها؛ لم يتم تجاوزها.`);
     }
     await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
@@ -300,6 +305,7 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
     : null;
 
   const runMemo = async () => {
+    const request=++readerRequest.current;
     setMemoPreparing(true);
     let urlMap = new Map(ayahAudioUrls);
     if (memoAyahs.some(a => !urlMap.has(a))) {
@@ -317,9 +323,15 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
       }
     }
     setMemoPreparing(false);
-
+    if(request!==readerRequest.current)return;
     const info = surahInfo(asset, surahNumber);
     const totalAyahs = memoAyahs.length;
+    // لا تجاوز صامت في مقاطع الحفظ: أي آية بلا صوت توقف البدء مع إعلان صريح.
+    const firstMissing = memoAyahs.find(a => !urlMap.get(a));
+    if (firstMissing !== undefined) {
+      notify(`تعذر بدء تكرار المقطع: الآية ${toArabicNumber(firstMissing)} بلا صوت متاح، ولن يتم تجاوزها.`);
+      return;
+    }
     const tracks: AudioTrack[] = [];
     for (let pr = 0; pr < memoPassageRepeat; pr += 1) {
       for (let ai = 0; ai < totalAyahs; ai += 1) {
@@ -726,6 +738,7 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
                   {contentState.status === 'loading' && <p className="muted small">جارٍ التحميل…</p>}
                   {contentState.status === 'error' && <p className="muted small" role="alert">{online ? contentState.error : 'لا يوجد اتصال، ولم يُحفظ هذا المحتوى على الجهاز بعد.'}</p>}
                   {contentState.status === 'empty' && <p className="muted small">{online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
+                  {contentState.status === 'success' && contentTab!=='asbab'&&<small>{attributionLabel((contentTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name??'مصدر غير محدد')}</small>}
                   {contentState.status === 'success' && <p className="quran-content-text">{contentState.data}</p>}
                 </div>
               )}
@@ -803,4 +816,4 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
       </aside>
     </div>
   </div>;
-}
+    }
