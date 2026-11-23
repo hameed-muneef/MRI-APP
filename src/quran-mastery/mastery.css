@@ -43,3 +43,5 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 [data-theme="dark"] #root .app .qm-workspace :is(.qm-primary,button[aria-pressed=true]){color:#10233b!important;background:#a6ccff!important}
 [data-theme="dark"] #root .app .qm-workspace :is(.qm-notice,.qm-metrics>div){background:#203c59;color:#d9e8fa!important}
 [data-theme="dark"] #root .app .qm-workspace .qm-steps li span{background:#203c59;color:#d9e8fa}
+
+.qm-workspace .qm-current-verse{outline:3px solid #1e5aa8;outline-offset:2px;background:#eaf3fb} [data-theme="dark"] #root .app .qm-workspace .qm-current-verse{outline-color:#a6ccff;background:#203c59}
