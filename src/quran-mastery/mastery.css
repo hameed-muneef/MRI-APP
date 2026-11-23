@@ -16,6 +16,9 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 .qm-sheet-verse{font-size:1.15rem;line-height:2;background:#f2f7fb;padding:10px;border-radius:8px}
 .qm-sheet-body{line-height:1.9;text-align:start}
 .qm-attribution{font-size:.8rem;color:#5a6b7d;margin:.2rem 0}
+.qm-listen-quick{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.3rem 0 .6rem}
+.qm-listen-quick>span{font-weight:600}
+.qm-words{margin:.4rem 0}.qm-words>div{margin-bottom:.5rem}.qm-words dt{font-weight:700}.qm-words dd{margin:0}
 .qm-field{display:block;margin:.5rem 0}
 .qm-sheet textarea{width:100%;border:1px solid #c8d6e2;border-radius:8px;padding:8px}
 
