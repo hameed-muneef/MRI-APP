@@ -7,6 +7,7 @@ import {
   Globe,
   HardDrive,
   Lock,
+  MapPin,
   MoonStar,
   Palette,
   Play,
@@ -57,6 +58,7 @@ import {
 import AdhanPlayer from './AdhanPlayer';
 import AlarmTonePlayer from './AlarmTonePlayer';
 import AudioDiagnostics from './AudioDiagnostics';
+import LocationPermissionPanel from './LocationPermissionPanel';
 import {useBackHandler} from '../navigation/useBackHandler';
 import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
 
@@ -495,6 +497,11 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
           <AppearancePanel/>
 
           <section className="panel">
+            <h3><MapPin size={18}/> الموقع</h3>
+            <LocationPermissionPanel notify={notify}/>
+          </section>
+
+          <section className="panel">
             <h3><HardDrive size={18}/> التخزين المحلي والنسخ الاحتياطي</h3>
             <p className="muted">جميع بياناتك — مهامك، خططك، أهدافك، أورادك، حفظ القرآن، الأذكار، والمنبهات — محفوظة محليًا على هذا الجهاز.</p>
             {storageSummary && (
@@ -596,4 +603,4 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
       </div>
     </div>
   );
-}
+                      }
