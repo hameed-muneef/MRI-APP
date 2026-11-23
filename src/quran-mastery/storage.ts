@@ -187,6 +187,7 @@ export function saveMasteryState(state: MasteryStateRoot): void {
     window.localStorage.setItem(TEMP_KEY, payload);
     window.localStorage.setItem(MASTERY_STORAGE_KEY, payload);
     window.localStorage.removeItem(TEMP_KEY);
+    window.dispatchEvent?.(new Event('rabbani-mastery-changed'));
   } catch (error) {
     try { window.localStorage.removeItem(TEMP_KEY); } catch { /* لا شيء */ }
     throw error instanceof Error ? error : new Error('تعذر حفظ بيانات الإتقان محليًا');
