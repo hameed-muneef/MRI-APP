@@ -9,7 +9,9 @@ import {MASTERY_SCHEMA_VERSION, MASTERY_STORAGE_KEY, MasteryStateRoot} from './t
 const TEMP_KEY = `${MASTERY_STORAGE_KEY}:pending`;
 const QUARANTINE_KEY = `${MASTERY_STORAGE_KEY}:quarantine`;
 
-const verseRangeSchema = z.object({
+const timezoneSchema=z.string().refine(value=>{try{new Intl.DateTimeFormat('en',{timeZone:value});return true;}catch{return false;}});
+const daySchema=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const date=new Date(`${value}T12:00:00Z`);return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;});
+export const verseRangeSchema = z.object({
   surah: z.number().int().min(1).max(114),
   ayahStart: z.number().int().min(1),
   ayahEnd: z.number().int().min(1),
@@ -24,7 +26,7 @@ const planSchema = z.object({
   ranges:z.array(verseRangeSchema).optional(),
   timeBudgetMinutes:z.number().int().min(1).max(240).optional(),
   weekdays:z.array(z.number().int().min(0).max(6)).min(1).optional(),
-  timezone:z.string().refine(v=>{try{new Intl.DateTimeFormat('en',{timeZone:v});return true;}catch{return false;}}).optional(),
+  timezone:timezoneSchema.optional(),
   reciterId:z.number().int().optional(),
   revisionLimit:z.number().int().min(1).max(20).optional(),
   dailyTargetVerses: z.number().int().min(1),
@@ -112,12 +114,12 @@ const projectionSchema = z.object({
 
 const scheduleSchema = z.object({
   passageId: z.string().min(1),
-  dueDate: z.string(),
-  timezone: z.string(),
-  intervalIndex: z.number().int().min(0),
+  dueDate: daySchema,
+  timezone: timezoneSchema,
+  intervalIndex: z.number().int().min(0).max(5),
   lapses: z.number().int().min(0),
-  lastEvidenceDate: z.string().optional(),
-  deferrals: z.array(z.object({date: z.string(), reason: z.string()})),
+  lastEvidenceDate: daySchema.optional(),
+  deferrals: z.array(z.object({date: daySchema, reason: z.string()})),
   updatedAt: z.string(),
 });
 
@@ -132,7 +134,7 @@ const recordingSchema = z.object({
   createdAt: z.string(),
 });
 
-const rootSchema = z.object({
+export const masteryRootSchema = z.object({
   schemaVersion: z.literal(MASTERY_SCHEMA_VERSION),
   plans: z.array(planSchema),
   passages: z.array(passageSchema),
@@ -155,21 +157,28 @@ export function createEmptyMasteryState(now = new Date()): MasteryStateRoot {
   };
 }
 
-const storageAvailable = (): boolean =>
-  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+const storageAvailable = (): boolean => {
+  try {return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';}
+  catch {return false;}
+};
+let readIssue = '';
+export const masteryStorageIssue = () => readIssue;
 
 /**
  * قراءة آمنة: حمولة مفقودة → حالة فارغة. حمولة تالفة أو بإصدار غير مدعوم →
  * تُنقل كما هي إلى مفتاح حجر (لا تُفقد) وتُعاد حالة فارغة جديدة.
  */
 export function loadMasteryState(now = new Date()): MasteryStateRoot {
-  if (!storageAvailable()) return createEmptyMasteryState(now);
-  const raw = window.localStorage.getItem(MASTERY_STORAGE_KEY);
+  readIssue = '';
+  if (!storageAvailable()) {readIssue = 'التخزين المحلي غير متاح. لا يمكن حفظ جلساتك هنا.';return createEmptyMasteryState(now);}
+  let raw:string|null;
+  try {raw=window.localStorage.getItem(MASTERY_STORAGE_KEY);} catch {readIssue='تعذر قراءة بيانات التعلم. لم تُحذف بياناتك. أعد تحميل التطبيق بعد إتاحة التخزين.';return createEmptyMasteryState(now);}
   if (raw == null) return createEmptyMasteryState(now);
   try {
-    const parsed = rootSchema.parse(JSON.parse(raw));
+    const parsed = masteryRootSchema.parse(JSON.parse(raw));
     return parsed as MasteryStateRoot;
   } catch {
+    readIssue='بيانات التعلم غير قابلة للقراءة أو من إصدار غير مدعوم. حُفظ الأصل دون استبداله؛ لا تبدأ جلسة جديدة قبل استعادة البيانات.';
     try { window.localStorage.setItem(QUARANTINE_KEY, raw); } catch { /* امتلاء التخزين لا يمنع المتابعة */ }
     return createEmptyMasteryState(now);
   }
@@ -180,9 +189,18 @@ export function loadMasteryState(now = new Date()): MasteryStateRoot {
  * أولًا؛ عند نجاحها تُكتب في الرئيسي ثم يُزال المؤقت. فشل الكتابة (امتلاء
  * الحصة مثلًا) يرمي خطأ مفهومًا ولا يترك الرئيسي نصف مكتوب.
  */
-export function saveMasteryState(state: MasteryStateRoot): void {
-  if (!storageAvailable()) return;
-  const payload = JSON.stringify(rootSchema.parse(state));
+export function saveMasteryState(state: MasteryStateRoot, expected?: MasteryStateRoot): void {
+  if (!storageAvailable()) throw new Error('التخزين المحلي غير متاح');
+  const current=window.localStorage.getItem(MASTERY_STORAGE_KEY);
+  if(current!==null){
+    let parsed:MasteryStateRoot;
+    try {parsed=masteryRootSchema.parse(JSON.parse(current)) as MasteryStateRoot;}
+    catch {throw new Error('لن تُستبدل بيانات تعلم غير قابلة للقراءة');}
+    if(expected&&JSON.stringify(parsed)!==JSON.stringify(masteryRootSchema.parse(expected)))throw new Error('تغيرت بيانات التعلم في نافذة أخرى. أعد تحميل التطبيق قبل المتابعة.');
+  } else if(expected&&(expected.sessions.length||expected.plans.length||expected.assessments.length)) {
+    throw new Error('تغير مخزن التعلم خارج هذه النافذة. أعد تحميل التطبيق.');
+  }
+  const payload = JSON.stringify(masteryRootSchema.parse(state));
   try {
     window.localStorage.setItem(TEMP_KEY, payload);
     window.localStorage.setItem(MASTERY_STORAGE_KEY, payload);
