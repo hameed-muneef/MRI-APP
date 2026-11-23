@@ -103,11 +103,11 @@ export function normalizeQuranAudioUrl(raw: unknown, base = BASE_AUDIO): string 
   return full.replace(/([^:])\/\/+/g, '$1/').replace(/ /g, '%20');
 }
 
-export async function fetchAyahAudioUrl(recitationId: number, surah: number, ayah: number): Promise<string | null> {
+export async function fetchAyahAudioUrl(recitationId: number, surah: number, ayah: number, signal?: AbortSignal): Promise<string | null> {
   const key = `${recitationId}:${surah}:${ayah}`;
   if (CACHE.has(key)) return CACHE.get(key)!;
   try {
-    const res = await fetch(`https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah/${surah}:${ayah}`);
+    const res = await fetch(`https://api.quran.com/api/v4/recitations/${recitationId}/by_ayah/${surah}:${ayah}`, {signal});
     if (!res.ok) return null;
     const json = await res.json();
     const full = normalizeQuranAudioUrl(json?.audio_files?.[0]?.url);
