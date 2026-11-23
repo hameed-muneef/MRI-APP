@@ -53,3 +53,12 @@
   - تحديث `src/azkar/content.ts` و`src/views/AzkarLibrary.tsx` (بمرآة `cdn.jsdelivr.net`)، و`src/quran/audio.ts` و`src/quran/ayah-audio.ts` و`src/views/quran/QuranReader.tsx`، ومشغلات المعاينة في `src/notifications/audio.ts` و`src/notifications/delivery.ts` و`src/views/AdhanPlayer.tsx` و`src/views/SettingsView.tsx`.
 - **التحقق**: اختبارات `src/audio/url-resolver.test.ts` و`src/audio/native-fallback.test.ts` و`npm test` و`npm run test:unit` و`tsc --noEmit` و`vite build`.
 - **غير متحقق على جهاز**: إعادة بناء APK (`npm run build:android` + Gradle/CI) وتجربة مسارات الصوت المحلية والخارجية والأذكار والقرآن على هاتف فعلي.
+
+### HADITH-CARD-UNIFIED-COLOR — توحيد ألوان بطاقات أحاديث البخاري ومسلم ومنع التشتيت (2026-11-23)
+- **المشكلة**: كانت بطاقات الأحاديث في صحيح البخاري وصحيح مسلم تتناوب بين ثلاثة ألوان مختلفة (عسلي/ذهبي، وأخضر، وأزرق) عبر قواعد `li:nth-child(3n+1)`, `(3n+2)`, `(3n)` في `src/ui-hardening.css`، وكذلك أزرار أبواب الكتاب، مما كان يسبب تشتيتًا بصريًا وضعفًا في تركيز القارئ.
+- **الحل**:
+  - إزالة التلوين المتناوب (`nth-child(3n)`) لبطاقات الأحاديث وقوائم الأبواب من `src/ui-hardening.css`.
+  - تطبيق لون موحد، هادئ ومريح للعين لكل بطاقات الأحاديث: خلفية ورقية إسلامية دافئة (`#FCFAF6`)، حد ناعم (`#E2DDD3`)، وخط تمييز جانبي بلون الغابة الوقور (`#1C6650`) في الوضع النهاري، وخلفية موحدة هادئة (`#182823`) مع حد متناسق (`#2F4D42`) وخط تمييز هادئ (`#57A388`) في الوضع الليلي.
+  - توحيد ألوان بطاقات أبواب الكتاب بالنمط المتناسق نفسه.
+- **الملفات**: `src/ui-hardening.css`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: `npm run lint` (`tsc --noEmit` ناجح)، `npm run test:unit` (121/121 ناجحة)، و`npm run build` ناجح لإنتاج حزمة الويب وتحديث Service Worker بنجاح.
