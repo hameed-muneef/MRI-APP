@@ -30,7 +30,7 @@ test('whole-passage replay begins at first verse after manual next selection',as
  const ui=await setup(page);await ui.getByRole('button',{name:'الآية التالية',exact:true}).click();await ui.locator('.qm-fields select').nth(2).selectOption('passage');await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();await expect.poll(async()=>(await audio(page)).src).toContain('1:1.wav');
 });
 test('reciter comparison is available in recall and invalidates unassisted evidence',async({page})=>{
- const ui=await setup(page);for(let i=0;i<4;i++)await ui.getByRole('button',{name:/التالي:/}).click();await expect(ui.locator('h2')).toHaveText('تلو');
+ const ui=await setup(page);for(let i=0;i<4;i++)await ui.getByRole('button',{name:/التالي:/}).click();await expect(ui.locator('h2')).toHaveText('سمّع من ذاكرتك');
  await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();await expect(ui).toContainText('تشغيل القارئ للمقارنة مساعدة');
  const attempts=await page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-mastery-v1')!).recallAttempts);expect(attempts.at(-1).helpEvents.length).toBeGreaterThan(0);
  await ui.getByRole('button',{name:'أنهيت محاولة الاسترجاع، انتقل للتقييم',exact:true}).click();await expect(ui.locator('.qm-current-verse')).toHaveCount(0);await expect(ui).toContainText('لن تبني دليل إتقان مستقلًا');
