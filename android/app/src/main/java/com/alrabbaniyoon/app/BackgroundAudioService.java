@@ -70,6 +70,8 @@ import java.util.concurrent.Executors;
 public class BackgroundAudioService extends Service {
 
     public static final String ACTION_PLAY_QUEUE = "com.alrabbaniyoon.app.action.BG_PLAY_QUEUE";
+    public static final String ACTION_RATE = "com.alrabbaniyoon.app.action.BG_RATE";
+    private float playbackRate=1f;
     public static final String ACTION_PAUSE = "com.alrabbaniyoon.app.action.BG_PAUSE";
     public static final String ACTION_RESUME = "com.alrabbaniyoon.app.action.BG_RESUME";
     public static final String ACTION_TOGGLE = "com.alrabbaniyoon.app.action.BG_TOGGLE";
@@ -117,6 +119,7 @@ public class BackgroundAudioService extends Service {
         public final List<String> fallbackUrls;
         public final String category;
         public final boolean isLive;
+        public float playbackRate=1f;
 
         public AudioTrackItem(String id, String title, String subtitle, String url, String category, boolean isLive) {
             this(id, title, subtitle, url, null, category, isLive);
@@ -154,6 +157,7 @@ public class BackgroundAudioService extends Service {
                 }
                 obj.put("category", category);
                 obj.put("isLive", isLive);
+                obj.put("playbackRate",playbackRate);
             } catch (JSONException ignored) {}
             return obj;
         }
@@ -177,7 +181,10 @@ public class BackgroundAudioService extends Service {
                     }
                 }
             }
-            return new AudioTrackItem(id, title, subtitle, url, fallbacks, cat, live);
+            AudioTrackItem item=new AudioTrackItem(id,title,subtitle,url,fallbacks,cat,live);
+            double rate=obj.optDouble("playbackRate",1.0);
+            if(!Double.isNaN(rate)&&!Double.isInfinite(rate)&&rate>=0.5&&rate<=2.0)item.playbackRate=(float)rate;
+            return item;
         }
     }
 
@@ -233,6 +240,7 @@ public class BackgroundAudioService extends Service {
     private SharedPreferences prefs;
 
     private MediaPlayer mediaPlayer;
+    private boolean mediaPrepared=false;
     private MediaSession mediaSession;
     private PowerManager.WakeLock wakeLock;
     private WifiManager.WifiLock wifiLock;
@@ -393,6 +401,13 @@ public class BackgroundAudioService extends Service {
             String category = intent.getStringExtra(EXTRA_CATEGORY);
             int startIndex = intent.getIntExtra(EXTRA_START_INDEX, 0);
             loadAndStartQueue(queueJson, startIndex, category);
+        } else if (ACTION_RATE.equals(action)) {
+            float rate=intent.getFloatExtra("playback_rate",1f);
+            if(!Float.isNaN(rate)&&!Float.isInfinite(rate)&&rate>=0.5f&&rate<=2f){
+                playbackRate=rate;
+                if(currentIndex>=0&&currentIndex<queue.size())queue.get(currentIndex).playbackRate=rate;
+                if("playing".equals(status)||"paused".equals(status))applyPlaybackRate();updateMediaSessionAndNotification();emitState();
+            }
         } else if (ACTION_PAUSE.equals(action)) {
             resumeOnFocusGain = false;
             pausePlayback();
@@ -932,7 +947,11 @@ public class BackgroundAudioService extends Service {
             mp.setOnPreparedListener(player -> {
                 if (gen != prepareGeneration || mediaPlayer != player) return;
                 try {
+                    mediaPrepared=true;
+                    playbackRate=track.playbackRate;
+                    if("paused".equals(status)){emitState();return;}
                     player.start();
+                    applyPlaybackRate();
                     status = "playing";
                     retryCount = 0;
                     restoreResumePosition();
@@ -1054,6 +1073,8 @@ public class BackgroundAudioService extends Service {
     }
 
     private void restoreResumePosition() {
+        AudioTrackItem owned=getCurrentTrack();
+        if(owned!=null&&owned.id.startsWith("quran:mastery-session:"))return;
         if (prefs == null || currentIndex < 0 || currentIndex >= queue.size()) return;
         AudioTrackItem track = queue.get(currentIndex);
         if (track == null || track.isLive) return;
@@ -1071,6 +1092,15 @@ public class BackgroundAudioService extends Service {
         } catch (Exception ignored) {}
     }
 
+    private void applyPlaybackRate() {
+        if(mediaPlayer==null||android.os.Build.VERSION.SDK_INT<23)return;
+        try {
+            boolean wasPlaying=mediaPlayer.isPlaying();
+            mediaPlayer.setPlaybackParams(mediaPlayer.getPlaybackParams().setSpeed(playbackRate).setPitch(1f));
+            if(!wasPlaying)mediaPlayer.pause();
+        } catch(Exception ex){lastError="تعذر تغيير سرعة التشغيل.";}
+    }
+
     private void resumePlayback() {
         if (queue.isEmpty() || currentIndex < 0 || currentIndex >= queue.size()) {
             stopAllAndSelf();
@@ -1082,11 +1112,13 @@ public class BackgroundAudioService extends Service {
             startTrackAt(currentIndex);
             return;
         }
+        if(!mediaPrepared){status="loading";emitState();return;}
         if (!requestAudioFocus()) return;
         acquireLocks();
         registerNoisyReceiver();
         try {
             mediaPlayer.start();
+            applyPlaybackRate();
             status = "playing";
             lastError = null;
             updateMediaSessionAndNotification();
@@ -1278,6 +1310,7 @@ public class BackgroundAudioService extends Service {
     }
 
     private void releasePlayerOnly() {
+        mediaPrepared=false;
         if (mediaPlayer != null) {
             try {
                 if (mediaPlayer.isPlaying()) mediaPlayer.stop();
@@ -1363,7 +1396,7 @@ public class BackgroundAudioService extends Service {
             }
             PlaybackState.Builder pbBuilder = new PlaybackState.Builder()
                 .setActions(actions)
-                .setState(pbState, posMs, "playing".equals(status) ? 1.0f : 0f);
+                .setState(pbState, posMs, "playing".equals(status) ? playbackRate : 0f);
             if ("error".equals(status) && lastError != null) {
                 pbBuilder.setErrorMessage(lastError);
             }
@@ -1540,4 +1573,4 @@ public class BackgroundAudioService extends Service {
         }
         super.onDestroy();
     }
-                    }
+                        }
