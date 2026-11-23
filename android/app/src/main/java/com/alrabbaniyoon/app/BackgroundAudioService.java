@@ -950,6 +950,8 @@ public class BackgroundAudioService extends Service {
                     mediaPrepared=true;
                     playbackRate=track.playbackRate;
                     if("paused".equals(status)){emitState();return;}
+                    if(!requestAudioFocus()){status="paused";emitState();return;}
+                    acquireLocks();registerNoisyReceiver();
                     player.start();
                     applyPlaybackRate();
                     status = "playing";
@@ -1573,4 +1575,4 @@ public class BackgroundAudioService extends Service {
         }
         super.onDestroy();
     }
-                        }
+}
