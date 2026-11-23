@@ -34,15 +34,15 @@ test('reminders use their own sound, then the default sound', () => {
   assert.deepEqual(soundPlanForReminder(undefined, prefs('full'), library), {mode: 'tone', id: 'builtin:asc'});
 });
 
-test('bundled local Adhan IDs resolve offline to packaged /sounds/adhan/*.mp3 files', () => {
+test('bundled local Adhan IDs resolve offline to packaged /sounds/adhan/*.ogg files', () => {
   assert.deepEqual(planSound('adhan:almulla', [], 'builtin:chime'), {
     mode: 'file',
     id: 'adhan:almulla',
-    url: '/sounds/adhan/adhan_almulla.mp3',
+    url: '/sounds/adhan/adhan_almulla.ogg',
   });
   assert.deepEqual(soundPlanForPrayer({prayer: 'الفجر', kind: 'at'}, prefs('full', 'adhan:madinah'), []), {
     mode: 'file',
     id: 'adhan:madinah',
-    url: '/sounds/adhan/adhan_madinah.mp3',
+    url: '/sounds/adhan/adhan_madinah.ogg',
   });
 });
