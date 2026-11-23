@@ -21,7 +21,7 @@ import {loadReciters, audioUrl, defaultMoshaf, moshafCategory, type Reciter} fro
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
 import {backgroundAudio} from '../../audio/background-player';
 import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
-import type {AudioTrack} from '../../audio/types';
+
 import {InternetBadge, useOnline} from '../../online';
 import {passageAyahs, progressLabel, clampRepeat, type MemorizationProgress} from '../../quran/memorization-audio';
 
@@ -306,65 +306,21 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
 
   const runMemo = async () => {
     const request=++readerRequest.current;
+    const info=surahInfo(asset,surahNumber),totalAyahs=memoAyahs.length;
+    const size=memoPassageRepeat*totalAyahs*memoAyahRepeat;
     setMemoPreparing(true);
-    let urlMap = new Map(ayahAudioUrls);
-    if (memoAyahs.some(a => !urlMap.has(a))) {
-      const batch = await fetchSurahAyahAudioUrls(ayahReciterId, surahNumber, memoAyahs);
-      if (batch.size > 0) {
-        urlMap = batch;
-        setAyahAudioUrls(batch);
-      } else {
-        for (const a of memoAyahs) {
-          if (!urlMap.has(a)) {
-            const single = await fetchAyahAudioUrl(ayahReciterId, surahNumber, a);
-            if (single) urlMap.set(a, single);
-          }
-        }
-      }
-    }
+    await backgroundAudio.playLazy(size,async index=>{
+      if(request!==readerRequest.current)return null;
+      const pr=Math.floor(index/(totalAyahs*memoAyahRepeat));
+      const ai=Math.floor(index/memoAyahRepeat)%totalAyahs,ar=index%memoAyahRepeat;
+      const ayah=memoAyahs[ai];
+      const url=ayahAudioUrls.get(ayah)??await fetchAyahAudioUrl(ayahReciterId,surahNumber,ayah);
+      if(request!==readerRequest.current||!url)return null;
+      return {id:`quran:memo:${surahNumber}:${ayah}:p${pr+1}:r${ar+1}`,title:`${info?.name??String(surahNumber)} · آية ${toArabicNumber(ayah)}`,
+        subtitle:`تكرار ${toArabicNumber(ar+1)}/${toArabicNumber(memoAyahRepeat)} · مقطع ${toArabicNumber(pr+1)}/${toArabicNumber(memoPassageRepeat)}`,
+        url,category:'quran',meta:{mode:'reader-memo',surah:surahNumber,ayah,ayahIndex:ai,ayahRepeatCurrent:ar+1,ayahRepeatTotal:memoAyahRepeat,passageRepeatCurrent:pr+1,passageRepeatTotal:memoPassageRepeat,totalAyahs}};
+    },index=>{if(request===readerRequest.current)notify(`توقف تكرار المقطع عند الآية ${toArabicNumber(memoAyahs[Math.floor(index/memoAyahRepeat)%totalAyahs])} لتعذر جلب صوتها؛ لن تُتجاوز.`);});
     setMemoPreparing(false);
-    if(request!==readerRequest.current)return;
-    const info = surahInfo(asset, surahNumber);
-    const totalAyahs = memoAyahs.length;
-    // لا تجاوز صامت في مقاطع الحفظ: أي آية بلا صوت توقف البدء مع إعلان صريح.
-    const firstMissing = memoAyahs.find(a => !urlMap.get(a));
-    if (firstMissing !== undefined) {
-      notify(`تعذر بدء تكرار المقطع: الآية ${toArabicNumber(firstMissing)} بلا صوت متاح، ولن يتم تجاوزها.`);
-      return;
-    }
-    const tracks: AudioTrack[] = [];
-    for (let pr = 0; pr < memoPassageRepeat; pr += 1) {
-      for (let ai = 0; ai < totalAyahs; ai += 1) {
-        const ayah = memoAyahs[ai];
-        const url = urlMap.get(ayah);
-        if (!url) continue;
-        for (let ar = 0; ar < memoAyahRepeat; ar += 1) {
-          tracks.push({
-            id: `quran:memo:${surahNumber}:${ayah}:p${pr + 1}:r${ar + 1}`,
-            title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(ayah)}`,
-            subtitle: `تكرار ${toArabicNumber(ar + 1)}/${toArabicNumber(memoAyahRepeat)} · مقطع ${toArabicNumber(pr + 1)}/${toArabicNumber(memoPassageRepeat)}`,
-            url,
-            category: 'quran',
-            meta: {
-              mode: 'reader-memo',
-              surah: surahNumber,
-              ayah,
-              ayahIndex: ai,
-              ayahRepeatCurrent: ar + 1,
-              ayahRepeatTotal: memoAyahRepeat,
-              passageRepeatCurrent: pr + 1,
-              passageRepeatTotal: memoPassageRepeat,
-              totalAyahs,
-            },
-          });
-        }
-      }
-    }
-    if (!tracks.length) {
-      notify('تعذر جلب الصوتيات الخاصة بالحفظ.');
-      return;
-    }
-    await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
 
   const pauseMemo = () => {
@@ -816,4 +772,4 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
       </aside>
     </div>
   </div>;
-    }
+}
