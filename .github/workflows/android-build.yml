@@ -1,8 +1,4 @@
-# بناء تطبيق الأندرويد (Capacitor) — APK للتجربة و AAB/APK للنشر على متجر Play
-# يعمل: يدويًا (workflow_dispatch) أو عند الدفع إلى main / hameed/mobile-app أو وسم app-v*
-# التوقيع: ضع هذه الأسرار في إعدادات المستودع (Settings → Secrets → Actions):
-#   KEYSTORE_BASE64  — ملف المفاتيح بترميز base64 (base64 -w0 release.keystore)
-#   KEYSTORE_PASSWORD، KEY_ALIAS، KEY_PASSWORD
+# Debug-only Android build (temporary variant of Android Build for test APKs)
 name: Android Build
 
 on:
@@ -22,8 +18,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    env:
-      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -84,37 +78,12 @@ jobs:
       - name: Make gradle executable
         run: chmod +x android/gradlew
 
-      - name: Build debug APK (للتجربة الفورية)
+      - name: Build debug APK
         run: ./android/gradlew -p android assembleDebug --no-daemon
-
-      - name: Build signed release AAB and APK (متطلب متجر Play)
-        if: env.HAS_KEYSTORE == 'true'
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./android/gradlew -p android bundleRelease assembleRelease --no-daemon
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 2
-
-      - name: Upload signed release AAB
-        if: env.HAS_KEYSTORE == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
-          retention-days: 2
-
-      - name: Upload signed release APK
-        if: env.HAS_KEYSTORE == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 2
