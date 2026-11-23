@@ -169,7 +169,8 @@ export async function loadReminders(): Promise<{reminders: Reminder[]; source: P
 }
 
 /** ينسخ الكتلة المحدَّثة إلى الذاكرة/المحلي، ثم يحاول المزامنة السحابية عبر دالة المُحدِّثة */
-export function storeLocalReminder(next: Reminder[]): Reminder[] {
-  saveLocalReminders(next);
+export function storeLocalReminder(next: Reminder[], strict = false): Reminder[] {
+  if(strict){const target=storage();if(!target)throw new Error("Local storage unavailable");target.setItem(REMINDERS_CACHE,JSON.stringify(next.slice(0,200)));}
+  else saveLocalReminders(next);
   return next;
 }
