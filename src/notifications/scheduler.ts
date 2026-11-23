@@ -66,6 +66,11 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
   const config = reminder.recurrence_config ?? {};
   const endDate = endOfLocalDay(config.end_date);
 
+  // A recurrence cannot precede its original date or the user's start date.
+  const startDate = config.start_date ? parseLocalDateAtTime(config.start_date, base) : null;
+  const lowerBound = new Date(Math.max(base.getTime(), startDate?.getTime() ?? base.getTime()));
+  const after = new Date(Math.max(now.getTime(), lowerBound.getTime() - 1));
+
   // مرة واحدة
   if (recurrence === 'none') {
     return base > now ? base : null;
@@ -73,9 +78,9 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
 
   // يوميًا
   if (recurrence === 'daily') {
-    const candidate = new Date(now);
+    const candidate = new Date(after);
     candidate.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
-    if (candidate <= now) {
+    if (candidate <= after) {
       candidate.setDate(candidate.getDate() + 1);
     }
     return clampEndDate(candidate, endDate);
@@ -86,11 +91,11 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
     const days = config.days_of_week ?? (recurrence === 'weekday' ? [0] : [1, 2, 3, 4, 5]);
     // ابحث عن اليوم التالي المطابق بعد الوقت الحالي
     for (let offset = 0; offset < 8; offset += 1) {
-      const testDay = addDays(now, offset);
+      const testDay = addDays(after, offset);
       if (!days.includes(testDay.getDay())) continue;
       const candidateTime = new Date(testDay);
       candidateTime.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
-      if (candidateTime > now) return clampEndDate(candidateTime, endDate);
+      if (candidateTime > after) return clampEndDate(candidateTime, endDate);
     }
     return null;
   }
@@ -99,11 +104,11 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
   if (recurrence === 'weekly') {
     const dayOfWeek = base.getDay();
     for (let offset = 0; offset <= 8; offset += 1) {
-      const testDay = addDays(now, offset);
+      const testDay = addDays(after, offset);
       if (testDay.getDay() !== dayOfWeek) continue;
       const candidateTime = new Date(testDay);
       candidateTime.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
-      if (candidateTime > now) return clampEndDate(candidateTime, endDate);
+      if (candidateTime > after) return clampEndDate(candidateTime, endDate);
     }
     return null;
   }
@@ -116,24 +121,27 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
     const seconds = base.getSeconds();
 
     // جرب هذا الشهر
-    const lastDayThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    let candidate = new Date(now.getFullYear(), now.getMonth(), Math.min(dayOfMonth, lastDayThisMonth), hours, minutes, seconds);
-    if (candidate <= now) {
+    const lastDayThisMonth = new Date(after.getFullYear(), after.getMonth() + 1, 0).getDate();
+    let candidate = new Date(after.getFullYear(), after.getMonth(), Math.min(dayOfMonth, lastDayThisMonth), hours, minutes, seconds);
+    if (candidate <= after) {
       // جرب الشهر التالي
-      const nextMonth = now.getMonth() + 1;
-      const nextYear = nextMonth > 11 ? now.getFullYear() + 1 : now.getFullYear();
+      const nextMonth = after.getMonth() + 1;
+      const nextYear = nextMonth > 11 ? after.getFullYear() + 1 : after.getFullYear();
       const normalizedMonth = nextMonth > 11 ? 0 : nextMonth;
       const lastDayNextMonth = new Date(nextYear, normalizedMonth + 1, 0).getDate();
       candidate = new Date(nextYear, normalizedMonth, Math.min(dayOfMonth, lastDayNextMonth), hours, minutes, seconds);
     }
-    return candidate > now ? clampEndDate(candidate, endDate) : null;
+    return candidate > after ? clampEndDate(candidate, endDate) : null;
   }
 
   // مخصص (فاصل أيام)
   if (recurrence === 'custom') {
-    const interval = Math.max(1, config.interval_days ?? 1);
+    const rawInterval = config.interval_days;
+    const interval = typeof rawInterval === 'number' && Number.isFinite(rawInterval) ? Math.max(1, Math.floor(rawInterval)) : 1;
     let candidate = new Date(base);
-    while (candidate <= now) {
+    const calendarDays = Math.floor((Date.UTC(after.getFullYear(), after.getMonth(), after.getDate()) - Date.UTC(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000);
+    if (calendarDays > 0) candidate = addDays(base, Math.floor(calendarDays / interval) * interval);
+    while (candidate <= after) {
       candidate = addDays(candidate, interval);
     }
     return clampEndDate(candidate, endDate);
@@ -144,7 +152,7 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
     const dates = (config.specific_dates ?? [])
       .map(d => parseLocalDateAtTime(d, base))
       .filter((d): d is Date => d !== null);
-    const future = dates.filter(d => d > now);
+    const future = dates.filter(d => d > after);
     if (future.length === 0) return null;
     const earliest = future.reduce((best, d) => (d < best ? d : best), future[0]);
     return clampEndDate(earliest, endDate);
@@ -177,7 +185,7 @@ export function upcomingOccurrences(reminder: Reminder, from: Date, limit = 10):
     const next = nextDueDate(reminder, current);
     if (!next) break;
     results.push(next);
-    current = new Date(next.getTime() + 1000); // move one second forward to avoid infinite loop
+    current = new Date(next.getTime()); // nextDueDate is strictly later than its probe
     if (results.length >= limit) break;
   }
   return results;
@@ -187,7 +195,7 @@ export function upcomingOccurrences(reminder: Reminder, from: Date, limit = 10):
  * يتحقق مما إذا كان التذكير مستحقًا الآن (within a small window).
  */
 export function isDue(reminder: Reminder, now: Date = new Date(), windowSeconds = 60): boolean {
-  const next = effectiveNextDueDate(reminder, now);
+  const next = effectiveNextDueDate(reminder, new Date(now.getTime() - windowSeconds * 1000 - 1));
   if (!next) return false;
   return Math.abs(next.getTime() - now.getTime()) <= windowSeconds * 1000;
 }
