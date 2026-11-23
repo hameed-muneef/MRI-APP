@@ -103,6 +103,16 @@ public class BackgroundAudioPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setPlaybackRate(PluginCall call) {
+        double rate=call.getDouble("rate",1.0);
+        if(Double.isNaN(rate)||Double.isInfinite(rate)||rate<0.5||rate>2.0){call.reject("Invalid playback rate");return;}
+        Intent intent=new Intent(getContext(),BackgroundAudioService.class);
+        intent.setAction(BackgroundAudioService.ACTION_RATE);
+        intent.putExtra("playback_rate",(float)rate);
+        try { getContext().startService(intent);call.resolve(); } catch(Exception ex){call.reject("Playback speed unavailable",ex);}
+    }
+
+    @PluginMethod
     public void pause(PluginCall call) {
         sendSimpleAction(BackgroundAudioService.ACTION_PAUSE);
         call.resolve();
