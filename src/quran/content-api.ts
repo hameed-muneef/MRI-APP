@@ -1,7 +1,8 @@
 // ربط Quran Foundation Content API (api.quran.com) — للترجمات والتفسير.
 // لا محتوى ديني مخترع: كل النصوص تُجلب من API.
 import {getOfflineEntry} from './offline-store';
-import asbabData from './asbab-nuzul.json';
+import asbabDataPart1 from './asbab-nuzul-1.json';
+import asbabDataPart2 from './asbab-nuzul-2.json';
 
 const CACHE_PREFIX = 'quran-content-cache-v1:';
 
@@ -101,7 +102,7 @@ type AsbabEntry = { surah: number; ayahs: number[]; occasions: string[] };
  *  بيانات mostafaahmed97/asbab-al-nuzul-dataset بترخيص MIT، مدمجة محليًا فلا تحتاج اتصالًا. */
 export const ASBAB_ATTRIBUTION = 'صحيح أسباب النزول دراسة حديثية — إبراهيم محمد العلي';
 
-const asbabEntries = asbabData as AsbabEntry[];
+const asbabEntries = [...(asbabDataPart1 as AsbabEntry[]), ...(asbabDataPart2 as AsbabEntry[])];
 
 export function getAsbabNuzul(verseKey: string): string | null {
   const [surah, ayah] = verseKey.split(':').map(Number);
