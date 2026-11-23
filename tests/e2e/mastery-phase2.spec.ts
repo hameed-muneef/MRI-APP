@@ -7,6 +7,8 @@ for(const width of [360,1280]){
   await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();
   await page.locator('[data-quran-tab="hifz"]').click();
   const ui=page.locator('.qm-workspace');await expect(ui).toBeVisible();
+  const contrast=await page.locator('.quran-journey-cta').first().evaluate(el=>{const style=getComputedStyle(el);const lum=(text:string)=>{const c=(text.match(/[\d.]+/g)??[]).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];};const a=lum(style.color),b=lum(style.backgroundColor);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
   await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
   await expect(ui.locator('h2')).toHaveText('استمع');
   await ui.getByRole('button',{name:'التالي: افهم',exact:true}).click();
