@@ -30,7 +30,7 @@ export const STAGE_LABELS: Record<SessionStage, string> = {
   understand: 'افهم',
   memorize: 'احفظ',
   connect: 'اربط',
-  recite: 'تلو',
+  recite: 'سمّع',
   assess: 'قيّم',
 };
 
@@ -360,4 +360,4 @@ export function passageLabel(passage: MasteryPassage): string {
   return range.ayahStart === range.ayahEnd
     ? `آية ${range.ayahStart}`
     : `آية ${range.ayahStart}–${range.ayahEnd}`;
-}
+  }
