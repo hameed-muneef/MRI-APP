@@ -83,6 +83,7 @@ export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: A
 
 // جلب "أسباب النزول" — Quran.com لا يوفر endpoint مخصصًا. نستخدم tafsir id 16 (الجلالين)
 // كمصدر "أسباب النزول" (الجلالين يذكر أسباب النزول في التفسير). لا محتوى مخترع.
-export async function fetchAsbabNuzul(verseKey: string, signal?: AbortSignal): Promise<string | null> {
-  return fetchTafsir(verseKey, 16, signal);
+/** No verified Asbab source is configured. Never substitute tafsir under this label. */
+export async function fetchAsbabNuzul(_verseKey: string, _signal?: AbortSignal): Promise<string | null> {
+  return 'المصدر قيد المراجعة. لا تُعرض أسباب نزول حتى اعتماد مصدر موثوق.';
 }
