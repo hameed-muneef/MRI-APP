@@ -5,3 +5,6 @@ body:has(.qm-steps) .scroll-top-fab-dock{display:none!important}
 .qm-workspace .qm-footer{margin-bottom:12px}
 body:has(.qm-steps) #root .app .mobile-nav{display:none!important}
 body:has(.qm-steps) #root .scroll-top-fab-dock{display:none!important}
+/* Keep prior features available outside sessions, without a second competing workflow mid-session. */
+body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>details{display:none!important}
+#root .app .quran-journey .quran-journey-cta{color:#fff!important;background:#174a3c!important}
