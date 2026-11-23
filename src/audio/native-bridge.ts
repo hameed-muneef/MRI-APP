@@ -30,11 +30,13 @@ export interface BackgroundAudioPluginInterface {
       fallbackUrls?: string[];
       category: AudioCategory;
       isLive?: boolean;
+      playbackRate?:number;
     }>;
     startIndex: number;
     category: AudioCategory;
   }): Promise<{ started: boolean }>;
   playSingle(track: AudioTrack): Promise<void>;
+  setPlaybackRate(options:{rate:number}):Promise<void>;
   pause(): Promise<void>;
   resume(): Promise<void>;
   stop(): Promise<void>;
