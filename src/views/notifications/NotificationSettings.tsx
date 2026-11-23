@@ -239,4 +239,4 @@ export default function NotificationSettings({
       <RemindersPanel notify={notify} goals={goals}/>
     </section>
   );
-  }
+}
