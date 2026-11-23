@@ -31,7 +31,7 @@ export function pickDueItems(
 ): DueItem[] {
   const due: DueItem[] = [];
   if (prefs.global_enabled) {
-    const probe = new Date(now.getTime() - 120000);
+    const probe = new Date(now.getTime() - 60 * 60 * 1000 - 1);
     for (const reminder of reminders) {
       if (!reminder.enabled) continue;
       const next = nextDueDate(reminder, probe);
@@ -60,7 +60,7 @@ export function pickDueItems(
         const key = `rem:${reminder.id}:${effective.toISOString()}`;
         if (fired.has(key)) continue;
         // أطلق فقط إذا كان مستحقًا (≤2 دقائق متأخر) أو خلال 30 ثانية في المستقبل (فاصل tick)
-        if (late >= -30000 && late <= 120000) {
+        if (late >= -30000 && late <= 60 * 60 * 1000) {
           due.push({kind: 'reminder', key, reminder, at: effective});
         }
       }
@@ -70,7 +70,7 @@ export function pickDueItems(
     for (const event of dailyPrayerEvents(prayers, prefs, now)) {
       const late = now.getTime() - event.at.getTime();
       if (late > 10 * 60 * 1000) continue;
-      if (late < -30000 || late > 120000) continue;
+      if (late < -30000 || late > 10 * 60 * 1000) continue;
       if (fired.has(event.key) || fired.has(`${event.key}:done`)) continue;
       if (!isPrayerEventAllowed(event, prefs, now)) continue;
       const silent = prefs.prayer_settings?.[event.prayer]?.adhan_type === 'silent';
@@ -95,10 +95,7 @@ export function pickDueItems(
       }
       const at = new Date(now);
       at.setHours(9, 0, 0, 0);
-      if (at < now) {
-        // If 9 AM already passed, fire now
-        // (the notification is overdue, deliver immediately)
-      }
+      if (now < at) continue;
       due.push({kind: 'review', key, passage, at: at < now ? now : at});
     }
   }
@@ -106,7 +103,7 @@ export function pickDueItems(
     for (const event of dailyTaskEvents(taskContext, prefs, now, 1)) {
       const late = now.getTime() - event.at.getTime();
       if (late > 10 * 60 * 1000) continue;
-      if (late < -30000 || late > 120000) continue;
+      if (late < -30000 || late > 10 * 60 * 1000) continue;
       if (fired.has(event.key) || fired.has(`${event.key}:done`)) continue;
       if (!isTaskEventAllowed(event, prefs, now)) continue;
       due.push({kind: 'task', key: event.key, event, at: event.at});
