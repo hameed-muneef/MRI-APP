@@ -36,7 +36,8 @@ export default function DayPlanner({scheduledTasks,confirmedTasks=[],onWeek,onMo
   const [today,setToday]=useState(localDateKey);
   const [selectedDate,setSelectedDate]=useState(localDateKey);
   const [planDate,setPlanDate]=useState(localDateKey);
-  const [tab,setTab]=useState<'home'|'plan'|'track'>('home');
+  // الافتراضي «تخطيط يومي»: فتح القسم على محتوى فارغ كان يوحي بأن الصفحة لا تعمل.
+  const [tab,setTab]=useState<'home'|'plan'|'track'>('plan');
   const [message,setMessage]=useState<'opening'|'resolve'|null>(null);
   const openPlan=()=>{setMessage('opening')};
   useEffect(()=>{
