@@ -126,6 +126,8 @@
 }
 
 .mini-audio-btn.close {
+  width: 40px;
+  height: 40px;
   border-color: transparent;
   color: var(--color-body, #5d6a65);
 }
@@ -205,7 +207,23 @@ html[data-theme="dark"] .mini-audio-badge.haramain {
   }
 
   .mini-audio-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
+
+  .mini-audio-btn.close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mini-audio-controls {
+    gap: 2px;
+  }
+}
+
+.mini-audio-clock {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
 }
