@@ -3664,3 +3664,54 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Narrow phones: crumb holds brand + view title in little space, truncating both.
+   Give the view title the full crumb width; home stays reachable via the back
+   button under the topbar and the bottom mobile-nav. */
+@media (max-width: 480px) {
+  #root .app .topbar > .crumb .crumb-home {
+    display: none;
+  }
+  #root .app .topbar > .crumb strong {
+    max-width: 100%;
+  }
+  html[data-theme="light"] #root .app .topbar,
+  html[data-theme="dark"] #root .app .topbar {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  #root .app .topbar > .crumb {
+    gap: 4px;
+  }
+  #root .app .topbar .top-actions {
+    gap: 4px;
+  }
+  #root .app .topbar .top-actions .top-date {
+    font-size: 10px;
+  }
+  #root .app .topbar .icon-btn,
+  #root .app .topbar .notif-bell,
+  #root .app .topbar .topbar-settings {
+    min-width: 34px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+}
+
+/* Very narrow handsets (~320px): let the topbar wrap so the crumb takes a full
+   row; every title fits and no control or the date is lost. */
+@media (max-width: 340px) {
+  html[data-theme="light"] #root .app .topbar,
+  html[data-theme="dark"] #root .app .topbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  #root .app .topbar > .crumb {
+    flex: 1 1 100%;
+    order: 2;
+  }
+  #root .app .topbar .top-actions {
+    order: 1;
+    margin-inline-start: auto;
+  }
+}
