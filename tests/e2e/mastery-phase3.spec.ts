@@ -3,6 +3,7 @@ import {expect,test} from '@playwright/test';
 async function mockUnderstandingApis(page:import('@playwright/test').Page){
  await page.route('**/api.quran.com/api/v4/tafsirs/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({tafsir:{text:'نص تفسير تجريبي للآية.'}})}));
  await page.route('**/api.quran.com/api/v4/quran/translations/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({translations:[{text:'Sample translation text.'}]})}));
+ await page.route('**/cdn.jsdelivr.net/gh/spa5k/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({text:'نص تفسير الجلالين التجريبي للآية.'})}));
 }
 async function startSession(page:import('@playwright/test').Page){
  await page.setViewportSize({width:360,height:900});
@@ -21,16 +22,17 @@ test('understanding sheet: attribution, gates, private notes, session preserved'
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
  const sheet=page.locator('.qm-sheet');
  await expect(sheet).toBeVisible();
- await expect(sheet).toContainText('نص تفسير تجريبي للآية.');
- await expect(sheet).toContainText('المصدر: تفسير السعدي');
+ await expect(sheet).toContainText('نص تفسير الجلالين التجريبي للآية.');
+ await expect(sheet).toContainText('المصدر: تفسير الجلالين، عبر مكتبة QUL (tafsir_api)');
  await expect(sheet.getByLabel('الترجمة',{exact:true})).toHaveCount(0);
  await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
  await expect(sheet).toContainText('Sample translation text.');
  await expect(sheet).toContainText('المصدر: Saheeh International');
- await expect(sheet).not.toContainText('نص تفسير تجريبي للآية.');
+ await expect(sheet).not.toContainText('نص تفسير الجلالين التجريبي للآية.');
  await sheet.getByRole('button',{name:'أسباب النزول',exact:true}).click();
- // البوابات الصادقة: لا محتوى بديل
- await expect(sheet).toContainText('المصدر قيد المراجعة');
+ // البوابات الصادقة: لا محتوى بديل عند غياب سبب في المصدر
+ await expect(sheet).toContainText('لا يوجد سبب نزول لهذه الآية في هذا المصدر');
+ await expect(sheet).toContainText('المصدر: صحيح أسباب النزول دراسة حديثية');
  // ملاحظة خاصة: حفظ محلي وإثبات في التخزين
  await sheet.locator('summary').filter({hasText:'ملاحظاتي الخاصة'}).click();
  await sheet.getByLabel('ملاحظة خاصة عن الآية').fill('تدبر تجريبي للآية الأولى');
@@ -75,6 +77,7 @@ test('non-Hafs reciters carry a listen-only badge in the library',async({page})=
 test('understanding failure is retryable; source changes retain unsaved notes and Escape restores focus',async({page})=>{
  await page.route('**/api.quran.com/api/v4/tafsirs/**',r=>r.abort());
  await page.route('**/api.quran.com/api/v4/quran/translations/**',r=>r.abort());
+ await page.route('**/cdn.jsdelivr.net/gh/spa5k/**',r=>r.abort());
  const ui=await startSession(page);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
  const sheet=page.locator('.qm-sheet');
@@ -92,13 +95,13 @@ test('private notes remain local and Quran content cache is reused offline',asyn
  await mockUnderstandingApis(page);const ui=await startSession(page);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
  const sheet=page.locator('.qm-sheet');
- await expect(sheet).toContainText('نص تفسير تجريبي');
+ await expect(sheet).toContainText('نص تفسير الجلالين التجريبي');
  await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
  await expect(sheet).toContainText('Sample translation text.');
  await page.getByRole('button',{name:'إغلاق لوحة الفهم'}).click();
  await context.setOffline(true);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
- await expect(sheet).toContainText('نص تفسير تجريبي');
+ await expect(sheet).toContainText('نص تفسير الجلالين التجريبي');
  await expect(sheet).not.toContainText('Sample translation text.');
  await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
  await expect(sheet).toContainText('Sample translation text.');
