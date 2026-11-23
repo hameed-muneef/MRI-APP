@@ -2,6 +2,8 @@
 // يعمل فقط أثناء فتح التطبيق (قيد المتصفح)، وهو موثق في إعدادات الإشعارات.
 
 import {useEffect, useRef} from 'react';
+import {filterMasteryReminders} from '../quran-mastery/reminders';
+import {loadMasteryState} from '../quran-mastery/storage';
 import usePrayerTimes from '../usePrayerTimes';
 import {sanitizePrayerLocation, type PrayerLocation} from '../prayer-location';
 import {useDueWatcher, type DueItem} from './engine';
@@ -106,7 +108,7 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
       ]);
       if (!active) return;
       if (prefs) state.current.prefs = prefs.prefs;
-      if (reminders) state.current.reminders = reminders.reminders;
+      if (reminders) state.current.reminders = filterMasteryReminders(reminders.reminders,loadMasteryState());
       if (library) state.current.library = library;
       state.current.nativeSystemActive = Boolean(native && perms?.display === 'granted');
       state.current.ready = true;
@@ -210,4 +212,4 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
     },
   );
   return null;
-}
+      }
