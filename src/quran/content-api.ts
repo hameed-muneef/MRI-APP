@@ -38,6 +38,10 @@ export const TRANSLATIONS: TranslationChoice[] = [
 // تفاسير — الجلالين هو الافتراضي بطلب المستخدم ويُجلب من مكتبة QUL عبر tafsir_api (انظر fetchTafsir).
 // البقية من Quran.com: الميسر، السعدي، ابن كثير، القرطبي، الطبري، البغوي.
 export const JALALAYN_TAFSIR_ID = 523;
+/** مزوّد نص التفسير لعرضه في نسبة المصدر؛ غير الافتراضي هو Quran.com API v4. */
+export function tafsirProviderLabel(tafsirId: number): string | undefined {
+  return tafsirId === JALALAYN_TAFSIR_ID ? 'عبر مكتبة QUL (tafsir_api)' : undefined;
+}
 export const TAFSIRS: TafsirChoice[] = [
   { id: JALALAYN_TAFSIR_ID, name: 'تفسير الجلالين', language: 'ar' },
   { id: 91, name: 'تفسير السعدي', language: 'ar' },
@@ -101,6 +105,7 @@ type AsbabEntry = { surah: number; ayahs: number[]; occasions: string[] };
 /** مصدر أسباب النزول المعروض: كتاب «صحيح أسباب النزول دراسة حديثية» لإبراهيم محمد العلي،
  *  بيانات mostafaahmed97/asbab-al-nuzul-dataset بترخيص MIT، مدمجة محليًا فلا تحتاج اتصالًا. */
 export const ASBAB_ATTRIBUTION = 'صحيح أسباب النزول دراسة حديثية — إبراهيم محمد العلي';
+export const ASBAB_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص MIT';
 
 const asbabEntries = [...(asbabDataPart1 as AsbabEntry[]), ...(asbabDataPart2 as AsbabEntry[])];
 
