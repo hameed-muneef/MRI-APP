@@ -25,7 +25,7 @@ for(const width of [360,1280]){
   await page.reload();
   await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
   await ui.getByRole('button',{name:/استئناف/}).first().click();await expect(ui.locator('h2')).toHaveText('اربط');
-  await ui.getByRole('button',{name:'التالي: تلو',exact:true}).click();
+  await ui.getByRole('button',{name:'التالي: سمّع',exact:true}).click();
   await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();
   await expect(ui.locator('.quran-verse-hidden')).toHaveCount(3);
   await ui.screenshot({path:`/downloads/mastery-recite-${width}.png`});
@@ -49,9 +49,9 @@ for(const width of [360,1280]){
 }
 test('revision starts at recall, individual reveal works in full test',async({page})=>{
  await page.setViewportSize({width:360,height:900});await page.goto('/');
- await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="revision"]').click();
- const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
- await expect(ui.locator('h2')).toHaveText('تلو');
+ await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
+ const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
+ await expect(ui.locator('h2')).toHaveText('سمّع من ذاكرتك');
  await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();
  await ui.getByRole('button',{name:'إظهار الآية 1',exact:true}).first().click();
  await expect(ui.locator('.quran-verse-hidden')).toHaveCount(2);
@@ -64,8 +64,8 @@ test('recording explicit private save, playback list and delete',async({page})=>
   class RecorderMock{mimeType='audio/webm';ondataavailable:((e:{data:Blob})=>void)|null=null;onstop:(()=>void)|null=null;start(){}stop(){this.ondataavailable?.({data:new Blob(['local-audio'])});this.onstop?.();}}
   Object.defineProperty(window,'MediaRecorder',{value:RecorderMock,configurable:true});
  });
- await page.setViewportSize({width:360,height:900});await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="revision"]').click();
- const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
+ await page.setViewportSize({width:360,height:900});await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
+ const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
  await ui.getByRole('button',{name:'ابدأ التسجيل بإذني',exact:true}).click();await expect(ui).toContainText('جارٍ التسجيل محليًا');
  await ui.getByRole('button',{name:'إيقاف التسجيل',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(1);
  await ui.getByRole('button',{name:'حفظ على الجهاز',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(0);
