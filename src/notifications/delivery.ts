@@ -6,8 +6,141 @@ import {authClient} from '../auth';
 import {addLocalNotification} from './local-inbox';
 import type {Reminder, NotificationChannel, NotificationCategory} from './types';
 import {resolveAudioUrlForWeb} from '../audio/url-resolver';
+import {isNativePlatform} from '../lib/device-location';
 
 let permissionState: NotificationPermission | null = null;
+
+// ---------- إذن إشعارات النظام المركزي ----------
+// طلب واحد مشترك لإذن الإشعارات: على الجوال يمر عبر إشعارات النظام المحلية حتى
+// تصل التنبيهات والمنبهات والتطبيق مغلق، وعلى الويب عبر إذن المتصفح. يُسأل
+// المستخدم مرة واحدة كحد أقصى تلقائيًا؛ إعادة الطلب تحتاج زرًا صريحًا.
+
+const SYSTEM_NOTIF_ASKED_KEY = 'rabbani-system-notif-asked-v1';
+
+export function hasAskedSystemNotificationPermission(): boolean {
+  try {
+    return typeof window !== 'undefined' && window.localStorage.getItem(SYSTEM_NOTIF_ASKED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markSystemNotificationAsked(): void {
+  try {
+    window.localStorage.setItem(SYSTEM_NOTIF_ASKED_KEY, '1');
+  } catch { /* ignore */ }
+}
+
+let systemPermissionInFlight: Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> | null = null;
+
+/**
+ * يضمن إذن إشعارات النظام من مكان واحد. عند ask=false يكتفي بقراءة الحالة دون
+ * إظهار أي نافذة. عند السؤال تلقائيًا (ask غير محدد) لا يعيد سؤال من رفض سابقًا.
+ */
+export function ensureSystemNotificationPermission(options?: { ask?: boolean }): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> {
+  if (systemPermissionInFlight) return systemPermissionInFlight;
+  const task = (async (): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> => {
+    if (isNativePlatform()) {
+      try {
+        const scheduler = await import('./native-prayer-scheduler');
+        const current = await scheduler.checkPermissions();
+        if (current.display === 'granted' || current.display === 'denied' || current.display === 'unsupported') {
+          return current.display as 'granted' | 'denied' | 'unsupported';
+        }
+        if (options?.ask === false) return 'prompt';
+        if (hasAskedSystemNotificationPermission()) return 'prompt';
+        markSystemNotificationAsked();
+        const requested = await scheduler.requestPermissions();
+        return requested.display === 'granted' || requested.display === 'denied' ? requested.display : 'prompt';
+      } catch {
+        return 'unsupported';
+      }
+    }
+    if (!isBrowserNotificationSupported()) return 'unsupported';
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+      return Notification.permission;
+    }
+    if (options?.ask === false || hasAskedSystemNotificationPermission()) return 'prompt';
+    markSystemNotificationAsked();
+    const result = await requestBrowserPermission();
+    return result === 'granted' || result === 'denied' ? result : 'prompt';
+  })();
+  systemPermissionInFlight = task.finally(() => {
+    systemPermissionInFlight = null;
+  });
+  return systemPermissionInFlight;
+}
+
+// ---------- توجيه التسليم: الهاتف أولًا ثم المتصفح ----------
+
+export type SystemDeliveryRoute = 'native' | 'browser';
+
+export interface SystemDeliveryContext {
+  isNative: boolean;
+  nativePermission: 'granted' | 'denied' | 'prompt' | 'unsupported';
+  browserSupported: boolean;
+  browserPermission: NotificationPermission | null;
+}
+
+/**
+ * قرار خالص: على الجوال لا يصل شيء خارج التطبيق إلا عبر إشعارات النظام، لذلك
+ * لا نتراجع إلى إشعارات المتصفح داخل WebView (إما لا تعمل أو لا تصل عند الإغلاق).
+ */
+export function chooseSystemDeliveryRoute(ctx: SystemDeliveryContext): SystemDeliveryRoute | null {
+  if (ctx.isNative) {
+    return ctx.nativePermission === 'granted' ? 'native' : null;
+  }
+  if (ctx.browserSupported && ctx.browserPermission === 'granted') return 'browser';
+  return null;
+}
+
+export async function getSystemDeliveryContext(): Promise<SystemDeliveryContext> {
+  const isNative = isNativePlatform();
+  let nativePermission: SystemDeliveryContext['nativePermission'] = 'unsupported';
+  if (isNative) {
+    try {
+      const mod = await import('@capacitor/local-notifications');
+      const p = await mod.LocalNotifications.checkPermissions();
+      const display = (p as { display?: string }).display;
+      nativePermission = display === 'granted' || display === 'denied' ? display : 'prompt';
+    } catch {
+      nativePermission = 'unsupported';
+    }
+  }
+  return {
+    isNative,
+    nativePermission,
+    browserSupported: isBrowserNotificationSupported(),
+    browserPermission: getBrowserPermission(),
+  };
+}
+
+/** تسليم فوري عبر إشعارات نظام الهاتف (يظهر حتى على شاشة القفل). */
+async function deliverNativeImmediate(title: string, body: string, tag: string): Promise<boolean> {
+  try {
+    const [scheduler, mod, { prayerId }] = await Promise.all([
+      import('./native-prayer-scheduler'),
+      import('@capacitor/local-notifications'),
+      import('../lib/prayer-schedule'),
+    ]);
+    await scheduler.ensureChannels();
+    const id = prayerId('instant', `${tag}:${Date.now()}`);
+    await mod.LocalNotifications.schedule({
+      notifications: [{
+        id,
+        title: title.slice(0, 200),
+        body: body.slice(0, 2000),
+        schedule: { at: new Date(Date.now() + 1500), allowWhileIdle: true },
+        channelId: scheduler.GENERAL_CHANNEL_ID,
+        foreground: true,
+        extra: { rabbaniKind: 'instant', tag },
+      }] as never,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function isBrowserNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
@@ -109,11 +242,17 @@ export async function deliverReminder(reminder: Reminder, channel: NotificationC
   // 1. إشعار داخل التطبيق (يظهر في مركز الإشعارات)
   if (channel === 'in_app' || channel === 'both') await recordNotification('reminder', title, body, 'settings');
 
-  // 2. إشعار متصفح (نظامي) إن أذن المستخدم
-  if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
-    const perm = await requestBrowserPermission();
-    if (perm === 'granted') {
-      showBrowserNotification(title, {body, tag: `reminder:${reminder.id}`, requireInteraction: true});
+  // 2. إشعار نظامي خارج التطبيق: الهاتف أولًا (يصل والتطبيق مغلق)، ثم المتصفح على الويب
+  if (channel === 'system' || channel === 'both') {
+    const ctx = await getSystemDeliveryContext();
+    const route = chooseSystemDeliveryRoute(ctx);
+    if (route === 'native') {
+      await deliverNativeImmediate(title, body, `reminder:${reminder.id}`);
+    } else if (!ctx.isNative && ctx.browserSupported) {
+      const perm = await requestBrowserPermission();
+      if (perm === 'granted') {
+        showBrowserNotification(title, {body, tag: `reminder:${reminder.id}`, requireInteraction: true});
+      }
     }
   }
 }
@@ -123,7 +262,11 @@ export async function deliverReminder(reminder: Reminder, channel: NotificationC
  */
 export async function deliverNotification(kind: string, title: string, body?: string, link?: string): Promise<void> {
   await recordNotification(kind, title, body ?? '', link ?? '');
-  if (isBrowserNotificationSupported()) {
+  const ctx = await getSystemDeliveryContext();
+  const route = chooseSystemDeliveryRoute(ctx);
+  if (route === 'native') {
+    await deliverNativeImmediate(title, body ?? '', `notification:${kind}:${Date.now()}`);
+  } else if (!ctx.isNative && ctx.browserSupported) {
     const perm = await requestBrowserPermission();
     if (perm === 'granted') {
       showBrowserNotification(title, {body: body ?? '', tag: `notification:${kind}:${Date.now()}`});
