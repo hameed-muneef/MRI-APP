@@ -21,3 +21,12 @@ it('suppresses opted-in review reminders when none due, no note data in payload'
  const r=createEmptyMasteryState();const reminder:Reminder={id:'quran-mastery-daily-review',user_id:'',title:'review',description:'',scheduled_at:now.toISOString(),recurrence:'daily',category:'worship',enabled:true,created_at:'',updated_at:''};
  expect(filterMasteryReminders([reminder],r,now)).toEqual([]);r.schedules=[{passageId:'p',dueDate:'2026-11-20',timezone:'UTC',intervalIndex:0,lapses:0,deferrals:[],updatedAt:''}];expect(filterMasteryReminders([reminder],r,now)[0].description).toContain('1');
 });
+import {nativeMasteryReminders} from './reminders';
+it('builds bounded native one-shots and reconciles completion/pause, no private payload',()=>{
+ const r=reshapePlan(createEmptyMasteryState(),{...plan,status:'active'},id);const p=r.passages[0];r.schedules=[{passageId:p.id,dueDate:'2026-11-24',timezone:'UTC',intervalIndex:1,lapses:0,deferrals:[],updatedAt:''}];
+ const reminder:Reminder={id:'quran-mastery-daily-review',user_id:'',title:'review',description:'',scheduled_at:'2026-11-23T09:00:00Z',recurrence:'daily',category:'worship',enabled:true,created_at:'',updated_at:''};
+ const payload=nativeMasteryReminders([reminder],r,now);expect(payload.length).toBeLessThanOrEqual(30);expect(payload.length).toBeGreaterThan(0);expect(payload.every(x=>x.recurrence==='none')).toBe(true);expect(new Date(payload[0].scheduled_at).getTime()).toBeGreaterThan(now.getTime());
+ r.plans[0].status='paused';expect(nativeMasteryReminders([reminder],r,now)).toEqual([]);r.plans[0].status='active';r.schedules[0].dueDate='2027-01-01';expect(nativeMasteryReminders([reminder],r,now)).toEqual([]);
+});
+
+it('native expansion clears snooze metadata to avoid duplicate snooze alarms',()=>{const r=reshapePlan(createEmptyMasteryState(),{...plan,status:'active'},id);r.schedules=[{passageId:r.passages[0].id,dueDate:'2026-11-20',timezone:'UTC',intervalIndex:0,lapses:0,deferrals:[],updatedAt:''}];const source:Reminder={id:'quran-mastery-daily-review',user_id:'',title:'review',scheduled_at:'2026-11-23T09:00:00Z',snooze_until:'2026-11-25T10:00:00Z',recurrence:'daily',category:'worship',enabled:true,created_at:'',updated_at:''};const items=nativeMasteryReminders([source],r,now);expect(items.length).toBeGreaterThan(0);expect(items.every(x=>!x.snooze_until&&new Date(x.scheduled_at)>=new Date(source.snooze_until!))).toBe(true);});
