@@ -603,4 +603,4 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
       </div>
     </div>
   );
-                      }
+}
