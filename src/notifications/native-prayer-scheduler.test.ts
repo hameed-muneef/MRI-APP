@@ -221,3 +221,18 @@ describe('buildNativeReminderPayloads', () => {
     expect(buildNativeReminderPayloads([baseReminder], prefs, now)).toEqual([]);
   });
 });
+
+describe('personal reminder scheduling regressions',()=>{
+ const reminder:Reminder={id:'q',user_id:'',title:'Morning',scheduled_at:new Date(2026,10,24,8).toISOString(),recurrence:'daily',category:'reminder',enabled:true,created_at:'',updated_at:''};
+ it('schedules tomorrow morning even if scheduling occurs during quiet hours',()=>{
+  const prefs=makePrefs({quiet_hours:{enabled:true,start:'22:00',end:'06:00'}});
+  const results=buildNativeReminderPayloads([reminder],prefs,new Date(2026,10,23,23));
+  expect(results.length).toBeGreaterThan(0);expect(results[0].schedule.at.getHours()).toBe(8);
+ });
+ it('does not schedule both the original alarm and its snoozed replacement',()=>{
+  const at=new Date(2026,10,24,8,10);
+  const results=buildNativeReminderPayloads([{...reminder,snooze_until:at.toISOString()}],makePrefs(),new Date(2026,10,24,7));
+  expect(results.filter(r=>r.schedule.at.getDate()===24)).toHaveLength(1);
+  expect(results[0].schedule.at.getTime()).toBe(at.getTime());
+ });
+});
