@@ -40,14 +40,24 @@ export interface PlaybackOwner {
   subscribe(listener: (s: AudioPlayerState) => void): () => void;
   playQueue(tracks: AudioTrack[], startIndex?: number, category?: AudioTrack['category']): Promise<void>;
   stop(): Promise<void>;
+  pause?():Promise<void>;
+  resume?():Promise<void>;
+  setPlaybackRate?(rate:number):boolean;
+  supportsPlaybackRate?():boolean;
 }
 
 export const SESSION_AUDIO_OWNER = 'mastery-session';
 
-type PlayVerseArgs = { reciterId: number; surah: number; ayah: number; title: string };
+type PlayVerseArgs = { reciterId: number; surah: number; ayah: number; title: string;playbackRate?:number };
 
 export class SessionAudioAdapter {
   private token = 0;
+  private paused=false;
+  private releasePause:(()=>void)|null=null;
+  supportsPlaybackRate(){return this.player.supportsPlaybackRate?.()??false;}
+  setPlaybackRate(rate:number){if(!Number.isFinite(rate)||rate<.5||rate>2)return false;if(!this.owns(this.player.getState()))return true;return this.player.setPlaybackRate?.(rate)??false;}
+  async pause(){this.paused=true;if(this.owns(this.player.getState()))await this.player.pause?.();}
+  async resume(){this.paused=false;this.releasePause?.();this.releasePause=null;if(this.owns(this.player.getState()))await this.player.resume?.();}
   private controller: AbortController | null = null;
   private settle: ((result: VersePlayResult) => void) | null = null;
 
@@ -64,6 +74,7 @@ export class SessionAudioAdapter {
   /** إلغاء أي طلب جارٍ وإيقاف تشغيل نملكه فقط؛ لا نوقف صوت القارئ الذي لا نملكه. */
   cancel(): void {
     this.token += 1;
+    this.paused=false;this.releasePause?.();this.releasePause=null;
     this.controller?.abort();
     this.settle?.('cancelled');
     this.settle = null;
@@ -74,7 +85,7 @@ export class SessionAudioAdapter {
    * تشغيل آية واحدة عبر المشغّل الموحّد.
    * لا يتجاوز الآية عند فقدان الصوت، ولا يستبدل القارئ، ويكشف الاستباق من مصدر آخر.
    */
-  async playVerse({ reciterId, surah, ayah, title }: PlayVerseArgs): Promise<VersePlayResult> {
+  async playVerse({ reciterId, surah, ayah, title,playbackRate=1 }: PlayVerseArgs): Promise<VersePlayResult> {
     if (!isHafsQuranComReciter(reciterId)) return 'rejected-narration';
     this.cancel();
     const my = ++this.token;
@@ -82,13 +93,15 @@ export class SessionAudioAdapter {
     const url = await fetchAyahAudioUrl(reciterId, surah, ayah, this.controller.signal);
     if (my !== this.token) return 'cancelled';
     if (!url) return 'missing';
+    if(this.paused)await new Promise<void>(resolve=>{this.releasePause=resolve;});
+    if(my!==this.token)return 'cancelled';
     const track: AudioTrack = {
       id: `quran:${SESSION_AUDIO_OWNER}:${surah}:${ayah}:${my}`,
       title,
       subtitle: 'جلسة حفظ ومراجعة',
       url,
       category: 'quran',
-      meta: { owner: SESSION_AUDIO_OWNER, surah, ayah, reciterId },
+      meta: { owner: SESSION_AUDIO_OWNER, surah, ayah, reciterId,playbackRate },
     };
     return new Promise<VersePlayResult>((resolve) => {
       let seenPlaying = false;
@@ -113,7 +126,7 @@ export class SessionAudioAdapter {
         return finish('preempted');
       });
       this.settle = finish;
-      this.player.playQueue([track], 0, 'quran').catch(() => finish('error'));
+      this.player.playQueue([track], 0, 'quran').then(()=>{if(this.paused&&my===this.token)void this.player.pause?.();}).catch(() => finish('error'));
     });
   }
 }
@@ -152,4 +165,4 @@ export function buildSequentialQueue(args: {
     });
   }
   return { tracks, firstMissingAyah };
-        }
+}
