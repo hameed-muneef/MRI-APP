@@ -31,7 +31,6 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 /* Offline is sustained normal use. Keep its global indicator in flow, never over learning text. */
 #root .app:has(.qm-workspace)>.offline-pill{position:static;transform:none;width:fit-content;margin:12px auto 90px;white-space:normal}
 
-.qm-tajweed summary{font-weight:700;min-height:44px;cursor:pointer;color:#174a8c}.qm-external{display:inline-flex;align-items:center;min-height:44px;border:1px solid #9dbbd7;border-radius:10px;padding:10px 14px;background:#eaf3fb;color:#174a8c!important;text-decoration:underline}.qm-tajweed{overflow-wrap:anywhere}
 /* Explicit mastery control colors win over unrelated global details variants. */
 #root .app .qm-workspace summary{color:#174a8c!important;background:transparent!important}
 #root .app .qm-workspace input,#root .app .qm-workspace select{color:#12305a!important;background:#fff!important}
