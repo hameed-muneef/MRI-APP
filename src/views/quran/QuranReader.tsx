@@ -15,7 +15,7 @@ import {
 import {dateKey} from '../../quran/learning';
 import {uid} from '../../id';
 import {EmptyNote, QuranVerseText, ReferenceBadge, copyText, shareText} from './ui';
-import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, ASBAB_ATTRIBUTION, type FetchState} from '../../quran/content-api';
+import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, ASBAB_ATTRIBUTION, ASBAB_PROVIDER, tafsirProviderLabel, type FetchState} from '../../quran/content-api';
 import {buildSequentialQueue} from '../../quran/audio-adapter';
 import {loadReciters, audioUrl, defaultMoshaf, moshafCategory, type Reciter} from '../../quran/audio';
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
@@ -694,7 +694,7 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
                   {contentState.status === 'loading' && <p className="muted small">جارٍ التحميل…</p>}
                   {contentState.status === 'error' && <p className="muted small" role="alert">{online ? contentState.error : 'لا يوجد اتصال، ولم يُحفظ هذا المحتوى على الجهاز بعد.'}</p>}
                   {contentState.status === 'empty' && <p className="muted small">{contentTab==='asbab'?'لا يوجد سبب نزول لهذه الآية في هذا المصدر.':online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
-                  {contentState.status === 'success' && <small>{attributionLabel(contentTab==='asbab'?ASBAB_ATTRIBUTION:(contentTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name??'مصدر غير محدد')}</small>}
+                  {contentState.status === 'success' && <small>{attributionLabel((contentTab==='asbab'?ASBAB_ATTRIBUTION:(contentTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name)??'مصدر غير محدد', contentTab==='asbab'?ASBAB_PROVIDER:contentTab==='tafsir'?tafsirProviderLabel(tafsirId):undefined)}</small>}
                   {contentState.status === 'success' && <p className="quran-content-text">{contentState.data}</p>}
                 </div>
               )}
@@ -772,4 +772,4 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
       </aside>
     </div>
   </div>;
-                }
+}
