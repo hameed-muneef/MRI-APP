@@ -23,7 +23,7 @@ Actual progressive warning, storage-conflict warning and active-ayah pixels were
 
 ## Still open
 
-Embedded authorized/reviewed Tajweed lessons and validated exercises remain incomplete. The approved six-topic external reading interim is unchanged. Physical Android microphone/calls/background/notification/battery/reboot/lazy playback and actual TalkBack remain device gates. No iOS or automatic pronunciation assessment claim. No software audit proves absence of every defect.
+Tajweed lessons, interim reference links and checklist were removed at the user's request on 23 November2026 and are no longer an open scope gate. Physical Android microphone/calls/background/notification/battery/reboot/lazy playback and actual TalkBack remain device gates. No iOS or automatic pronunciation assessment claim. No software audit proves absence of every defect.
 
 ## Original-spec audio continuation
 
@@ -37,7 +37,11 @@ Verification for this continuation:271 unit tests,173 Node tests, TypeScript, pr
 
 ## Remaining requirement classification
 
-- Reviewed religious-content/data dependencies: embedded six-topic Tajweed lessons, practical examples/exercises, reliable referenced Asbab al-Nuzul and validated word meanings remain incomplete. Accurate word-part hiding remains gated on verified word structure. No generated substitute religious content was added.
+- Reviewed religious-content/data dependencies: reliable referenced Asbab al-Nuzul and validated word meanings remain incomplete. Accurate word-part hiding remains gated on verified word structure. No generated substitute religious content was added.
 - Deliberately restricted infrastructure: local-only learning, notes and recording storage remain enabled; authentication/cloud synchronization remain disabled by the user's project boundary. No claim of cross-device synchronization.
 - Device/release gates: physical Android audio rates/pitch, microphone, interruptions/calls, background/lazy playback, notification/battery/reboot and actual TalkBack remain unverified. No iOS, merge, signed artifact, packaging or release claim.
 - Existing implementable flows reviewed against the original request: free/organized range plans, adaptive review and catch-up, evidence-based mastery, dashboard/history, hide/reveal, progressive connection, attributed understanding/private notes, explicit recording storage and offline packs retain their existing implementation and automated coverage. This is not proof that no further defect exists.
+
+## User scope change, 23 November2026
+
+Tajweed education was removed by explicit request. The mastery landing/session reference card, six-topic external links and temporary checklist are removed. Its former source/component are deleted; the regression now verifies absence without losing session, audio or assessment behavior. Phase5 interim research remains historical, not a current requirement or completion blocker. The user guide and current acceptance matrix reflect this narrower scope.
