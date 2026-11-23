@@ -1,9 +1,9 @@
-name: Phase 3 Android compile only
+name: Mastery Android compile only
 
 # Verification only. No signing secrets, APK/AAB packaging, uploads, or releases.
 on:
   push:
-    branches: [feat/mastery-phase-3]
+    branches: [feat/mastery-phase-3, feat/mastery-phases-5-7]
     paths:
       - '.github/workflows/android-compile-check.yml'
       - 'android/**'
@@ -13,14 +13,14 @@ on:
       - 'package*.json'
       - '*config*'
   pull_request:
-    branches: [feat/mastery-phase-2]
+    branches: [feat/mastery-phase-2, feat/mastery-phase-4]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: phase3-android-compile-${{ github.ref }}
+  group: mastery-android-compile-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
