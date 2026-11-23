@@ -30,3 +30,16 @@ body:has(.qm-steps) .quran-page > :is(.quran-intro,.quran-section-grid,.quran-se
 .qm-workspace h2:focus { outline: none; }
 .qm-workspace .qm-audio-settings summary { cursor: pointer; min-height: 44px; }
 .qm-workspace .qm-guidance { line-height: 1.85; }
+
+/* The next action remains thumb-reachable from the first screen of every step. */
+body:has(.qm-steps) .qm-workspace { padding-bottom: 150px; }
+body:has(.qm-steps) .qm-workspace .qm-footer {
+  position: fixed; inset-inline: 12px; bottom: 8px; margin: 0 auto; width: auto;
+  max-width: 1180px; z-index: 40; padding: 10px; display: flex;
+  flex-direction: row; flex-wrap: wrap; align-items: center;
+}
+body:has(.qm-steps) .qm-footer .qm-primary { flex: 1 1 190px; }
+body:has(.qm-steps) .qm-footer small { flex-basis: 100%; font-size: 12px; }
+.qm-workspace .qm-journey-steps summary { min-height: 36px; cursor: pointer; font-size: 13px; }
+.qm-workspace .qm-guidance { margin-block: 12px; padding: 12px; }
+.qm-workspace .qm-heading h2 { margin-block: 10px; }
