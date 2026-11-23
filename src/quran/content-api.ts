@@ -35,17 +35,10 @@ export const TRANSLATIONS: TranslationChoice[] = [
   { id: 85, name: 'M.A.S. Abdel Haleem', language: 'en' },
 ];
 
-// تفاسير — الجلالين هو الافتراضي بطلب المستخدم ويُجلب من مكتبة QUL عبر tafsir_api (انظر fetchTafsir).
-// البقية من Quran.com: الميسر، السعدي، ابن كثير، القرطبي، الطبري، البغوي.
-export const JALALAYN_TAFSIR_ID = 523;
-/** مزوّد نص التفسير لعرضه في نسبة المصدر؛ غير الافتراضي هو Quran.com API v4. */
-export function tafsirProviderLabel(tafsirId: number): string | undefined {
-  return tafsirId === JALALAYN_TAFSIR_ID ? 'عبر مكتبة QUL (tafsir_api)' : undefined;
-}
+// تفاسير — التفسير الميسر هو الافتراضي بطلب المستخدم. الكل يُجلب من Quran.com API v4.
 export const TAFSIRS: TafsirChoice[] = [
-  { id: JALALAYN_TAFSIR_ID, name: 'تفسير الجلالين', language: 'ar' },
-  { id: 91, name: 'تفسير السعدي', language: 'ar' },
   { id: 16, name: 'التفسير الميسر', language: 'ar' },
+  { id: 91, name: 'تفسير السعدي', language: 'ar' },
   { id: 14, name: 'تفسير ابن كثير', language: 'ar' },
   { id: 90, name: 'تفسير القرطبي', language: 'ar' },
   { id: 15, name: 'تفسير الطبري', language: 'ar' },
@@ -76,18 +69,7 @@ export async function fetchTranslation(verseKey: string, translationId: number, 
 }
 
 // جلب تفسير آية
-const JALALAYN_CDN = 'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@v1.2.3/tafsir/ar-tafsir-al-jalalayn';
-
 export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: AbortSignal): Promise<string | null> {
-  if (tafsirId === JALALAYN_TAFSIR_ID) {
-    const cachedJal = readCache('tf', tafsirId, verseKey);
-    if (cachedJal !== undefined) return cachedJal;
-    const [js, ja] = verseKey.split(':');
-    const body = await fetchJson(`${JALALAYN_CDN}/${encodeURIComponent(js)}/${encodeURIComponent(ja)}.json`, signal) as { text?: string };
-    const text = typeof body?.text === 'string' && body.text.trim() ? body.text.trim() : null;
-    writeCache('tf', tafsirId, verseKey, text);
-    return text;
-  }
   const offline = await getOfflineEntry('tafsir', tafsirId, verseKey);
   if (offline !== undefined) return offline;
   const cached = readCache('tf', tafsirId, verseKey);
@@ -102,10 +84,10 @@ export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: A
 
 type AsbabEntry = { surah: number; ayahs: number[]; occasions: string[] };
 
-/** مصدر أسباب النزول المعروض: كتاب «صحيح أسباب النزول دراسة حديثية» لإبراهيم محمد العلي،
- *  بيانات mostafaahmed97/asbab-al-nuzul-dataset بترخيص MIT، مدمجة محليًا فلا تحتاج اتصالًا. */
-export const ASBAB_ATTRIBUTION = 'صحيح أسباب النزول دراسة حديثية — إبراهيم محمد العلي';
-export const ASBAB_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص MIT';
+/** مصدر أسباب النزول المعروض: قاعدة بيانات مركز تفسير للدراسات القرآنية (tafsir.net)،
+ *  بترخيص CC BY 4.0، مدمجة محليًا فلا تحتاج اتصالًا؛ 201 مدخلًا، وغياب الآية يعني عدم ورودها في هذا المصدر. */
+export const ASBAB_ATTRIBUTION = 'أسباب النزول — مركز تفسير للدراسات القرآنية (tafsir.net)';
+export const ASBAB_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0)، مع تكييف التنسيق';
 
 const asbabEntries = [...(asbabDataPart1 as AsbabEntry[]), ...(asbabDataPart2 as AsbabEntry[])];
 
@@ -119,4 +101,32 @@ export function getAsbabNuzul(verseKey: string): string | null {
 /** أسباب النزول من المصدر المحلي المعتمد فقط؛ لا بديل ولا نص مخترع عند غياب سبب موثّق. */
 export async function fetchAsbabNuzul(verseKey: string, _signal?: AbortSignal): Promise<string | null> {
   return getAsbabNuzul(verseKey);
+}
+
+/** معاني الكلمات: شروح عربية من قاعدة بيانات مركز تفسير للدراسات القرآنية (tafsir.net)،
+ *  بترخيص CC BY 4.0، مدمجة محليًا. شروح توضيحية تتضمن أحيانًا ملاحظات نحوية، وليست ترجمة آلية. */
+export const WORD_MEANINGS_ATTRIBUTION = 'معاني الكلمات — مركز تفسير للدراسات القرآنية (tafsir.net)';
+export const WORD_MEANINGS_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0)، مع تكييف التنسيق';
+
+export type WordMeaning = { word: string; meaning: string };
+
+type WordMeaningsData = Record<string, [string, string][]>;
+
+let wordMeaningsPromise: Promise<WordMeaningsData> | null = null;
+function loadWordMeanings(): Promise<WordMeaningsData> {
+  if (!wordMeaningsPromise) {
+    wordMeaningsPromise = fetch('/quran/word-meanings-ar.json').then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<WordMeaningsData>;
+    });
+  }
+  return wordMeaningsPromise;
+}
+
+/** شروح كلمات الآية من بيانات المصدر المدمجة؛ تُعرض بنص كلمات المصدر نفسه، بلا محاذاة آليّة مع نص الآية. */
+export async function fetchWordMeanings(verseKey: string): Promise<WordMeaning[] | null> {
+  const data = await loadWordMeanings();
+  const rows = data[verseKey];
+  if (!rows || rows.length === 0) return null;
+  return rows.map(([word, meaning]) => ({ word, meaning }));
 }
