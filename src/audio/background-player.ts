@@ -83,7 +83,7 @@ class BackgroundAudioEngine {
     }
 
     if (snap.status === 'idle') {
-      this.setState({ ...INITIAL_STATE });
+      this.setState({ ...INITIAL_STATE, completedTrackId: snap.completedTrackId });
       return;
     }
 
@@ -309,7 +309,7 @@ class BackgroundAudioEngine {
     }
   }
 
-  async stop(): Promise<void> {
+  async stop(completedTrackId?: string): Promise<void> {
     this.usingWebFallback = false;
     this.nativeFallbackAttemptKey = null;
     const native = getNativeBackgroundAudioPlugin();
@@ -320,7 +320,7 @@ class BackgroundAudioEngine {
     this.webLoadToken += 1;
     this.destroyWebAudio();
     this.clearWebMediaSession();
-    this.setState({ ...INITIAL_STATE });
+    this.setState({ ...INITIAL_STATE, completedTrackId });
   }
 
   /** Sleep timer: stop playback after `minutes`. 0 = cancel. */
@@ -485,7 +485,7 @@ class BackgroundAudioEngine {
       } else if (index + 1 < this.state.queue.length) {
         void this.startWebTrack(index + 1);
       } else {
-        void this.stop();
+        void this.stop(track.id);
       }
     });
 
