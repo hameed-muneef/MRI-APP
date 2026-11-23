@@ -1,6 +1,7 @@
 // ربط Quran Foundation Content API (api.quran.com) — للترجمات والتفسير.
 // لا محتوى ديني مخترع: كل النصوص تُجلب من API.
 import {getOfflineEntry} from './offline-store';
+import asbabData from './asbab-nuzul.json';
 
 const CACHE_PREFIX = 'quran-content-cache-v1:';
 
@@ -33,9 +34,11 @@ export const TRANSLATIONS: TranslationChoice[] = [
   { id: 85, name: 'M.A.S. Abdel Haleem', language: 'en' },
 ];
 
-// تفاسير (من Quran.com) — ملاحظة: "الجلالين" غير متاح عبر هذا API.
-// متاح: الميسر، السعدي، ابن كثير، القرطبي، الطبري، البغوي.
+// تفاسير — الجلالين هو الافتراضي بطلب المستخدم ويُجلب من مكتبة QUL عبر tafsir_api (انظر fetchTafsir).
+// البقية من Quran.com: الميسر، السعدي، ابن كثير، القرطبي، الطبري، البغوي.
+export const JALALAYN_TAFSIR_ID = 523;
 export const TAFSIRS: TafsirChoice[] = [
+  { id: JALALAYN_TAFSIR_ID, name: 'تفسير الجلالين', language: 'ar' },
   { id: 91, name: 'تفسير السعدي', language: 'ar' },
   { id: 16, name: 'التفسير الميسر', language: 'ar' },
   { id: 14, name: 'تفسير ابن كثير', language: 'ar' },
@@ -68,7 +71,18 @@ export async function fetchTranslation(verseKey: string, translationId: number, 
 }
 
 // جلب تفسير آية
+const JALALAYN_CDN = 'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@v1.2.3/tafsir/ar-tafsir-al-jalalayn';
+
 export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: AbortSignal): Promise<string | null> {
+  if (tafsirId === JALALAYN_TAFSIR_ID) {
+    const cachedJal = readCache('tf', tafsirId, verseKey);
+    if (cachedJal !== undefined) return cachedJal;
+    const [js, ja] = verseKey.split(':');
+    const body = await fetchJson(`${JALALAYN_CDN}/${encodeURIComponent(js)}/${encodeURIComponent(ja)}.json`, signal) as { text?: string };
+    const text = typeof body?.text === 'string' && body.text.trim() ? body.text.trim() : null;
+    writeCache('tf', tafsirId, verseKey, text);
+    return text;
+  }
   const offline = await getOfflineEntry('tafsir', tafsirId, verseKey);
   if (offline !== undefined) return offline;
   const cached = readCache('tf', tafsirId, verseKey);
@@ -81,7 +95,22 @@ export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: A
   return cleaned;
 }
 
-/** No verified Asbab source is configured. Never substitute tafsir under this label. */
-export async function fetchAsbabNuzul(_verseKey: string, _signal?: AbortSignal): Promise<string | null> {
-  return 'المصدر قيد المراجعة. لا تُعرض أسباب نزول حتى اعتماد مصدر موثوق.';
-  }
+type AsbabEntry = { surah: number; ayahs: number[]; occasions: string[] };
+
+/** مصدر أسباب النزول المعروض: كتاب «صحيح أسباب النزول دراسة حديثية» لإبراهيم محمد العلي،
+ *  بيانات mostafaahmed97/asbab-al-nuzul-dataset بترخيص MIT، مدمجة محليًا فلا تحتاج اتصالًا. */
+export const ASBAB_ATTRIBUTION = 'صحيح أسباب النزول دراسة حديثية — إبراهيم محمد العلي';
+
+const asbabEntries = asbabData as AsbabEntry[];
+
+export function getAsbabNuzul(verseKey: string): string | null {
+  const [surah, ayah] = verseKey.split(':').map(Number);
+  const entry = asbabEntries.find((e) => e.surah === surah && e.ayahs.includes(ayah));
+  if (!entry) return null;
+  return entry.occasions.join('\n\n');
+}
+
+/** أسباب النزول من المصدر المحلي المعتمد فقط؛ لا بديل ولا نص مخترع عند غياب سبب موثّق. */
+export async function fetchAsbabNuzul(verseKey: string, _signal?: AbortSignal): Promise<string | null> {
+  return getAsbabNuzul(verseKey);
+}
