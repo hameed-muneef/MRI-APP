@@ -30,7 +30,7 @@ export const TRANSLATIONS: TranslationChoice[] = [
   { id: 20, name: 'Saheeh International', language: 'en' },
   { id: 22, name: 'Yusuf Ali', language: 'en' },
   { id: 19, name: 'Pickthall', language: 'en' },
-  { id: 85, name: 'Muhammad Taqi Usmani', language: 'en' },
+  { id: 85, name: 'M.A.S. Abdel Haleem', language: 'en' },
 ];
 
 // تفاسير (من Quran.com) — ملاحظة: "الجلالين" غير متاح عبر هذا API.
@@ -81,9 +81,7 @@ export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: A
   return cleaned;
 }
 
-// جلب "أسباب النزول" — Quran.com لا يوفر endpoint مخصصًا. نستخدم tafsir id 16 (الجلالين)
-// كمصدر "أسباب النزول" (الجلالين يذكر أسباب النزول في التفسير). لا محتوى مخترع.
 /** No verified Asbab source is configured. Never substitute tafsir under this label. */
 export async function fetchAsbabNuzul(_verseKey: string, _signal?: AbortSignal): Promise<string | null> {
   return 'المصدر قيد المراجعة. لا تُعرض أسباب نزول حتى اعتماد مصدر موثوق.';
-}
+  }
