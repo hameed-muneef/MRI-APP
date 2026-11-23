@@ -71,4 +71,4 @@ export default function PrayerLocationPicker({location,onChange}:Props){
       <button type="button" className="soft-btn" onClick={()=>onChange(undefined)}>إلغاء الموقع المحفوظ</button>
     </div>}
   </div>;
-      }
+}
