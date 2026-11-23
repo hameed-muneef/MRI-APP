@@ -382,7 +382,8 @@ export function buildNativeReminderPayloads(
 
   for (const reminder of reminders) {
     if (!reminder.enabled) continue;
-    if (!isReminderAllowed(reminder, prefs, now)) continue;
+    // Quiet hours are checked at each future occurrence, not at scheduling time.
+    if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
     const channelPref = prefs.reminder_settings?.default_channel ?? 'both';
     if (channelPref === 'in_app') continue;
 
@@ -403,6 +404,7 @@ export function buildNativeReminderPayloads(
     const occurrences = upcomingOccurrences(reminder, now, 5);
     for (const at of occurrences) {
       if (at.getTime() <= nowMs + 1000) continue;
+      if (snoozeAt && at <= snoozeAt && snoozeAt.getTime()-at.getTime()<=60*60*1000) continue;
       if (isQuietHoursActive(prefs, at)) continue;
       payloads.push({
         id: prayerId('rem', `${reminder.id}:${at.toISOString()}`),
@@ -807,4 +809,4 @@ export async function syncAllNativeNotifications(opts: {
 
 export function isNativePlatform(): boolean {
   return isNative();
-}
+        }
