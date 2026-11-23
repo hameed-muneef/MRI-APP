@@ -341,4 +341,4 @@ export function resetCentralLocationForTests(clearStorage = true): void {
   state = null;
   inFlight = null;
   listeners.clear();
-      }
+}
