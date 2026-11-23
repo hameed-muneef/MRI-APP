@@ -1,6 +1,6 @@
 import type {MasteryPlan,MasteryStateRoot,RevisionSchedule} from './types';
 import {addDays,buildMasteryPassages} from './engine';
-export const localDay=(now:Date,zone:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+export const localDay=(now:Date,zone:string)=>{const parts=new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const get=(type:string)=>parts.find(p=>p.type===type)!.value;return `${get('year')}-${get('month')}-${get('day')}`;};
 export function nextPlanDay(day:string,weekdays:number[]=[0,1,2,3,4,5,6]):string{
  if(!weekdays.length)throw new Error('اختر يومًا واحدًا على الأقل.');
  for(let i=0;i<8;i++){const d=addDays(day,i);if(weekdays.includes(new Date(`${d}T12:00:00Z`).getUTCDay()))return d;}
@@ -48,4 +48,4 @@ export function planNextDate(root:MasteryStateRoot,plan:MasteryPlan,now=new Date
  const ids=new Set(root.passages.filter(p=>p.planId===plan.id).map(p=>p.id));
  const todayVerses=new Set<string>();for(const session of root.sessions){if(session.purpose!=='new'||!ids.has(session.passageId)||localDay(new Date(session.startedAt),zone)!==today)continue;for(let a=session.range.ayahStart;a<=session.range.ayahEnd;a++)todayVerses.add(`${session.range.surah}:${a}`);}
  return nextPlanDay(todayVerses.size>=plan.dailyTargetVerses?addDays(today,1):today,plan.weekdays);
-   }
+                                                                                                                               }
