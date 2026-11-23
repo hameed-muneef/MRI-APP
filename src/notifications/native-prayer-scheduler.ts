@@ -388,6 +388,8 @@ export function buildNativeReminderPayloads(
   const payloads: NativeNotificationPayload[] = [];
 
   for (const reminder of reminders) {
+    // Mastery due-state is evaluated live; do not schedule a stale daily alert while closed.
+    if(reminder.id==='quran-mastery-daily-review')continue;
     if (!reminder.enabled) continue;
     // Quiet hours are checked at each future occurrence, not at scheduling time.
     if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
@@ -908,4 +910,4 @@ export async function syncAllNativeNotifications(opts: {
 
 export function isNativePlatform(): boolean {
   return isNative();
-}
+    }
