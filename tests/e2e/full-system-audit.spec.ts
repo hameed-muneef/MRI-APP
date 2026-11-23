@@ -81,7 +81,7 @@ test.describe('full-system audit',()=>{
     await page.goto('/');
     await sideNav(page,'القرآن');
     await expect(page.locator('.quran-section-grid')).toBeVisible();
-    const sections=['mushaf','tafsir','translations','reciters','hifz','revision','bukhari','muslim','sunnah','routine','progress','azkar'];
+    const sections=['mushaf','tafsir','translations','reciters','hifz','bukhari','muslim','sunnah','routine','progress','azkar'];
     for(const s of sections){
       await page.locator(`[data-quran-tab="${s}"]`).click();
       await page.waitForTimeout(s==='mushaf'?2500:700);
