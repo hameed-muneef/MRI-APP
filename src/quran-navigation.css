@@ -1,0 +1,25 @@
+/* One calm green palette for Quran navigation, matching the mastery workspace.
+   Selection is also conveyed by border weight and aria-current, never hue alone. */
+html[data-theme="light"] #root .app main[data-section="quran"] .quran-section-grid [data-quran-tab] {
+  --qtab-bg: #E0EEE5 !important; --qtab-border: #6C907D !important; --qtab-icon-bg: #C8E1D2 !important;
+  --qtab-icon-fg: #20553E !important; --qtab-active-bg: #C8E1D2 !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .quran-section-grid [data-quran-tab] {
+  --qtab-bg: #203F35 !important; --qtab-border: #6E9D88 !important; --qtab-icon-bg: #2C5747 !important;
+  --qtab-icon-fg: #A5DFC0 !important; --qtab-active-bg: #2C5747 !important;
+}
+#root .app .quran-section-grid button[data-quran-tab] { min-height: 48px; }
+#root .app .quran-section-grid button[data-quran-tab] strong {
+  white-space: normal; overflow: visible; overflow-wrap: anywhere; line-height: 1.5;
+}
+#root .app .quran-section-grid button[data-quran-tab="hifz"] { grid-column: 1 / -1; }
+#root .app .quran-section-grid button[data-quran-tab]:hover {
+  background: var(--qtab-active-bg) !important;
+}
+#root .app .quran-section-grid button[data-quran-tab]:focus-visible {
+  outline: 3px solid var(--qtab-icon-fg) !important; outline-offset: 3px;
+}
+
+/* Quran mastery card surfaces follow the same calm green family as its menu. */
+#root .app .qm-workspace .qm-card { background: #E0EEE5; border-color: #6C907D; }
+[data-theme="dark"] #root .app .qm-workspace .qm-card { background: #203F35; border-color: #6E9D88; }
