@@ -12,9 +12,9 @@ Independent preparation while Phase5 religious-content gate remains open. No mer
 
 ## Verification
 
-256 unit tests, TypeScript pass. Added unit coverage for cache reuse/resume, abort/no-skip, error, quota, deletion isolation, native horizon and pause/deferral removal. Four browser tests pass across mobile and desktop: pack download/presence/delete, plus a full daily session with decoded downloaded WAV audio after removing all route fixtures and disabling network. Synthetic sound proves playback/cache mechanics, not real recitation quality. Offline indicator is in normal page flow, not over dashboard text. Existing plan/catch-up interaction tests rerun mobile. Screenshots inspected; desktop action wrapping fixed/re-inspected.
+257 unit tests, TypeScript pass. Added unit coverage for cache reuse/resume, abort/no-skip, error, quota, deletion isolation, native horizon and pause/deferral removal. Four browser tests pass across mobile and desktop: pack download/presence/delete, plus a full daily session with decoded downloaded WAV audio after removing all route fixtures and disabling network. Synthetic sound proves playback/cache mechanics, not real recitation quality. Offline indicator is in normal page flow, not over dashboard text. Existing plan/catch-up interaction tests rerun mobile. Screenshots inspected; desktop action wrapping fixed/re-inspected.
 
-Production PWA actual check: build preview, first online service-worker setup, offline reload, Quran navigation and new session render passed. Canonical Quran text rendered offline. Fixture pack bytes are not religious audio and cannot establish actual audio quality or timing.
+Production PWA actual check: build preview, first online service-worker setup, offline reload, Quran navigation and new session render passed. Canonical Quran text rendered offline. Final production check also downloaded the real Fatiha verse-audio pack without mocks, disabled network, cold-reloaded, and naturally completed first-ayah playback with persisted completed1/reciter7/reference1:1. This proves browser decode/completion, not a pronunciation audit or phone behavior. Fixture pack bytes are not religious audio and cannot establish actual audio quality or timing.
 
 ## Remaining gates
 
