@@ -23,6 +23,7 @@ type Props = {
  * لا تلمس حالة الجلسة؛ الإغلاق يعيد للنطاق كما كان.
  */
 export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseText, onClose }: Props) {
+  const [topic,setTopic]=useState<'tafsir'|'translation'|'context'>('tafsir');
   const [ayah, setAyah] = useState(ayahStart);
   const [tafsirId, setTafsirId] = useState(TAFSIRS[0].id);
   const [translationId, setTranslationId] = useState(TRANSLATIONS[0].id);
@@ -64,14 +65,14 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
     setTranslation(null);
     const key = `${surah}:${ayah}`;
     const controller=new AbortController();
-    void Promise.all([fetchTafsir(key, tafsirId,controller.signal), fetchTranslation(key, translationId,controller.signal)]).then(([t, tr]) => {
-      if (my !== seq.current) return;
-      setTafsir(t);
-      setTranslation(tr);
+    if(topic==='context'){setLoading(false);return()=>controller.abort();}
+    void (topic==='tafsir'?fetchTafsir(key,tafsirId,controller.signal):fetchTranslation(key,translationId,controller.signal)).then(value=>{
+      if(my!==seq.current)return;
+      if(topic==='tafsir')setTafsir(value);else setTranslation(value);
       setLoading(false);
     }).catch(()=>{if(!controller.signal.aborted&&my===seq.current)setLoading(false);});
     return()=>{controller.abort();seq.current++;};
-  }, [surah, ayah, tafsirId, translationId,retry]);
+  }, [surah, ayah, tafsirId, translationId,retry,topic]);
 
   const tafsirName = TAFSIRS.find((t) => t.id === tafsirId)?.name ?? 'تفسير';
   const translationName = TRANSLATIONS.find((t) => t.id === translationId)?.name ?? 'ترجمة';
@@ -91,25 +92,21 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
         </div>
       )}
       {text && <p className="qm-sheet-verse">{text}</p>}
-      <label className="qm-field">التفسير
-        <select aria-label="التفسير" value={tafsirId} onChange={(e) => setTafsirId(Number(e.target.value))}>
-          {TAFSIRS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
-      </label>
-      <p className="qm-attribution">{attributionLabel(tafsirName)}</p>
-      {loading ? <p className="qm-muted">جارٍ التحميل…</p> : <p className="qm-sheet-body">{tafsir ?? 'تعذر جلب التفسير الآن. تحقق من الاتصال وأعد المحاولة.'}</p>}
-      <label className="qm-field">الترجمة
-        <select aria-label="الترجمة" value={translationId} onChange={(e) => setTranslationId(Number(e.target.value))}>
-          {TRANSLATIONS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
-      </label>
-      <p className="qm-attribution">{attributionLabel(translationName)}</p>
-      {!loading && <p className="qm-sheet-body">{translation ?? 'تعذر جلب الترجمة الآن.'}</p>}
-      {!loading&&(!tafsir||!translation)&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصادر</button>}
-      <h4>أسباب النزول</h4>
-      <p className="qm-muted">المصدر قيد المراجعة. لا يُعرض أي نص تحت هذا العنوان حتى اعتماد مجموعة مرجعية مدققة.</p>
-      <h4>معاني الكلمات</h4>
-      <p className="qm-muted">قيد التحقق من مصدر موثوق محاذٍ للكلمات. لن تُعرض معانٍ من مصدر غير معتمد.</p>
+      <nav className="qm-chips" aria-label="نوع الفهم">
+        <button aria-pressed={topic==='tafsir'} onClick={()=>setTopic('tafsir')}>تفسير</button>
+        <button aria-pressed={topic==='translation'} onClick={()=>setTopic('translation')}>ترجمة</button>
+        <button aria-pressed={topic==='context'} onClick={()=>setTopic('context')}>أسباب النزول</button>
+      </nav>
+      {topic==='tafsir'&&<><label className="qm-field">التفسير
+        <select aria-label="التفسير" value={tafsirId} onChange={e=>setTafsirId(Number(e.target.value))}>{TAFSIRS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+      </label><p className="qm-attribution">{attributionLabel(tafsirName)}</p>
+      {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{tafsir??'تعذر جلب التفسير. تحقق من الاتصال.'}</p>}</>}
+      {topic==='translation'&&<><label className="qm-field">الترجمة
+        <select aria-label="الترجمة" value={translationId} onChange={e=>setTranslationId(Number(e.target.value))}>{TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+      </label><p className="qm-attribution">{attributionLabel(translationName)}</p>
+      {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{translation??'تعذر جلب الترجمة. تحقق من الاتصال.'}</p>}</>}
+      {topic==='context'?<p className="qm-notice">أسباب النزول غير متاحة حاليًا. المصدر قيد المراجعة.</p>:!loading&&!(topic==='tafsir'?tafsir:translation)&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}
+      <details><summary>ملاحظاتي الخاصة</summary>
       <h4>ملاحظاتي الخاصة</h4>
       <p className="qm-muted">محلية على هذا الجهاز فقط، منفصلة عن سجلات الحفظ، ويمكن حذفها في أي وقت.</p>
       <textarea
@@ -126,7 +123,7 @@ export default function UnderstandingSheet({ surah, ayahStart, ayahEnd, verseTex
         {noteSavedAt && <button onClick={() => { if (deleteVerseNote(surah, ayah)) { setNote(''); setNoteSavedAt(null);setSaveError(''); }else setSaveError('تعذر حذف الملاحظة. أعد المحاولة.'); }}>حذف الملاحظة</button>}
       </div>
       {saveError&&<p role="alert">{saveError}</p>}
-      {noteSavedAt && <p className="qm-muted">محفوظة على الجهاز.</p>}
+      {noteSavedAt && <p className="qm-muted">محفوظة على الجهاز.</p>}</details>
     </div></div>,document.body
   );
     }
