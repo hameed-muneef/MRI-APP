@@ -52,6 +52,7 @@ class BackgroundAudioEngine {
   private audioEl: HTMLAudioElement | null = null;
   private hlsInstance: HlsInstance | null = null;
   private webLoadToken = 0;
+  private webPaused=false;
   private sleepTimerHandle: ReturnType<typeof globalThis.setTimeout> | null = null;
   private nativeInitDone = false;
   private usingWebFallback = false;
@@ -224,6 +225,7 @@ class BackgroundAudioEngine {
               fallbackUrls: nativeCandidates.slice(1),
               category: t.category,
               isLive: Boolean(t.isLive),
+              playbackRate:Number(t.meta?.playbackRate??1),
             };
           }),
           startIndex: idx,
@@ -247,7 +249,16 @@ class BackgroundAudioEngine {
     await this.playQueue([track], 0, track.category);
   }
 
+  supportsPlaybackRate(): boolean {return true;}
+  setPlaybackRate(rate:number): boolean {
+    if(!this.supportsPlaybackRate()||!Number.isFinite(rate)||rate<.5||rate>2)return false;
+    if(this.state.currentTrack)this.state.currentTrack.meta={...this.state.currentTrack.meta,playbackRate:rate};
+    if(this.audioEl){this.audioEl.defaultPlaybackRate=rate;this.audioEl.playbackRate=rate;}
+    else {const native=getNativeBackgroundAudioPlugin();if(native)void native.setPlaybackRate({rate}).catch(()=>{this.setState({...this.state,status:'error',error:'تعذر تغيير سرعة التشغيل.'});});}
+    return true;
+  }
   async pause(): Promise<void> {
+    this.webPaused=true;
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.pause();
@@ -263,6 +274,7 @@ class BackgroundAudioEngine {
   }
 
   async resume(): Promise<void> {
+    this.webPaused=false;
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.resume();
@@ -411,6 +423,7 @@ class BackgroundAudioEngine {
 
     const track = queue[index];
     const token = ++this.webLoadToken;
+    if(candidateIndex===0)this.webPaused=false;
     this.destroyWebAudio();
 
     const candidates = expandAudioFallbackUrls(track.url, track.fallbackUrls, 'web');
@@ -432,6 +445,9 @@ class BackgroundAudioEngine {
 
     const audio = new Audio();
     audio.preload = 'auto';
+    const requestedRate=Number(track.meta?.playbackRate??1);
+    audio.defaultPlaybackRate=Number.isFinite(requestedRate)?Math.max(.5,Math.min(2,requestedRate)):1;
+    audio.playbackRate=audio.defaultPlaybackRate;
     this.audioEl = audio;
 
     if (candidateIndex === 0) {
@@ -500,6 +516,7 @@ class BackgroundAudioEngine {
 
     audio.addEventListener('loadedmetadata', () => {
       if (token !== this.webLoadToken || track.isLive) return;
+      audio.playbackRate=Number(track.meta?.playbackRate??1);
       const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
       this.setState({ ...this.state, duration: dur });
     });
@@ -571,6 +588,8 @@ class BackgroundAudioEngine {
       } else {
         audio.src = effectiveUrl;
       }
+      if(token!==this.webLoadToken)return;
+      if(this.webPaused)return;
       await audio.play();
     } catch (err) {
       handleAttemptFailure(err);
