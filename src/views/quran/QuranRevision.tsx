@@ -17,17 +17,18 @@ export default function QuranRevision({asset, state, onState, notify}: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const passes = useMemo(() => state.passages.filter(passage => passage.contentType === 'quran' && (passage.reviewCount > 0 || passage.state !== 'new')), [state.passages]);
   const due = duePassages(passes);
-  const upcoming = passes.filter(passage => passage.state !== 'mastered' && passage.dueDate && passage.dueDate > dateKey())
+  const upcoming = passes.filter(passage => passage.dueDate && passage.dueDate > dateKey())
     .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')).slice(0, 20);
   const stats = memorizationStats(passes, state.revisionEvents);
   const active = passes.find(passage => passage.id === selected) ?? due[0];
 
-  const rate = (quality: number) => {
-    if (!active) return;
-    const result = applyReview(active, quality);
+  const rate = (passageId: string, quality: number) => {
+    const target = passes.find(passage => passage.id === passageId);
+    if (!target) return;
+    const result = applyReview(target, quality);
     onState({
       ...state,
-      passages: state.passages.map(passage => passage.id === active.id ? result.passage : passage),
+      passages: state.passages.map(passage => passage.id === target.id ? result.passage : passage),
       revisionEvents: [{...result.event, id: uid()}, ...state.revisionEvents].slice(0, 1000),
       updatedAt: new Date().toISOString()
     });
@@ -118,7 +119,7 @@ export default function QuranRevision({asset, state, onState, notify}: Props) {
                 <small>{passage.state === 'needs_revision' ? 'يحتاج مراجعة' : passage.state === 'learning' ? 'مراجعة أولى' : 'مراجعة'} · تكرر {toArabicNumber(passage.reviewCount)} مرة · تعثر {toArabicNumber(passage.lapses)}</small></span>
             </button>
             <div className="rev-row-actions">
-              <button className="rev-btn-success" onClick={() => rate(4)}><CheckCircle2 size={15}/> راجعته</button>
+              <button className="rev-btn-success" onClick={() => rate(passage.id, 4)}><CheckCircle2 size={15}/> راجعته</button>
               <button className="rev-btn-fail" onClick={() => markAgain(passage.id)}><RotateCcw size={15}/> أعد</button>
             </div>
           </li>)}
@@ -152,9 +153,9 @@ export default function QuranRevision({asset, state, onState, notify}: Props) {
     </section>}
 
     {active ? <section className="panel">
-      <PassagePractice asset={asset} passage={active} notify={notify} onRate={rate}/>
+      <PassagePractice asset={asset} passage={active} notify={notify} onRate={quality => rate(active.id, quality)}/>
     </section> : <section className="panel quran-revision-empty">
       <CheckCircle2 size={26}/><p>أنشئ خطة حفظ وأتمّ مقطعًا ليظهر هنا في موعده.</p>
     </section>}
   </div>;
-}
+          }
