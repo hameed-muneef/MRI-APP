@@ -50,3 +50,19 @@ test('revision starts at recall, individual reveal works in full test',async({pa
  await expect(ui.locator('.quran-verse-hidden')).toHaveCount(2);
  await ui.getByRole('button',{name:'إظهار الكل فورًا',exact:true}).click();await expect(ui.locator('.quran-verse-hidden')).toHaveCount(0);
 });
+test('recording explicit private save, playback list and delete',async({page})=>{
+ await page.addInitScript(()=>{
+  const stop=()=>{};
+  Object.defineProperty(navigator,'mediaDevices',{value:{getUserMedia:async()=>({getTracks:()=>[{stop}]})},configurable:true});
+  class RecorderMock{mimeType='audio/webm';ondataavailable:((e:{data:Blob})=>void)|null=null;onstop:(()=>void)|null=null;start(){}stop(){this.ondataavailable?.({data:new Blob(['local-audio'])});this.onstop?.();}}
+  Object.defineProperty(window,'MediaRecorder',{value:RecorderMock,configurable:true});
+ });
+ await page.setViewportSize({width:360,height:900});await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="revision"]').click();
+ const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
+ await ui.getByRole('button',{name:'ابدأ التسجيل بإذني',exact:true}).click();await expect(ui).toContainText('جارٍ التسجيل محليًا');
+ await ui.getByRole('button',{name:'إيقاف التسجيل',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(1);
+ await ui.getByRole('button',{name:'حفظ على الجهاز',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(0);
+ await ui.getByRole('button',{name:'أنهيت محاولة الاسترجاع، انتقل للتقييم',exact:true}).click();await ui.getByRole('button',{name:'جيد',exact:true}).click();
+ await expect(ui).toContainText('تسجيلاتي الخاصة على الجهاز');await ui.getByRole('button',{name:'استماع',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(1);
+ await ui.getByRole('button',{name:'حذف التسجيل المحفوظ',exact:true}).click();await expect(ui).not.toContainText('تسجيلاتي الخاصة على الجهاز');
+});
