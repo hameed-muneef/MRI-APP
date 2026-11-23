@@ -250,7 +250,9 @@ export function applyAssessment(root: MasteryStateRoot, args: {
   if (!attempt || !session || session.passageId !== args.passageId) throw new Error('محاولة الاسترجاع غير مرتبطة بالمقطع');
   if (root.assessments.some(item => item.attemptId === args.attemptId)) throw new Error('تم تقييم هذه المحاولة بالفعل');
   const selfReport = args.selfReport === true || !attempt.completedAt;
-  const unassisted = !selfReport && attempt.helpEvents.length === 0 && attempt.hideMode !== 'B';
+  const completion=attempt.completedAt?new Date(attempt.completedAt):null;
+  const completionDay=completion&&Number.isFinite(completion.getTime())?(zone?(()=>{const p=new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(completion);return `${p.find(v=>v.type==='year')!.value}-${p.find(v=>v.type==='month')!.value}-${p.find(v=>v.type==='day')!.value}`;})():dateKey(completion)):null;
+  const unassisted = !selfReport && completionDay===today && completion!.getTime()<=now.getTime() && attempt.helpEvents.length === 0 && (attempt.hideMode === 'A' || attempt.hideMode === 'E');
 
   const assessment: Assessment = {
     id: args.newId(),
@@ -320,9 +322,9 @@ export function buildMasteryPassages(plan: MasteryPlan, newId: () => string, now
   const stamp = now.toISOString();
   const size = Math.max(1, Math.round(plan.dailyTargetVerses));
   const passages: MasteryPassage[] = [];
+  let order = 0;
   for (const planRange of plan.ranges??[plan.range]) {
   let start = planRange.ayahStart;
-  let order = 0;
   while (start <= planRange.ayahEnd) {
     const end = Math.min(planRange.ayahEnd, start + size - 1);
     passages.push({
