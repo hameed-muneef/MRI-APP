@@ -243,7 +243,8 @@ export function applyAssessment(root: MasteryStateRoot, args: {
   const now = args.now ?? new Date();
   const existingSchedule=root.schedules.find(s=>s.passageId===args.passageId);
   const zone=existingSchedule?.timezone??root.plans.find(p=>p.id===root.passages.find(v=>v.id===args.passageId)?.planId)?.timezone;
-  const today=zone?new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now):dateKey(now);
+  const parts=zone?new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now):null;
+  const today=parts?`${parts.find(p=>p.type==='year')!.value}-${parts.find(p=>p.type==='month')!.value}-${parts.find(p=>p.type==='day')!.value}`:dateKey(now);
   const attempt = root.recallAttempts.find(item => item.id === args.attemptId);
   const session = root.sessions.find(item => item.id === attempt?.sessionId);
   if (!attempt || !session || session.passageId !== args.passageId) throw new Error('محاولة الاسترجاع غير مرتبطة بالمقطع');
