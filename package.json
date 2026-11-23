@@ -13,7 +13,7 @@
     "cap:assets": "node scripts/generate-capacitor-assets.mjs",
     "deploy:check": "node scripts/check-deploy-env.mjs",
     "prebuild": "node scripts/generate-book-manifest.mjs",
-    "test": "node --test \"tests/*.test.mjs\"",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\"",
     "test:unit": "vitest run src",
     "test:ui": "node qa/scan.mjs",
     "test:e2e": "playwright test",
@@ -42,7 +42,8 @@
     "hls.js": "^1.7.4",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^4.6.7"
   },
   "overrides": {
     "workbox-build": {
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.2",
+    "@electric-sql/pglite": "^0.5.17",
     "@playwright/test": "^1.65.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
