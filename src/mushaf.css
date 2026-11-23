@@ -374,3 +374,7 @@
 @media (prefers-reduced-motion:reduce){
   .mf-btn,.mf-progress > span,.mf-nowplaying,.mf-khatmah-bar > span,.ol-progress > span,.reciters-tabs button,.reciters-scope-chip,.reciter-btn-listen,.reciter-btn-dl{transition:none}
 }
+.reciter-tag.narration-tag{background:#fff4e0;color:#8a5a00;border:1px solid #e8c47a}
+/* Keep library active tabs readable even inside inherited pale sheet palettes. */
+#root .app .reciters-library .reciters-tabs button[aria-selected="true"]{background:#174a3c!important;color:#fff!important;border-color:#174a3c!important}
+.reciters-tabs{scroll-padding-inline:8px}.reciters-tabs button{scroll-margin-inline:8px}
