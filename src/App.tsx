@@ -31,6 +31,7 @@ import {fetchCloudState,saveCloudState} from './cloud-state';
 import {mergeQuranState,logRoutineCompletion,syncRoutineTasks} from './quran/learning';
 import {fetchQuranLearningState,saveQuranLearningState} from './quran/sync';
 import type {User} from '@supabase/supabase-js';
+import {changeWirdCount, normalizeWirds} from './wird-periods';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
@@ -117,6 +118,18 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const isOnline=useOnline();
 
   useEffect(()=>{void requestPersistentStorage()},[]);
+  useEffect(()=>{
+    const refreshPeriods=()=>setState(current=>{
+      const wirds=normalizeWirds(current.wirds);
+      return wirds===current.wirds?current:{...current,wirds};
+    });
+    refreshPeriods();
+    const timer=window.setInterval(refreshPeriods,30000);
+    window.addEventListener('focus',refreshPeriods);
+    const onVisible=()=>{if(document.visibilityState==='visible')refreshPeriods()};
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>{window.clearInterval(timer);window.removeEventListener('focus',refreshPeriods);document.removeEventListener('visibilitychange',onVisible)};
+  },[]);
 
   const [cloudReady,setCloudReady]=useState(!user);
   const [cloudWritable,setCloudWritable]=useState(false);
@@ -337,7 +350,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {view==='mosques'&&<MosquesScreen notify={notify}/>}
     {view==='reflect'&&<ReflectionView reflections={state.reflections} onAdd={text=>{update(s=>({...s,reflections:[newReflection(text),...s.reflections]}));notify('حُفظت المراجعة')}} onDelete={id=>update(s=>({...s,reflections:s.reflections.filter(x=>x.id!==id)}))} navigate={navigate}/>}
 
-    {view==='wird'&&<WirdsView wirds={state.wirds} onWirds={wirds=>update(s=>({...s,wirds}))} notify={notify} navigate={navigate}/>}
+    {view==='wird'&&<WirdsView wirds={state.wirds} onCountChange={(id,delta)=>update(s=>({...s,wirds:changeWirdCount(s.wirds,id,delta)}))} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate}/>}
     {!LOCAL_ONLY&&view==='profile'&&<ProfileView user={user!} notify={notify} onProfileSaved={()=>{}}/>}
     {view==='settings'&&<SettingsView state={state} onReplace={setState} notify={notify} onOpenProfile={()=>navigate('profile')}/>}
     {!LOCAL_ONLY&&view==='payment'&&<PaymentCheckout user={user!} featureKey={paymentFeature} onBack={()=>navigate('home')}/>}
@@ -345,6 +358,5 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     </Suspense></ErrorBoundary>}
   </div><ScrollToTopFab enabled={canRenderView}/><footer>© 2026 الربانيون — جميع الحقوق محفوظة </footer></main>{!isOnline&&<div className="offline-pill" role="status" aria-live="polite"><WifiOff size={14} aria-hidden="true"/><span>وضع عدم الاتصال · التخزين المحلي نشط</span></div>}{toast&&<div className="toast"><Check size={16}/>{toast}</div>}<MiniAudioPlayer onOpenCategory={openAudioCategory}/><nav className="mobile-nav" aria-label="التنقل السفلي"><button className={view==='home'?'active':''} aria-current={view==='home'?'page':undefined} onClick={()=>navigate('home')}><Home size={20} aria-hidden="true"/><span>الرئيسية</span></button><button data-section="daily" className={inDailySuite(view)?'active':''} aria-current={inDailySuite(view)?'page':undefined} onClick={()=>navigate('day')}><CalendarDays size={20} aria-hidden="true"/><span>حياتي</span></button><button data-section="quran" className={view==='quran'?'active':''} aria-current={view==='quran'?'page':undefined} onClick={()=>navigate('quran')}><BookMarked size={20} aria-hidden="true"/><span>القرآن</span></button><button data-section="qibla" className={view==='qibla'?'active':''} aria-current={view==='qibla'?'page':undefined} onClick={()=>navigate('qibla')}><Compass size={20} aria-hidden="true"/><span>القبلة</span></button><button data-section="daily" className={view==='mosques'?'active':''} aria-label="المساجد القريبة" aria-current={view==='mosques'?'page':undefined} onClick={()=>navigate('mosques')}><MapPin size={20} aria-hidden="true"/><span>المساجد</span></button><button data-section="haramain" className={view==='haramain'?'active':''} aria-current={view==='haramain'?'page':undefined} onClick={()=>navigate('haramain')}><MonitorPlay size={20} aria-hidden="true"/><span>الحرمين</span></button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} aria-current={['reflect','wird'].includes(view)?'page':undefined} onClick={()=>navigate('reflect')}><Heart size={20} aria-hidden="true"/><span>المحاسبة</span></button></nav></div>;
 }
-
 
 
