@@ -17,6 +17,9 @@ if (!isCapacitorNative && import.meta.env.PROD && 'serviceWorker' in navigator) 
       reloaded = true;
       // أول تثبيت على الجهاز: الصفحة أصلاً بالنسخة الجديدة — لا إعادة تحميل.
       if (!navigator.serviceWorker.controller) return;
+      if(document.querySelector('.qm-steps')){
+        const banner=document.createElement('div');banner.setAttribute('role','status');banner.className='qm-update-notice';banner.textContent='تحديث جاهز. أنهِ الجلسة واحفظها ثم أعد فتح التطبيق لتطبيقه؛ لن نقطع التسجيل أو التسميع.';document.body.appendChild(banner);return;
+      }
       window.location.reload();
     });
     navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(() => { /* لا شيء — العمل دون SW ممكن */ });
