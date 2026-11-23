@@ -62,6 +62,7 @@ const repetitionEventSchema = z.object({
   interrupted: z.number().int().min(0),
   source: z.enum(['recitation', 'self_recording']),
   reciterId: z.number().int().optional(),
+  reciterHistory: z.array(z.object({reciterId:z.number().int(),at:z.string(),completedBefore:z.number().int()})).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
