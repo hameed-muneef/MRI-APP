@@ -160,3 +160,30 @@ describe('buildSequentialQueue never skips silently', () => {
     expect(firstMissingAyah).toBe(5);
   });
 });
+
+describe('pause/resume ownership and rate',()=>{
+ it('pauses and resumes the same owned track without completing it',async()=>{
+  const player=fakePlayer(),pause=vi.fn(async()=>{player.setState({status:'paused'});}),resume=vi.fn(async()=>{player.setState({status:'playing'});});
+  player.pause=pause;player.resume=resume;
+  const adapter=new SessionAudioAdapter(player);mockAudioApi('https://verses.quran.com/pause.mp3');
+  let settled=false;const pending=adapter.playVerse({reciterId:7,surah:1,ayah:1,title:'t',playbackRate:.75}).then(r=>{settled=true;return r;});
+  await vi.waitFor(()=>expect(player.played).toHaveLength(1));const id=player.played[0][0].id;
+  await adapter.pause();expect(pause).toHaveBeenCalledOnce();expect(settled).toBe(false);
+  await adapter.resume();expect(resume).toHaveBeenCalledOnce();expect(player.played).toHaveLength(1);
+  expect(player.played[0][0].meta?.playbackRate).toBe(.75);
+  player.setState({status:'idle',currentTrack:null,completedTrackId:id});await expect(pending).resolves.toBe('ended');
+ });
+ it('holds a pending URL resolution while paused and cancels it safely',async()=>{
+  const player=fakePlayer(),adapter=new SessionAudioAdapter(player);let release!:(x:unknown)=>void;
+  globalThis.fetch=vi.fn(()=>new Promise(r=>{release=r;})) as unknown as typeof fetch;
+  const pending=adapter.playVerse({reciterId:7,surah:1,ayah:144,title:'t'});await adapter.pause();
+  release({ok:true,json:async()=>({audio_files:[{url:'https://verses.quran.com/pending.mp3'}]})});
+  await new Promise(r=>setTimeout(r,0));expect(player.played).toHaveLength(0);adapter.cancel();await expect(pending).resolves.toBe('cancelled');
+ });
+ it('does not pause, resume or change speed for another playback owner',async()=>{
+  const player=fakePlayer();player.pause=vi.fn(async()=>{});player.resume=vi.fn(async()=>{});player.setPlaybackRate=vi.fn(()=>true);
+  player.setState({currentTrack:{id:'other',url:'u',title:'t',category:'quran'},status:'playing'});
+  const adapter=new SessionAudioAdapter(player);await adapter.pause();await adapter.resume();adapter.setPlaybackRate(.75);
+  expect(player.pause).not.toHaveBeenCalled();expect(player.resume).not.toHaveBeenCalled();expect(player.setPlaybackRate).not.toHaveBeenCalled();
+ });
+});
