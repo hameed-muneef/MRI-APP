@@ -1,4 +1,5 @@
-// مشغّل أذان: اختيار صوت الأذان (محلي أو خارجي) وتشغيله/إيقافه.
+// مشغّل أذان: تشغيل الأذان الافتراضي المختار من لوحة الأصوات، أو تكبيرات العيد،
+// أو ملف أذان خارجي من جهاز المستخدم. لا يغيّر المؤذن الافتراضي — ذلك من لوحة الأصوات.
 import {useEffect, useRef, useState} from 'react';
 import {Play, Square, Volume2, Trash2} from 'lucide-react';
 import {
@@ -9,30 +10,21 @@ import {
   type SoundSlot,
 } from '../sounds/custom-store';
 import {
-  ADHAN_SELECTION_STORAGE_KEY,
   BUNDLED_ADHAN_SOUNDS,
   EID_TAKBEERAT_SOUND,
+  getSelectedDefaultAdhanId,
 } from '../sounds/adhan-catalog';
-import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
+import {NOTIFICATIONS_CHANGED_EVENT} from '../notifications/native-prayer-scheduler';
 import {playBuiltInTone} from '../notifications/builtin-sounds';
 import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
 
-export type AdhanSound = {id: string; name: string; url: string};
 type ExternalAdhanItem = {slot: SoundSlot; name: string; url: string};
 
-const SOUNDS: AdhanSound[] = [
-  ...BUNDLED_ADHAN_SOUNDS.map(item => ({id: item.id, name: item.name, url: item.url})),
-  {id: EID_TAKBEERAT_SOUND.id, name: EID_TAKBEERAT_SOUND.name, url: EID_TAKBEERAT_SOUND.url},
-  {id: 'external', name: 'أذان خارجي (ملفات من جهازك)', url: ''},
-];
-
-const ADHAN_OPTIONS = SOUNDS.filter(s => s.id !== EID_TAKBEERAT_SOUND.id && s.id !== 'external');
 const EXTERNAL_SLOT_KEY = 'rabbani-external-adhan-slot';
 
 export default function AdhanPlayer({notify}: {notify: (text: string) => void}) {
-  const [selected, setSelected] = useState<string>(() => {
-    try { const v = localStorage.getItem(ADHAN_SELECTION_STORAGE_KEY); return SOUNDS.some(s => s.id === v) ? v! : SOUNDS[0].id; } catch { return SOUNDS[0].id; }
-  });
+  const [selected, setSelected] = useState<'default' | 'external' | string>('default');
+  const [defaultAdhanId, setDefaultAdhanId] = useState<string>(() => getSelectedDefaultAdhanId());
   const [externals, setExternals] = useState<ExternalAdhanItem[]>([]);
   const [selectedExternalSlot, setSelectedExternalSlot] = useState<SoundSlot | ''>(() => {
     try { return (localStorage.getItem(EXTERNAL_SLOT_KEY) as SoundSlot) || ''; } catch { return ''; }
@@ -68,27 +60,11 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
     }
   };
 
+  // يتبع المؤذن الافتراضي المختار في لوحة الأصوات عند تغيّره.
   useEffect(() => {
-    try {
-      const prev = localStorage.getItem(ADHAN_SELECTION_STORAGE_KEY);
-      if (prev !== selected) {
-        localStorage.setItem(ADHAN_SELECTION_STORAGE_KEY, selected);
-        notifyNativePrefsChanged();
-      }
-    } catch { /* ignore */ }
-  }, [selected]);
-
-  useEffect(() => {
-    const syncSelected = () => {
-      try {
-        const stored = localStorage.getItem(ADHAN_SELECTION_STORAGE_KEY);
-        if (stored && SOUNDS.some(s => s.id === stored)) {
-          setSelected(curr => (curr === stored ? curr : stored));
-        }
-      } catch { /* ignore */ }
-    };
-    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, syncSelected);
-    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, syncSelected);
+    const syncDefault = () => setDefaultAdhanId(getSelectedDefaultAdhanId());
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, syncDefault);
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, syncDefault);
   }, []);
 
   useEffect(() => {
@@ -112,9 +88,14 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
     objectUrlsRef.current = [];
   }, []);
 
-  const sound = SOUNDS.find(s => s.id === selected) ?? SOUNDS[0];
+  const defaultSound = BUNDLED_ADHAN_SOUNDS.find(s => s.id === defaultAdhanId) ?? BUNDLED_ADHAN_SOUNDS[0];
   const activeExternal = externals.find(e => e.slot === selectedExternalSlot) ?? externals[0] ?? null;
-  const playUrl = selected === 'external' ? (activeExternal?.url ?? null) : sound.url;
+  const playUrl =
+    selected === 'external'
+      ? (activeExternal?.url ?? null)
+      : selected === 'default'
+        ? defaultSound.url
+        : EID_TAKBEERAT_SOUND.url;
 
   const stopPlayback = () => {
     playTokenRef.current += 1;
@@ -206,27 +187,20 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
 
   return (
     <section className="panel adhan-player" dir="rtl">
-      <h3><Volume2 size={18}/> أذان الصلاة</h3>
-      <p className="muted">اختر صوت الأذان (محلي أو ملفات من جهازك) وشغّله.</p>
+      <h3><Volume2 size={18}/> تشغيل الأذان الآن</h3>
+      <p className="muted">استمع للأذان الافتراضي أو لتكبيرات العيد، أو شغّل ملف أذان من جهازك.</p>
       <div className="adhan-row">
         <select
           className="adhan-select"
           value={selected}
           onChange={event => {
-            const nextId = event.target.value;
             stopPlayback();
-            setSelected(nextId);
-            const chosen = ADHAN_OPTIONS.find(s => s.id === nextId);
-            if (chosen) notify(`تم اختيار صوت الأذان: ${chosen.name}`);
+            setSelected(event.target.value);
           }}
-          aria-label="صوت الأذان"
+          aria-label="ما الذي تريد تشغيله"
         >
-          <optgroup label="أصوات الأذان (يعمل بدون إنترنت)">
-            {ADHAN_OPTIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </optgroup>
-          <optgroup label="مناسبات خاصة (لا يُستخدم كأذان للصلوات)">
-            <option value={EID_TAKBEERAT_SOUND.id}>{EID_TAKBEERAT_SOUND.name}</option>
-          </optgroup>
+          <option value="default">الأذان الافتراضي ({defaultSound.name})</option>
+          <option value={EID_TAKBEERAT_SOUND.id}>{EID_TAKBEERAT_SOUND.name}</option>
           <option value="external">أذان خارجي (ملفات من جهازك)</option>
         </select>
         <button type="button" className={playing ? 'soft-btn selected' : 'primary'} onClick={() => toggle()} aria-pressed={playing}>
