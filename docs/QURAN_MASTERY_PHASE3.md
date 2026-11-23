@@ -13,7 +13,7 @@ Scope approved: shared audio ownership, cancellation and reciter changes, narrat
 
 All Quran recitation uses the existing background player. Mastery repetition resolves one verse at a time; stale requests abort, and reciter changes retain verse position and completed cycles. Repetition history records reciter changes. A completion receipt contains the exact naturally ended track ID; external stop, preemption and error do not grant a completed repeat. Android emits the same receipt, but physical-device validation remains required.
 
-Reader sequences stop at the first missing verse or chapter rather than filtering it out. The older reader memorization queue refuses to start if any verse is missing. Whole-chapter playback never highlights an estimated current verse. Non-Hafs/unknown narrations play independently in the library without updating Hafs reader/session selection.
+Reader sequences stop at the first missing verse or chapter rather than filtering it out. The older reader repetition now uses the same background player lazy queue: only the current track is resolved/allocated, with repetition coordinates computed from the cursor. Pause/resume, previous/next, external-preemption cancellation and explicit missing-audio stop are preserved and unit-tested. Natural-completion receipts advance the lazy cursor; no later verse is requested after missing audio. Whole-chapter playback never highlights an estimated current verse. Non-Hafs/unknown narrations play independently in the library without updating Hafs reader/session selection.
 
 ## Understanding and storage
 
@@ -41,3 +41,11 @@ Run `npm run lint`, `npm run test:unit`, `npm test`, `npm run quran:check`, `npm
 Physical-device microphone/call/background behavior and actual screen-reader use remain pending from Phase 2. Android native completion receipt changes also require Android build/device verification before release. No estimated timing is accepted as verse alignment.
 
 Review this PR on top of the unmerged Phase 2 branch. Do not merge either phase without separate authorization.
+
+### Follow-up verification
+
+Legacy reader lazy-queue migration is complete. New tests exercise 10,000 configured repetitions with one allocated track, pause/resume and previous/next, missing audio, stale resolution after another owner starts, and exact natural completion. Android compile is still blocked by absent Java 21 and Android SDK platform/build-tools 36 in this environment. Existing Android CI does not auto-run this branch; the available manual Android workflow includes release/signing packaging and was not dispatched. Safe next validation is `compileDebugJavaWithJavac` in an existing Java 21 + Android SDK 36 environment, without signing or release. Native background continuity for JS-driven lazy advancement remains a physical-device release check.
+
+## Required quality gate for every phase
+
+User requirement: verify working functionality, actual GUI interactions and design at every phase. Passing tests/build alone is not enough. Inspect rendered mobile and desktop screens, operate the affected controls, check fixed overlays, focus, RTL text, contrast, overflow, loading/error/empty states, and record screenshots. Fix visible issues and inspect again. Keep native/device-only behavior explicitly unverified until exercised on the target device. Phase approval never implies merge, release or approval of the next phase.
