@@ -250,4 +250,35 @@ test.describe('full-system audit',()=>{
     }
     expect(problems,problems.join('\n')).toEqual([]);
   });
+
+  test('topbar shows full view titles on narrow phones',async({page})=>{
+    // Regression: crumb used to truncate both brand and title (e.g. "المساجد الق...").
+    await page.setViewportSize({width:393,height:740});
+    await page.goto('/');
+    await page.waitForTimeout(700);
+    for(const nav of ['المساجد','الحرمين'] as const){
+      await sideNav(page,nav);
+      await page.waitForTimeout(900);
+      const m=await page.evaluate(()=>{
+        const s=document.querySelector('.topbar .crumb strong') as HTMLElement|null;
+        return s?{ellipsized:s.scrollWidth>s.clientWidth+1,text:s.textContent}:null;
+      });
+      expect(m?.ellipsized,`topbar title ellipsized for ${nav}: ${m?.text}`).toBe(false);
+    }
+  });
+
+  test('qibla quick-steps dismissal persists across reloads',async({page})=>{
+    await page.goto('/');
+    await page.waitForTimeout(700);
+    await sideNav(page,'القبلة');
+    await page.waitForTimeout(900);
+    await expect(page.getByText('3 خطوات سريعة')).toBeVisible();
+    await page.locator('.qibla-steps-close').click();
+    await expect(page.getByText('3 خطوات سريعة')).toBeHidden();
+    await page.reload();
+    await page.waitForTimeout(900);
+    await sideNav(page,'القبلة');
+    await page.waitForTimeout(800);
+    await expect(page.getByText('3 خطوات سريعة')).toBeHidden();
+  });
 });
