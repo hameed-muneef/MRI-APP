@@ -73,4 +73,4 @@ export function useGeolocation(autoRequest = true): GeoState {
     request,
     openSettings,
   };
-    }
+}
