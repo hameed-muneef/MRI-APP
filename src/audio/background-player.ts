@@ -45,6 +45,8 @@ export function formatAudioClock(seconds: number): string {
 }
 
 class BackgroundAudioEngine {
+  private lazy: {size:number;index:number;resolve:(index:number)=>Promise<AudioTrack|null>;onMissing:(index:number)=>void;generation:number}|null=null;
+  private lazyGeneration=0;
   private state: AudioPlayerState = { ...INITIAL_STATE };
   private listeners = new Set<StateListener>();
   private audioEl: HTMLAudioElement | null = null;
@@ -83,6 +85,7 @@ class BackgroundAudioEngine {
     }
 
     if (snap.status === 'idle') {
+      if(!snap.completedTrackId){this.lazy=null;this.lazyGeneration++;}
       this.setState({ ...INITIAL_STATE, completedTrackId: snap.completedTrackId });
       return;
     }
@@ -141,6 +144,11 @@ class BackgroundAudioEngine {
 
   private setState(next: AudioPlayerState) {
     this.state = next;
+    const lazy=this.lazy;
+    if(lazy&&next.completedTrackId&&next.completedTrackId===lazyTrackId(lazy.generation,lazy.index)&&lazy.index+1<lazy.size){
+      const index=lazy.index+1;
+      queueMicrotask(()=>{if(this.lazy===lazy)void this.loadLazy(index,lazy);});
+    }
     for (const listener of this.listeners) {
       listener(this.state);
     }
@@ -157,7 +165,22 @@ class BackgroundAudioEngine {
     };
   }
 
-  async playQueue(tracks: AudioTrack[], startIndex = 0, category?: AudioCategory): Promise<void> {
+  async playLazy(size:number,resolve:(index:number)=>Promise<AudioTrack|null>,onMissing:(index:number)=>void):Promise<void>{
+    await this.stop();
+    const lazy={size,index:0,resolve,onMissing,generation:++this.lazyGeneration};this.lazy=lazy;
+    if(size>0)await this.loadLazy(0,lazy);
+  }
+
+  private async loadLazy(index:number,lazy:NonNullable<BackgroundAudioEngine['lazy']>):Promise<void>{
+    lazy.index=index;
+    const track=await lazy.resolve(index);
+    if(this.lazy!==lazy||lazy.index!==index)return;
+    if(!track){this.lazy=null;lazy.onMissing(index);await this.stop();return;}
+    await this.playQueue([{...track,id:lazyTrackId(lazy.generation,index)}],0,track.category,true);
+  }
+
+  async playQueue(tracks: AudioTrack[], startIndex = 0, category?: AudioCategory,keepLazy=false): Promise<void> {
+    if(!keepLazy){this.lazy=null;this.lazyGeneration++;}
     if (!tracks.length) return;
     const sanitizedTracks: AudioTrack[] = tracks.map((t) => {
       const safeWeb = resolveAudioUrlForWeb(t.url) ?? t.url;
@@ -268,6 +291,7 @@ class BackgroundAudioEngine {
   }
 
   async next(): Promise<void> {
+    if(this.lazy){if(this.lazy.index+1<this.lazy.size)await this.loadLazy(this.lazy.index+1,this.lazy);return;}
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.next();
@@ -279,6 +303,7 @@ class BackgroundAudioEngine {
   }
 
   async previous(): Promise<void> {
+    if(this.lazy){await this.loadLazy(Math.max(0,this.lazy.index-1),this.lazy);return;}
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.previous();
@@ -310,6 +335,7 @@ class BackgroundAudioEngine {
   }
 
   async stop(completedTrackId?: string): Promise<void> {
+    if(!completedTrackId){this.lazy=null;this.lazyGeneration++;}
     this.usingWebFallback = false;
     this.nativeFallbackAttemptKey = null;
     const native = getNativeBackgroundAudioPlugin();
@@ -599,3 +625,5 @@ class BackgroundAudioEngine {
 }
 
 export const backgroundAudio = new BackgroundAudioEngine();
+
+function lazyTrackId(generation:number,index:number):string{return `lazy:${generation}:${index}`;}
