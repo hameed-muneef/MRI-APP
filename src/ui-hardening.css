@@ -559,11 +559,14 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 
 #root .app .mini-audio-player {
   position: fixed;
-  left: 50%;
-  right: auto;
-  inset-inline: auto;
-  transform: translateX(-50%);
+  /* Centre with explicit left/right + auto margins. A logical `inset-inline: auto`
+     here used to reset `left`, which pushed the bar off-screen in RTL. */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  transform: none;
   width: min(456px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
   bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   border-radius: 12px;
   z-index: 940;
