@@ -216,6 +216,9 @@ test.describe('full-system audit',()=>{
     await page.waitForTimeout(1500);
     await shot(page,info,'dark-quran');
     await sideNav(page,'الإعدادات');
+    // settings view is lazy-loaded: wait for real content, not the loading fallback
+    await expect(page.getByText('جاري تحميل الصفحة')).toBeHidden();
+    await expect(page.getByText('الإعدادات والمنبهات')).toBeVisible();
     await shot(page,info,'dark-settings');
     // restore system default
     await page.getByRole('button',{name:/المظهر:/}).click();
