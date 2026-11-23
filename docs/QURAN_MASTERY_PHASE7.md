@@ -1,29 +1,39 @@
-# Phase 7 verification matrix, in progress
+# Phase 7: final review-code verification
 
-No merge, signed artifact or release. Phase5 content gate is unresolved, so this is not all-phases completion.
+Draft PR9 is stacked on draft Phase4: https://github.com/hameed-muneef/MRI-APP/pull/9 . No merge, release signing, package distribution or production deployment. Review code is prepared; this is not a claim that every originally specified phase is complete.
 
-| Area | Current evidence | Remaining |
+## Status by phase
+
+- Phase4 plans/revision/dashboard implemented and tested. Native closed-app reminder preparation is included in PR9, with OS/device caveats below.
+- Phase5 user-approved interim external reading is implemented. All six topics point to inspected chapter openings of the attributed reference. Embedded authorized/reviewed lessons and validated exercises remain incomplete, not waived. The temporary personal checklist is not a test or evidence of mastery.
+- Phase6 browser offline implementation verified. Physical Android demonstration remains for the user.
+- Phase7 automated/readiness checks below pass. Physical accessibility/lifecycle checks remain release gates.
+
+## Verification matrix
+
+| Area | Evidence | Limits / remaining gate |
 |---|---|---|
-| Unit | 256 passing, including plans, evidence, offline, native preference payloads | Recheck fetched remote head after publication |
-| Node regressions | 173 passing | Recheck on final code |
-| TypeScript/build | Passing Phase6 build and typecheck | Final publication retest |
-| Quran integrity | Original checksum 7d07a93a4caa556b1dce92fbac347ffc7e74da12c0480dc898880627a2a0554a unchanged | Final check |
-| Desktop regression | First run tests 1–32 passed before process timeout; bounded remaining reader/reciter/reminder/review batch 8/8 passed | One consolidated bounded accounting, latest audio cases |
-| Mobile mastery | 12 tests passed: Phase2,3,4,6 session/masks/recording mock/understanding/planning/offline | Remaining audio and legacy screen regressions |
-| Offline | Four new desktop/mobile cases pass: manage cache and full daily session with downloaded synthetic WAV after network removed. Production PWA cold reload and Quran/session render pass | Real-source downloaded playback and phone demo |
-| Visual/RTL | Actual mobile/desktop viewport pixels inspected. Offline status moved to page flow, card spacing fixed, storage action clicked clear of navigation | Final Phase5 if approved; full dark/accessibility audit |
-| Native reminders | 30-day bounded one-shot due summaries; original recurrence/start/end/snooze, quiet hours/categories/channel; permission refresh; serialized refresh and scoped cancel/rebuild. Pure payload tests pass | Plugin reconciliation mock integration, final unsigned Android compile, physical delivery/cancel/battery/reboot |
-| Accessibility | Existing focus/keyboard sheet tests and selected control contrast assertions pass | Actual screen reader, broader light/dark contrast audit |
-| Performance | Lazy Quran feature and bounded revision/catch-up | Measured session budgets |
-| Privacy/sync | Local-only unchanged; recording explicit private save; no upload; pack deletion preserves learning | Device lifecycle tests; sync conflict tests inapplicable while sync disabled |
-| Trusted content | No Quran source edits; attribution and unavailable states retained | Phase5 authorized reviewed lessons/exercises or user-approved interim scope |
+| Unit | 257 passing on fetched code86c36c7, including storage, evidence, plans, offline, native preferences and mocked plugin reconciliation | Mock is not OS execution |
+| Node regressions | 173 passing | No physical-device claim |
+| Browser regression | 82 existing/interim/offline cases passed in bounded batches, 41 per viewport; four new theme/viewport cases pass, total86 unique configured cases | Chromium, not every browser/device |
+| TypeScript/build | Typecheck and production build pass on fetched review code | No signed production artifact |
+| Quran integrity | Original checksum7d07a93a4caa556b1dce92fbac347ffc7e74da12c0480dc898880627a2a0554a unchanged;114 surahs/6236 verses | Manifest stability does not replace scholarly content review |
+| Browser offline | Full daily session completes with downloaded synthetic decoded WAV, network disabled and fixtures removed; assessment persists. Production cold reload plus real-source Fatiha pack download, first-ayah natural playback and completed1 event verified without mocks | Actual audio decode/completion, not a pronunciation/content audition; user must test actual phone |
+| Download lifecycle | Partial/resume/abort/no-skip/error/quota/eviction checks; deletion leaves progress/notes/recordings intact | Browser can evict storage; no backup/sync |
+| Visual/RTL | Actual mobile/desktop pixels inspected. Layout gap fixed; offline status in page flow, no persistent content overlay; bottom storage control clicked clear of navigation. Light/dark palette fixes verified | User large-text and device review |
+| Accessibility | Exposed enabled control text contrast >=4.5 in both themes/viewports; keyboard start/link and sheet focus/Escape tests; RTL overflow checks | Not a full WCAG audit; actual TalkBack/screen reader remains untested |
+| Performance | Lazy feature loading retained; local screen-entry budget under5s, observed transition plus checks1.7–2.2s across themes/viewports | Not a low-end-phone or network benchmark |
+| Native reminders | Original recurrence/start/end/snooze respected; bounded30-day due summaries, channel/category/quiet-hour/permission gates, serialized refresh and scoped cancellation. Mocked plugin test cancels stale reminders after due removal/permission loss without touching prayer/task alarms | Closed-app delivery, completion/deferral/pause on device, battery limits/reboot/horizon remain user tests |
+| Android compile | Unsigned Java21/SDK36 compile passes on code86c36c7: https://github.com/hameed-muneef/MRI-APP/actions/runs/45214070405/job/137830358473 | Earlier parallel push run881e77f failed with truncated Gradle log while its PR run passed; latest PR compile passes. No packaging/signing/upload. Deprecation warnings for actions remain |
+| Privacy/sync | Local-only unchanged; temporary recording with explicit private save; no upload; legacy data preserved | Sync/conflict testing is inapplicable while sync disabled, not a sync safety pass |
+| Trusted content | No Quran source changes, invented rules/examples or automatic recitation judgment; external source attribution and unknown/unavailable states retained | Embedded Tajweed lessons/exercises, token-level meanings and Asbab sources remain gated |
 
-## Physical Android protocol
+## Physical Android protocol before release
 
-1. Install a locally built unsigned-debug/test artifact through the normal developer workflow. No release signing or distribution is authorized.
-2. Download verse audio while online, restart offline, finish one daily session, reload and check history, notes and recordings.
-3. Deny then allow microphone; interrupt with phone call, background, lock screen, resume and leave the session. Confirm microphone is released and private recording save/delete works.
-4. Test shared audio preemption and long lazy continuation without inflated repetition counts.
-5. Opt into a near-term due review reminder. Check permission denial and grant, quiet hours, pause, assessment/deferral cancellation, closed-app delivery, reboot and battery restriction behavior. Reopen within the bounded horizon to refresh.
-6. Use TalkBack, large text and dark/light modes. Check every mask/reveal button and sheet focus.
-7. Do not publish until unresolved content and device/accessibility gates are explicitly accepted.
+1. Build/install a test artifact through the developer workflow. No release signing or distribution was performed.
+2. Download verse audio while online, restart offline, complete a daily session, reload and check history, notes and recordings. Check missing-file and deletion behavior.
+3. Deny then allow microphone; interrupt recording with phone call, background, lock screen, resume and exit. Confirm microphone release and private recording save/play/delete.
+4. Test shared audio preemption, reciter changes and long lazy continuation without inflated repetition counts.
+5. Opt into a near-term due review reminder. Test permission denial/grant, quiet hours, assessment/deferral/pause cancellation, closed-app delivery, reboot and battery restriction behavior. Reopen within the bounded horizon to refresh.
+6. Use TalkBack, large text and both themes. Check mask/reveal controls, focus, sheet closing and bottom actions.
+7. Review content scope and remaining gates before any merge/release. iOS is unverified; no cloud sync or automated voice assessment is included.
