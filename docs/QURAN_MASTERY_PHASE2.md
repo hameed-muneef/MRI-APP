@@ -40,8 +40,8 @@ Asbab does not substitute tafsir: it displays source-under-review. Understanding
 
 ## Verification and remaining gates
 
-Run `npm run quran:check`, `npm run lint`, `npm run test:unit`, `npm test`, `npm run build`, and `npx playwright test tests/e2e/mastery-phase2.spec.ts tests/e2e/review-regressions.spec.ts --project=mobile-light`.
+Run `npm run quran:check`, `npm run lint`, `npm run test:unit`, `npm test`, `npm run build`, and the full browser suite `npx playwright test` (12 specs × desktop/mobile projects, 62 tests, all passing at review time).
 
-Tests cover transitions/resume, completed-vs-interrupted repetition, connection order, same-day/early/assisted/self-report evidence rules, failed-recall reset, attempt-link rejection, masking escape hatches, storage isolation/quarantine, recorder tracks/URLs/background/late-permission cleanup, and full UI sessions at 360/1280px. Unit/mock/browser checks do not replace real-device microphone/call checks. Those remain explicitly unverified.
+Tests cover transitions/resume, completed-vs-interrupted repetition, connection order, same-day/early/assisted/self-report evidence rules, failed-recall reset, attempt-link rejection, masking escape hatches, storage isolation/quarantine, recorder tracks/URLs/background/late-permission cleanup, and full UI sessions at 360/1280px. `tests/e2e/mastery-audio.spec.ts` drives the real `<audio>` repetition path with controlled responses: per-verse sequencing, exact repeat counts (completed plays only), auto-advance order, visible failure on resolution and playback errors, and no-skip retry that resumes the same verse. It also probes the live Quran.com per-ayah source and reports a skip (not a pass) when the network is unavailable. Unit/mock/browser checks do not replace real-device microphone/call checks. Those remain explicitly unverified.
 
 Phase 2 review requires a walkthrough of the full local session and evidence records before acceptance. No merge and no Phase 3 work are included.
