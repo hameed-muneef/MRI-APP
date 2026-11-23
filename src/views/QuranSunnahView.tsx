@@ -17,6 +17,7 @@ import HadithLibrary from './quran/HadithLibrary';
 import QuranRoutine from './quran/QuranRoutine';
 import QuranProgress from './quran/QuranProgress';
 import QuranJourney from './quran/QuranJourney';
+import MasteryWorkspace from './quran/MasteryWorkspace';
 import AzkarLibrary from './AzkarLibrary';
 import {EmptyNote} from './quran/ui';
 
@@ -132,8 +133,8 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, notify,
             }}
           />
         )}
-        {section === 'hifz' && <><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/></>}
-        {section === 'revision' && <QuranRevision asset={asset} state={state} onState={onState} notify={notify}/>}
+        {section === 'hifz' && <><MasteryWorkspace asset={asset} purpose="new" notify={notify}/><details open><summary>خطط الحفظ السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/></details></>}
+        {section === 'revision' && <><MasteryWorkspace asset={asset} purpose="revision" notify={notify}/><details open><summary>المراجعات السابقة (محفوظة دون تغيير)</summary><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'muslim' && <HadithLibrary collectionKey="muslim" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'sunnah' && <HadithLibrary collectionKey="bukhari" mode="memorization" state={state} onState={onState} notify={notify}/>}
