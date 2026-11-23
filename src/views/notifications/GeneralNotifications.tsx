@@ -5,6 +5,7 @@ import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationChannel, type NotificationPreference} from '../../notifications/types';
 import {channelDescription, channelLabel, SoundSelectField} from './SoundPanel';
 import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
+import {ensureSystemNotificationPermission} from '../../notifications/delivery';
 
 const CATEGORY_LABELS: Record<string, string> = {
   prayer: 'الصلاة والأذان',
@@ -57,6 +58,10 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       const merged = {...fresh};
       for (const key of GENERAL_KEYS) (merged as Record<string, unknown>)[key] = prefs[key];
       const result = await savePrefs(merged);
+      if (merged.global_enabled) {
+        // إذن النظام يُطلب مركزيًا من هنا أيضًا كي تصل التنبيهات على الهاتف.
+        void ensureSystemNotificationPermission();
+      }
       notifyNativePrefsChanged();
       setDirty(false);
       notify(result.source === 'cloud' ? 'حُفظت الإعدادات العامة في حسابك' : 'حُفظت الإعدادات العامة على هذا الجهاز');
@@ -119,4 +124,4 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       </div>
     </div>
   );
-}
+  }
