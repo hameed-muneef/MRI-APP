@@ -16,7 +16,6 @@ import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
 import UnderstandingSheet from './UnderstandingSheet';
 import MasteryPlanning from './MasteryPlanning';
 import MasteryOffline from './MasteryOffline';
-import MasteryTajweed from './MasteryTajweed';
 import '../../quran-mastery/mastery.css';
 
 type Props={asset:QuranAsset;purpose:SessionPurpose;notify:(text:string)=>void};
@@ -62,7 +61,6 @@ export default function MasteryWorkspace({asset,purpose,notify}:Props){
     <header className="qm-heading"><span className="qm-kicker">مصحف الحفظ والإتقان · محلي على جهازك</span><h2>{purpose==='new'?'جلسة حفظ جديدة':'جلسة مراجعة واسترجاع'}</h2><p>استمع ← افهم ← احفظ ← اربط ← تلو ← قيّم. إكمال الجلسة لا يمنح الإتقان.</p></header>
     {storageError&&<p role="alert" className="qm-error">{storageError}</p>}
     {summary&&<div className="qm-notice" role="status">{summary}</div>}
-    <MasteryTajweed/>
     <MasteryOffline asset={asset}/>
     <MasteryPlanning asset={asset} root={root} commit={commit} open={open}/>
     <div className="qm-card"><h3>{summary?'ابدأ جلسة أخرى (اختياري)':'اختر مقطعًا حرًا'}</h3><div className="qm-fields">
@@ -219,7 +217,6 @@ function SessionPanel({asset,session,root,commit,notify,storageError,onClose}:Se
   return <section className="qm-workspace" dir="rtl" aria-label="جلسة الحفظ والإتقان">
     <header className="qm-heading"><button onClick={()=>{stopAudio();recorder.current?.discard('exit');const interrupted=interruptSession(session);if(commit(r=>({...r,sessions:upsert(r.sessions,interrupted)}))){sessionRef.current=interrupted;onClose('حُفظت مرحلة الجلسة. يمكنك استئنافها لاحقًا.');}}}>رجوع وحفظ الموضع</button><span className="qm-kicker">{session.purpose==='new'?'حفظ جديد':'مراجعة'} · {referenceLabel(asset,session.range.surah,session.range.ayahStart,session.range.ayahEnd)}</span><h2>{STAGE_LABELS[session.stage]}</h2><ol className="qm-steps">{session.stages.map((stage,i)=><li key={stage} aria-current={stage===session.stage?'step':undefined}><span>{toArabicNumber(i+1)}</span>{STAGE_LABELS[stage]}</li>)}</ol></header>
     {storageError&&<p role="alert" className="qm-error">{storageError}</p>}
-    {session.stage!=='assess'&&<MasteryTajweed onOpen={()=>{stopAudio();if(session.stage==='recite')reveal();}}/>}
     {session.stage==='understand'&&<div className="qm-card"><h3>الفهم قبل الحفظ</h3><p>اقرأ الآيات بتأنٍ. التفسير المعتمد موجود في مكتبة التفسير الحالية؛ لا نعرض نصًا تفسيريًا غير موثّق هنا.</p><p className="qm-notice">أسباب النزول: المصدر قيد المراجعة. معاني الكلمات قيد التحقق من مصدر موثوق وحدود كلمات معتمدة.</p></div>}
     {session.stage==='connect'&&<div className="qm-card"><h3>سلسلة الربط التدريجي</h3><p>١، ثم ١–٢، ثم ١–٣ حتى المقطع كاملًا. هذا تدريب ربط، وليس اختبار ترتيب الآيات.</p><div className="qm-chips">{chains.map((c,i)=><button key={i} aria-pressed={!connectPrevious&&chain===i} onClick={()=>{stopAudio();setChain(i);setConnectPrevious(false);}}>{toArabicNumber(c.ayahStart)}{c.ayahEnd!==c.ayahStart?`–${toArabicNumber(c.ayahEnd)}`:''}</button>)}</div>{previous&&<button aria-pressed={connectPrevious} onClick={()=>{stopAudio();setConnectPrevious(v=>!v);}}>اربط بالمقطع السابق: {referenceLabel(asset,previous.range.surah,previous.range.ayahStart,session.range.ayahEnd)}</button>}</div>}
     {masking&&<div className="qm-card"><h3>الإخفاء والاسترجاع</h3>{hide.mode==='D'&&<p className="qm-notice">الإخفاء التدريجي تدريب يبدأ بنص ظاهر، ولا يبني دليل إتقان مستقلًا. استخدم إخفاء الكل أو اختبار الاسترجاع الكامل لمحاولة مقيمة بلا مساعدة.</p>}<div className="qm-chips">{HIDE_MODES.map(m=><button key={m.value} aria-pressed={hide.mode===m.value} onClick={()=>changeMode(m.value)}>{m.label}</button>)}<button disabled>إخفاء كلمات · قيد التحقق</button></div><p className="qm-muted">{HIDE_MODES.find(m=>m.value===hide.mode)?.hint}</p><button className="qm-primary" onClick={()=>reveal()}>إظهار الكل فورًا</button>{hide.mode==='D'&&<button onClick={()=>{const next=ayahs.find(a=>!isHidden(hide,a));if(next!=null)setHide(hideVerse(hide,next));}}>أخفي الآية التالية</button>}<p role="status" className="qm-muted">المخفي: {ayahs.filter(a=>isHidden(hide,a)).map(toArabicNumber).join('، ')||'لا توجد آيات مخفية'}</p></div>}
@@ -230,4 +227,4 @@ function SessionPanel({asset,session,root,commit,notify,storageError,onClose}:Se
     {showUnderstanding&&<UnderstandingSheet surah={session.range.surah} ayahStart={understandingAyah} ayahEnd={session.range.ayahEnd} verseText={(s,a)=>asset.verses.find(v=>v.s===s&&v.a===a)?.t??null} onClose={()=>setShowUnderstanding(false)}/>}
     {session.stage!=='assess'&&<footer className="qm-footer"><button onClick={()=>openUnderstanding()}>فهم الآيات</button>{session.stage==='recite'?<button className="qm-primary" onClick={finishRecall}>أنهيت محاولة الاسترجاع، انتقل للتقييم</button>:<button className="qm-primary" onClick={nextStage}>التالي: {STAGE_LABELS[session.stages[session.stages.indexOf(session.stage)+1]]}</button>}<small>موضعك محفوظ على جهازك فقط</small></footer>}
   </section>;
-    }
+  }
