@@ -7,6 +7,21 @@ const TINY_MP3 = Buffer.from(
   'hex',
 );
 
+/** نسبة تباين WCAG بين لوني rgb() — تكشف النص الداكن على خلفية داكنة فعليًا. */
+function contrastRatio(fg: string, bg: string): number {
+  const parse = (s: string) => (s.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+  const lum = (rgb: number[]) => {
+    const f = (c: number) => {
+      const v = c / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+  };
+  const l1 = lum(parse(fg));
+  const l2 = lum(parse(bg));
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
 test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
   test.use({ viewport: { width: 360, height: 800 } });
 
@@ -88,7 +103,7 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
 
     // Verify 44px touch targets and dark-mode contrast inside the light-paper sheet
     const uiMetrics = await sheet.evaluate(el => {
-      const listenBtn = el.querySelector('.reciter-btn-listen') as HTMLElement | null;
+      const listenBtn = el.querySelector('.reciter-btn-listen.selected') as HTMLElement | null;
       const dlBtn = el.querySelector('.reciter-btn-dl') as HTMLElement | null;
       const activeTab = el.querySelector('.reciters-tabs button.active') as HTMLElement | null;
       const closeBtn = el.querySelector('button[aria-label="إغلاق"]') as HTMLElement | null;
@@ -108,9 +123,11 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     expect(uiMetrics.listen?.height ?? 0).toBeGreaterThanOrEqual(42);
     expect(uiMetrics.dl?.height ?? 0).toBeGreaterThanOrEqual(42);
     expect(uiMetrics.close?.height ?? 0).toBeGreaterThanOrEqual(42);
-    expect(uiMetrics.activeTab?.color).not.toBe(uiMetrics.activeTab?.bg);
-    expect(uiMetrics.listen?.color).not.toBe(uiMetrics.listen?.bg);
-    expect(uiMetrics.dl?.color).not.toBe(uiMetrics.dl?.bg);
+    // تباين حقيقي (WCAG AA للنصوص): كان النص داكنًا (#1a2a24) فوق زر داكن (#163d34)
+    // داخل الورقة الفاتحة بالوضع الداكن، فبدا مختفيًا كما في لقطة المستخدم.
+    expect(contrastRatio(uiMetrics.activeTab!.color, uiMetrics.activeTab!.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(uiMetrics.listen!.color, uiMetrics.listen!.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(uiMetrics.dl!.color, uiMetrics.dl!.bg)).toBeGreaterThanOrEqual(4.5);
 
     const overflowModal320 = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
     expect(overflowModal320).toBe(true);
@@ -122,5 +139,65 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     await page.evaluate(() => window.dispatchEvent(new Event('offline')));
     await expect(page.locator('.mf-offline-pill')).toContainText('السورة متاحة دون إنترنت');
     await context.setOffline(false);
+  });
+
+  test('downloads the full mushaf for a reciter directly from the library card', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.route('https://www.mp3quran.net/api/v3/reciters**', route => route.abort());
+    await page.route('https://**/*.mp3quran.net/**/*.mp3', route => route.fulfill({
+      status: 200,
+      contentType: 'audio/mpeg',
+      headers: { 'access-control-allow-origin': '*' },
+      body: TINY_MP3,
+    }));
+
+    await page.goto('/');
+    await page.locator('.mobile-nav button', { hasText: 'القرآن' }).click();
+    await page.locator('.quran-section-grid button[data-quran-tab="reciters"]').click();
+    await expect(page.locator('.reciters-library')).toBeVisible({ timeout: 10_000 });
+
+    // Every reciter card exposes a one-tap full-mushaf download with its surah count
+    const firstCard = page.locator('.reciter-card').first();
+    const fullBtn = firstCard.locator('.reciter-btn-full');
+    await expect(fullBtn).toBeVisible();
+    await expect(fullBtn).toContainText('تحميل المصحف كاملًا (١١٤ سورة)');
+
+    // Two-tap confirm protects against accidental multi-hundred-MB downloads
+    await fullBtn.click();
+    const confirmBtn = firstCard.locator('.reciter-full-confirm .soft-btn').first();
+    await expect(confirmBtn).toContainText('تأكيد تنزيل ١١٤ سورة');
+    await confirmBtn.click();
+
+    // Progress covers the whole mushaf, then the card shows a saved state
+    await expect(firstCard.locator('.reciter-dl-progress')).toContainText('/١١٤', { timeout: 10_000 });
+    await expect(firstCard.locator('.reciter-btn-full.done')).toContainText('المصحف كاملًا محفوظ', { timeout: 45_000 });
+    await expect(firstCard).toContainText('١١٤ سورة');
+
+    // Contrast of the active tab stays readable in the standalone library too (light + dark)
+    const activeTabPair = await page.evaluate(() => {
+      const el = document.querySelector('.reciters-tabs button.active') as HTMLElement | null;
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      return { color: s.color, bg: s.backgroundColor };
+    });
+    expect(activeTabPair).not.toBeNull();
+    expect(contrastRatio(activeTabPair!.color, activeTabPair!.bg)).toBeGreaterThanOrEqual(4.5);
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    const darkActiveTabPair = await page.evaluate(() => {
+      const el = document.querySelector('.reciters-tabs button.active') as HTMLElement | null;
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      return { color: s.color, bg: s.backgroundColor };
+    });
+    expect(darkActiveTabPair).not.toBeNull();
+    expect(contrastRatio(darkActiveTabPair!.color, darkActiveTabPair!.bg)).toBeGreaterThanOrEqual(4.5);
+
+    // Scope chips wrap instead of clipping المصحف كاملًا off the edge
+    const chipsOverflow = await page.evaluate(() => {
+      const el = document.querySelector('.reciters-scope-chips');
+      return el ? el.scrollWidth <= (el.clientWidth + 1) : true;
+    });
+    expect(chipsOverflow).toBe(true);
   });
 });
