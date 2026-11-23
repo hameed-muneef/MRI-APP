@@ -2,7 +2,9 @@
 
 import {useEffect, useRef, useState} from 'react';
 import {AlarmClock, Bell, BellRing, CheckCircle2, Clock3, MoonStar, Volume2} from 'lucide-react';
-import {getBrowserPermission, isBrowserNotificationSupported, requestBrowserPermission} from '../../notifications/delivery';
+import {ensureSystemNotificationPermission, getBrowserPermission, isBrowserNotificationSupported, requestBrowserPermission} from '../../notifications/delivery';
+import {checkPermissions as checkNativePermissions} from '../../notifications/native-prayer-scheduler';
+import {openAppSettings} from '../../lib/settings-opener';
 import type {TaskScheduleContext} from '../../notifications/task-planner';
 import GeneralNotifications from './GeneralNotifications';
 import PrayerNotifications from './PrayerNotifications';
@@ -21,18 +23,49 @@ const PERMISSION_TEXT: Record<string, string> = {
 export function PermissionStatus() {
   const nativeApp = isNativePlatform();
   const [permission, setPermission] = useState<NotificationPermission | null>(() => getBrowserPermission());
+  const [nativeDisplay, setNativeDisplay] = useState<string>('prompt');
   useEffect(() => {
     setPermission(getBrowserPermission());
   }, []);
+  useEffect(() => {
+    if (!nativeApp) return;
+    let active = true;
+    void checkNativePermissions().then((p) => {
+      if (active) setNativeDisplay(p.display);
+    });
+    return () => {
+      active = false;
+    };
+  }, [nativeApp]);
 
   if (nativeApp) {
+    if (nativeDisplay === 'granted') {
+      return (
+        <div className="task-push-permission-bar perm-granted">
+          <div>
+            <strong>تنبيهات النظام:</strong>{' '}
+            <span>الإشعارات والمنبهات تعمل مباشرة عبر نظام الهاتف، حتى والتطبيق مغلق.</span>
+          </div>
+          <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
+        </div>
+      );
+    }
     return (
-      <div className="task-push-permission-bar perm-granted">
+      <div className="task-push-permission-bar perm-denied">
         <div>
           <strong>تنبيهات النظام:</strong>{' '}
-          <span>الإشعارات والمنبهات تعمل مباشرة عبر نظام الهاتف.</span>
+          <span role="status">إذن الإشعارات غير مفعّل على الهاتف؛ لن تصل المنبهات والتذكيرات والتطبيق مغلق حتى تفعيله.</span>
         </div>
-        <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void ensureSystemNotificationPermission().then((result) => {
+            setNativeDisplay(result);
+            if (result !== 'granted') void openAppSettings();
+          })}
+        >
+          <BellRing size={15}/> تفعيل إشعارات الهاتف
+        </button>
       </div>
     );
   }
@@ -206,4 +239,4 @@ export default function NotificationSettings({
       <RemindersPanel notify={notify} goals={goals}/>
     </section>
   );
-}
+  }
