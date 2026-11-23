@@ -31,19 +31,39 @@ export function pickDueItems(
 ): DueItem[] {
   const due: DueItem[] = [];
   if (prefs.global_enabled) {
+    const probe = new Date(now.getTime() - 120000);
     for (const reminder of reminders) {
       if (!reminder.enabled) continue;
-      const next = nextDueDate(reminder, now);
-      if (!next) continue;
-      const snooze = reminder.snooze_until ? new Date(reminder.snooze_until) : null;
-      const effective = snooze && snooze > next ? snooze : next;
-      const late = now.getTime() - effective.getTime();
-      if (late > 60 * 60 * 1000) continue; // ضاع موعده منذ أكثر من ساعة
+      const next = nextDueDate(reminder, probe);
+      const snoozeRaw = reminder.snooze_until ? new Date(reminder.snooze_until) : null;
+      const snooze = snoozeRaw && !isNaN(snoozeRaw.getTime()) ? snoozeRaw : null;
+      const candidates: Date[] = [];
+      if (snooze) {
+        candidates.push(snooze);
+      }
+      if (next) {
+        // إذا وُجد تأجيل لاحق لوقت الموعد القريب نفسه، قدّم وقت التأجيل فقط لهذا الاستحقاق
+        const supersededBySnooze = Boolean(
+          snooze
+          && snooze.getTime() > next.getTime()
+          && snooze.getTime() - next.getTime() <= 60 * 60 * 1000,
+        );
+        if (!supersededBySnooze && (!snooze || snooze.getTime() !== next.getTime())) {
+          candidates.push(next);
+        }
+      }
+      if (candidates.length === 0) continue;
       if (!isReminderAllowed(reminder, prefs, now)) continue;
-      const key = `rem:${reminder.id}:${effective.toISOString()}`;
-      if (fired.has(key)) continue;
-      // أطلق فقط إذا كان مستحقًا (≤2 دqiqات متأخر) أو خلال 30 ثانية في المستقبل (فاصل tick)
-      if (late >= -30000 && late <= 120000) due.push({kind: 'reminder', key, reminder, at: effective});
+      for (const effective of candidates) {
+        const late = now.getTime() - effective.getTime();
+        if (late > 60 * 60 * 1000) continue; // ضاع موعده منذ أكثر من ساعة
+        const key = `rem:${reminder.id}:${effective.toISOString()}`;
+        if (fired.has(key)) continue;
+        // أطلق فقط إذا كان مستحقًا (≤2 دقائق متأخر) أو خلال 30 ثانية في المستقبل (فاصل tick)
+        if (late >= -30000 && late <= 120000) {
+          due.push({kind: 'reminder', key, reminder, at: effective});
+        }
+      }
     }
   }
   if (prayers) {

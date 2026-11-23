@@ -1,5 +1,6 @@
 package com.alrabbaniyoon.app;
 
+import android.os.Build;
 import android.provider.Settings;
 import android.content.Context;
 import android.content.Intent;
@@ -17,8 +18,21 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
 @CapacitorPlugin(name = "BackgroundAudio")
 public class BackgroundAudioPlugin extends Plugin {
+    private final ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicInteger downloadGeneration = new AtomicInteger(0);
 
     @Override
     public void load() {
@@ -203,6 +217,195 @@ public class BackgroundAudioPlugin extends Plugin {
             ret.put("opened", false);
             ret.put("error", e.getMessage() != null ? e.getMessage() : "unknown");
         }
+        call.resolve(ret);
+    }
+
+    /** تنزيل ملف صوتي للاستخدام الدائم دون إنترنت داخل التخزين الخاص للتطبيق. */
+    @PluginMethod
+    public void downloadOfflineAudio(PluginCall call) {
+        String id = call.getString("id", "").trim();
+        String urlStr = call.getString("url", "").trim();
+        if (id.isEmpty() || urlStr.isEmpty()) {
+            call.reject("id and url are required");
+            return;
+        }
+        final int gen = downloadGeneration.get();
+        final Context appContext = getContext().getApplicationContext();
+        final File targetFile = BackgroundAudioService.offlineAudioFile(appContext, id);
+
+        if (targetFile.isFile() && targetFile.length() > 128) {
+            JSObject ret = new JSObject();
+            ret.put("id", id);
+            ret.put("bytes", targetFile.length());
+            ret.put("alreadyExists", true);
+            call.resolve(ret);
+            return;
+        }
+
+        downloadExecutor.submit(() -> {
+            HttpURLConnection conn = null;
+            File tempFile = new File(targetFile.getParentFile(), targetFile.getName() + ".part");
+            try {
+                if (gen != downloadGeneration.get()) {
+                    call.reject("cancelled");
+                    return;
+                }
+                URL currentUrl = new URL(urlStr.replace(" ", "%20"));
+                for (int hop = 0; hop <= 6; hop++) {
+                    if (gen != downloadGeneration.get()) {
+                        call.reject("cancelled");
+                        return;
+                    }
+                    conn = (HttpURLConnection) currentUrl.openConnection();
+                    conn.setInstanceFollowRedirects(false);
+                    conn.setConnectTimeout(15000);
+                    conn.setReadTimeout(45000);
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ") AppleWebKit/537.36 Mobile Safari/537.36");
+                    conn.setRequestProperty("Accept", "audio/mpeg, audio/ogg, audio/mp4, audio/*;q=0.9, */*;q=0.8");
+
+                    int code = conn.getResponseCode();
+                    if (code == HttpURLConnection.HTTP_MOVED_PERM
+                        || code == HttpURLConnection.HTTP_MOVED_TEMP
+                        || code == HttpURLConnection.HTTP_SEE_OTHER
+                        || code == 307
+                        || code == 308) {
+                        String loc = conn.getHeaderField("Location");
+                        conn.disconnect();
+                        conn = null;
+                        if (loc == null || loc.trim().isEmpty()) {
+                            throw new IOException("Redirect without Location (HTTP " + code + ")");
+                        }
+                        currentUrl = new URL(currentUrl, loc.trim());
+                        continue;
+                    }
+                    if (code < 200 || code >= 300) {
+                        throw new IOException("HTTP " + code);
+                    }
+                    String ct = conn.getContentType();
+                    if (ct != null) {
+                        String ctLower = ct.toLowerCase(Locale.US);
+                        if (ctLower.startsWith("text/html") || ctLower.contains("application/json") || ctLower.contains("xml")) {
+                            throw new IOException("Invalid audio content-type: " + ct);
+                        }
+                    }
+
+                    long totalBytes = 0L;
+                    try (InputStream in = conn.getInputStream();
+                         FileOutputStream out = new FileOutputStream(tempFile)) {
+                        byte[] buf = new byte[16384];
+                        int n;
+                        while ((n = in.read(buf)) != -1) {
+                            if (gen != downloadGeneration.get()) {
+                                throw new IOException("cancelled");
+                            }
+                            out.write(buf, 0, n);
+                            totalBytes += n;
+                        }
+                        out.flush();
+                    }
+
+                    if (totalBytes <= 128) {
+                        throw new IOException("Empty audio download");
+                    }
+                    if (targetFile.exists()) {
+                        //noinspection ResultOfMethodCallIgnored
+                        targetFile.delete();
+                    }
+                    if (!tempFile.renameTo(targetFile)) {
+                        throw new IOException("Failed saving offline audio file");
+                    }
+
+                    JSObject ret = new JSObject();
+                    ret.put("id", id);
+                    ret.put("bytes", totalBytes);
+                    ret.put("alreadyExists", false);
+                    call.resolve(ret);
+                    return;
+                }
+                throw new IOException("Too many redirects");
+            } catch (Exception ex) {
+                if (tempFile.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    tempFile.delete();
+                }
+                String msg = ex.getMessage() != null ? ex.getMessage() : "Download failed";
+                call.reject(msg);
+            } finally {
+                if (conn != null) {
+                    try { conn.disconnect(); } catch (Exception ignored) {}
+                }
+            }
+        });
+    }
+
+    @PluginMethod
+    public void cancelOfflineDownloads(PluginCall call) {
+        downloadGeneration.incrementAndGet();
+        call.resolve(new JSObject().put("cancelled", true));
+    }
+
+    @PluginMethod
+    public void deleteOfflineAudio(PluginCall call) {
+        Context appContext = getContext().getApplicationContext();
+        String id = call.getString("id", "").trim();
+        String prefix = call.getString("prefix", "").trim();
+        int deletedCount = 0;
+        long freedBytes = 0L;
+
+        if (!id.isEmpty()) {
+            File target = BackgroundAudioService.offlineAudioFile(appContext, id);
+            if (target.exists() && target.isFile()) {
+                long len = target.length();
+                if (target.delete()) {
+                    deletedCount++;
+                    freedBytes += len;
+                }
+            }
+        } else if (!prefix.isEmpty()) {
+            String safePrefix = BackgroundAudioService.sanitizeOfflineId(prefix);
+            File dir = BackgroundAudioService.getOfflineAudioDir(appContext);
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.getName().startsWith(safePrefix)) {
+                        long len = f.length();
+                        if (f.delete()) {
+                            deletedCount++;
+                            freedBytes += len;
+                        }
+                    }
+                }
+            }
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("deletedCount", deletedCount);
+        ret.put("freedBytes", freedBytes);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void listOfflineAudio(PluginCall call) {
+        Context appContext = getContext().getApplicationContext();
+        File dir = BackgroundAudioService.getOfflineAudioDir(appContext);
+        File[] files = dir.listFiles();
+        JSArray items = new JSArray();
+        long totalBytes = 0L;
+        if (files != null) {
+            for (File f : files) {
+                if (!f.isFile() || f.getName().endsWith(".part")) continue;
+                long len = f.length();
+                totalBytes += len;
+                JSObject obj = new JSObject();
+                obj.put("name", f.getName());
+                obj.put("bytes", len);
+                items.put(obj);
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("totalBytes", totalBytes);
+        ret.put("files", items);
         call.resolve(ret);
     }
 

@@ -1,6 +1,7 @@
 // إعداد إشعارات الصلاة لكل صلاة على حدة: التفعيل، نوع الأذان، القناة، الصوت، التذكير قبل/بعد، والتعديل اليدوي.
 
 import {useEffect, useState} from 'react';
+import {Check, ChevronDown, ChevronUp, RotateCcw} from 'lucide-react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {clampAdjustment, MAX_PRAYER_ADJUSTMENT} from '../../notifications/prayer-planner';
 import {
@@ -28,12 +29,25 @@ function boundedMinutes(value: string, max: number): number {
   return Number.isFinite(parsed) ? Math.max(0, Math.min(max, parsed)) : 0;
 }
 
+function summarizePrayer(setting: PrayerSetting): string {
+  if (!setting.enabled) return 'متوقف';
+  const parts: string[] = [PRAYER_ADHAN_LABELS[setting.adhan_type]];
+  if ((setting.remind_before_minutes ?? 0) > 0) parts.push(`قبل ${setting.remind_before_minutes} د`);
+  if ((setting.remind_after_minutes ?? 0) > 0) parts.push(`بعد ${setting.remind_after_minutes} د`);
+  if ((setting.adjust_minutes ?? 0) !== 0) {
+    const adj = setting.adjust_minutes ?? 0;
+    parts.push(`تعديل ${adj > 0 ? `+${adj}` : adj} د`);
+  }
+  return parts.join(' · ');
+}
+
 type Props = {notify: (message: string) => void; prayerLocation?: PrayerLocation; onPrayerLocation?: (location?: PrayerLocation) => void};
 
 export default function PrayerNotifications({notify, prayerLocation, onPrayerLocation}: Props) {
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
   const [loading, setLoading] = useState(true);
   const [savingPrayer, setSavingPrayer] = useState<PrayerName | null>(null);
+  const [expandedPrayer, setExpandedPrayer] = useState<PrayerName | null>(null);
   // الحفظ لكل صلاة على حدة: تعديل صلاة لا يلمس إعدادات باقي الصلوات.
   const [dirtyPrayers, setDirtyPrayers] = useState<ReadonlySet<PrayerName>>(new Set());
 
@@ -93,62 +107,159 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
 
   return (
     <div className="notif-prayer-panel">
-      <NativeAdhanPanel prayerLocation={prayerLocation} onNotify={notify} />
-      {onPrayerLocation && <PrayerLocationPicker location={sanitizePrayerLocation(prayerLocation)} onChange={onPrayerLocation}/>}
-      <p className="muted small">
-        يمكنك هنا ضبط كل صلاة بشكل مستقل.
-        الأذان داخل المتصفح يعمل فقط والصفحة مفتوحة؛ لا يضمن المتصفح التشغيل في الخلفية.
-      </p>
-      {PRAYER_NAMES.map(prayer => {
-        const setting: PrayerSetting = {...DEFAULT_PRAYER_PREFERENCES[prayer], ...prefs.prayer_settings[prayer]};
-        const id = `prayer-${PRAYER_NAMES.indexOf(prayer)}`;
-        return (
-          <fieldset key={prayer} className="notif-prayer-card" disabled={!prefs.global_enabled}>
-            <legend>{prayer}</legend>
-            <label className="notif-switch">
-              <input type="checkbox" checked={setting.enabled} onChange={event => update(prayer, {enabled: event.target.checked})}/>
-              <span>تفعيل تنبيه صلاة {prayer}</span>
-            </label>
-            {setting.enabled && (
-              <div className="form-grid">
-                <label htmlFor={`${id}-type`}>نوع الأذان
-                  <select id={`${id}-type`} value={setting.adhan_type} onChange={event => update(prayer, {adhan_type: event.target.value as PrayerAdhanType})}>
-                    {(Object.keys(PRAYER_ADHAN_LABELS) as PrayerAdhanType[]).map(key => <option key={key} value={key}>{PRAYER_ADHAN_LABELS[key]}</option>)}
-                  </select>
+      <NativeAdhanPanel prayerLocation={prayerLocation} onNotify={notify}/>
+      {onPrayerLocation && (
+        <PrayerLocationPicker location={sanitizePrayerLocation(prayerLocation)} onChange={onPrayerLocation}/>
+      )}
+
+      <div className="notif-prayer-list-head">
+        <h4>تخصيص كل صلاة</h4>
+        <p className="muted small">
+          اضغط «تخصيص» على أي صلاة لضبط الأذان والتذكير قبل/بعد الوقت.
+          {!prefs.global_enabled && ' (الإشعارات العامة متوقفة حاليًا من تبويب الهدوء والإشعارات)'}
+        </p>
+      </div>
+
+      <div className="notif-prayer-list">
+        {PRAYER_NAMES.map(prayer => {
+          const setting: PrayerSetting = {...DEFAULT_PRAYER_PREFERENCES[prayer], ...prefs.prayer_settings[prayer]};
+          const id = `prayer-${PRAYER_NAMES.indexOf(prayer)}`;
+          const isOpen = expandedPrayer === prayer;
+          const isDirty = dirtyPrayers.has(prayer);
+          return (
+            <fieldset key={prayer} className={`notif-prayer-card${setting.enabled ? '' : ' paused'}`} disabled={!prefs.global_enabled}>
+              <legend className="sr-only">إعدادات صلاة {prayer}</legend>
+              <div className="notif-prayer-head">
+                <label className="notif-prayer-toggle">
+                  <input
+                    type="checkbox"
+                    checked={setting.enabled}
+                    onChange={event => update(prayer, {enabled: event.target.checked})}
+                    aria-label={`تفعيل تنبيه صلاة ${prayer}`}
+                  />
+                  <span className="notif-prayer-title-wrap">
+                    <strong>{prayer}</strong>
+                    <small className="notif-prayer-summary">{summarizePrayer(setting)}</small>
+                  </span>
                 </label>
-                <label htmlFor={`${id}-channel`}>طريقة وصول التنبيه
-                  <select id={`${id}-channel`} value={setting.channel} onChange={event => update(prayer, {channel: event.target.value as NotificationChannel})}>
-                    {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => <option key={key} value={key}>{channelLabel(key)}</option>)}
-                  </select>
-                </label>
-                {setting.adhan_type !== 'silent' && (
-                  <label>الصوت
-                    <SoundSelectField value={setting.sound_id} onChange={sound => update(prayer, {sound_id: sound})}/>
-                  </label>
-                )}
-                <label htmlFor={`${id}-before`}>تذكير قبل الأذان (دقائق، 0 = بلا تذكير)
-                  <input id={`${id}-before`} type="number" inputMode="numeric" min={0} max={MAX_REMINDER_MINUTES}
-                    value={setting.remind_before_minutes ?? 0} onChange={event => update(prayer, {remind_before_minutes: boundedMinutes(event.target.value, MAX_REMINDER_MINUTES)})}/>
-                </label>
-                <label htmlFor={`${id}-after`}>تذكير بعد الأذان (دقائق، 0 = بلا تذكير)
-                  <input id={`${id}-after`} type="number" inputMode="numeric" min={0} max={MAX_REMINDER_MINUTES}
-                    value={setting.remind_after_minutes ?? 0} onChange={event => update(prayer, {remind_after_minutes: boundedMinutes(event.target.value, MAX_REMINDER_MINUTES)})}/>
-                </label>
-                <label htmlFor={`${id}-adjust`}>تعديل يدوي للوقت (دقائق، من −{MAX_PRAYER_ADJUSTMENT} إلى +{MAX_PRAYER_ADJUSTMENT})
-                  <input id={`${id}-adjust`} type="number" inputMode="numeric" min={-MAX_PRAYER_ADJUSTMENT} max={MAX_PRAYER_ADJUSTMENT}
-                    value={setting.adjust_minutes ?? 0} onChange={event => update(prayer, {adjust_minutes: clampAdjustment(Number(event.target.value))})}/>
-                </label>
+
+                <div className="notif-prayer-head-actions">
+                  {isDirty && !isOpen && (
+                    <button
+                      type="button"
+                      className="primary notif-prayer-quick-save"
+                      disabled={savingPrayer !== null}
+                      onClick={() => void savePrayer(prayer)}
+                    >
+                      <Check size={15}/> حفظ
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`soft-btn notif-prayer-expand${isOpen ? ' open' : ''}`}
+                    aria-expanded={isOpen}
+                    aria-controls={`${id}-details`}
+                    onClick={() => setExpandedPrayer(isOpen ? null : prayer)}
+                  >
+                    <span>{isOpen ? 'إخفاء' : 'تخصيص'}</span>
+                    {isOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                  </button>
+                </div>
               </div>
-            )}
-            <div className="notif-form-actions">
-              <button type="button" className="primary" disabled={savingPrayer !== null || !dirtyPrayers.has(prayer)} onClick={() => void savePrayer(prayer)}>
-                {savingPrayer === prayer ? 'جارٍ الحفظ…' : dirtyPrayers.has(prayer) ? `حفظ إعدادات ${prayer}` : 'تم الحفظ'}
-              </button>
-              <button type="button" className="soft-btn" disabled={savingPrayer !== null} onClick={() => restorePrayer(prayer)}>استعادة الافتراضي</button>
-            </div>
-          </fieldset>
-        );
-      })}
+
+              {isOpen && (
+                <div id={`${id}-details`} className="notif-prayer-details">
+                  {setting.enabled ? (
+                    <div className="form-grid">
+                      <label htmlFor={`${id}-type`}>نوع الأذان
+                        <select
+                          id={`${id}-type`}
+                          value={setting.adhan_type}
+                          onChange={event => update(prayer, {adhan_type: event.target.value as PrayerAdhanType})}
+                        >
+                          {(Object.keys(PRAYER_ADHAN_LABELS) as PrayerAdhanType[]).map(key => (
+                            <option key={key} value={key}>{PRAYER_ADHAN_LABELS[key]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label htmlFor={`${id}-channel`}>طريقة وصول التنبيه
+                        <select
+                          id={`${id}-channel`}
+                          value={setting.channel}
+                          onChange={event => update(prayer, {channel: event.target.value as NotificationChannel})}
+                        >
+                          {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => (
+                            <option key={key} value={key}>{channelLabel(key)}</option>
+                          ))}
+                        </select>
+                      </label>
+                      {setting.adhan_type !== 'silent' && (
+                        <label>الصوت
+                          <SoundSelectField value={setting.sound_id} onChange={sound => update(prayer, {sound_id: sound})}/>
+                        </label>
+                      )}
+                      <label htmlFor={`${id}-before`}>تذكير قبل الأذان (دقائق، 0 = بلا تذكير)
+                        <input
+                          id={`${id}-before`}
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          max={MAX_REMINDER_MINUTES}
+                          value={setting.remind_before_minutes ?? 0}
+                          onChange={event => update(prayer, {remind_before_minutes: boundedMinutes(event.target.value, MAX_REMINDER_MINUTES)})}
+                        />
+                      </label>
+                      <label htmlFor={`${id}-after`}>تذكير بعد الأذان (دقائق، 0 = بلا تذكير)
+                        <input
+                          id={`${id}-after`}
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          max={MAX_REMINDER_MINUTES}
+                          value={setting.remind_after_minutes ?? 0}
+                          onChange={event => update(prayer, {remind_after_minutes: boundedMinutes(event.target.value, MAX_REMINDER_MINUTES)})}
+                        />
+                      </label>
+                      <label htmlFor={`${id}-adjust`}>تعديل يدوي للوقت (دقائق، −{MAX_PRAYER_ADJUSTMENT} إلى +{MAX_PRAYER_ADJUSTMENT})
+                        <input
+                          id={`${id}-adjust`}
+                          type="number"
+                          inputMode="numeric"
+                          min={-MAX_PRAYER_ADJUSTMENT}
+                          max={MAX_PRAYER_ADJUSTMENT}
+                          value={setting.adjust_minutes ?? 0}
+                          onChange={event => update(prayer, {adjust_minutes: clampAdjustment(Number(event.target.value))})}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <p className="muted small">التنبيه متوقف لهذه الصلاة. فعّل المفتاح بالأعلى لضبط خيارات الأذان والتذكير.</p>
+                  )}
+
+                  <div className="notif-form-actions">
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={savingPrayer !== null || !isDirty}
+                      onClick={() => void savePrayer(prayer)}
+                    >
+                      {savingPrayer === prayer ? 'جارٍ الحفظ…' : isDirty ? `حفظ إعدادات ${prayer}` : 'تم الحفظ'}
+                    </button>
+                    <button
+                      type="button"
+                      className="soft-btn"
+                      disabled={savingPrayer !== null}
+                      onClick={() => restorePrayer(prayer)}
+                    >
+                      <RotateCcw size={15}/> استعادة الافتراضي
+                    </button>
+                  </div>
+                </div>
+              )}
+            </fieldset>
+          );
+        })}
+      </div>
     </div>
   );
 }

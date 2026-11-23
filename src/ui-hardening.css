@@ -1053,6 +1053,34 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
   margin-bottom: 12px;
 }
 
+#root .app .mf-sheet-backdrop.mf-sheet-backdrop-reciters {
+  padding: 0 8px;
+}
+
+@media (max-width: 640px) {
+  #root .app .mf-sheet-backdrop.mf-sheet-backdrop-reciters {
+    padding: 0;
+  }
+  #root .app .mf-sheet-backdrop > .mf-sheet.mf-sheet-reciters {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 82dvh;
+    margin: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    padding: 0 !important;
+  }
+}
+
+@media (min-width: 641px) {
+  #root .app .mf-sheet-backdrop > .mf-sheet.mf-sheet-reciters {
+    width: min(560px, calc(100vw - 24px)) !important;
+    max-height: 82dvh;
+    margin-bottom: 14px;
+    border-radius: 20px;
+    padding: 0 !important;
+  }
+}
+
 #root .app .mf-sheet-head {
   display: flex;
   align-items: flex-start;
@@ -1691,14 +1719,24 @@ body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
 
 /* 4) Home Screen Polish — Distinct Per-Card Color Differentiation */
 #root .app .home-dashboard {
-  gap: 10px;
-  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 #root .app .home-next-card {
+  display: flex;
   align-items: flex-start;
-  padding: 14px;
+  padding: 15px 16px;
   gap: 12px;
+  min-height: 82px;
+  border-radius: 16px;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+#root .app .home-next-card:active {
+  transform: scale(0.992);
 }
 
 #root .app .home-next-card:nth-child(1) {
@@ -1729,6 +1767,107 @@ body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
   display: grid;
   place-items: center;
   flex: none;
+}
+
+#root .app .home-next-body {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+#root .app .home-next-kicker {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#root .app .home-next-kicker small {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+#root .app .home-next-countdown {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1F5675;
+  font-variant-numeric: tabular-nums;
+}
+
+#root .app .home-next-card-reminders .home-next-countdown {
+  color: #7D5817;
+}
+
+#root .app .home-next-headline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#root .app .home-next-headline strong {
+  font-size: 19px;
+  font-weight: 800;
+  color: #163038;
+}
+
+#root .app .home-next-time {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #163D34;
+  white-space: nowrap;
+}
+
+#root .app .home-upcoming-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+#root .app .home-upcoming-row {
+  display: grid;
+  gap: 2px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(130, 93, 26, 0.14);
+}
+
+#root .app .home-upcoming-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+#root .app .home-upcoming-title-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#root .app .home-upcoming-title-line strong {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #262015;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#root .app .home-upcoming-row small {
+  font-size: 12px;
+  color: #6E5934;
+  font-variant-numeric: tabular-nums;
+}
+
+#root .app .home-next-chevron {
+  flex: none;
+  margin-top: 2px;
+  opacity: 0.68;
 }
 
 #root .app .home-today-entry {
@@ -1765,6 +1904,32 @@ body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
   background: #3D3422 !important;
   color: #E6C77E !important;
   border: 1px solid #7D6839 !important;
+}
+
+[data-theme="dark"] #root .app .home-next-headline strong,
+[data-theme="dark"] #root .app .home-upcoming-title-line strong {
+  color: #F3F7FA !important;
+}
+
+[data-theme="dark"] #root .app .home-next-time {
+  color: #9ED3B7 !important;
+}
+
+[data-theme="dark"] #root .app .home-next-card-prayer .home-next-countdown {
+  color: #8BC4E6 !important;
+}
+
+[data-theme="dark"] #root .app .home-next-card-reminders .home-next-countdown,
+[data-theme="dark"] #root .app .home-next-card-reminders .home-next-time {
+  color: #E6C77E !important;
+}
+
+[data-theme="dark"] #root .app .home-upcoming-row {
+  border-top-color: rgba(230, 199, 126, 0.18);
+}
+
+[data-theme="dark"] #root .app .home-upcoming-row small {
+  color: #D2C3A3 !important;
 }
 
 [data-theme="dark"] #root .app .home-today-entry {
@@ -2210,10 +2375,11 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .quran-section-gri
   color: #FFFFFF !important;
 }
 
-/* Light tokens for the 11 Quran & Sunnah tabs */
+/* Light tokens for the 12 Quran & Sunnah tabs */
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="mushaf"]       { --qtab-bg: #EDF7F2; --qtab-border: #AED3C2; --qtab-icon-bg: #D2ECE0; --qtab-icon-fg: #145C46; --qtab-active-bg: #DCF0E6; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="tafsir"]       { --qtab-bg: #FCF6E6; --qtab-border: #DFC586; --qtab-icon-bg: #F3E3B8; --qtab-icon-fg: #82590F; --qtab-active-bg: #F7ECCD; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="translations"] { --qtab-bg: #EDF5FB; --qtab-border: #A9CBE2; --qtab-icon-bg: #D1E5F5; --qtab-icon-fg: #1F5A82; --qtab-active-bg: #DCEBF7; }
+html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="reciters"]     { --qtab-bg: #EBF7F4; --qtab-border: #9FCFC3; --qtab-icon-bg: #CBEAE1; --qtab-icon-fg: #13594B; --qtab-active-bg: #D7EFE9; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="hifz"]         { --qtab-bg: #EFF1FA; --qtab-border: #B3BBE2; --qtab-icon-bg: #D7DDF5; --qtab-icon-fg: #34478A; --qtab-active-bg: #E0E5F7; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="revision"]     { --qtab-bg: #F8EFF5; --qtab-border: #D7B2CA; --qtab-icon-bg: #ECD5E4; --qtab-icon-fg: #753860; --qtab-active-bg: #F2DFEC; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="bukhari"]      { --qtab-bg: #FBF1EB; --qtab-border: #DFBBA8; --qtab-icon-bg: #F2DACE; --qtab-icon-fg: #874525; --qtab-active-bg: #F6E2D7; }
@@ -2223,10 +2389,11 @@ html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="progress"]     { --qtab-bg: #FCF3E8; --qtab-border: #E0BE93; --qtab-icon-bg: #F4DEC1; --qtab-icon-fg: #8B5014; --qtab-active-bg: #F8E6CF; }
 html[data-theme="light"] #root .app main[data-section="quran"] [data-quran-tab="azkar"]        { --qtab-bg: #F3EFFA; --qtab-border: #C3B4E2; --qtab-icon-bg: #DFD5F5; --qtab-icon-fg: #534185; --qtab-active-bg: #E7DFF7; }
 
-/* Dark tokens for the 11 Quran & Sunnah tabs */
+/* Dark tokens for the 12 Quran & Sunnah tabs */
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="mushaf"]       { --qtab-bg: #16332D; --qtab-border: #357662; --qtab-icon-bg: #1E4D42; --qtab-icon-fg: #8CE2C0; --qtab-active-bg: #1D4A40; }
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="tafsir"]       { --qtab-bg: #2C2617; --qtab-border: #7A6332; --qtab-icon-bg: #41361E; --qtab-icon-fg: #ECCB79; --qtab-active-bg: #3D331D; }
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="translations"] { --qtab-bg: #162C3D; --qtab-border: #39698C; --qtab-icon-bg: #20405A; --qtab-icon-fg: #8BC7EE; --qtab-active-bg: #1D3B53; }
+html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="reciters"]     { --qtab-bg: #14322F; --qtab-border: #34776E; --qtab-icon-bg: #1B4A45; --qtab-icon-fg: #84DFD2; --qtab-active-bg: #1A4641; }
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="hifz"]         { --qtab-bg: #1D2642; --qtab-border: #475A94; --qtab-icon-bg: #293761; --qtab-icon-fg: #A4B7F5; --qtab-active-bg: #27345C; }
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="revision"]     { --qtab-bg: #2D2030; --qtab-border: #754969; --qtab-icon-bg: #432D47; --qtab-icon-fg: #E0A3CA; --qtab-active-bg: #3F2B44; }
 html[data-theme="dark"] #root .app main[data-section="quran"] [data-quran-tab="bukhari"]      { --qtab-bg: #31221C; --qtab-border: #80503B; --qtab-icon-bg: #493127; --qtab-icon-fg: #E9A889; --qtab-active-bg: #442E24; }
@@ -2244,13 +2411,60 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .mf-sec-nav      {
 html[data-theme="dark"] #root .app main[data-section="quran"] .mf-sec-reading  { background: #292419 !important; border-color: #6F5D37 !important; }
 html[data-theme="dark"] #root .app main[data-section="quran"] .mf-sec-audio    { background: #18293E !important; border-color: #3B5E86 !important; }
 
-/* Offline Library Cards (Tafsir & Translations) */
-html[data-theme="light"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n+1) { background: #FDF8EC !important; border-color: #DEC894 !important; }
-html[data-theme="light"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n+2) { background: #F0F6FB !important; border-color: #B7CFE2 !important; }
-html[data-theme="light"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n)   { background: #F1F8F4 !important; border-color: #B7D6C5 !important; }
-html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n+1)  { background: #27231A !important; border-color: #6B5B37 !important; }
-html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n+2)  { background: #172B3C !important; border-color: #396588 !important; }
-html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list .ol-row:nth-child(3n)    { background: #16302B !important; border-color: #36705E !important; }
+/* Offline Library Cards (Tafsir & Translations — exclude Reciters list so modal sheet stays crisp) */
+html[data-theme="light"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+1) { background: #FDF8EC !important; border-color: #DEC894 !important; }
+html[data-theme="light"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2) { background: #F0F6FB !important; border-color: #B7CFE2 !important; }
+html[data-theme="light"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n)   { background: #F1F8F4 !important; border-color: #B7D6C5 !important; }
+html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+1)  { background: #27231A !important; border-color: #6B5B37 !important; }
+html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2)  { background: #172B3C !important; border-color: #396588 !important; }
+html[data-theme="dark"] #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n)    { background: #16302B !important; border-color: #36705E !important; }
+
+/* Standalone Reciters Cards in Dark Mode (Modal inside .mf-sheet keeps its light-paper tokens) */
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-card {
+  background: #172A38 !important;
+  border-color: #32526B !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-card.reciter-selected {
+  background: #1A3A35 !important;
+  border-color: #7FD2AE !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-search-box,
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-inline-moshaf,
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-single-surah select {
+  background: #11212E !important;
+  border-color: #3B5B75 !important;
+  color: #F1F5F8 !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-tabs button:not(.active),
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-scope-chip:not(.active),
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-btn-dl {
+  background: #172A38 !important;
+  border-color: #32526B !important;
+  color: #E9F1EE !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-mini-refresh {
+  background: #172A38 !important;
+  border-color: #32526B !important;
+  color: #E9F1EE !important;
+}
+html[data-theme="dark"] #root .app .mf-sheet-reciters .soft-btn {
+  background: rgba(22, 61, 52, .08) !important;
+  color: #163d34 !important;
+  border: 1px solid rgba(22, 61, 52, .18) !important;
+}
+html[data-theme="dark"] #root .app .mf-sheet-reciters .soft-btn.selected {
+  background: #163d34 !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] #root .app .mf-sheet-reciters .reciter-card {
+  background: #fffdf8 !important;
+  border-color: rgba(22, 61, 52, .18) !important;
+  color: #1a2a24 !important;
+}
+html[data-theme="dark"] #root .app .mf-sheet-reciters .reciter-card.reciter-selected {
+  background: #EAF5EE !important;
+  border-color: #163d34 !important;
+}
 
 /* Quran Journey & Mini Stats */
 html[data-theme="light"] #root .app main[data-section="quran"] .quran-journey { background: #F5F7F3 !important; border-color: #C7D4C7 !important; }
@@ -2568,9 +2782,11 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
 }
 
 #root .app .notif-general-panel,
-#root .app .notif-prayer-panel {
+#root .app .notif-prayer-panel,
+#root .app .notif-reminders,
+#root .app .settings-section-stack {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 #root .app .notif-general-panel > fieldset,
@@ -2581,6 +2797,11 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   display: grid;
   gap: 10px;
   min-width: 0;
+  transition: opacity .16s ease;
+}
+
+#root .app :is(.notif-general-panel, .notif-task-panel) > fieldset:disabled {
+  opacity: 0.6;
 }
 
 #root .app .notif-categories,
@@ -2588,19 +2809,778 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   display: grid;
   gap: 10px;
   margin: 0;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid #D6CFC0;
   background: #FFFFFF;
   min-width: 0;
 }
 
-#root .app .notif-categories legend,
-#root .app .notif-prayer-card legend {
+#root .app .notif-categories legend {
   padding: 0 6px;
   font-size: 13.5px;
   font-weight: 800;
   color: #1E4B3B;
+}
+
+#root .app .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Settings 4-Tab Hub */
+#root .app .settings-hub {
+  display: grid;
+  gap: 16px;
+}
+
+#root .app .settings-hub .page-intro {
+  margin-bottom: 4px;
+}
+
+#root .app .settings-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 14px;
+  background: #ECE7DA;
+  border: 1px solid #DAD3C2;
+  scrollbar-width: none;
+}
+
+#root .app .settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+#root .app .settings-tabs button {
+  flex: 1 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #465752;
+  font-weight: 700;
+  font-size: 13.5px;
+  white-space: nowrap;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+#root .app .settings-tabs button.active {
+  background: #1B5140;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(27, 81, 64, 0.24);
+}
+
+#root .app .settings-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+#root .app .settings-overview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  min-height: 68px;
+  border-radius: 14px;
+  border: 1px solid #D9D2C3;
+  background: #FCFBF7;
+  color: #1D3036;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+
+#root .app .settings-overview-card:hover {
+  border-color: #1B5140;
+  transform: translateY(-1px);
+}
+
+#root .app .settings-overview-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: #E8F1EC;
+  color: #1B5140;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+#root .app .settings-overview-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#root .app .settings-overview-body strong {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+#root .app .settings-overview-body small {
+  font-size: 12px;
+  color: #5A6B66;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#root .app .settings-inner-details {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #E2DDD0;
+}
+
+#root .app .settings-inner-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1B5140;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+#root .app .settings-inner-details .form-grid {
+  margin-top: 10px;
+}
+
+/* Alarms & Task Sub-tabs */
+#root .app .notif-subtabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#root .app .notif-subtabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #D5CEC0;
+  background: #F7F4EC;
+  color: #364B44;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+#root .app .notif-subtabs button.active {
+  background: #1B5140;
+  border-color: #1B5140;
+  color: #FFFFFF;
+}
+
+/* Reminders Panel */
+#root .app .notif-reminders-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#root .app .notif-reminders-summary {
+  display: grid;
+  gap: 2px;
+}
+
+#root .app .notif-reminders-summary strong {
+  font-size: 17px;
+}
+
+#root .app .notif-add-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  white-space: nowrap;
+}
+
+#root .app .notif-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  border: 1px dashed #CBC3B3;
+  background: #FBF9F4;
+  color: #394A45;
+}
+
+#root .app .notif-empty svg {
+  flex: none;
+  margin-top: 2px;
+  color: #1B5140;
+}
+
+#root .app .notif-empty p {
+  margin: 4px 0 0;
+}
+
+#root .app .notif-reminder-form {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #CFC8B8;
+  background: #FCFBF7;
+}
+
+#root .app .notif-reminder-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2A3F38;
+}
+
+#root .app .notif-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#root .app .notif-form-head h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+
+#root .app .notif-form-close {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+}
+
+#root .app .notif-days {
+  border: 1px solid #D8D1C2;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0;
+  min-width: 0;
+}
+
+#root .app .notif-days legend {
+  padding: 0 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1B5140;
+}
+
+#root .app .notif-days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+#root .app .notif-day {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #D6CFC0;
+  background: #FFFFFF;
+  color: #2A3F38;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#root .app .notif-day input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+#root .app .notif-day.selected {
+  background: #1B5140;
+  border-color: #1B5140;
+  color: #FFFFFF;
+}
+
+#root .app .notif-reminder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+#root .app .notif-reminder-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 15px;
+  border: 1px solid #D6CFC0;
+  background: #FFFFFF;
+  transition: opacity .15s ease, border-color .15s ease;
+}
+
+#root .app .notif-reminder-card.paused {
+  opacity: 0.72;
+  background: #F6F3EC;
+}
+
+#root .app .notif-reminder-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#root .app .notif-reminder-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+#root .app .notif-reminder-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#root .app .notif-reminder-clock {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1B5140;
+  font-variant-numeric: tabular-nums;
+}
+
+#root .app .notif-reminder-title-row strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1C2D27;
+}
+
+#root .app .notif-reminder-meta {
+  font-size: 12.5px;
+  color: #5C6D67;
+  line-height: 1.5;
+}
+
+#root .app .notif-reminder-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #205B45;
+  font-variant-numeric: tabular-nums;
+}
+
+#root .app .notif-reminder-due.snoozed {
+  color: #8E5B13;
+}
+
+#root .app .notif-power-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid #CFC8B8;
+  background: #F3EFE6;
+  color: #55645F;
+  font-size: 12.5px;
+  font-weight: 700;
+  flex: none;
+}
+
+#root .app .notif-power-switch.on {
+  background: #E4F2EA;
+  border-color: #9CC7AE;
+  color: #19533E;
+}
+
+#root .app .notif-reminder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 8px;
+  border-top: 1px solid #EDE8DC;
+}
+
+#root .app .notif-reminder-actions button {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+#root .app .notif-reminder-actions button.danger {
+  color: #992F26;
+  background: #FBECEA;
+}
+
+#root .app .notif-inline-confirm {
+  margin-top: 2px;
+}
+
+#root .app .notif-templates {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #E5DFD2;
+}
+
+#root .app .notif-templates-head {
+  display: grid;
+  gap: 2px;
+}
+
+#root .app .notif-templates-head h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+#root .app .notif-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 9px;
+}
+
+#root .app .notif-template {
+  display: grid;
+  gap: 4px;
+  min-height: 60px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid #D9D2C3;
+  background: #FCFBF7;
+  color: #1F352E;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+#root .app .notif-template:hover {
+  border-color: #1B5140;
+  background: #F1F7F4;
+}
+
+#root .app .notif-template-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#root .app .notif-template-top strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+#root .app .notif-template-time {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1B5140;
+  font-variant-numeric: tabular-nums;
+}
+
+#root .app .notif-template small {
+  font-size: 12px;
+  color: #5D6E68;
+}
+
+/* Compact Expandable Prayer Cards */
+#root .app .notif-prayer-list-head {
+  display: grid;
+  gap: 3px;
+}
+
+#root .app .notif-prayer-list-head h4 {
+  margin: 0;
+  font-size: 15.5px;
+}
+
+#root .app .notif-prayer-list-head p {
+  margin: 0;
+}
+
+#root .app .notif-prayer-list {
+  display: grid;
+  gap: 10px;
+}
+
+#root .app .notif-prayer-card.paused {
+  opacity: 0.78;
+}
+
+#root .app .notif-prayer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#root .app .notif-prayer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 160px;
+  min-width: 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+#root .app .notif-prayer-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: none;
+  accent-color: #1B5140;
+}
+
+#root .app .notif-prayer-title-wrap {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#root .app .notif-prayer-title-wrap strong {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #1C2E28;
+}
+
+#root .app .notif-prayer-summary {
+  font-size: 12px;
+  color: #5A6B65;
+}
+
+#root .app .notif-prayer-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#root .app .notif-prayer-quick-save,
+#root .app .notif-prayer-expand {
+  min-height: 44px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+#root .app .notif-prayer-details {
+  display: grid;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #E8E2D4;
+}
+
+/* Sound Library List */
+#root .app .notif-sound-panel {
+  display: grid;
+  gap: 12px;
+}
+
+#root .app .notif-sound-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+#root .app .notif-sound-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #DDD6C7;
+  background: #FCFBF7;
+}
+
+#root .app .notif-sound-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#root .app .notif-sound-main strong {
+  font-size: 14px;
+}
+
+#root .app .notif-sound-main small {
+  font-size: 12px;
+  color: #5C6D67;
+}
+
+#root .app .notif-play {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+}
+
+#root .app .notif-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px dashed #B9B1A0;
+  background: #F8F5ED;
+  color: #1B5140;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+#root .app .notif-upload input {
+  display: none;
+}
+
+/* Dark Theme Overrides for Settings, Reminders, Prayer Cards & Sound Library */
+[data-theme="dark"] #root .app .settings-tabs {
+  background: #142534 !important;
+  border-color: #2E4B62 !important;
+}
+
+[data-theme="dark"] #root .app .settings-tabs button {
+  color: #C3D4E0 !important;
+}
+
+[data-theme="dark"] #root .app .settings-tabs button.active {
+  background: #235D4B !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .3) !important;
+}
+
+[data-theme="dark"] #root .app .settings-overview-card,
+[data-theme="dark"] #root .app .notif-subtabs button,
+[data-theme="dark"] #root .app .notif-reminder-form,
+[data-theme="dark"] #root .app .notif-reminder-card,
+[data-theme="dark"] #root .app .notif-template,
+[data-theme="dark"] #root .app .notif-sound-list li,
+[data-theme="dark"] #root .app .notif-day {
+  background: #192C3D !important;
+  border-color: #34526A !important;
+  color: #F1F5F8 !important;
+}
+
+[data-theme="dark"] #root .app .settings-overview-card:hover,
+[data-theme="dark"] #root .app .notif-template:hover {
+  border-color: #6CA58B !important;
+}
+
+[data-theme="dark"] #root .app .settings-overview-icon {
+  background: #204237 !important;
+  color: #9ED3B7 !important;
+}
+
+[data-theme="dark"] #root .app .settings-overview-body small,
+[data-theme="dark"] #root .app .notif-reminder-meta,
+[data-theme="dark"] #root .app .notif-template small,
+[data-theme="dark"] #root .app .notif-prayer-summary,
+[data-theme="dark"] #root .app .notif-sound-main small {
+  color: #B8CBDA !important;
+}
+
+[data-theme="dark"] #root .app .notif-subtabs button.active,
+[data-theme="dark"] #root .app .notif-day.selected {
+  background: #235D4B !important;
+  border-color: #6CA58B !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-card.paused {
+  background: #14222F !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-title-row strong,
+[data-theme="dark"] #root .app .notif-prayer-title-wrap strong,
+[data-theme="dark"] #root .app .notif-reminder-form label {
+  color: #F1F5F8 !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-clock,
+[data-theme="dark"] #root .app .notif-template-time,
+[data-theme="dark"] #root .app .notif-reminder-due,
+[data-theme="dark"] #root .app .settings-inner-details summary,
+[data-theme="dark"] #root .app .notif-days legend {
+  color: #9ED3B7 !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-due.snoozed {
+  color: #E6C77E !important;
+}
+
+[data-theme="dark"] #root .app .notif-power-switch {
+  background: #13212E !important;
+  border-color: #34526A !important;
+  color: #B8CBDA !important;
+}
+
+[data-theme="dark"] #root .app .notif-power-switch.on {
+  background: #1C4235 !important;
+  border-color: #5C9E7D !important;
+  color: #B5E6CB !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-actions,
+[data-theme="dark"] #root .app .notif-templates,
+[data-theme="dark"] #root .app .settings-inner-details,
+[data-theme="dark"] #root .app .notif-prayer-details {
+  border-top-color: #2E4B62 !important;
+}
+
+[data-theme="dark"] #root .app .notif-reminder-actions button.danger {
+  background: #421E1E !important;
+  color: #F6B4AE !important;
+  border: 1px solid #753B38 !important;
+}
+
+[data-theme="dark"] #root .app .notif-empty,
+[data-theme="dark"] #root .app .notif-upload {
+  background: #162736 !important;
+  border-color: #375772 !important;
+  color: #DCE8F0 !important;
 }
 
 [data-theme="dark"] #root .app .notif-categories,
@@ -2609,8 +3589,7 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   border-color: #34526A !important;
 }
 
-[data-theme="dark"] #root .app .notif-categories legend,
-[data-theme="dark"] #root .app .notif-prayer-card legend {
+[data-theme="dark"] #root .app .notif-categories legend {
   color: #9ED3B7 !important;
 }
 
@@ -2630,7 +3609,7 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   color: #C7D7E2 !important;
 }
 
-[data-theme="dark"] #root .app :is(.task-notif-quick-config, .notif-settings) :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+[data-theme="dark"] #root .app :is(.task-notif-quick-config, .notif-settings, .settings-hub) :is(input:not([type="checkbox"]):not([type="radio"]), select) {
   background-color: #11212E !important;
   border-color: #3B5B75 !important;
   color: #F1F5F8 !important;
@@ -2662,6 +3641,15 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   min-height: 44px;
   flex: 1 1 auto;
   justify-content: center;
+}
+
+@media (max-width: 480px) {
+  #root .app .notif-subtabs {
+    grid-template-columns: 1fr;
+  }
+  #root .app .notif-template-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (pointer: coarse) {

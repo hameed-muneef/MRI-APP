@@ -48,6 +48,10 @@ export interface BackgroundAudioPluginInterface {
   testAdhanNotification(): Promise<{scheduled: boolean}>;
   /** فتح إعدادات قناة الأذان (ACTION_CHANNEL_NOTIFICATION_SETTINGS). */
   openAdhanChannelSettings(): Promise<{opened: boolean; error?: string}>;
+  downloadOfflineAudio?(options: {id: string; url: string}): Promise<{id: string; bytes: number; alreadyExists?: boolean}>;
+  cancelOfflineDownloads?(): Promise<{cancelled: boolean}>;
+  deleteOfflineAudio?(options: {id?: string; prefix?: string}): Promise<{deletedCount: number; freedBytes: number}>;
+  listOfflineAudio?(): Promise<{totalBytes: number; files: Array<{name: string; bytes: number}>}>;
   addListener(
     eventName: 'stateChange',
     listenerFunc: (state: NativeAudioStateSnapshot) => void,

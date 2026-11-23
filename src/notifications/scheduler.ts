@@ -24,6 +24,35 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
+function parseLocalDateAtTime(raw: string, base: Date): Date | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]) - 1;
+    const day = Number(dateOnly[3]);
+    const parsed = new Date(year, month, day, base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const parsed = new Date(trimmed);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function endOfLocalDay(ymd?: string): Date | null {
+  if (!ymd) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!match) return null;
+  const parsed = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 23, 59, 59, 999);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function clampEndDate(candidate: Date | null, endDate: Date | null): Date | null {
+  if (!candidate) return null;
+  if (endDate && candidate.getTime() > endDate.getTime()) return null;
+  return candidate;
+}
+
 /**
  * يحسب الموعد التالي للتنبيه بناءً على التكرار والوقت الحالي.
  * يعرض null إذا لم يكن هناك موعد قادم (انتهى التكرار أو غير مفعّل).
@@ -35,35 +64,33 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
 
   const recurrence = reminder.recurrence;
   const config = reminder.recurrence_config ?? {};
+  const endDate = endOfLocalDay(config.end_date);
 
   // مرة واحدة
   if (recurrence === 'none') {
     return base > now ? base : null;
   }
 
-  //毎日
+  // يوميًا
   if (recurrence === 'daily') {
     const candidate = new Date(now);
     candidate.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
     if (candidate <= now) {
       candidate.setDate(candidate.getDate() + 1);
     }
-    return candidate;
+    return clampEndDate(candidate, endDate);
   }
 
   // أيام الأسبوع المختارة
   if (recurrence === 'weekdays' || recurrence === 'weekday') {
     const days = config.days_of_week ?? (recurrence === 'weekday' ? [0] : [1, 2, 3, 4, 5]);
-    let candidate = new Date(now);
-    candidate.setSeconds(0, 0);
-    candidate.setMilliseconds(0);
     // ابحث عن اليوم التالي المطابق بعد الوقت الحالي
     for (let offset = 0; offset < 8; offset += 1) {
       const testDay = addDays(now, offset);
       if (!days.includes(testDay.getDay())) continue;
       const candidateTime = new Date(testDay);
       candidateTime.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
-      if (candidateTime > now) return candidateTime;
+      if (candidateTime > now) return clampEndDate(candidateTime, endDate);
     }
     return null;
   }
@@ -76,7 +103,7 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
       if (testDay.getDay() !== dayOfWeek) continue;
       const candidateTime = new Date(testDay);
       candidateTime.setHours(base.getHours(), base.getMinutes(), base.getSeconds(), base.getMilliseconds());
-      if (candidateTime > now) return candidateTime;
+      if (candidateTime > now) return clampEndDate(candidateTime, endDate);
     }
     return null;
   }
@@ -99,7 +126,7 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
       const lastDayNextMonth = new Date(nextYear, normalizedMonth + 1, 0).getDate();
       candidate = new Date(nextYear, normalizedMonth, Math.min(dayOfMonth, lastDayNextMonth), hours, minutes, seconds);
     }
-    return candidate > now ? candidate : null;
+    return candidate > now ? clampEndDate(candidate, endDate) : null;
   }
 
   // مخصص (فاصل أيام)
@@ -109,18 +136,35 @@ export function nextDueDate(reminder: Reminder, now: Date = new Date()): Date | 
     while (candidate <= now) {
       candidate = addDays(candidate, interval);
     }
-    return candidate;
+    return clampEndDate(candidate, endDate);
   }
 
   // تواريخ محددة
   if (recurrence === 'specific_dates') {
-    const dates = (config.specific_dates ?? []).map(d => new Date(d)).filter(d => !isNaN(d.getTime()));
+    const dates = (config.specific_dates ?? [])
+      .map(d => parseLocalDateAtTime(d, base))
+      .filter((d): d is Date => d !== null);
     const future = dates.filter(d => d > now);
     if (future.length === 0) return null;
-    return future.reduce((earliest, d) => (d < earliest ? d : earliest), future[0]);
+    const earliest = future.reduce((best, d) => (d < best ? d : best), future[0]);
+    return clampEndDate(earliest, endDate);
   }
 
   return null;
+}
+
+/**
+ * الموعد الفعلي القادم للمنبه مع مراعاة التأجيل المؤقت (snooze_until).
+ */
+export function effectiveNextDueDate(reminder: Reminder, now: Date = new Date()): Date | null {
+  if (!reminder.enabled) return null;
+  if (reminder.snooze_until) {
+    const snooze = new Date(reminder.snooze_until);
+    if (!isNaN(snooze.getTime()) && snooze.getTime() > now.getTime()) {
+      return snooze;
+    }
+  }
+  return nextDueDate(reminder, now);
 }
 
 /**
@@ -133,17 +177,17 @@ export function upcomingOccurrences(reminder: Reminder, from: Date, limit = 10):
     const next = nextDueDate(reminder, current);
     if (!next) break;
     results.push(next);
-    current = new Date(next.getTime() + 1000); //move one second forward to avoid infinite loop
+    current = new Date(next.getTime() + 1000); // move one second forward to avoid infinite loop
     if (results.length >= limit) break;
   }
   return results;
 }
 
 /**
- * يتحقق مما إذا كان التذكير مستحقًا الآن ( within a small window ).
+ * يتحقق مما إذا كان التذكير مستحقًا الآن (within a small window).
  */
 export function isDue(reminder: Reminder, now: Date = new Date(), windowSeconds = 60): boolean {
-  const next = nextDueDate(reminder, now);
+  const next = effectiveNextDueDate(reminder, now);
   if (!next) return false;
   return Math.abs(next.getTime() - now.getTime()) <= windowSeconds * 1000;
 }

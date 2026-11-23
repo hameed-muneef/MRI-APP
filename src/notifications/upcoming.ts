@@ -1,6 +1,6 @@
 // ملخص «القادم» للصفحة الرئيسية: أقرب صلاة وأقرب التذكيرات (نطاق عمل خالص).
 
-import {nextDueDate} from './scheduler';
+import {effectiveNextDueDate} from './scheduler';
 import {hhmmToDate} from './prayer-planner';
 import {PRAYER_NAMES, type PrayerName, type Reminder} from './types';
 
@@ -23,15 +23,19 @@ export function nextPrayer(prayers: Record<string, string> | undefined, now = ne
   return first;
 }
 
-export type UpcomingReminder = {reminder: Reminder; at: Date};
+export type UpcomingReminder = {reminder: Reminder; at: Date; isSnoozed?: boolean};
 
-/** التذكيرات المفعّلة القادمة مرتبة بالأقرب */
+/** التذكيرات المفعّلة القادمة مرتبة بالأقرب (بما فيها المؤجلة مؤقتًا) */
 export function upcomingReminders(reminders: Reminder[], now = new Date(), limit = 3): UpcomingReminder[] {
   const items: UpcomingReminder[] = [];
   for (const reminder of reminders) {
     if (!reminder.enabled) continue;
-    const at = nextDueDate(reminder, now);
-    if (at && at.getTime() > now.getTime()) items.push({reminder, at});
+    const at = effectiveNextDueDate(reminder, now);
+    if (at && at.getTime() > now.getTime()) {
+      const snoozeMs = reminder.snooze_until ? new Date(reminder.snooze_until).getTime() : NaN;
+      const isSnoozed = Number.isFinite(snoozeMs) && snoozeMs > now.getTime() && at.getTime() === snoozeMs;
+      items.push({reminder, at, isSnoozed});
+    }
   }
   return items.sort((a, b) => a.at.getTime() - b.at.getTime()).slice(0, Math.max(0, limit));
 }

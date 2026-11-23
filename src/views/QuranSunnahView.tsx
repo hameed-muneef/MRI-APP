@@ -2,7 +2,7 @@ import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {useBackHandler} from '../navigation/useBackHandler';
 import {
   BookOpen, Brain, RotateCcw, Library, ScrollText, CalendarClock, TrendingUp,
-  Flower2, BookType, Languages
+  Flower2, BookType, Languages, Volume2
 } from 'lucide-react';
 import '../quran.css';
 import type {QuranAsset, QuranLearningState} from '../quran/types';
@@ -10,6 +10,7 @@ import type {Task} from '../app-state';
 import {loadQuran} from '../quran/content';
 import MushafPages from './quran/MushafPages';
 import OfflineLibrary from './quran/OfflineLibrary';
+import RecitersAudioLibrary from './quran/RecitersAudioLibrary';
 import QuranMemorization from './quran/QuranMemorization';
 import QuranRevision from './quran/QuranRevision';
 import HadithLibrary from './quran/HadithLibrary';
@@ -19,7 +20,7 @@ import QuranJourney from './quran/QuranJourney';
 import AzkarLibrary from './AzkarLibrary';
 import {EmptyNote} from './quran/ui';
 
-export type QuranSection = 'mushaf' | 'tafsir' | 'translations' | 'hifz' | 'revision' | 'bukhari' | 'muslim' | 'sunnah' | 'routine' | 'progress' | 'azkar';
+export type QuranSection = 'mushaf' | 'tafsir' | 'translations' | 'reciters' | 'hifz' | 'revision' | 'bukhari' | 'muslim' | 'sunnah' | 'routine' | 'progress' | 'azkar';
 
 type Props = {
   state: QuranLearningState;
@@ -35,6 +36,7 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
   {id: 'mushaf', title: 'المصحف الشريف', description: 'تمرير رأسي متصل على صفحات المصحف (٦٠٤)، مع انتقال بالسورة والجزء والحزب والصفحة والآية، وتفسير وترجمة وعلامات وملاحظات.', icon: BookOpen},
   {id: 'tafsir', title: 'مكتبة التفسير', description: 'نزّل التفاسير على جهازك مرة واحدة، ثم اقرأها كاملة دون إنترنت.', icon: BookType},
   {id: 'translations', title: 'مكتبة الترجمات', description: 'ترجمات معتمدة قابلة للتنزيل والقراءة دون اتصال، مع حفظ المصدر.', icon: Languages},
+  {id: 'reciters', title: 'مكتبة القراء والتلاوات', description: 'تصفح ٢٤٠+ قارئًا مشهورًا بجميع الروايات، واستمع مباشرة عند الفتح أو نزّل السور للموبايل.', icon: Volume2},
   {id: 'hifz', title: 'حفظ القرآن', description: 'خطط مرنة وتمارين إخفاء وإكمال وترتيب واسترجاع.', icon: Brain},
   {id: 'revision', title: 'مراجعة القرآن', description: 'مراجعة متباعدة تحفظ ما حفظته وتعيد المتعثر.', icon: RotateCcw},
   {id: 'bukhari', title: 'صحيح البخاري', description: '', icon: Library},
@@ -47,6 +49,7 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
 
 export default function QuranSunnahView({state, onState, tasks, onTasks, notify, onOpenTasks, initialSection}: Props) {
   const [section, setSection] = useState<QuranSection>(initialSection ?? 'mushaf');
+  const [autoPlayToken, setAutoPlayToken] = useState(0);
   const sectionHeaderRef = useRef<HTMLDivElement>(null);
   const [asset, setAsset] = useState<QuranAsset | null>(null);
   const [error, setError] = useState('');
@@ -115,9 +118,20 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, notify,
     {error ? <section className="panel quran-error" role="alert"><h3>تعذر فتح المصحف</h3><p>{error}</p><button className="soft-btn" onClick={() => { setError(''); loadQuran().then(setAsset).catch(() => setError('تعذر تحميل أصل المصحف المعتمد مرة أخرى.')); }}>إعادة المحاولة</button></section>
       : !asset ? <section className="panel"><EmptyNote>جارٍ تحميل النص العثماني والبيانات الوصفية…</EmptyNote></section>
       : <>
-        {section === 'mushaf' && <MushafPages asset={asset} state={state} onState={onState} notify={notify}/>}
+        {section === 'mushaf' && <MushafPages asset={asset} state={state} onState={onState} notify={notify} autoPlayToken={autoPlayToken}/>}
         {section === 'tafsir' && <OfflineLibrary kind="tafsir" asset={asset} notify={notify}/>}
         {section === 'translations' && <OfflineLibrary kind="translation" asset={asset} notify={notify}/>}
+        {section === 'reciters' && (
+          <RecitersAudioLibrary
+            asset={asset}
+            notify={notify}
+            currentSurah={state.readingPosition?.surah ?? 1}
+            onSelectReciter={(_reciter, _moshaf, autoPlay) => {
+              if (autoPlay) setAutoPlayToken(t => t + 1);
+              handleSectionChange('mushaf');
+            }}
+          />
+        )}
         {section === 'hifz' && <><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/></>}
         {section === 'revision' && <QuranRevision asset={asset} state={state} onState={onState} notify={notify}/>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}

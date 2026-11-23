@@ -538,6 +538,34 @@ public class BackgroundAudioService extends Service {
         return headers;
     }
 
+    public static File getOfflineAudioDir(Context ctx) {
+        File dir = new File(ctx.getFilesDir(), "offline_quran_audio");
+        if (!dir.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
+    public static String sanitizeOfflineId(String id) {
+        if (id == null) return "track";
+        return id.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    public static File offlineAudioFile(Context ctx, String id) {
+        return new File(getOfflineAudioDir(ctx), sanitizeOfflineId(id) + ".mp3");
+    }
+
+    private boolean isPermanentOfflineFile(File file) {
+        if (file == null) return false;
+        try {
+            File parent = file.getParentFile();
+            return parent != null && "offline_quran_audio".equals(parent.getName());
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private File getAudioCacheDir() {
         File dir = new File(getCacheDir(), "audio_cache");
         if (!dir.exists()) {
@@ -581,6 +609,13 @@ public class BackgroundAudioService extends Service {
     }
 
     private ResolvedSource resolveAudioSource(AudioTrackItem track, int gen) throws IOException {
+        if (!track.isLive && track.id != null && !track.id.trim().isEmpty()) {
+            File offlineFile = offlineAudioFile(this, track.id.trim());
+            if (offlineFile.isFile() && offlineFile.canRead() && offlineFile.length() > 128) {
+                return ResolvedSource.file(offlineFile);
+            }
+        }
+
         List<String> candidates = new ArrayList<>();
         if (track.url != null && !track.url.trim().isEmpty()) {
             candidates.add(track.url.trim());
@@ -920,7 +955,7 @@ public class BackgroundAudioService extends Service {
             mp.setOnErrorListener((player, what, extra) -> {
                 if (gen != prepareGeneration || mediaPlayer != player) return true;
                 Logger.error("BackgroundAudioService", "MediaPlayer error what=" + what + " extra=" + extra + " url=" + track.url, null);
-                if (resolved.localFile != null && resolved.localFile.exists()) {
+                if (resolved.localFile != null && resolved.localFile.exists() && !isPermanentOfflineFile(resolved.localFile)) {
                     // Remove potentially corrupt cached audio file before retry
                     //noinspection ResultOfMethodCallIgnored
                     resolved.localFile.delete();
@@ -945,7 +980,7 @@ public class BackgroundAudioService extends Service {
             mp.prepareAsync();
         } catch (Exception ex) {
             Logger.error("BackgroundAudioService", "Failed preparing track " + track.url, ex);
-            if (resolved.localFile != null && resolved.localFile.exists()) {
+            if (resolved.localFile != null && resolved.localFile.exists() && !isPermanentOfflineFile(resolved.localFile)) {
                 //noinspection ResultOfMethodCallIgnored
                 resolved.localFile.delete();
             }

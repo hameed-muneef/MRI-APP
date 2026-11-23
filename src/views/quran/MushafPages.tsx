@@ -4,7 +4,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Bookmark, BookmarkCheck, ChevronLeft, Copy, Loader2, Pause, Play, Search,
-  Share2, Square, StickyNote, Trash2, X, WifiOff, BookOpen, TrendingUp
+  Share2, Square, StickyNote, Trash2, X, WifiOff, BookOpen, TrendingUp, CheckCircle2, Users
 } from 'lucide-react';
 import type {QuranAsset, QuranLearningState, QuranVerse} from '../../quran/types';
 import {
@@ -12,7 +12,16 @@ import {
   searchVerses, basmalaText
 } from '../../quran/content';
 import {TRANSLATIONS, TAFSIRS, fetchTafsir, fetchTranslation, type FetchState} from '../../quran/content-api';
-import {fetchAllChapterAudioUrls, fetchAyahAudioUrl, fetchChapterAudioUrl, DEFAULT_RECITATION_ID, QURAN_COM_RECITERS} from '../../quran/ayah-audio';
+import {
+  audioUrl, defaultMoshaf, loadReciters, type Reciter, type ReciterMoshaf
+} from '../../quran/audio';
+import {
+  DEFAULT_MP3QURAN_RECITER_ID, resolveSingleAyahUrl
+} from '../../quran/ayah-audio';
+import {
+  getSelectedReciterPref, isSurahOfflineDownloaded, offlineTrackId, saveSelectedReciterPref
+} from '../../quran/offline-audio';
+import RecitersAudioLibrary from './RecitersAudioLibrary';
 import {backgroundAudio} from '../../audio/background-player';
 import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
 import type {AudioTrack} from '../../audio/types';
@@ -36,11 +45,12 @@ type Props = {
   state: QuranLearningState;
   onState: (next: QuranLearningState) => void;
   notify: (text: string) => void;
+  autoPlayToken?: number;
 };
 
 type PageBlock = {page: number; verses: QuranVerse[]};
 
-export default function MushafPages({asset, state, onState, notify}: Props) {
+export default function MushafPages({asset, state, onState, notify, autoPlayToken = 0}: Props) {
   const online = useOnline();
 
   // تجميع الآيات في صفحات المصحف المعتمدة (٦٠٤ صفحة) مرة واحدة.
@@ -108,12 +118,57 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   });
   const audioState = useBackgroundAudio();
   const [ayahLoading, setAyahLoading] = useState(false);
-  const [reciterId, setReciterId] = useState<number>(() => {
-    try { const v = Number(localStorage.getItem('quran-reciter-id')); return QURAN_COM_RECITERS.some(r => r.id === v) ? v : DEFAULT_RECITATION_ID; } catch { return DEFAULT_RECITATION_ID; }
-  });
+  const [reciters, setReciters] = useState<Reciter[]>([]);
+  const [reciterId, setReciterId] = useState<number>(() => getSelectedReciterPref()?.reciterId ?? DEFAULT_MP3QURAN_RECITER_ID);
+  const [moshafId, setMoshafId] = useState<number>(() => getSelectedReciterPref()?.moshafId ?? 0);
+  const [recitersModalOpen, setRecitersModalOpen] = useState(false);
   const [playScope, setPlayScope] = useState<'surah' | 'fromHere' | 'all'>(() => {
     try { const v = localStorage.getItem('quran-play-scope'); return (v === 'surah' || v === 'fromHere' || v === 'all') ? v : 'surah'; } catch { return 'surah'; }
   });
+
+  const handledAutoPlayRef = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    loadReciters({
+      onNetworkUpdate: updated => {
+        if (active) setReciters(updated);
+      },
+    })
+      .then(list => {
+        if (!active || list.length === 0) return;
+        setReciters(list);
+        const pref = getSelectedReciterPref();
+        const picked = (pref ? list.find(r => r.id === pref.reciterId) : undefined)
+          ?? list.find(r => r.id === DEFAULT_MP3QURAN_RECITER_ID)
+          ?? list[0];
+        if (picked) {
+          setReciterId(picked.id);
+          const matchedMoshaf = (pref?.moshafId ? picked.moshaf.find(m => m.id === pref.moshafId) : undefined)
+            ?? defaultMoshaf(picked);
+          if (matchedMoshaf) setMoshafId(matchedMoshaf.id);
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const currentReciter = useMemo(
+    () => reciters.find(r => r.id === reciterId) ?? reciters[0],
+    [reciters, reciterId],
+  );
+  const currentMoshaf = useMemo(
+    () => currentReciter?.moshaf.find(m => m.id === moshafId) ?? (currentReciter ? defaultMoshaf(currentReciter) : undefined),
+    [currentReciter, moshafId],
+  );
+  const selectOptionsReciters = useMemo(() => {
+    const famous = reciters.filter(r => r.famous);
+    const list = famous.length > 0 ? [...famous] : reciters.slice(0, 45);
+    if (currentReciter && !list.some(r => r.id === currentReciter.id)) {
+      list.unshift(currentReciter);
+    }
+    return list;
+  }, [reciters, currentReciter]);
   const activeQuranContinuous =
     audioState.category === 'quran' &&
     audioState.status !== 'idle' &&
@@ -258,13 +313,14 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     setActive(null);
   }, []);
 
-  // الرجوع يغلق الطبقة المفتوحة في المصحف: بطاقة الآية، ثم الختمة، ثم العلامات، ثم البحث.
+  // الرجوع يغلق الطبقة المفتوحة في المصحف: بطاقة الآية، ثم قائمة القراء، ثم الختمة، ثم العلامات، ثم البحث.
   useBackHandler(() => {
     if (active) { closePopover(); return; }
+    if (recitersModalOpen) { setRecitersModalOpen(false); return; }
     if (khatmahOpen) { setKhatmahOpen(false); setConfirmKhatmahReset(false); return; }
     if (bookmarksOpen) { setBookmarksOpen(false); return; }
     if (searchOpen) { setSearchOpen(false); }
-  }, Boolean(active || khatmahOpen || bookmarksOpen || searchOpen));
+  }, Boolean(active || recitersModalOpen || khatmahOpen || bookmarksOpen || searchOpen));
 
   const pauseContinuous = useCallback(() => {
     void backgroundAudio.pause();
@@ -274,11 +330,11 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     void backgroundAudio.resume();
   }, []);
 
-  const playContinuousFrom = useCallback(async (startIndex: number, stopSurah?: number) => {
-    if (!online) {
-      notify('تلاوة القرآن تحتاج اتصالًا بالإنترنت. النص والتفسير المحفوظ يعملان بلا اتصال.');
-      return;
-    }
+  const playContinuousFrom = useCallback(async (
+    startIndex: number,
+    stopSurah?: number,
+    override?: {reciter: Reciter; moshaf: ReciterMoshaf},
+  ) => {
     const verses = asset.verses;
     const startVerse = verses[Math.max(0, Math.min(startIndex, verses.length - 1))];
     const startSurah = stopSurah !== undefined ? stopSurah : (startVerse?.s ?? 1);
@@ -295,54 +351,69 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
       }
     }
 
-    const activeReciterId = reciterIdRef.current ?? reciterId;
-    const reciterName = QURAN_COM_RECITERS.find(r => r.id === activeReciterId)?.name ?? 'مشاري راشد العفاسي';
-    setAyahLoading(true);
-    let urlMap = await fetchAllChapterAudioUrls(activeReciterId);
-    if (!urlMap.has(startSurah)) {
-      const single = await fetchChapterAudioUrl(activeReciterId, startSurah);
-      if (single) {
-        urlMap = new Map(urlMap).set(startSurah, single);
-      }
+    const activeReciter = override?.reciter ?? currentReciter;
+    const activeMoshaf = override?.moshaf ?? currentMoshaf;
+    if (!activeReciter || !activeMoshaf) {
+      notify('جارٍ تجهيز قائمة القراء… أعد المحاولة بعد لحظة.');
+      return;
     }
-    setAyahLoading(false);
+
+    const firstOfflineReady = isSurahOfflineDownloaded(activeMoshaf.id, startSurah);
+    if (!online && !firstOfflineReady) {
+      notify('هذه السورة غير منزَّلة لهذا القارئ؛ يمكنك تنزيلها عند توفر الإنترنت أو اختيار قارئ منزَّل.');
+      return;
+    }
 
     const tracks: AudioTrack[] = [];
     for (let s = startSurah; s <= lastSurah; s += 1) {
-      const url = urlMap.get(s);
-      if (!url) continue;
+      if (!activeMoshaf.surahList.includes(s)) continue;
+      if (!online && !isSurahOfflineDownloaded(activeMoshaf.id, s)) continue;
+      const url = audioUrl(activeMoshaf, s);
       tracks.push({
-        id: `quran:ch:${activeReciterId}:${s}`,
+        id: offlineTrackId(activeMoshaf.id, s),
         title: surahInfo(asset, s)?.name ?? `سورة ${s}`,
-        subtitle: reciterName,
+        subtitle: activeReciter.name,
         url,
         category: 'quran',
-        meta: {mode: 'continuous', key: `${s}:1`, surah: s, reciterId: activeReciterId},
+        meta: {mode: 'continuous', key: `${s}:1`, surah: s, reciterId: activeReciter.id, moshafId: activeMoshaf.id},
       });
     }
 
     if (!tracks.length) {
-      notify('تعذر جلب تلاوة السورة حاليًا. تحقق من الاتصال وأعد المحاولة.');
+      notify('هذه السورة غير متوفرة لدى هذا القارئ أو الرواية.');
       return;
     }
 
     await backgroundAudio.playQueue(tracks, 0, 'quran');
-  }, [asset, notify, online, playScope, reciterId]);
+  }, [asset, currentMoshaf, currentReciter, notify, online, playScope]);
 
   // reciterIdRef sync
   const reciterIdRef = useRef<number>(reciterId);
   useEffect(() => { reciterIdRef.current = reciterId; }, [reciterId]);
 
+  useEffect(() => {
+    if (!autoPlayToken || handledAutoPlayRef.current === autoPlayToken) return;
+    if (!currentReciter || !currentMoshaf) return;
+    handledAutoPlayRef.current = autoPlayToken;
+    const curSurah = pages[page - 1]?.verses[0]?.s ?? 1;
+    const startIdx = Math.max(0, asset.verses.findIndex(v => v.s === curSurah && v.a === 1));
+    const stopS = playScope === 'surah' ? curSurah : undefined;
+    void playContinuousFrom(startIdx, stopS, {reciter: currentReciter, moshaf: currentMoshaf});
+  }, [autoPlayToken, asset.verses, currentMoshaf, currentReciter, page, pages, playContinuousFrom, playScope]);
+
   const playAyah = async (verse: QuranVerse) => {
     const targetKey = `${verse.s}:${verse.a}`;
     if (playingKey === targetKey) { stopAudio(); return; }
-    if (!online) { notify('تلاوة الآيات تحتاج اتصالًا بالإنترنت. النص والتفسير المحفوظ يعملان بلا اتصال.'); return; }
+    if (!online) { notify('تلاوة الآية الواحدة تحتاج اتصالًا بالإنترنت؛ أو شغّل السورة الكاملة إن كانت منزَّلة.'); return; }
     setAyahLoading(true);
-    const url = await fetchAyahAudioUrl(reciterId, verse.s, verse.a);
+    const url = await resolveSingleAyahUrl(reciterId, currentMoshaf?.name, verse.s, verse.a);
     setAyahLoading(false);
-    if (!url) { notify('تعذر جلب تلاوة هذه الآية.'); return; }
+    if (!url) {
+      notify('التلاوة آية بآية غير متوفرة لهذا القارئ؛ استخدم زر «تشغيل» للاستماع للسورة كاملة بصوته.');
+      return;
+    }
     const surahName = surahInfo(asset, verse.s)?.name ?? `سورة ${verse.s}`;
-    const reciterName = QURAN_COM_RECITERS.find(r => r.id === reciterId)?.name ?? '';
+    const reciterName = currentReciter?.name ?? 'القرآن الكريم';
     await backgroundAudio.playSingle({
       id: `quran:ayah:${reciterId}:${targetKey}`,
       title: `${surahName} · آية ${toArabicNumber(verse.a)}`,
@@ -448,8 +519,14 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
   }, [khatmahPace]);
 
   useEffect(() => {
-    try { localStorage.setItem('quran-reciter-id', String(reciterId)); } catch { /* تجاهل */ }
-  }, [reciterId]);
+    if (!currentReciter || !currentMoshaf) return;
+    saveSelectedReciterPref({
+      reciterId: currentReciter.id,
+      moshafId: currentMoshaf.id,
+      reciterName: currentReciter.name,
+      moshafName: currentMoshaf.name,
+    });
+  }, [currentReciter, currentMoshaf]);
 
   useEffect(() => {
     try { localStorage.setItem('quran-play-scope', playScope); } catch { /* تجاهل */ }
@@ -457,12 +534,12 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
 
   // أثناء فتح لوحة: منع تمرير الصفحة (لتوسيط صحيح وتجنب شريط التمرير).
   useEffect(() => {
-    const open = Boolean(active) || bookmarksOpen || khatmahOpen;
+    const open = Boolean(active) || bookmarksOpen || khatmahOpen || recitersModalOpen;
     const prevBody = document.body.style.overflow;
     const prevHtml = document.documentElement.style.overflow;
     if (open) { document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; }
     return () => { document.body.style.overflow = prevBody; document.documentElement.style.overflow = prevHtml; };
-  }, [active, bookmarksOpen, khatmahOpen]);
+  }, [active, bookmarksOpen, khatmahOpen, recitersModalOpen]);
 
   const jump = () => {
     if (jumpKind === 'surah') {
@@ -489,11 +566,12 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
 
   useEffect(() => { setJumpValue('1'); }, [jumpKind]);
 
-  // تغيير القارئ/النطاق أثناء التشغيل: تحديث المصدر في المكان (إعادة تشغيل من الموضع الحالي).
-  const prevReciterRef = useRef(reciterId);
+  // تغيير القارئ/الرواية/النطاق أثناء التشغيل: تحديث المصدر في المكان (إعادة تشغيل من الموضع الحالي).
+  const prevReciterRef = useRef(`${reciterId}:${moshafId}`);
   useEffect(() => {
-    if (prevReciterRef.current === reciterId) return;
-    prevReciterRef.current = reciterId;
+    const key = `${reciterId}:${moshafId}`;
+    if (prevReciterRef.current === key) return;
+    prevReciterRef.current = key;
     if (playStateRef.current === 'idle') return;
     const playingSurah = Number(currentKey.split(':')[0]) || (pages[page - 1]?.verses[0]?.s ?? 1);
     const idx = Math.max(0, asset.verses.findIndex(v => v.s === playingSurah && v.a === 1));
@@ -501,7 +579,7 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
     const t = setTimeout(() => { void playContinuousFrom(idx, ss); }, 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reciterId]);
+  }, [reciterId, moshafId]);
 
   const prevScopeRef = useRef(playScope);
   useEffect(() => {
@@ -651,11 +729,31 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
             <div className="mf-field mf-field-grow">
               <label className="mf-field-label">القارئ</label>
               <div className="mf-select-wrap">
-                <select value={reciterId} onChange={event => setReciterId(Number(event.target.value))} aria-label="القارئ">
-                  {QURAN_COM_RECITERS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                <select
+                  value={reciterId}
+                  onChange={event => {
+                    const id = Number(event.target.value);
+                    setReciterId(id);
+                    const picked = reciters.find(r => r.id === id);
+                    const m = picked ? defaultMoshaf(picked) : undefined;
+                    if (m) setMoshafId(m.id);
+                  }}
+                  aria-label="القارئ"
+                >
+                  {selectOptionsReciters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
             </div>
+            {currentReciter && currentReciter.moshaf.length > 1 && (
+              <div className="mf-field mf-field-grow">
+                <label className="mf-field-label">الرواية</label>
+                <div className="mf-select-wrap">
+                  <select value={currentMoshaf?.id ?? moshafId} onChange={event => setMoshafId(Number(event.target.value))} aria-label="الرواية">
+                    {currentReciter.moshaf.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
             <div className="mf-field mf-field-grow">
               <label className="mf-field-label">النطاق</label>
               <div className="mf-select-wrap">
@@ -668,8 +766,20 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
               {playState === 'idle' ? <><Play size={17}/>تشغيل</> : playState === 'playing' ? <><Pause size={17}/>إيقاف مؤقت</> : <><Play size={17}/>تشغيل</>}
             </button>
           </div>
+          <div className="mf-audio-extra">
+            <button
+              type="button"
+              className="mf-btn sm soft"
+              onClick={() => setRecitersModalOpen(true)}
+            >
+              <Users size={15}/> القراء والتحميل ({toArabicNumber(reciters.length || 244)}+)
+            </button>
+            {currentMoshaf && isSurahOfflineDownloaded(currentMoshaf.id, pages[page - 1]?.verses[0]?.s ?? 1) && (
+              <span className="mf-offline-pill"><CheckCircle2 size={13}/> السورة متاحة دون إنترنت</span>
+            )}
+          </div>
           {(playState !== 'idle' || currentKey) && <div className="mf-nowplaying">
-            <Play size={13}/> الآن يُشغَّل: {currentKey ? `${surahInfo(asset, Number(currentKey.split(':')[0]))?.name ?? ''} — ${QURAN_COM_RECITERS.find(r => r.id === reciterId)?.name ?? ''}` : '—'}
+            <Play size={13}/> الآن يُشغَّل: {currentKey ? `${surahInfo(asset, Number(currentKey.split(':')[0]))?.name ?? ''} — ${currentReciter?.name ?? ''}` : '—'}
           </div>}
         </section>
         <section className="mf-section mf-sec-reading">
@@ -808,7 +918,7 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
           </label>
           <button type="button" className="mf-btn primary mf-btn-full" onClick={addNote}><StickyNote size={18}/> حفظ الملاحظة</button>
         </div>
-        <p className="mf-sheet-foot"><InternetBadge compact/> التلاوة: {QURAN_COM_RECITERS.find(r => r.id === reciterId)?.name ?? 'مشاري راشد العفاسي'} — تحتاج إنترنت؛ النص والتفسير المحفوظ لا يحتاجان.</p>
+        <p className="mf-sheet-foot"><InternetBadge compact/> التلاوة: {currentReciter?.name ?? 'مشاري العفاسي'} — تعمل مباشرة عبر الإنترنت أو دون اتصال للسور المنزَّلة؛ النص والتفسير المحفوظ لا يحتاجان.</p>
       </div>
     </div>}
 
@@ -872,6 +982,42 @@ export default function MushafPages({asset, state, onState, notify}: Props) {
       </div>
     </div>}
 
+    {recitersModalOpen && <div className="mf-sheet-backdrop mf-sheet-backdrop-reciters" onClick={() => setRecitersModalOpen(false)}>
+      <div className="mf-sheet mf-sheet-reciters" role="dialog" aria-modal="true" aria-label="مكتبة القراء والتحميل للموبايل" onClick={event => event.stopPropagation()}>
+        <div className="mf-sheet-reciters-head">
+          <div className="mf-drag-handle" aria-hidden="true"/>
+          <div className="mf-sheet-head">
+            <div>
+              <strong>مكتبة القراء والتلاوات</strong>
+              <small className="muted"> استمع مباشرة أو حمّل السور للاستماع دون إنترنت</small>
+            </div>
+            <button type="button" className="mf-icon-btn" onClick={() => setRecitersModalOpen(false)} aria-label="إغلاق"><X size={18}/></button>
+          </div>
+        </div>
+        <div className="mf-sheet-reciters-body">
+          <RecitersAudioLibrary
+            asset={asset}
+            notify={notify}
+            selectedReciterId={reciterId}
+            selectedMoshafId={currentMoshaf?.id}
+            currentSurah={pages[page - 1]?.verses[0]?.s ?? 1}
+            compact
+            onSelectReciter={(picked, pickedMoshaf, autoPlay) => {
+              setReciterId(picked.id);
+              setMoshafId(pickedMoshaf.id);
+              setRecitersModalOpen(false);
+              if (autoPlay) {
+                const curSurah = pages[page - 1]?.verses[0]?.s ?? 1;
+                const startIdx = Math.max(0, asset.verses.findIndex(v => v.s === curSurah && v.a === 1));
+                const stopS = playScope === 'surah' ? curSurah : undefined;
+                void playContinuousFrom(startIdx, stopS, {reciter: picked, moshaf: pickedMoshaf});
+              }
+            }}
+          />
+        </div>
+      </div>
+    </div>}
+
   </div>;
 }
 
@@ -926,6 +1072,6 @@ const MushafPageList = function MushafPageList({asset, pages, surahStarts, sajda
         <div className="mf-page-foot">{toArabicNumber(block.page)}</div>
       </div>;
     })}
-    <p className="mf-source">النص العثماني من {asset.source} · رواية {asset.narration}. حدود الصفحات والأجزاء والأحزاب كما في مصدر المجمع. التلاوات الصوتية والبث المباشر يعملان عبر الإنترنت فقط.</p>
+    <p className="mf-source">النص العثماني من {asset.source} · رواية {asset.narration}. حدود الصفحات والأجزاء والأحزاب كما في مصدر المجمع. التلاوات المنزَّلة على الجهاز تعمل دون إنترنت، بينما البث المباشر والتلاوات غير المنزَّلة تحتاج اتصالًا.</p>
   </div>;
 }

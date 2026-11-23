@@ -495,7 +495,27 @@ class BackgroundAudioEngine {
 
     try {
       let effectiveUrl = resolvedUrl;
-      if (!isHlsUrl(effectiveUrl) && isBundledWebAssetUrl(effectiveUrl)) {
+      let playedFromOfflineCache = false;
+      if (!isHlsUrl(effectiveUrl) && typeof caches !== 'undefined' && typeof URL?.createObjectURL === 'function') {
+        try {
+          const cache = await caches.open('rabbani-quran-audio-v1');
+          const cachedResponse = await cache.match(effectiveUrl);
+          if (cachedResponse && cachedResponse.ok) {
+            const blob = await cachedResponse.blob();
+            if (token !== this.webLoadToken) return;
+            if (blob && blob.size > 128) {
+              const objUrl = URL.createObjectURL(blob);
+              this.activeWebBlobRevoke = () => {
+                try { URL.revokeObjectURL(objUrl); } catch { /* ignore */ }
+              };
+              effectiveUrl = objUrl;
+              playedFromOfflineCache = true;
+            }
+          }
+        } catch { /* ignore CacheStorage access errors */ }
+      }
+
+      if (!playedFromOfflineCache && !isHlsUrl(effectiveUrl) && isBundledWebAssetUrl(effectiveUrl)) {
         const localBlob = await loadLocalAudioObjectUrlForWebView(effectiveUrl);
         if (token !== this.webLoadToken) {
           localBlob?.revoke();

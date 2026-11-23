@@ -62,3 +62,26 @@
   - توحيد ألوان بطاقات أبواب الكتاب بالنمط المتناسق نفسه.
 - **الملفات**: `src/ui-hardening.css`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
 - **التحقق**: `npm run lint` (`tsc --noEmit` ناجح)، `npm run test:unit` (121/121 ناجحة)، و`npm run build` ناجح لإنتاج حزمة الويب وتحديث Service Worker بنجاح.
+
+### QURAN-RECITERS-244-OFFLINE-DOWNLOAD — توسيع مكتبة القراء (٢٤٤+ قارئ) مع البث المباشر والتحميل للموبايل (2026-11-23)
+- **المشكلة**: كانت الواجهة تقتصر على قائمة قصيرة ثابتة (١٢ قارئًا)، مع غياب خيار تصفح أكبر عدد من القراء المشهورين بمختلف الروايات (حفص، ورش، قالون...)، وعدم توفر تنزيل السور داخل التطبيق على الموبايل للعمل دون إنترنت.
+- **الحل**:
+  - إنشاء فهرس محلي مضغوط `public/quran/reciters.json` يضم ٢٤٤+ قارئًا بجميع مصاحفهم ورواياتهم من MP3Quran v3 (`~141 KB`، `~10.6 KB` gzip)، مع تضمينه في PWA `includeAssets` وتحديثه تلقائيًا في الخلفية عند توفر الإنترنت (`src/quran/audio.ts`).
+  - توسيع تلاوة الآيات الفردية في `src/quran/ayah-audio.ts` لتغطية ٢٦ قارئًا مشهورًا عبر Quran.com API v4 + مصادر EveryAyah.com المُتحقَّق منها.
+  - إضافة مدير التنزيل دون إنترنت `src/quran/offline-audio.ts` لحفظ التلاوات على أندرويد مباشرة في `filesDir/offline_quran_audio/` عبر إضافات أصلية في `BackgroundAudioPlugin.java` / `BackgroundAudioService.java` (بحيث لا تُحذف مع ذاكرة التخزين المؤقت وتعمل في الخلفية وشاشة القفل بلا إنترنت)، وفي Cache Storage (`rabbani-quran-audio-v1`) على الويب وPWA.
+  - إنشاء واجهة `src/views/quran/RecitersAudioLibrary.tsx` وربطها بكل من نافذة المصحف (`MushafPages.tsx`) وتبويب مستقل «مكتبة القراء والتلاوات» في `QuranSunnahView.tsx` مع البحث السريع وتحديد نطاق التنزيل (السورة الحالية / سورة محددة / جزء عمّ / المفصّل / المصحف كاملًا) والترحيل من التفضيل القديم `quran-reciter-id`.
+- **الملفات**: `public/quran/reciters.json`, `src/quran/audio.ts`, `src/quran/ayah-audio.ts`, `src/quran/offline-audio.ts`, `src/audio/native-bridge.ts`, `src/audio/background-player.ts`, `src/views/quran/RecitersAudioLibrary.tsx`, `src/views/quran/MushafPages.tsx`, `src/views/QuranSunnahView.tsx`, `src/mushaf.css`, `src/ui-hardening.css`, `vite.config.ts`, `android/app/src/main/java/com/alrabbaniyoon/app/BackgroundAudioPlugin.java`, `android/app/src/main/java/com/alrabbaniyoon/app/BackgroundAudioService.java`, `src/quran/audio.test.ts`, `src/quran/offline-audio.test.ts`, `tests/e2e/reciters.spec.ts`.
+- **التحقق**: `tsc --noEmit` ناجح؛ `npm run build` ناجح؛ `npm run test:unit` 129/129 (شاملة `audio.test.ts` و`offline-audio.test.ts`)؛ `npm run quran:check` و`npm run prayer:check` ناجحان؛ اختبارات الثيم والأقسام والقارئ `node --test` (18/18) ناجحة؛ اختبارات Playwright على الجوال `tests/e2e/reciters.spec.ts` و`tests/e2e/mobile-app-full.spec.ts` (3/3) ناجحة شاملة العرض الداكن على 320px والبحث والتحميل دون إنترنت؛ ومزامنة Capacitor (`npx cap sync android`) تؤكد وجود `android/app/src/main/assets/public/quran/reciters.json`.
+- **غير متحقق على جهاز (يتطلب Gradle/JDK وجهاز أندرويد فعلي)**: تجميع تعديلات `BackgroundAudioPlugin.java` / `BackgroundAudioService.java` داخل APK، والتحقق على الهاتف من تنزيل السور إلى `filesDir/offline_quran_audio/` وتشغيلها في الخلفية وشاشة القفل أثناء وضع الطيران.
+
+### QURAN-RECITERS-MOBILE-SHEET-POLISH — تنسيق مكتبة القراء للجوال وتحويل النافذة إلى ورقة سفلية متناسقة (2026-11-23)
+- **المشكلة**: عند فتح نافذة القراء والتحميل من داخل شاشة المصحف، كانت تظهر كصندوق كبير مزدوج العناوين وبعناصر تحكم متكدسة تدفع أول قارئ لأسفل الشاشة وتُصعّب التمرير والإغلاق على شاشات الجوال الضيقة (320–375px).
+- **الحل**:
+  - تحويل نافذة القراء داخل `MushafPages.tsx` إلى **ورقة سفلية كاملة العرض للجوال** (`mf-sheet-reciters`) برأس ثابت (مقبض سحب + عنوان واحد واضح + زر إغلاق `X` بحجم 44px) وجسم تمرير داخلي معزول، مع إزالة العنوان التمهيدي المكرر عبر خاصية `compact` في `RecitersAudioLibrary.tsx` ليظهر القراء فورًا دون تمرير.
+  - تبسيط أدوات التصفية والتحميل: مربع بحث مع زر مسح (`X`)، وتبويبات أفقية بصف واحد قابل للسحب، وشرائح اختيار نطاق التحميل في صف واحد (`السورة الحالية` / `جزء عمّ` / `المفصّل` / `المصحف كاملًا` / `سورة محددة`) مع ظهور منتقي السورة فقط عند اختيار `سورة محددة`.
+  - إعادة تصميم بطاقة القارئ (`reciter-card`) لتكون أنظف وأخف على الجوال: منتقٍ مضمّن للرواية عند تعدد المصاحف، ووسوم مختصرة دون ازدحام، وزرا إجراء متناسقان بارتفاع 44px (`استماع الآن` و`تحميل`/`مكتمل`/`إيقاف`).
+  - توسيع تغطية `tests/e2e/reciters.spec.ts` للتحقق من أبعاد الورقة السفلية على 320px في الوضع الداكن وظهور أول بطاقة قارئ فوق الطيّ وتباين الأزرار وانعدام التمرير الأفقي.
+- **الملفات**: `src/views/quran/RecitersAudioLibrary.tsx`, `src/views/quran/MushafPages.tsx`, `src/mushaf.css`, `src/ui-hardening.css`, `tests/e2e/reciters.spec.ts`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: `compile_applet` (`tsc -b && vite build`) و`lint_applet` (`tsc --noEmit`) ناجحان؛ `npm run test:unit` (129/129) ناجح؛ `node --test tests/section-theme.test.mjs tests/quran-reader.test.mjs tests/theme-engine.test.mjs` (18/18) ناجحة؛ `npm run quran:check` و`npm run prayer:check` ناجحان؛ Playwright `tests/e2e/reciters.spec.ts` و`tests/e2e/mobile-app-full.spec.ts` (3/3) ناجحة؛ و`npm run build:android` (مع `npx cap sync android`) ناجح.
+- **غير متحقق على جهاز**: فتح نافذة القراء وتجربة السحب/اللمس الفعلي داخل WebView على هاتف أندرويد بعد بناء APK عبر Gradle/CI.
+
