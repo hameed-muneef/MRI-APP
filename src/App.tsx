@@ -107,6 +107,7 @@ export default function App(){
 function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const storageKey=user?`rabbani-v1-user-${user.id}`:'rabbani-v1';
   const [state,setState]=useState<State>(()=>load(storageKey));
+  const [currentDate,setCurrentDate]=useState(today);
   const [view,setView]=useState<View>('home');
   const [quranSection,setQuranSection]=useState<QuranSection|undefined>(undefined);
   const [featureAccess,setFeatureAccess]=useState<FeatureAccess>({view:'home',status:'allowed',price_amount:null,currency_code:null,billing_interval:null});
@@ -119,10 +120,10 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
   useEffect(()=>{void requestPersistentStorage()},[]);
   useEffect(()=>{
-    const refreshPeriods=()=>setState(current=>{
+    const refreshPeriods=()=>{setCurrentDate(today());setState(current=>{
       const wirds=normalizeWirds(current.wirds);
       return wirds===current.wirds?current:{...current,wirds};
-    });
+    })};
     refreshPeriods();
     const timer=window.setInterval(refreshPeriods,30000);
     window.addEventListener('focus',refreshPeriods);
@@ -176,12 +177,12 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   },[state.quran,user?.id,cloudReady,quranSynced]);
   // Keep the daily routine inside the existing task list without a second engine.
   useEffect(()=>{
-    const date=today();
+    const date=currentDate;
     setState(current=>{
       const next=syncRoutineTasks(current.tasks,current.quran.routine,date,current.quran.plans);
       return JSON.stringify(next.map(task=>[task.id,task.title,task.sourceLabel,task.period]))===JSON.stringify(current.tasks.map(task=>[task.id,task.title,task.sourceLabel,task.period]))?current:{...current,tasks:next};
     });
-  },[state.quran.routine,state.quran.plans]);
+  },[state.quran.routine,state.quran.plans,currentDate]);
   const completeQuranTask=(taskId:string)=>{
     update(current=>{
       const activity=current.quran.routine.find(item=>`quran:${item.id}`===taskId);
@@ -358,5 +359,4 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     </Suspense></ErrorBoundary>}
   </div><ScrollToTopFab enabled={canRenderView}/><footer>© 2026 الربانيون — جميع الحقوق محفوظة </footer></main>{!isOnline&&<div className="offline-pill" role="status" aria-live="polite"><WifiOff size={14} aria-hidden="true"/><span>وضع عدم الاتصال · التخزين المحلي نشط</span></div>}{toast&&<div className="toast"><Check size={16}/>{toast}</div>}<MiniAudioPlayer onOpenCategory={openAudioCategory}/><nav className="mobile-nav" aria-label="التنقل السفلي"><button className={view==='home'?'active':''} aria-current={view==='home'?'page':undefined} onClick={()=>navigate('home')}><Home size={20} aria-hidden="true"/><span>الرئيسية</span></button><button data-section="daily" className={inDailySuite(view)?'active':''} aria-current={inDailySuite(view)?'page':undefined} onClick={()=>navigate('day')}><CalendarDays size={20} aria-hidden="true"/><span>حياتي</span></button><button data-section="quran" className={view==='quran'?'active':''} aria-current={view==='quran'?'page':undefined} onClick={()=>navigate('quran')}><BookMarked size={20} aria-hidden="true"/><span>القرآن</span></button><button data-section="qibla" className={view==='qibla'?'active':''} aria-current={view==='qibla'?'page':undefined} onClick={()=>navigate('qibla')}><Compass size={20} aria-hidden="true"/><span>القبلة</span></button><button data-section="daily" className={view==='mosques'?'active':''} aria-label="المساجد القريبة" aria-current={view==='mosques'?'page':undefined} onClick={()=>navigate('mosques')}><MapPin size={20} aria-hidden="true"/><span>المساجد</span></button><button data-section="haramain" className={view==='haramain'?'active':''} aria-current={view==='haramain'?'page':undefined} onClick={()=>navigate('haramain')}><MonitorPlay size={20} aria-hidden="true"/><span>الحرمين</span></button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} aria-current={['reflect','wird'].includes(view)?'page':undefined} onClick={()=>navigate('reflect')}><Heart size={20} aria-hidden="true"/><span>المحاسبة</span></button></nav></div>;
 }
-
 

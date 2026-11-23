@@ -61,7 +61,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     }));
     console.log('DIAG AFTER SUBMIT:', JSON.stringify(diag));
 
-    const firstCard = page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'});
+    const firstCard = page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})});
     await expect(firstCard).toBeVisible();
     await assertMinTouchTargets(page, '.notif-reminder-actions button, .notif-power-switch', 'reminder-card-actions');
 
@@ -84,7 +84,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await expect(page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'})).toBeVisible();
 
     // 5. Snooze "صلاة الضحى" and verify HomeDashboard shows "مؤجل مؤقتًا"
-    const duhaCard = page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'});
+    const duhaCard = page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})});
     await duhaCard.locator('button', {hasText: 'تأجيل ١٠ د'}).click();
     await expect(duhaCard.locator('.notif-reminder-due')).toContainText('مؤجل مؤقتًا');
 
@@ -104,7 +104,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await duhaCard.locator('button', {hasText: 'حذف'}).click();
     await expect(duhaCard.locator('[role="alertdialog"]')).toBeVisible();
     await duhaCard.locator('[role="alertdialog"] button', {hasText: 'تأكيد الحذف'}).click();
-    await expect(page.locator('.notif-reminder-card', {hasText: /^صلاة الضحى$/})).toHaveCount(0);
+    await expect(page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})})).toHaveCount(0);
 
     // 7. Sub-tab: Scheduled task notifications
     await page.locator('.notif-subtabs button', {hasText: 'تذكيرات المهام المجدولة'}).click();

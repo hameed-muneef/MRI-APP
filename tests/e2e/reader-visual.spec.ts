@@ -1,55 +1,18 @@
-import { test, expect } from '@playwright/test';
+import {test,expect} from '@playwright/test';
 
-const EMAIL = 'gui-audit-20261103@example.com';
-const PASSWORD = 'TestGui2026!';
-
-async function login(page: any) {
+for(const theme of ['light','dark'] as const){
+ test(`reader renders a readable palette in ${theme} theme`,async({page})=>{
+  await page.addInitScript(mode=>localStorage.setItem('rabbani-theme-v1',mode),theme);
   await page.goto('/');
-  await page.waitForTimeout(1000);
-  await page.evaluate(async ({ email, password }) => {
-    const mod: any = await import('/src/auth.ts');
-    const client = mod.authClient;
-    if (client) await client.auth.signInWithPassword({ email, password });
-  }, { email: EMAIL, password: PASSWORD });
-  await page.waitForTimeout(1000);
-  await page.reload();
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1500);
+  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).click();
+  await page.locator('.quran-section-grid button[data-quran-tab="mushaf"]').click();
+  const paper=page.locator('.mf-page').first();
+  await expect(paper).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme',theme);
+  // Test the paper contract directly, without machine-specific screenshot baselines.
+  const colors=await paper.evaluate(el=>({background:getComputedStyle(el).backgroundImage,color:getComputedStyle(el.querySelector('.mf-page-text')!).color}));
+  expect(colors.background).toContain(theme==='dark'?'rgb(28, 42, 36)':'rgb(247, 239, 217)');
+  expect(colors.color).toBe(theme==='dark'?'rgb(210, 221, 215)':'rgb(48, 75, 80)');
+  await paper.screenshot({path:`test-results/reader-${theme}.png`});
+ });
 }
-
-async function openReader(page: any) {
-  await login(page);
-  // Check if sidebar is visible (desktop)
-  const sidebarVisible = await page.locator('.sidebar').isVisible().catch(() => false);
-  if (sidebarVisible) {
-    await page.locator('.sidebar button', { hasText: 'القرآن والسنة' }).first().click();
-  } else {
-    await page.locator('.mobile-nav button', { hasText: 'القرآن' }).first().click();
-  }
-  await page.waitForTimeout(1000);
-  await page.locator('button', { hasText: 'المصحف الشريف' }).first().click();
-  await page.waitForSelector('.quran-reader', { timeout: 20000 });
-  await page.waitForTimeout(1000);
-}
-
-test('reader stays paper in light theme', async ({ page }) => {
-  await openReader(page);
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-  await page.waitForTimeout(500);
-  await expect(page.locator('.quran-reader')).toHaveScreenshot('reader-light.png', {
-    maxDiffPixelRatio: 0.02,
-    timeout: 15000,
-    animations: 'disabled',
-  });
-});
-
-test('reader stays paper in dark theme', async ({ page }) => {
-  await openReader(page);
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-  await page.waitForTimeout(500);
-  await expect(page.locator('.quran-reader')).toHaveScreenshot('reader-dark.png', {
-    maxDiffPixelRatio: 0.02,
-    timeout: 15000,
-    animations: 'disabled',
-  });
-});

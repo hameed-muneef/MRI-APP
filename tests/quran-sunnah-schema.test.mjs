@@ -1,4 +1,6 @@
-import test from 'node:test';
+import test, {afterEach} from 'node:test';
+const databases=new Set();
+afterEach(async()=>{for(const db of databases)await db.close();databases.clear()});
 import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
@@ -53,6 +55,7 @@ const learningState = () => ({
 
 async function setup() {
   const db = new PGlite({extensions: {pgcrypto}});
+  databases.add(db);
   const client = {query: async (sql, params) => params ? db.query(sql, params) : (await db.exec(sql)).at(-1)};
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create schema storage;

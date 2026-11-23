@@ -1,3 +1,4 @@
+import {parseStoredState} from './state-schema';
 import {type DayPlan} from './DayPlanner';
 import {type DayRecords} from './day-tracking';
 import {type Goal} from './goal-plan';
@@ -31,12 +32,14 @@ export function createSeed():State{
   ],reflections:[],lessonStep:0,prayers:{},quran:createQuranState()};
 }
 
-export function load(storageKey='rabbani-v1'):State{return loadFromRaw(localStorage.getItem(storageKey))}
+export function load(storageKey='rabbani-v1'):State{
+  try{return loadFromRaw(localStorage.getItem(storageKey))}catch{return createSeed()}
+}
 
 export function loadFromRaw(raw:string|null):State{
   try{
     if(raw){
-      const x=JSON.parse(raw) as State;
+      const x=parseStoredState(raw);
       return {...createSeed(),...x,quran:{...createQuranState(),...(x.quran??{})},wirds:normalizeWirds(x.wirds||[])};
     }
   }catch{/* تجاهل: بيانات تالفة تعني البدء من الصفر */}

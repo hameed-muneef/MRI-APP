@@ -376,7 +376,9 @@ export function logRoutineCompletion(
   state: QuranLearningState, activity: RoutineActivity, date = dateKey(), now = new Date()
 ): QuranLearningState {
   const exists = state.activityLog.some(entry => entry.activityId === activity.id && entry.date === date);
-  const activityLog = exists ? state.activityLog : [...state.activityLog, {activityId: activity.id, date, kind: activity.kind}];
+  // Rechecking the same daily task must not advance the next new passage.
+  if (exists) return state;
+  const activityLog = [...state.activityLog, {activityId: activity.id, date, kind: activity.kind}];
   let passages = state.passages;
   let history = state.history;
   if (activity.kind === 'quran_memorization') {
@@ -391,7 +393,7 @@ export function logRoutineCompletion(
   if (activity.kind === 'quran_reading' && activity.config.surah && activity.config.ayahFrom) {
     const ayahStart = activity.config.ayahFrom;
     const ayahEnd = Math.max(ayahStart, activity.config.ayahTo ?? ayahStart);
-    const recorded = state.history.some(entry => entry.surah === activity.config.surah && entry.ayahStart === ayahStart && entry.readAt.slice(0, 10) === date);
+    const recorded = state.history.some(entry => entry.surah === activity.config.surah && entry.ayahStart === ayahStart && dateKey(new Date(entry.readAt)) === date);
     if (!recorded) {
       history = [{id: `routine-${activity.id}-${date}`, surah: activity.config.surah, ayahStart, ayahEnd, readAt: now.toISOString()}, ...history].slice(0, 500);
     }
