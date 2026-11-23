@@ -51,6 +51,7 @@ export type RepetitionEvent = {
   /** مصدر الصوت الحالي: آلي (تلاوة مرخّصة) أو تسجيل ذاتي. */
   source: 'recitation' | 'self_recording';
   reciterId?: number;
+  reciterHistory?: {reciterId:number;at:string;completedBefore:number}[];
   createdAt: string;
   updatedAt: string;
 };
