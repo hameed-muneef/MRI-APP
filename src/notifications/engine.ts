@@ -81,7 +81,6 @@ export function pickDueItems(
   if (passages && passages.length > 0) {
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     for (const passage of passages) {
-      if (passage.state === 'mastered') continue;
       if (!passage.dueDate || passage.dueDate > today) continue;
       const key = `review:${passage.id}:${passage.dueDate}`;
       if (fired.has(key) || fired.has(`${key}:done`)) continue;

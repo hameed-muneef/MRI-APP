@@ -171,7 +171,7 @@ export function isDue(passage: MemorizationPassage, date = dateKey()): boolean {
 }
 
 export function duePassages(passages: MemorizationPassage[], date = dateKey()): MemorizationPassage[] {
-  return passages.filter(passage => passage.state !== 'mastered' && isDue(passage, date))
+  return passages.filter(passage => isDue(passage, date))
     .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''));
 }
 
@@ -216,7 +216,22 @@ export function buildPlanPassages(
   now = new Date()
 ): MemorizationPassage[] {
   const stamp = now.toISOString();
-  return chunkVerses(verses, plan.dailyTarget, plan.targetUnit).map(chunk => ({
+  // A passage has one surah. Split a daily chunk at each surah boundary
+  // so its verse range always refers to actual verses in that surah.
+  const chunks = chunkVerses(verses, plan.dailyTarget, plan.targetUnit);
+  const passages: PlanVerse[][] = [];
+  for (const chunk of chunks) {
+    let current: PlanVerse[] = [];
+    for (const verse of chunk) {
+      if (current.length && current[0].s !== verse.s) {
+        passages.push(current);
+        current = [];
+      }
+      current.push(verse);
+    }
+    if (current.length) passages.push(current);
+  }
+  return passages.map(chunk => ({
     id: newId(), planId: plan.id, contentType: 'quran' as const,
     surah: chunk[0].s, ayahStart: chunk[0].a, ayahEnd: chunk[chunk.length - 1].a,
     state: 'new' as const, ease: 2.5, intervalDays: 0, reviewCount: 0, lapses: 0,
