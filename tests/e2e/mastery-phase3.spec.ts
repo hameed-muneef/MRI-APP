@@ -23,12 +23,16 @@ test('understanding sheet: attribution, gates, private notes, session preserved'
  await expect(sheet).toBeVisible();
  await expect(sheet).toContainText('نص تفسير تجريبي للآية.');
  await expect(sheet).toContainText('المصدر: تفسير السعدي');
+ await expect(sheet.getByLabel('الترجمة',{exact:true})).toHaveCount(0);
+ await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
  await expect(sheet).toContainText('Sample translation text.');
  await expect(sheet).toContainText('المصدر: Saheeh International');
+ await expect(sheet).not.toContainText('نص تفسير تجريبي للآية.');
+ await sheet.getByRole('button',{name:'أسباب النزول',exact:true}).click();
  // البوابات الصادقة: لا محتوى بديل
  await expect(sheet).toContainText('المصدر قيد المراجعة');
- await expect(sheet).toContainText('قيد التحقق من مصدر موثوق');
  // ملاحظة خاصة: حفظ محلي وإثبات في التخزين
+ await sheet.locator('summary').filter({hasText:'ملاحظاتي الخاصة'}).click();
  await sheet.getByLabel('ملاحظة خاصة عن الآية').fill('تدبر تجريبي للآية الأولى');
  await sheet.getByRole('button',{name:'حفظ الملاحظة محليًا',exact:true}).click();
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-verse-notes-v1')!));
@@ -42,6 +46,7 @@ test('understanding sheet: attribution, gates, private notes, session preserved'
  await expect(ui.locator('h2')).toHaveText('استمع');
  // إعادة الفتح تُظهر الملاحظة المحفوظة ثم حذفها
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
+ await sheet.locator('summary').filter({hasText:'ملاحظاتي الخاصة'}).click();
  await expect(sheet.getByLabel('ملاحظة خاصة عن الآية')).toHaveValue('تدبر تجريبي للآية الأولى');
  await sheet.getByRole('button',{name:'حذف الملاحظة',exact:true}).click();
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-verse-notes-v1')!));
@@ -73,7 +78,8 @@ test('understanding failure is retryable; source changes retain unsaved notes an
  const ui=await startSession(page);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
  const sheet=page.locator('.qm-sheet');
- await expect(sheet.getByRole('button',{name:'إعادة تحميل المصادر'})).toBeVisible();
+ await expect(sheet.getByRole('button',{name:'إعادة تحميل المصدر',exact:true})).toBeVisible();
+ await sheet.locator('summary').filter({hasText:'ملاحظاتي الخاصة'}).click();
  await sheet.getByLabel('ملاحظة خاصة عن الآية').fill('مسودة غير محفوظة');
  await sheet.getByLabel('التفسير',{exact:true}).selectOption('16');
  await expect(sheet.getByLabel('ملاحظة خاصة عن الآية')).toHaveValue('مسودة غير محفوظة');
@@ -85,10 +91,15 @@ test('understanding failure is retryable; source changes retain unsaved notes an
 test('private notes remain local and Quran content cache is reused offline',async({page,context})=>{
  await mockUnderstandingApis(page);const ui=await startSession(page);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
- await expect(page.locator('.qm-sheet')).toContainText('نص تفسير تجريبي');
+ const sheet=page.locator('.qm-sheet');
+ await expect(sheet).toContainText('نص تفسير تجريبي');
+ await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
+ await expect(sheet).toContainText('Sample translation text.');
  await page.getByRole('button',{name:'إغلاق لوحة الفهم'}).click();
  await context.setOffline(true);
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();
- await expect(page.locator('.qm-sheet')).toContainText('نص تفسير تجريبي');
- await expect(page.locator('.qm-sheet')).toContainText('Sample translation text.');
+ await expect(sheet).toContainText('نص تفسير تجريبي');
+ await expect(sheet).not.toContainText('Sample translation text.');
+ await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();
+ await expect(sheet).toContainText('Sample translation text.');
 });
