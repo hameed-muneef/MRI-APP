@@ -6,7 +6,7 @@ import {applyMigrations, readMigrations} from '../scripts/database-migrations.mj
 
 // الملف الشخصي وإعدادات الحساب: الاسم والبلد والعمر تُحفظ لمالكها وحده،
 // ولا يكتبها المتصفح مباشرة، ولا يراها غيره.
-test('user profile: identity, age as birth year, settings, ownership', async () => {
+test('user profile: identity, retired age API, settings, ownership', async () => {
   const db = new PGlite({extensions: {pgcrypto}});
   const client = {query: async (sql, params) => params ? db.query(sql, params) : (await db.exec(sql)).at(-1)};
   const owner = '11111111-1111-4111-8111-111111111111';
@@ -34,14 +34,14 @@ test('user profile: identity, age as birth year, settings, ownership', async () 
 
     // 1) حفظ الملف الشخصي: الاسم والبلد والعمر والجنس.
     await asUser(owner, async () => {
-      await db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['محمد', 'أحمد', 'مصر', 28, '']);
+      await db.query('select public.save_user_profile($1,$2,$3,$4)', ['محمد', 'أحمد', 'مصر', '']);
       const row = (await db.query('select * from public.user_preferences where user_id=$1', [owner])).rows[0];
       assert.equal(row.first_name, 'محمد');
       assert.equal(row.last_name, 'أحمد');
       assert.equal(row.country, 'مصر');
       assert.equal(row.gender, '');
       // العمر يُحفظ كسنة ميلاد: 2026 - 28 = 1998
-      assert.equal(row.birth_year, new Date().getFullYear() - 28);
+      assert.equal('birth_year' in row, false);
       assert.ok(row.profile_updated_at);
     });
 
@@ -55,7 +55,7 @@ test('user profile: identity, age as birth year, settings, ownership', async () 
     // 3) غير المالك لا يرى ملف صاحب الحساب، لكن يستطيع أن يحفظ ملفه هو فقط.
     await asUser(other, async () => {
       assert.equal((await db.query('select count(*)::int as n from public.user_preferences')).rows[0].n, 0);
-      await db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['س', 'ص', 'اليمن', 30, '']);
+      await db.query('select public.save_user_profile($1,$2,$3,$4)', ['س', 'ص', 'اليمن', '']);
       const rows = (await db.query('select user_id from public.user_preferences')).rows;
       assert.equal(rows.length, 1);
       assert.equal(rows[0].user_id, other);
@@ -63,11 +63,9 @@ test('user profile: identity, age as birth year, settings, ownership', async () 
 
     // 4) قيم غير صالحة → 22023 (اسم فارغ، بلد فارغ، عمر خارج النطاق، جنس غير معروف).
     await asUser(owner, async () => {
-      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['', 'أحمد', 'مصر', 28, '']), e => e.code === '22023');
-      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['محمد', 'أحمد', '', 28, '']), e => e.code === '22023');
-      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['محمد', 'أحمد', 'مصر', 5, '']), e => e.code === '22023');
-      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['محمد', 'أحمد', 'مصر', 200, '']), e => e.code === '22023');
-      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['محمد', 'أحمد', 'مصر', 28, 'other']), e => e.code === '22023');
+      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4)', ['', 'أحمد', 'مصر', '']), e => e.code === '22023');
+      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4)', ['محمد', 'أحمد', '', '']), e => e.code === '22023');
+      await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4)', ['محمد', 'أحمد', 'مصر', 'other']), e => e.code === '22023');
     });
 
     // 5) إعدادات الحساب: المنطقة الزمنية واللغة والمدينة والمواعيد والتفضيلات.
@@ -107,7 +105,7 @@ test('user profile: identity, age as birth year, settings, ownership', async () 
 
     // 9) بلا جلسة: الحفظ والحذف مرفوضان.
     await db.exec('set role anon');
-    await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4,$5)', ['أ', 'ب', 'مصر', 20, '']), e => e.code === '42501');
+    await assert.rejects(db.query('select public.save_user_profile($1,$2,$3,$4)', ['أ', 'ب', 'مصر', '']), e => e.code === '42501');
     await db.exec('reset role');
   } finally { await db.close(); }
 });
