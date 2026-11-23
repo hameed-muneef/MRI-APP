@@ -133,7 +133,6 @@ type Props = {
   mode?: 'alarms' | 'adhan' | 'quiet';
   focusTarget?: OpenSection | null;
   extraAdhanContent?: React.ReactNode;
-  extraToneContent?: React.ReactNode;
 };
 
 export default function NotificationSettings({
@@ -145,7 +144,6 @@ export default function NotificationSettings({
   mode,
   focusTarget,
   extraAdhanContent,
-  extraToneContent,
 }: Props) {
   const tasksRef = useRef<HTMLElement | null>(null);
   const [alarmsSubTab, setAlarmsSubTab] = useState<'reminders' | 'tasks'>(() =>
@@ -223,7 +221,6 @@ export default function NotificationSettings({
           <PermissionStatus/>
           <GeneralNotifications notify={notify}/>
         </section>
-        {extraToneContent}
         <section className="panel notif-settings" aria-label="مكتبة الأصوات والنغمات">
           <h3><Volume2 size={18}/> مكتبة النغمات والأصوات</h3>
           <SoundPanel notify={notify}/>
