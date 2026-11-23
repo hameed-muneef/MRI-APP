@@ -101,7 +101,7 @@ jobs:
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          retention-days: 2
 
       - name: Upload signed release AAB
         if: env.HAS_KEYSTORE == 'true'
@@ -109,7 +109,7 @@ jobs:
         with:
           name: app-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
-          retention-days: 30
+          retention-days: 2
 
       - name: Upload signed release APK
         if: env.HAS_KEYSTORE == 'true'
@@ -117,4 +117,4 @@ jobs:
         with:
           name: app-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
+          retention-days: 2
