@@ -96,8 +96,10 @@ export default function usePrayerTimes(enabled: boolean, saved?: PrayerLocation)
       setStatus('جارٍ تحديد موقعك من الجهاز…');
       const advice='ابحث عن مدينتك أدناه أو أدخل المواقيت يدويًا.';
       void (async () => {
-        const {requestDeviceLocation}=await import('./lib/device-location');
-        const res=await requestDeviceLocation({timeout:10000,maximumAge:0});
+        // المخزن المركزي: طلب واحد مشترك مع القبلة والمساجد وبقية الأجزاء،
+        // ويستخدم الموقع اليدوي المشترك إن اختاره المستخدم.
+        const {ensureCentralLocation}=await import('./lib/location-store');
+        const res=await ensureCentralLocation({timeout:10000});
         if(!active) return;
         if(!res.ok){ fail(`${res.message} ${advice}`); return; }
         const loc:PrayerLocation={name:'موقعي',country:'',latitude:res.coords.latitude,longitude:res.coords.longitude,timezone:context.zone};
