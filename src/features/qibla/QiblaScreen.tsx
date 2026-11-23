@@ -12,6 +12,8 @@ import CompassDial from './CompassDial';
 
 interface Props { notify?: (t: string) => void; }
 
+const QIBLA_STEPS_KEY = 'rabbani-qibla-steps-dismissed-v1';
+
 export default function QiblaScreen({ notify }: Props) {
   const geo = useGeolocation(true);
   const central = useCentralLocation();
@@ -20,7 +22,15 @@ export default function QiblaScreen({ notify }: Props) {
   const [query, setQuery] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [digitalOnly, setDigitalOnly] = useState(false);
-  const [showSteps, setShowSteps] = useState(true);
+  // بطاقة الخطوات تظهر أول مرة فقط: إخفاؤها يُحفظ محليًا فلا تتكرر مع كل زيارة،
+  // بينما تبقى إرشادات الإذن السياقية (لوحة إذن الموقع) ظاهرة عند الحاجة.
+  const [showSteps, setShowSteps] = useState(() => {
+    try { return localStorage.getItem(QIBLA_STEPS_KEY) !== '1'; } catch { return true; }
+  });
+  const dismissSteps = () => {
+    try { localStorage.setItem(QIBLA_STEPS_KEY, '1'); } catch { /* التخزين غير متاح */ }
+    setShowSteps(false);
+  };
   useBackHandler(() => setShowPicker(false), showPicker);
 
   // Effective coordinates: manual overrides GPS
@@ -81,7 +91,7 @@ export default function QiblaScreen({ notify }: Props) {
         <div className="qibla-steps" role="note">
           <div className="qibla-steps-head">
             <strong>3 خطوات سريعة</strong>
-            <button className="qibla-steps-close" onClick={() => setShowSteps(false)} aria-label="إخفاء"><X size={16} aria-hidden="true" /></button>
+            <button className="qibla-steps-close" onClick={dismissSteps} aria-label="إخفاء"><X size={16} aria-hidden="true" /></button>
           </div>
           <ol>
             <li>فعّل الموقع (أو اختر مدينتك).</li>

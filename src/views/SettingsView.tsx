@@ -510,6 +510,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
                 <div><strong>السجلات المحفوظة:</strong> {storageSummary.localKeysCount} سجلًا{storageSummary.usageBytes !== null ? ` · المساحة: ${formatStorageBytes(storageSummary.usageBytes)}` : ''}</div>
               </div>
             )}
+            <p className="muted">النسخة تشمل سجلات التعلم والملاحظات النصية. لا تشمل ملفات التسجيلات الصوتية أو حزم التلاوة والتفسير والترجمة المنزلة؛ تحتاج تنزيل الحزم مجددًا، والتسجيلات تبقى على جهازها الأصلي.</p>
             <div className="settings-backup-actions">
               <button type="button" className="primary" onClick={exportBackup}><Download size={16}/> تصدير نسخة احتياطية</button>
               <button type="button" className="soft-btn" onClick={() => backupFileRef.current?.click()}><Upload size={16}/> استيراد نسخة احتياطية</button>

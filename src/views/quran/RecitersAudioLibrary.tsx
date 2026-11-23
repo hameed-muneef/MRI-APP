@@ -1,3 +1,4 @@
+import {backgroundAudio} from '../../audio/background-player';
 // مكتبة القراء والتلاوات: تصفح ٢٤٠+ قارئًا مشهورًا بجميع الروايات،
 // مع البحث السريع، والاستماع المباشر عند الفتح، وتنزيل السور على الموبايل
 // للعمل دون إنترنت (في Android التخزين الخاص + Web Cache Storage).
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
 import {
-  defaultMoshaf, loadReciters, moshafCategory, searchReciters,
+  defaultMoshaf, loadReciters, moshafCategory, searchReciters, audioUrl,
   type Reciter, type ReciterMoshaf,
 } from '../../quran/audio';
 import {resolveAyahSourceForMp3QuranReciter} from '../../quran/ayah-audio';
@@ -135,6 +136,7 @@ export default function RecitersAudioLibrary({
       const found = reciter.moshaf.find(m => m.id === manualId);
       if (found) return found;
     }
+    if(tab==='narrations')return reciter.moshaf.find(m=>moshafCategory(m.name)!=='hafs')??reciter.moshaf[0];
     return defaultMoshaf(reciter) ?? reciter.moshaf[0];
   };
 
@@ -261,6 +263,12 @@ export default function RecitersAudioLibrary({
   };
 
   const handleSelect = (reciter: Reciter, moshaf: ReciterMoshaf, autoPlay: boolean) => {
+    if(moshafCategory(moshaf.name)!=='hafs'){
+      const chapter=targetChapters.find(ch=>moshaf.surahList.includes(ch));
+      if(!chapter){notify('السورة المختارة غير متاحة بهذه الرواية.');return;}
+      if(autoPlay)void backgroundAudio.playSingle({id:`listen-only:${moshaf.id}:${chapter}`,title:asset.surahs.find(s=>s.n===chapter)?.name??String(chapter),subtitle:`${reciter.name}، ${moshaf.name}، للاستماع فقط`,url:audioUrl(moshaf,chapter),category:'quran',meta:{mode:'listen-only',moshafId:moshaf.id,surah:chapter}});
+      notify('تشغيل مستقل للاستماع فقط؛ لم تتغير رواية النص أو إعدادات الحفظ.');return;
+    }
     saveSelectedReciterPref({
       reciterId: reciter.id,
       moshafId: moshaf.id,
@@ -325,16 +333,16 @@ export default function RecitersAudioLibrary({
         </label>
 
         <div className="reciters-tabs" role="tablist" aria-label="تصنيف القراء">
-          <button type="button" role="tab" aria-selected={tab === 'famous'} className={tab === 'famous' ? 'active' : ''} onClick={() => setTab('famous')}>
+          <button type="button" role="tab" aria-selected={tab === 'famous'} className={tab === 'famous' ? 'active' : ''} onClick={e => {setTab('famous');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             الأشهر
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>
+          <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'active' : ''} onClick={e => {setTab('all');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             الكل ({toArabicNumber(reciters.length)})
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'downloaded'} className={tab === 'downloaded' ? 'active' : ''} onClick={() => setTab('downloaded')}>
+          <button type="button" role="tab" aria-selected={tab === 'downloaded'} className={tab === 'downloaded' ? 'active' : ''} onClick={e => {setTab('downloaded');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             المنزّلون ({toArabicNumber(Object.keys(packs).length)})
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'narrations'} className={tab === 'narrations' ? 'active' : ''} onClick={() => setTab('narrations')}>
+          <button type="button" role="tab" aria-selected={tab === 'narrations'} className={tab === 'narrations' ? 'active' : ''} onClick={e => {setTab('narrations');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             ورش وغيرها
           </button>
         </div>
@@ -446,6 +454,7 @@ export default function RecitersAudioLibrary({
                         </span>
                       )}
                       {hasAyahAudio && <span className="reciter-tag ayah-tag">آية بآية</span>}
+                      {moshafCategory(moshaf.name) !== 'hafs' && <span className="reciter-tag narration-tag">رواية غير حفص، للاستماع فقط</span>}
                       {pack && pack.bytes > 0 && <span className="reciter-tag">{formatBytes(pack.bytes)}</span>}
                     </div>
                   </div>
@@ -562,4 +571,4 @@ export default function RecitersAudioLibrary({
       )}
     </section>
   );
-}
+  }

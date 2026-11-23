@@ -14,6 +14,7 @@ export interface AudioTrack {
 }
 
 export interface AudioPlayerState {
+  completedTrackId?: string;
   status: AudioStatus;
   category: AudioCategory | null;
   queue: AudioTrack[];

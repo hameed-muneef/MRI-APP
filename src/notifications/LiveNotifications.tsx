@@ -2,6 +2,8 @@
 // يعمل فقط أثناء فتح التطبيق (قيد المتصفح)، وهو موثق في إعدادات الإشعارات.
 
 import {useEffect, useRef} from 'react';
+import {filterMasteryReminders} from '../quran-mastery/reminders';
+import {loadMasteryState} from '../quran-mastery/storage';
 import usePrayerTimes from '../usePrayerTimes';
 import {sanitizePrayerLocation, type PrayerLocation} from '../prayer-location';
 import {useDueWatcher, type DueItem} from './engine';
@@ -10,7 +12,7 @@ import {listAudioResources} from './service';
 import {playAudio, stopAudio} from './audio';
 import {playBuiltInTone} from './builtin-sounds';
 import {deliverReminder, isBrowserNotificationSupported, recordNotification, showBrowserNotification} from './delivery';
-import {checkPermissions, isNativePlatform, NOTIFICATIONS_CHANGED_EVENT} from './native-prayer-scheduler';
+import {checkPermissions, isNativePlatform, scheduleNativePersonalReminders, NOTIFICATIONS_CHANGED_EVENT} from './native-prayer-scheduler';
 import {soundPlanForPrayer, soundPlanForReminder, soundPlanForTask, type SoundPlan} from './sound-selection';
 import {resolvePrayerAdhan} from '../sounds/adhan-catalog';
 import {
@@ -97,7 +99,13 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
   useEffect(() => {
     let active = true;
     const native = isNativePlatform();
+    let nativeSignature='';
+    let refreshing=false;
+    let refreshAgain=false;
     const refresh = async () => {
+      if(refreshing){refreshAgain=true;return;}
+      refreshing=true;
+      try{
       const [prefs, reminders, library, perms] = await Promise.all([
         loadPrefs().catch(() => null),
         loadReminders().catch(() => null),
@@ -105,11 +113,13 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
         native ? checkPermissions().catch(() => null) : Promise.resolve(null),
       ]);
       if (!active) return;
+      if(native&&prefs&&reminders){const learning=loadMasteryState();const signature=JSON.stringify([reminders.reminders,prefs.prefs,learning.schedules,learning.plans,perms,new Date().toDateString()]);if(signature!==nativeSignature){await scheduleNativePersonalReminders(reminders.reminders,prefs.prefs);nativeSignature=signature;}}
       if (prefs) state.current.prefs = prefs.prefs;
-      if (reminders) state.current.reminders = reminders.reminders;
+      if (reminders) state.current.reminders = filterMasteryReminders(reminders.reminders,loadMasteryState());
       if (library) state.current.library = library;
       state.current.nativeSystemActive = Boolean(native && perms?.display === 'granted');
       state.current.ready = true;
+      }finally{refreshing=false;if(active&&refreshAgain){refreshAgain=false;void refresh();}}
     };
     void refresh();
     const timer = window.setInterval(() => void refresh(), REFRESH_MS);
@@ -117,11 +127,15 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
     const onChanged = () => {void refresh()};
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
+    window.addEventListener('rabbani-mastery-changed',onChanged);
+    window.addEventListener('storage',onChanged);
     return () => {
       active = false;
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
+      window.removeEventListener('rabbani-mastery-changed',onChanged);
+      window.removeEventListener('storage',onChanged);
     };
   }, []);
 
@@ -210,4 +224,4 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
     },
   );
   return null;
-}
+    }

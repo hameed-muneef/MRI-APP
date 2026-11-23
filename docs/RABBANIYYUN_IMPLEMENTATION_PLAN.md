@@ -85,3 +85,13 @@
 - **التحقق**: `compile_applet` (`tsc -b && vite build`) و`lint_applet` (`tsc --noEmit`) ناجحان؛ `npm run test:unit` (129/129) ناجح؛ `node --test tests/section-theme.test.mjs tests/quran-reader.test.mjs tests/theme-engine.test.mjs` (18/18) ناجحة؛ `npm run quran:check` و`npm run prayer:check` ناجحان؛ Playwright `tests/e2e/reciters.spec.ts` و`tests/e2e/mobile-app-full.spec.ts` (3/3) ناجحة؛ و`npm run build:android` (مع `npx cap sync android`) ناجح.
 - **غير متحقق على جهاز**: فتح نافذة القراء وتجربة السحب/اللمس الفعلي داخل WebView على هاتف أندرويد بعد بناء APK عبر Gradle/CI.
 
+
+### QURAN-MASTERY-PHASE6-PREPARATION (2026-11-23)
+- Added local per-ayah audio pack management, cold-offline resolution cache, production Quran precache, session-safe update behavior and bounded native review summaries with reconciliation.
+- Current local verification: 256 unit tests, 173 Node tests, typecheck, build and Quran manifest integrity pass. Four offline browser cases pass mobile/desktop, including a complete daily session with synthetic downloaded sound and no network. This does not validate real recitation quality or physical Android behavior.
+- Phase5 content gate remains open. Phase6 device demonstration and final Phase7 accessibility/performance/device matrix remain open. No merge, signing or release.
+
+### QURAN-MASTERY-REVIEW-CODE-HANDOFF (2026-11-23)
+- Draft PR9 stacks on Phase4, with approved external-reference interim, offline pack management and native reminder reconciliation. No merge/release.
+- Fetched review code86c36c7:257 unit,173 Node,82 browser cases in bounded batches plus4 theme/viewport checks; TypeScript, production build, source checksum and unsigned Android compile pass. Real-source downloaded first-ayah playback passed after production cold offline reload.
+- Embedded authorized reviewed Tajweed lessons/exercises remain incomplete. Physical Android microphone/call/background/audio/notifications, actual screen reader and user content/release review remain open. Full matrix in QURAN_MASTERY_PHASE7.md.

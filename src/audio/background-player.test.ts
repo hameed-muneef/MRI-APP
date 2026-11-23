@@ -178,3 +178,40 @@ describe('player state machine', () => {
     expect(backgroundAudio.getState().status).toBe('playing');
   });
 });
+describe('lazy reader repetition',()=>{
+ beforeEach(async()=>{await backgroundAudio.stop();});
+ it('resolves only the current track, retains pause and navigation, and never allocates the expanded queue',async()=>{
+  const resolve=vi.fn(async(i:number)=>({...TRACKS[0],id:String(i),meta:{ayah:i+1}}));
+  await backgroundAudio.playLazy(10000,resolve,vi.fn());
+  expect(resolve.mock.calls.map(c=>c[0])).toEqual([0]);expect(backgroundAudio.getState().queue).toHaveLength(1);
+  await backgroundAudio.pause();expect(backgroundAudio.getState().status).toBe('paused');
+  await backgroundAudio.resume();expect(backgroundAudio.getState().status).toBe('playing');
+  await backgroundAudio.next();expect(resolve.mock.calls.map(c=>c[0])).toEqual([0,1]);
+  await backgroundAudio.previous();expect(resolve.mock.calls.map(c=>c[0])).toEqual([0,1,0]);
+ });
+ it('reports missing current audio, never requests later indexes',async()=>{
+  const resolve=vi.fn(async(i:number)=>i===0?TRACKS[0]:null),missing=vi.fn();
+  await backgroundAudio.playLazy(4,resolve,missing);await backgroundAudio.next();
+  expect(missing).toHaveBeenCalledWith(1);expect(resolve.mock.calls.map(c=>c[0])).toEqual([0,1]);
+  expect(backgroundAudio.getState().status).toBe('idle');
+ });
+ it('external playback cancels pending lazy resolution without preempting the new owner',async()=>{
+  let finish!:(t:AudioTrack)=>void;
+  const pending=backgroundAudio.playLazy(3,()=>new Promise(r=>finish=r),vi.fn());
+  await Promise.resolve();await backgroundAudio.playSingle(TRACKS[1]);finish(TRACKS[0]);await pending;
+  expect(backgroundAudio.getState().currentTrack?.id).toBe('t2');
+ });
+});
+
+describe('lazy natural completion',()=>{
+ it('advances after a natural receipt and stops at the configured final track',async()=>{
+  await backgroundAudio.stop();const resolve=vi.fn(async(i:number)=>({...TRACKS[0],id:String(i)}));
+  await backgroundAudio.playLazy(2,resolve,vi.fn());
+  const first=(backgroundAudio as unknown as {audioEl:{dispatchEvent:(e:string)=>void}}).audioEl;
+  first.dispatchEvent('ended');await vi.runAllTimersAsync();
+  expect(resolve.mock.calls.map(c=>c[0])).toEqual([0,1]);
+  const second=(backgroundAudio as unknown as {audioEl:{dispatchEvent:(e:string)=>void}}).audioEl;
+  second.dispatchEvent('ended');await vi.runAllTimersAsync();
+  expect(backgroundAudio.getState().status).toBe('idle');expect(resolve).toHaveBeenCalledTimes(2);
+ });
+});

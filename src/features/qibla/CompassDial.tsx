@@ -58,7 +58,10 @@ export default function CompassDial({ heading, qibla, digitalOnly }: Props) {
         <span className="qibla-cardinal s">S</span>
         <span className="qibla-cardinal w">W</span>
         <div className="qibla-kaaba" style={{ transform: `rotate(${qibla}deg) translateY(-38%)` }}>
-          <span className="qibla-kaaba-icon" aria-hidden="true">🕋</span>
+          <svg className="qibla-kaaba-icon" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true" focusable="false">
+            <rect x="3" y="5" width="20" height="18" rx="2.5" fill="#1F1B16" />
+            <rect x="3" y="9.6" width="20" height="3.2" fill="#D8BD79" />
+          </svg>
         </div>
       </div>
     </div>

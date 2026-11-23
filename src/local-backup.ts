@@ -1,3 +1,4 @@
+import {masteryRootSchema} from './quran-mastery/storage';
 import {z} from 'zod';
 import {prefsSchema,reminderSchema} from './notifications/storage-schema';
 import {parseStoredState} from './state-schema';
@@ -107,6 +108,7 @@ export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'
   // Validate all app-state snapshots before writing even a single key.
   for (const [key, value] of entries) {
     if (/^rabbani-v1(?:-user-.+)?$/.test(key)) parseStoredState(value as string);
+    if (key==='rabbani-mastery-v1') masteryRootSchema.parse(JSON.parse(value as string));
     if (key==='rabbani-notif-prefs-v1') prefsSchema.parse(JSON.parse(value as string));
     if (key==='rabbani-notif-reminders-v1') z.array(reminderSchema).parse(JSON.parse(value as string));
   }
@@ -130,6 +132,7 @@ export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'
   installAppearance();
   notifyNativePrefsChanged();
   window.dispatchEvent(new CustomEvent(LOCAL_NOTIFICATIONS_EVENT));
+  if(entries.some(([key])=>key==='rabbani-mastery-v1'))window.dispatchEvent(new Event('rabbani-mastery-changed'));
 
   return restored;
 }

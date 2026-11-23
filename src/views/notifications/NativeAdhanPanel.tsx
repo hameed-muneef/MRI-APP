@@ -209,26 +209,15 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         </div>
       )}
       <div className="notif-prayer-panel">
-      <h3>تنبيهات الأذان (نظام Android)</h3>
-      <p className="muted small">
-        جدولة 10 أيام من مواقيت الصلاة كمنبهات نظام (تعمل حتى عند إغلاق التطبيق مع تشغيل الأذان الكامل).
-        تُعاد الجدولة تلقائيًا عند فتح التطبيق، تغيير الإعدادات، إعادة التشغيل، تحديث التطبيق، أو تغيير الوقت والمنطقة الزمنية.
-      </p>
-
+      <h3>تنبيهات الأذان</h3>
+      <p className="muted small">فعّل التنبيهات ليصلك الأذان. قد تؤثر إعدادات البطارية في وصوله.</p>
+      <details className="settings-inner-details"><summary>حالة الأذونات والتشخيص</summary>
       <div className="form-grid">
-        <div>
-          <strong>حالة الإذن (display):</strong> {perm.display}
-        </div>
-        <div>
-          <strong>المنبهات الدقيقة (exact alarm):</strong> {perm.exact}
-        </div>
-        <div>
-          <strong>قناة الأذان:</strong> {channelInfo.adhanChannelId || ADHAN_CHANNEL_ID} (صوت: {activeSoundLabel})
-        </div>
-        <div>
-          <strong>قناة عامة:</strong> {GENERAL_CHANNEL_ID} · <strong>البطارية:</strong> {batteryLabel}
-        </div>
-      </div>
+        <div><strong>الإشعارات:</strong> {perm.display==='granted'?'مفعّلة':'تحتاج إذنًا'}</div>
+        <div><strong>المنبهات الدقيقة:</strong> {perm.exact==='granted'?'مفعّلة':perm.exact==='unsupported'?'غير مدعومة':'تحتاج إذنًا'}</div>
+        <div><strong>قناة الأذان:</strong> {channelInfo.adhanChannelId || ADHAN_CHANNEL_ID} · {activeSoundLabel}</div>
+        <div><strong>قناة عامة:</strong> {GENERAL_CHANNEL_ID} · <strong>البطارية:</strong> {batteryLabel}</div>
+      </div></details>
 
       {perm.display !== 'granted' && (
         <div className="qibla-banner warn" role="alert">
@@ -276,7 +265,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       {result && <p className="muted small">{result}</p>}
 
       <details className="qibla-steps" style={{ marginTop: 8 }}>
-        <summary><strong>تشخيص + تعليمات أجهزة OEM</strong></summary>
+        <summary><strong>مساعدة عند تأخر الأذان</strong></summary>
         <ul style={{ paddingInlineStart: 20, fontSize: 13 }}>
           <li>Android 13+: صلاحية POST_NOTIFICATIONS (تُطلب وقت التشغيل).</li>
           <li>Android 12+: صلاحية SCHEDULE_EXACT_ALARM (exact alarm) — توجيه المستخدم لإعدادات النظام، مع استمرار العمل بالمنبه التقريبي عند الرفض.</li>
@@ -287,7 +276,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       </details>
 
       <details className="qibla-steps" style={{ marginTop: 8 }}>
-        <summary><strong>أصوات الأذان المدمجة وتشغيل الخلفية</strong></summary>
+        <summary><strong>معلومات تشغيل الأذان</strong></summary>
         <ol style={{ paddingInlineStart: 20, fontSize: 13 }}>
           <li>التطبيق يضم 6 تسجيلات أذان كاملة مدمجة محليًا في `res/raw/adhan_*.ogg` (تعمل دون إنترنت)، إضافة إلى ملف `takbeerat_eid.ogg` المستقل لتكبيرات العيد.</li>
           <li>يُشغّل الأذان الكامل في الخلفية أو أثناء قفل الشاشة عبر خدمة `AdhanPlaybackService` (MediaPlayback Foreground Service) مع زر «إيقاف الأذان» وإغلاق تلقائي مضبوط، مع قناة إشعار مخصصة لكل مؤذن في Android 8+.</li>

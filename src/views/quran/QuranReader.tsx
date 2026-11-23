@@ -1,3 +1,4 @@
+import {attributionLabel} from './UnderstandingSheet';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {
   Bookmark, BookmarkCheck, Copy, Share2, Search, StickyNote, Plus, Trash2,
@@ -14,12 +15,13 @@ import {
 import {dateKey} from '../../quran/learning';
 import {uid} from '../../id';
 import {EmptyNote, QuranVerseText, ReferenceBadge, copyText, shareText} from './ui';
-import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, type FetchState} from '../../quran/content-api';
-import {loadReciters, audioUrl, defaultMoshaf, type Reciter} from '../../quran/audio';
+import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, ASBAB_ATTRIBUTION, ASBAB_PROVIDER, type FetchState} from '../../quran/content-api';
+import {buildSequentialQueue} from '../../quran/audio-adapter';
+import {loadReciters, audioUrl, defaultMoshaf, moshafCategory, type Reciter} from '../../quran/audio';
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
 import {backgroundAudio} from '../../audio/background-player';
 import {useBackgroundAudio} from '../../audio/useBackgroundAudio';
-import type {AudioTrack} from '../../audio/types';
+
 import {InternetBadge, useOnline} from '../../online';
 import {passageAyahs, progressLabel, clampRepeat, type MemorizationProgress} from '../../quran/memorization-audio';
 
@@ -135,6 +137,7 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
 
   const playSurah = () => {
     if (!currentMoshaf) return;
+    if(moshafCategory(currentMoshaf.name)!=='hafs'){notify('الرواية غير حفص متاحة للاستماع فقط من مكتبة القراء، ولا تُربط بنص حفص المعروض.');return;}
     const url = audioUrl(currentMoshaf, surahNumber);
     const info = surahInfo(asset, surahNumber);
     void backgroundAudio.playSingle({
@@ -179,7 +182,10 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
     }
   };
 
+  const readerRequest=useRef(0);
+  useEffect(()=>{readerRequest.current++;return()=>{readerRequest.current++;};},[surahNumber,ayahReciterId,reciterId,moshafId]);
   const playAyah = async (ayah: number) => {
+    const request=++readerRequest.current;
     if (playingAyah === ayah) {
       void backgroundAudio.stop();
       return;
@@ -199,24 +205,23 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
       }
     }
 
+    if(request!==readerRequest.current)return;
     const info = surahInfo(asset, surahNumber);
-    const tracks: AudioTrack[] = [];
-    for (let i = startIdx; i < verses.length; i += 1) {
-      const aNum = verses[i].a;
-      const url = urlMap.get(aNum);
-      if (!url) continue;
-      tracks.push({
-        id: `quran:reader-ayah:${surahNumber}:${aNum}`,
-        title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(aNum)}`,
-        subtitle: 'تلاوة متتابعة',
-        url,
-        category: 'quran',
-        meta: {mode: 'reader-ayah', surah: surahNumber, ayah: aNum},
-      });
-    }
+    // لا تجاوز صامت: تتوقف القائمة عند أول آية بلا صوت وتُذكر صراحة.
+    const {tracks, firstMissingAyah} = buildSequentialQueue({
+      surah: surahNumber,
+      surahName: info?.name ?? `سورة ${surahNumber}`,
+      ayahs: verses.slice(startIdx).map(v => v.a),
+      urlFor: (a) => urlMap.get(a),
+      owner: 'reader-ayah',
+      titleFor: (a) => `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(a)}`,
+    });
     if (!tracks.length) {
       notify('تعذر جلب تلاوة الآية. تحقق من الاتصال بالإنترنت وأعد المحاولة.');
       return;
+    }
+    if (firstMissingAyah !== null) {
+      notify(`توقف التشغيل قبل الآية ${toArabicNumber(firstMissingAyah)} لتعذر جلب صوتها؛ لم يتم تجاوزها.`);
     }
     await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
@@ -300,59 +305,22 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
     : null;
 
   const runMemo = async () => {
+    const request=++readerRequest.current;
+    const info=surahInfo(asset,surahNumber),totalAyahs=memoAyahs.length;
+    const size=memoPassageRepeat*totalAyahs*memoAyahRepeat;
     setMemoPreparing(true);
-    let urlMap = new Map(ayahAudioUrls);
-    if (memoAyahs.some(a => !urlMap.has(a))) {
-      const batch = await fetchSurahAyahAudioUrls(ayahReciterId, surahNumber, memoAyahs);
-      if (batch.size > 0) {
-        urlMap = batch;
-        setAyahAudioUrls(batch);
-      } else {
-        for (const a of memoAyahs) {
-          if (!urlMap.has(a)) {
-            const single = await fetchAyahAudioUrl(ayahReciterId, surahNumber, a);
-            if (single) urlMap.set(a, single);
-          }
-        }
-      }
-    }
+    await backgroundAudio.playLazy(size,async index=>{
+      if(request!==readerRequest.current)return null;
+      const pr=Math.floor(index/(totalAyahs*memoAyahRepeat));
+      const ai=Math.floor(index/memoAyahRepeat)%totalAyahs,ar=index%memoAyahRepeat;
+      const ayah=memoAyahs[ai];
+      const url=ayahAudioUrls.get(ayah)??await fetchAyahAudioUrl(ayahReciterId,surahNumber,ayah);
+      if(request!==readerRequest.current||!url)return null;
+      return {id:`quran:memo:${surahNumber}:${ayah}:p${pr+1}:r${ar+1}`,title:`${info?.name??String(surahNumber)} · آية ${toArabicNumber(ayah)}`,
+        subtitle:`تكرار ${toArabicNumber(ar+1)}/${toArabicNumber(memoAyahRepeat)} · مقطع ${toArabicNumber(pr+1)}/${toArabicNumber(memoPassageRepeat)}`,
+        url,category:'quran',meta:{mode:'reader-memo',surah:surahNumber,ayah,ayahIndex:ai,ayahRepeatCurrent:ar+1,ayahRepeatTotal:memoAyahRepeat,passageRepeatCurrent:pr+1,passageRepeatTotal:memoPassageRepeat,totalAyahs}};
+    },index=>{if(request===readerRequest.current)notify(`توقف تكرار المقطع عند الآية ${toArabicNumber(memoAyahs[Math.floor(index/memoAyahRepeat)%totalAyahs])} لتعذر جلب صوتها؛ لن تُتجاوز.`);});
     setMemoPreparing(false);
-
-    const info = surahInfo(asset, surahNumber);
-    const totalAyahs = memoAyahs.length;
-    const tracks: AudioTrack[] = [];
-    for (let pr = 0; pr < memoPassageRepeat; pr += 1) {
-      for (let ai = 0; ai < totalAyahs; ai += 1) {
-        const ayah = memoAyahs[ai];
-        const url = urlMap.get(ayah);
-        if (!url) continue;
-        for (let ar = 0; ar < memoAyahRepeat; ar += 1) {
-          tracks.push({
-            id: `quran:memo:${surahNumber}:${ayah}:p${pr + 1}:r${ar + 1}`,
-            title: `${info?.name ?? `سورة ${surahNumber}`} · آية ${toArabicNumber(ayah)}`,
-            subtitle: `تكرار ${toArabicNumber(ar + 1)}/${toArabicNumber(memoAyahRepeat)} · مقطع ${toArabicNumber(pr + 1)}/${toArabicNumber(memoPassageRepeat)}`,
-            url,
-            category: 'quran',
-            meta: {
-              mode: 'reader-memo',
-              surah: surahNumber,
-              ayah,
-              ayahIndex: ai,
-              ayahRepeatCurrent: ar + 1,
-              ayahRepeatTotal: memoAyahRepeat,
-              passageRepeatCurrent: pr + 1,
-              passageRepeatTotal: memoPassageRepeat,
-              totalAyahs,
-            },
-          });
-        }
-      }
-    }
-    if (!tracks.length) {
-      notify('تعذر جلب الصوتيات الخاصة بالحفظ.');
-      return;
-    }
-    await backgroundAudio.playQueue(tracks, 0, 'quran');
   };
 
   const pauseMemo = () => {
@@ -725,7 +693,8 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
                   {!online && <p className="quran-online-note"><InternetBadge compact/> التفسير والترجمة يُجلبان عبر الإنترنت؛ ما فتحته سابقًا محفوظ على الجهاز.</p>}
                   {contentState.status === 'loading' && <p className="muted small">جارٍ التحميل…</p>}
                   {contentState.status === 'error' && <p className="muted small" role="alert">{online ? contentState.error : 'لا يوجد اتصال، ولم يُحفظ هذا المحتوى على الجهاز بعد.'}</p>}
-                  {contentState.status === 'empty' && <p className="muted small">{online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
+                  {contentState.status === 'empty' && <p className="muted small">{contentTab==='asbab'?'لا يوجد سبب نزول لهذه الآية في هذا المصدر.':online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
+                  {contentState.status === 'success' && <small>{attributionLabel((contentTab==='asbab'?ASBAB_ATTRIBUTION:(contentTab==='tafsir'?TAFSIRS.find(t=>t.id===tafsirId):TRANSLATIONS.find(t=>t.id===translationId))?.name)??'مصدر غير محدد', contentTab==='asbab'?ASBAB_PROVIDER:undefined)}</small>}
                   {contentState.status === 'success' && <p className="quran-content-text">{contentState.data}</p>}
                 </div>
               )}

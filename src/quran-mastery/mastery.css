@@ -1,0 +1,50 @@
+.qm-workspace{--qm-blue:#1e5aa8;--qm-ink:#12305a;--qm-pale:#eaf3fb;direction:rtl;color:var(--qm-ink);background:#f7fbff;border:1px solid #c5ddf3;border-radius:20px;padding:24px;margin:20px 0;font-size:15px;line-height:1.6;font-family:Tajawal,Arial,sans-serif}.qm-workspace *{box-sizing:border-box}.qm-heading h2{font-size:28px;color:#174a8c;margin:12px 0}.qm-kicker{display:block;color:#426a91;font-size:13px;margin-top:12px}.qm-heading p{color:#42617d}.qm-card{padding:22px;border:1px solid #c5ddf3;border-radius:16px;background:#fff;margin:16px 0;box-shadow:0 4px 14px #12305a06}.qm-card h3{color:#174a8c;margin:0 0 12px;font-size:20px}.qm-workspace label{display:flex;flex-direction:column;gap:6px}.qm-workspace input,.qm-workspace select{border:1px solid #9dbbd7;border-radius:10px;padding:10px;background:white;color:#12305a;min-width:0;width:100%;min-height:44px}.qm-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:15px 0}.qm-workspace button{min-height:44px;border:1px solid #9dbbd7;background:#fff;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;font-family:inherit;white-space:normal}.qm-workspace button:focus-visible,.qm-workspace input:focus-visible,.qm-workspace select:focus-visible{outline:3px solid #7fb3e0;outline-offset:3px}#root .app .qm-workspace button,.qm-workspace button{color:#174a8c}#root .app .qm-workspace .qm-primary,.qm-workspace .qm-primary{background:#1e5aa8;color:#fff;border-color:#1e5aa8}#root .app .qm-workspace button[aria-pressed=true],.qm-workspace button[aria-pressed=true]{background:#eaf3fb;border-color:#1e5aa8;color:#12305a;box-shadow:inset 0 0 0 1px #1e5aa8}.qm-workspace button:disabled{opacity:.5;cursor:not-allowed}.qm-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.qm-muted,.qm-workspace small{color:#496680;font-size:13px}.qm-error{color:#922c24;background:#fff0ef;padding:14px;border:1px solid #c0392b;border-radius:10px}.qm-notice{padding:14px;background:#eaf3fb;border-right:4px solid #1e5aa8;border-radius:10px}.qm-row{display:flex;justify-content:space-between;width:100%;text-align:right;gap:16px;margin:10px 0}.qm-passage{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #dae7f3}.qm-passage p{margin:6px 0}.qm-steps{list-style:none;display:flex;gap:12px;padding:0;flex-wrap:wrap;margin:18px 0}.qm-steps li{display:flex;align-items:center;gap:6px;font-size:13px;color:#56728e}.qm-steps li span{display:grid;place-items:center;width:28px;height:28px;background:#eaf3fb;border-radius:50%}.qm-steps li[aria-current=step]{color:#174a8c;font-weight:700}.qm-steps li[aria-current=step] span{color:#fff;background:#1e5aa8}.qm-verse-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid #e0edf7;padding-top:12px}.qm-workspace .quran-verse-text{font-size:34px;line-height:1.9;color:#12305a;margin:10px 0 20px;overflow-wrap:anywhere}.qm-workspace .quran-verse-hidden{display:inline-block;color:#54779a;letter-spacing:5px}.qm-check{flex-direction:row!important;align-items:center;gap:10px!important}.qm-check input{width:20px;min-height:20px}.qm-ratings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.qm-footer{position:sticky;bottom:12px;background:#fff;border:1px solid #bad4ec;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:5;box-shadow:0 5px 25px #12305a15}.qm-workspace audio{max-width:100%;width:100%}@media(max-width:600px){.qm-workspace{padding:14px;border-radius:16px}.qm-heading h2{font-size:24px}.qm-card{padding:16px}.qm-fields{grid-template-columns:1fr 1fr}.qm-fields label:first-child{grid-column:1/-1}.qm-workspace .quran-verse-text{font-size:28px;line-height:1.85}.qm-footer{bottom:8px;flex-direction:column;align-items:stretch}.qm-ratings{grid-template-columns:1fr}.qm-passage{align-items:flex-start;flex-direction:column}.qm-steps{gap:8px}.qm-steps li{font-size:12px}}
+/* Focused session has its own persistent exit and next action. Avoid competing fixed controls. */
+body:has(.qm-steps) .mobile-nav{display:none!important}
+body:has(.qm-steps) .mini-audio-player{display:none!important}
+body:has(.qm-steps) .scroll-top-fab-dock{display:none!important}
+.qm-workspace .qm-footer{margin-bottom:12px}
+body:has(.qm-steps) #root .app .mobile-nav{display:none!important}
+body:has(.qm-steps) #root .scroll-top-fab-dock{display:none!important}
+/* Keep prior features available outside sessions, without a second competing workflow mid-session. */
+body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>details{display:none!important}
+#root .app .quran-journey .quran-journey-cta{color:#fff!important;background:#174a3c!important}
+/* Understanding sheet (Phase 3) */
+.qm-sheet{position:fixed;inset:auto 0 0 0;max-height:85vh;overflow-y:auto;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18);padding:16px;z-index:60;color:#17324f}
+@media(min-width:720px){.qm-sheet{inset:10vh auto auto 50%;transform:translateX(-50%);width:560px;border-radius:16px}}
+.qm-sheet-head{display:flex;justify-content:space-between;align-items:center}
+.qm-sheet-verse{font-size:1.15rem;line-height:2;background:#f2f7fb;padding:10px;border-radius:8px}
+.qm-sheet-body{line-height:1.9;text-align:start}
+.qm-attribution{font-size:.8rem;color:#5a6b7d;margin:.2rem 0}
+.qm-listen-quick{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.3rem 0 .6rem}
+.qm-listen-quick>span{font-weight:600}
+.qm-words{margin:.4rem 0}.qm-words>div{margin-bottom:.5rem}.qm-words dt{font-weight:700}.qm-words dd{margin:0}
+.qm-field{display:block;margin:.5rem 0}
+.qm-sheet textarea{width:100%;border:1px solid #c8d6e2;border-radius:8px;padding:8px}
+
+.qm-sheet-backdrop{position:fixed;inset:0;background:rgba(12,28,45,.48);z-index:1000}
+.qm-sheet{box-sizing:border-box}.qm-sheet-head{position:sticky;top:-16px;background:white;z-index:1;padding-block:8px}
+.qm-sheet textarea,.qm-sheet select{box-sizing:border-box;max-width:100%;font:inherit}
+.qm-sheet button{border:1px solid #9ab2ca;border-radius:10px;background:#f1f7fd;color:#17324f;padding:10px 14px;min-height:44px;font:inherit;cursor:pointer}.qm-sheet .qm-primary{background:#165d98;color:#fff}.qm-sheet .icon-btn{display:grid;place-items:center}.qm-sheet select{padding:8px;border:1px solid #9ab2ca;border-radius:8px;background:#fff;color:#17324f}.qm-sheet h4{margin-bottom:8px}.qm-sheet :is(h3,h4){color:#17324f}.qm-sheet p{line-height:1.8}
+.qm-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}.qm-metrics>div{background:#eaf3fb;border:1px solid #c5ddf3;border-radius:12px;padding:14px;display:flex;flex-direction:column}.qm-metrics strong{font-size:26px;color:#174a8c}.qm-metrics span{font-size:13px}.qm-planning summary{cursor:pointer;min-height:44px;font-weight:bold;color:#174a8c}.qm-planning fieldset{border:1px solid #9dbbd7;border-radius:12px;padding:12px}.qm-planning .qm-check{font-size:14px}.qm-planning p{overflow-wrap:anywhere}
+@media(min-width:720px){.qm-planning .qm-passage{flex-wrap:wrap}.qm-planning .qm-passage>div{flex:1 1 160px}.qm-planning .qm-passage>label{flex:1 1 150px}}.qm-planning .qm-passage>div{min-width:0}
+.qm-offline summary{font-weight:bold;color:#174a8c;cursor:pointer;min-height:44px}.qm-offline .qm-passage{flex-wrap:wrap}.qm-offline .qm-passage>div{flex:1 1 170px;min-width:0}.qm-offline .qm-passage>button{flex:0 1 auto}.qm-offline{overflow-wrap:anywhere}
+.qm-update-notice{position:fixed;top:12px;inset-inline:12px;z-index:1100;background:#eaf3fb;color:#12305a;border:1px solid #1e5aa8;padding:14px;border-radius:12px;font-family:Tajawal,Arial,sans-serif}
+
+.qm-offline .qm-passage{gap:10px;align-items:center}.qm-offline .qm-passage>div{flex-basis:100%}.qm-offline .qm-passage>button{margin:0}.qm-offline{padding-bottom:32px}.qm-workspace{scroll-margin-bottom:110px}.qm-offline button{scroll-margin-block:100px}
+/* Offline is sustained normal use. Keep its global indicator in flow, never over learning text. */
+#root .app:has(.qm-workspace)>.offline-pill{position:static;transform:none;width:fit-content;margin:12px auto 90px;white-space:normal}
+
+/* Explicit mastery control colors win over unrelated global details variants. */
+#root .app .qm-workspace summary{color:#174a8c!important;background:transparent!important}
+#root .app .qm-workspace input,#root .app .qm-workspace select{color:#12305a!important;background:#fff!important}
+[data-theme="dark"] #root .app .qm-workspace{--qm-ink:#d9e8fa;--qm-pale:#1a3553;--qm-blue:#8ebdff;background:#111f31;color:#d9e8fa;border-color:#3c5874}
+[data-theme="dark"] #root .app .qm-workspace .qm-card,[data-theme="dark"] #root .app .qm-workspace .qm-footer{background:#182b40;color:#d9e8fa;border-color:#3c5874}
+[data-theme="dark"] #root .app .qm-workspace :is(h2,h3,h4,summary,label,strong,.quran-verse-text){color:#d9e8fa!important}
+[data-theme="dark"] #root .app .qm-workspace :is(p,small,.qm-muted,.qm-kicker,.qm-steps li){color:#bed0e4!important}
+[data-theme="dark"] #root .app .qm-workspace :is(button,input,select,.qm-external){color:#d9e8fa!important;background:#203c59!important;border-color:#7999b9}
+[data-theme="dark"] #root .app .qm-workspace :is(.qm-primary,button[aria-pressed=true]){color:#10233b!important;background:#a6ccff!important}
+[data-theme="dark"] #root .app .qm-workspace :is(.qm-notice,.qm-metrics>div){background:#203c59;color:#d9e8fa!important}
+[data-theme="dark"] #root .app .qm-workspace .qm-steps li span{background:#203c59;color:#d9e8fa}
+
+.qm-workspace .qm-current-verse{outline:3px solid #1e5aa8;outline-offset:2px;background:#eaf3fb} [data-theme="dark"] #root .app .qm-workspace .qm-current-verse{outline-color:#a6ccff;background:#203c59}

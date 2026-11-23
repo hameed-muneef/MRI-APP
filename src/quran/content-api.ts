@@ -1,6 +1,8 @@
 // ربط Quran Foundation Content API (api.quran.com) — للترجمات والتفسير.
 // لا محتوى ديني مخترع: كل النصوص تُجلب من API.
 import {getOfflineEntry} from './offline-store';
+import asbabDataPart1 from './asbab-nuzul-1.json';
+import asbabDataPart2 from './asbab-nuzul-2.json';
 
 const CACHE_PREFIX = 'quran-content-cache-v1:';
 
@@ -30,14 +32,13 @@ export const TRANSLATIONS: TranslationChoice[] = [
   { id: 20, name: 'Saheeh International', language: 'en' },
   { id: 22, name: 'Yusuf Ali', language: 'en' },
   { id: 19, name: 'Pickthall', language: 'en' },
-  { id: 85, name: 'Muhammad Taqi Usmani', language: 'en' },
+  { id: 85, name: 'M.A.S. Abdel Haleem', language: 'en' },
 ];
 
-// تفاسير (من Quran.com) — ملاحظة: "الجلالين" غير متاح عبر هذا API.
-// متاح: الميسر، السعدي، ابن كثير، القرطبي، الطبري، البغوي.
+// تفاسير — التفسير الميسر هو الافتراضي بطلب المستخدم. الكل يُجلب من Quran.com API v4.
 export const TAFSIRS: TafsirChoice[] = [
-  { id: 91, name: 'تفسير السعدي', language: 'ar' },
   { id: 16, name: 'التفسير الميسر', language: 'ar' },
+  { id: 91, name: 'تفسير السعدي', language: 'ar' },
   { id: 14, name: 'تفسير ابن كثير', language: 'ar' },
   { id: 90, name: 'تفسير القرطبي', language: 'ar' },
   { id: 15, name: 'تفسير الطبري', language: 'ar' },
@@ -81,8 +82,51 @@ export async function fetchTafsir(verseKey: string, tafsirId: number, signal?: A
   return cleaned;
 }
 
-// جلب "أسباب النزول" — Quran.com لا يوفر endpoint مخصصًا. نستخدم tafsir id 16 (الجلالين)
-// كمصدر "أسباب النزول" (الجلالين يذكر أسباب النزول في التفسير). لا محتوى مخترع.
-export async function fetchAsbabNuzul(verseKey: string, signal?: AbortSignal): Promise<string | null> {
-  return fetchTafsir(verseKey, 16, signal);
+type AsbabEntry = { surah: number; ayahs: number[]; occasions: string[] };
+
+/** مصدر أسباب النزول المعروض: قاعدة بيانات مركز تفسير للدراسات القرآنية (tafsir.net)،
+ *  بترخيص CC BY 4.0، مدمجة محليًا فلا تحتاج اتصالًا؛ 201 مدخلًا، وغياب الآية يعني عدم ورودها في هذا المصدر. */
+export const ASBAB_ATTRIBUTION = 'أسباب النزول — مركز تفسير للدراسات القرآنية (tafsir.net)';
+export const ASBAB_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0)، مع تكييف التنسيق';
+
+const asbabEntries = [...(asbabDataPart1 as AsbabEntry[]), ...(asbabDataPart2 as AsbabEntry[])];
+
+export function getAsbabNuzul(verseKey: string): string | null {
+  const [surah, ayah] = verseKey.split(':').map(Number);
+  const entry = asbabEntries.find((e) => e.surah === surah && e.ayahs.includes(ayah));
+  if (!entry) return null;
+  return entry.occasions.join('\n\n');
+}
+
+/** أسباب النزول من المصدر المحلي المعتمد فقط؛ لا بديل ولا نص مخترع عند غياب سبب موثّق. */
+export async function fetchAsbabNuzul(verseKey: string, _signal?: AbortSignal): Promise<string | null> {
+  return getAsbabNuzul(verseKey);
+}
+
+/** معاني الكلمات: شروح عربية من قاعدة بيانات مركز تفسير للدراسات القرآنية (tafsir.net)،
+ *  بترخيص CC BY 4.0، مدمجة محليًا. شروح توضيحية تتضمن أحيانًا ملاحظات نحوية، وليست ترجمة آلية. */
+export const WORD_MEANINGS_ATTRIBUTION = 'معاني الكلمات — مركز تفسير للدراسات القرآنية (tafsir.net)';
+export const WORD_MEANINGS_PROVIDER = 'بيانات مدمجة على الجهاز، بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0)، مع تكييف التنسيق';
+
+export type WordMeaning = { word: string; meaning: string };
+
+type WordMeaningsData = Record<string, [string, string][]>;
+
+let wordMeaningsPromise: Promise<WordMeaningsData> | null = null;
+function loadWordMeanings(): Promise<WordMeaningsData> {
+  if (!wordMeaningsPromise) {
+    wordMeaningsPromise = fetch('/quran/word-meanings-ar.json').then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<WordMeaningsData>;
+    });
+  }
+  return wordMeaningsPromise;
+}
+
+/** شروح كلمات الآية من بيانات المصدر المدمجة؛ تُعرض بنص كلمات المصدر نفسه، بلا محاذاة آليّة مع نص الآية. */
+export async function fetchWordMeanings(verseKey: string): Promise<WordMeaning[] | null> {
+  const data = await loadWordMeanings();
+  const rows = data[verseKey];
+  if (!rows || rows.length === 0) return null;
+  return rows.map(([word, meaning]) => ({ word, meaning }));
 }

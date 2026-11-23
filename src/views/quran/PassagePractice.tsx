@@ -16,8 +16,6 @@ type Exercise = 'read' | 'hide' | 'first' | 'blank' | 'order' | 'recall';
 const EXERCISES: {value: Exercise; label: string}[] = [
   {value: 'read', label: 'قراءة'},
   {value: 'hide', label: 'إخفاء الآيات'},
-  {value: 'first', label: 'أول الكلمة'},
-  {value: 'blank', label: 'املأ الفراغ'},
   {value: 'order', label: 'ترتيب الآيات'},
   {value: 'recall', label: 'استرجاع كامل'}
 ];
@@ -119,6 +117,7 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
       <div className="quran-exercise-tabs">{EXERCISES.map(item => <button key={item.value} className={exercise === item.value ? 'primary' : 'soft-btn'} onClick={() => reset(item.value)}>{item.label}</button>)}</div>
     </header>
 
+    <p className="muted small">التدريب على مستوى الكلمات مقيد حتى اعتماد بيانات حدود الكلمات. استخدم الجلسة الجديدة للإخفاء والاسترجاع.</p>
     <div className="quran-practice-verses">
       {verses.map(verse => {
         const hidden = exercise === 'recall' ? !revealed.has(verse.a)
@@ -192,4 +191,4 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
       </div>
     </div>}
   </div>;
-}
+        }

@@ -45,11 +45,14 @@ export function formatAudioClock(seconds: number): string {
 }
 
 class BackgroundAudioEngine {
+  private lazy: {size:number;index:number;resolve:(index:number)=>Promise<AudioTrack|null>;onMissing:(index:number)=>void;generation:number}|null=null;
+  private lazyGeneration=0;
   private state: AudioPlayerState = { ...INITIAL_STATE };
   private listeners = new Set<StateListener>();
   private audioEl: HTMLAudioElement | null = null;
   private hlsInstance: HlsInstance | null = null;
   private webLoadToken = 0;
+  private webPaused=false;
   private sleepTimerHandle: ReturnType<typeof globalThis.setTimeout> | null = null;
   private nativeInitDone = false;
   private usingWebFallback = false;
@@ -83,7 +86,8 @@ class BackgroundAudioEngine {
     }
 
     if (snap.status === 'idle') {
-      this.setState({ ...INITIAL_STATE });
+      if(!snap.completedTrackId){this.lazy=null;this.lazyGeneration++;}
+      this.setState({ ...INITIAL_STATE, completedTrackId: snap.completedTrackId });
       return;
     }
 
@@ -141,6 +145,11 @@ class BackgroundAudioEngine {
 
   private setState(next: AudioPlayerState) {
     this.state = next;
+    const lazy=this.lazy;
+    if(lazy&&next.completedTrackId&&next.completedTrackId===lazyTrackId(lazy.generation,lazy.index)&&lazy.index+1<lazy.size){
+      const index=lazy.index+1;
+      queueMicrotask(()=>{if(this.lazy===lazy)void this.loadLazy(index,lazy);});
+    }
     for (const listener of this.listeners) {
       listener(this.state);
     }
@@ -157,7 +166,22 @@ class BackgroundAudioEngine {
     };
   }
 
-  async playQueue(tracks: AudioTrack[], startIndex = 0, category?: AudioCategory): Promise<void> {
+  async playLazy(size:number,resolve:(index:number)=>Promise<AudioTrack|null>,onMissing:(index:number)=>void):Promise<void>{
+    await this.stop();
+    const lazy={size,index:0,resolve,onMissing,generation:++this.lazyGeneration};this.lazy=lazy;
+    if(size>0)await this.loadLazy(0,lazy);
+  }
+
+  private async loadLazy(index:number,lazy:NonNullable<BackgroundAudioEngine['lazy']>):Promise<void>{
+    lazy.index=index;
+    const track=await lazy.resolve(index);
+    if(this.lazy!==lazy||lazy.index!==index)return;
+    if(!track){this.lazy=null;lazy.onMissing(index);await this.stop();return;}
+    await this.playQueue([{...track,id:lazyTrackId(lazy.generation,index)}],0,track.category,true);
+  }
+
+  async playQueue(tracks: AudioTrack[], startIndex = 0, category?: AudioCategory,keepLazy=false): Promise<void> {
+    if(!keepLazy){this.lazy=null;this.lazyGeneration++;}
     if (!tracks.length) return;
     const sanitizedTracks: AudioTrack[] = tracks.map((t) => {
       const safeWeb = resolveAudioUrlForWeb(t.url) ?? t.url;
@@ -201,6 +225,7 @@ class BackgroundAudioEngine {
               fallbackUrls: nativeCandidates.slice(1),
               category: t.category,
               isLive: Boolean(t.isLive),
+              playbackRate:Number(t.meta?.playbackRate??1),
             };
           }),
           startIndex: idx,
@@ -224,7 +249,16 @@ class BackgroundAudioEngine {
     await this.playQueue([track], 0, track.category);
   }
 
+  supportsPlaybackRate(): boolean {return true;}
+  setPlaybackRate(rate:number): boolean {
+    if(!this.supportsPlaybackRate()||!Number.isFinite(rate)||rate<.5||rate>2)return false;
+    if(this.state.currentTrack)this.state.currentTrack.meta={...this.state.currentTrack.meta,playbackRate:rate};
+    if(this.audioEl){this.audioEl.defaultPlaybackRate=rate;this.audioEl.playbackRate=rate;}
+    else {const native=getNativeBackgroundAudioPlugin();if(native)void native.setPlaybackRate({rate}).catch(()=>{this.setState({...this.state,status:'error',error:'تعذر تغيير سرعة التشغيل.'});});}
+    return true;
+  }
   async pause(): Promise<void> {
+    this.webPaused=true;
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.pause();
@@ -240,6 +274,7 @@ class BackgroundAudioEngine {
   }
 
   async resume(): Promise<void> {
+    this.webPaused=false;
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.resume();
@@ -268,6 +303,7 @@ class BackgroundAudioEngine {
   }
 
   async next(): Promise<void> {
+    if(this.lazy){if(this.lazy.index+1<this.lazy.size)await this.loadLazy(this.lazy.index+1,this.lazy);return;}
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.next();
@@ -279,6 +315,7 @@ class BackgroundAudioEngine {
   }
 
   async previous(): Promise<void> {
+    if(this.lazy){await this.loadLazy(Math.max(0,this.lazy.index-1),this.lazy);return;}
     const native = getNativeBackgroundAudioPlugin();
     if (native && !this.usingWebFallback && !this.audioEl) {
       await native.previous();
@@ -309,7 +346,8 @@ class BackgroundAudioEngine {
     }
   }
 
-  async stop(): Promise<void> {
+  async stop(completedTrackId?: string): Promise<void> {
+    if(!completedTrackId){this.lazy=null;this.lazyGeneration++;}
     this.usingWebFallback = false;
     this.nativeFallbackAttemptKey = null;
     const native = getNativeBackgroundAudioPlugin();
@@ -320,7 +358,7 @@ class BackgroundAudioEngine {
     this.webLoadToken += 1;
     this.destroyWebAudio();
     this.clearWebMediaSession();
-    this.setState({ ...INITIAL_STATE });
+    this.setState({ ...INITIAL_STATE, completedTrackId });
   }
 
   /** Sleep timer: stop playback after `minutes`. 0 = cancel. */
@@ -385,6 +423,7 @@ class BackgroundAudioEngine {
 
     const track = queue[index];
     const token = ++this.webLoadToken;
+    if(candidateIndex===0)this.webPaused=false;
     this.destroyWebAudio();
 
     const candidates = expandAudioFallbackUrls(track.url, track.fallbackUrls, 'web');
@@ -406,6 +445,9 @@ class BackgroundAudioEngine {
 
     const audio = new Audio();
     audio.preload = 'auto';
+    const requestedRate=Number(track.meta?.playbackRate??1);
+    audio.defaultPlaybackRate=Number.isFinite(requestedRate)?Math.max(.5,Math.min(2,requestedRate)):1;
+    audio.playbackRate=audio.defaultPlaybackRate;
     this.audioEl = audio;
 
     if (candidateIndex === 0) {
@@ -474,6 +516,7 @@ class BackgroundAudioEngine {
 
     audio.addEventListener('loadedmetadata', () => {
       if (token !== this.webLoadToken || track.isLive) return;
+      audio.playbackRate=Number(track.meta?.playbackRate??1);
       const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
       this.setState({ ...this.state, duration: dur });
     });
@@ -485,7 +528,7 @@ class BackgroundAudioEngine {
       } else if (index + 1 < this.state.queue.length) {
         void this.startWebTrack(index + 1);
       } else {
-        void this.stop();
+        void this.stop(track.id);
       }
     });
 
@@ -545,6 +588,8 @@ class BackgroundAudioEngine {
       } else {
         audio.src = effectiveUrl;
       }
+      if(token!==this.webLoadToken)return;
+      if(this.webPaused)return;
       await audio.play();
     } catch (err) {
       handleAttemptFailure(err);
@@ -599,3 +644,5 @@ class BackgroundAudioEngine {
 }
 
 export const backgroundAudio = new BackgroundAudioEngine();
+
+function lazyTrackId(generation:number,index:number):string{return `lazy:${generation}:${index}`;}

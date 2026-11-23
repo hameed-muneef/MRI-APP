@@ -1,3 +1,5 @@
+import {nativeMasteryReminders} from '../quran-mastery/reminders';
+import {loadMasteryState} from '../quran-mastery/storage';
 // src/notifications/native-prayer-scheduler.ts
 // جدولة أذان الصلاة (AlarmManager + AdhanPlaybackService) والمنبهات عبر @capacitor/local-notifications (Android/iOS).
 // تعمل فقط في بيئة Capacitor (native). في الويب تُتجاهل (no-op).
@@ -388,6 +390,8 @@ export function buildNativeReminderPayloads(
   const payloads: NativeNotificationPayload[] = [];
 
   for (const reminder of reminders) {
+    // Mastery due-state is evaluated live; do not schedule a stale daily alert while closed.
+    if(reminder.id==='quran-mastery-daily-review')continue;
     if (!reminder.enabled) continue;
     // Quiet hours are checked at each future occurrence, not at scheduling time.
     if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
@@ -794,7 +798,7 @@ export async function scheduleNativePersonalReminders(
     if (perms.display !== 'granted') return 0;
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeReminderPayloads(reminders, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
     if (payloads.length === 0) return 0;
 
     try {
@@ -908,4 +912,4 @@ export async function syncAllNativeNotifications(opts: {
 
 export function isNativePlatform(): boolean {
   return isNative();
-}
+  }

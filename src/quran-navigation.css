@@ -1,0 +1,41 @@
+/* One calm green palette for Quran navigation, matching the mastery workspace.
+   Selection is also conveyed by border weight and aria-current, never hue alone. */
+html[data-theme="light"] #root .app main[data-section="quran"] .quran-section-grid [data-quran-tab] {
+  --qtab-bg: #E0EEE5 !important; --qtab-border: #6C907D !important; --qtab-icon-bg: #C8E1D2 !important;
+  --qtab-icon-fg: #20553E !important; --qtab-active-bg: #C8E1D2 !important;
+}
+html[data-theme="dark"] #root .app main[data-section="quran"] .quran-section-grid [data-quran-tab] {
+  --qtab-bg: #203F35 !important; --qtab-border: #6E9D88 !important; --qtab-icon-bg: #2C5747 !important;
+  --qtab-icon-fg: #A5DFC0 !important; --qtab-active-bg: #2C5747 !important;
+}
+#root .app .quran-section-grid button[data-quran-tab] { min-height: 48px; }
+#root .app .quran-section-grid button[data-quran-tab] strong {
+  white-space: normal; overflow: visible; overflow-wrap: anywhere; line-height: 1.5;
+}
+#root .app .quran-section-grid button[data-quran-tab="hifz"] { grid-column: 1 / -1; }
+#root .app .quran-section-grid button[data-quran-tab]:hover {
+  background: var(--qtab-active-bg) !important;
+}
+#root .app .quran-section-grid button[data-quran-tab]:focus-visible {
+  outline: 3px solid var(--qtab-icon-fg) !important; outline-offset: 3px;
+}
+
+/* Focus the learning journey: surrounding navigation returns on saved exit. */
+body:has(.qm-steps) .quran-page > :is(.quran-intro,.quran-section-grid,.quran-section-header) { display: none !important; }
+.qm-workspace { scroll-margin-top: 80px; }
+.qm-workspace h2:focus { outline: none; }
+.qm-workspace .qm-audio-settings summary { cursor: pointer; min-height: 44px; }
+.qm-workspace .qm-guidance { line-height: 1.85; }
+
+/* The next action remains thumb-reachable from the first screen of every step. */
+body:has(.qm-steps) .qm-workspace { padding-bottom: 150px; }
+body:has(.qm-steps) .qm-workspace .qm-footer {
+  position: fixed; inset-inline: 12px; bottom: 8px; margin: 0 auto; width: auto;
+  max-width: 1180px; z-index: 40; padding: 10px; display: flex;
+  flex-direction: row; flex-wrap: wrap; align-items: center;
+}
+body:has(.qm-steps) .qm-footer .qm-primary { flex: 1 1 190px; }
+body:has(.qm-steps) .qm-footer small { flex-basis: 100%; font-size: 12px; }
+.qm-workspace .qm-journey-steps summary { min-height: 36px; cursor: pointer; font-size: 13px; }
+.qm-workspace .qm-guidance { margin-block: 12px; padding: 12px; }
+.qm-workspace .qm-heading h2 { margin-block: 10px; }
