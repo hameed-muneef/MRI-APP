@@ -9,6 +9,7 @@ let listenerCb: ((state: NativeAudioStateSnapshot) => void) | null = null;
 const mockPlugin: BackgroundAudioPluginInterface = {
   playQueue: vi.fn(async () => ({ started: true })),
   playSingle: vi.fn(async () => {}),
+  setPlaybackRate:vi.fn(async()=>{}),
   pause: vi.fn(async () => {}),
   resume: vi.fn(async () => {}),
   stop: vi.fn(async () => {}),
