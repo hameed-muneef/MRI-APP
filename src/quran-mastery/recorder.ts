@@ -60,6 +60,10 @@ export class SessionRecorder {
     return this.status;
   }
   stop() {if (this.status === 'recording') this.recorder?.stop();}
+  recordingForSave(newId: () => string, passageId?: string, sessionId?: string): {blob:Blob;meta:RecordingMeta}|null {
+    if (this.status !== 'stopped' || !this.blob) return null;
+    return {blob:this.blob,meta:{id:newId(),passageId,sessionId,mimeType:this.blob.type,durationMs:this.durationMs,retention:'saved_local',consentGranted:true,createdAt:new Date().toISOString()}};
+  }
   saveToDevice(newId: () => string, passageId?: string, sessionId?: string): {blob:Blob;meta:RecordingMeta}|null {
     if (this.status !== 'stopped' || !this.blob) return null;
     const result = {blob:this.blob,meta:{id:newId(),passageId,sessionId,mimeType:this.blob.type,durationMs:this.durationMs,retention:'saved_local' as const,consentGranted:true,createdAt:new Date().toISOString()}};
@@ -87,4 +91,4 @@ export function createBrowserRecorder(onEvent?: (event: RecorderEvent)=>void): S
       document.addEventListener('visibilitychange',visibility);window.addEventListener('pagehide',handler);
       return()=>{document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',handler);};},
   });
-        }
+}
