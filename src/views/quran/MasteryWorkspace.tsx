@@ -10,7 +10,9 @@ import {advanceStage,applyAssessment,completePlayback,connectionChains,connectio
 import {loadMasteryState,saveMasteryState} from '../../quran-mastery/storage';
 import {hiddenAriaLabel,hideVerse,initialHide,isHidden,revealAll,revealVerse} from '../../quran-mastery/hide';
 import {createBrowserRecorder,type SessionRecorder} from '../../quran-mastery/recorder';
-import {resolveSessionAudio,selectRange,SESSION_RECITERS} from '../../quran-mastery/services';
+import {selectRange,SESSION_RECITERS} from '../../quran-mastery/services';
+import {sessionAudio} from '../../quran/audio-adapter';
+import UnderstandingSheet from './UnderstandingSheet';
 import '../../quran-mastery/mastery.css';
 
 type Props={asset:QuranAsset;purpose:SessionPurpose;notify:(text:string)=>void};
@@ -88,17 +90,20 @@ function SessionPanel({asset,session,root,commit,notify,storageError,onClose}:Se
   const [recorderSnapshot,setRecorderSnapshot]=useState({status:'idle',url:'',mimeType:'',durationMs:0});
   const recorder=useRef<SessionRecorder|null>(null);
   const mounted=useRef(false);
-  const audio=useRef<HTMLAudioElement|null>(null),generation=useRef(0),timer=useRef<ReturnType<typeof setTimeout>|null>(null),eventRef=useRef<RepetitionEvent|null>(null),inFlight=useRef(false);
+  const generation=useRef(0),timer=useRef<ReturnType<typeof setTimeout>|null>(null),eventRef=useRef<RepetitionEvent|null>(null),inFlight=useRef(false);
   const [completed,setCompleted]=useState(0);
   const [recallDone,setRecallDone]=useState(false);
   const chains=connectionChains(session.range);
   const previous=root.sessions.filter(s=>s.completionReason==='completed'&&s.range.surah===session.range.surah&&s.range.ayahEnd+1===session.range.ayahStart) .slice(-1)[0];
   const connected=connectPrevious?connectionWithPrevious(session.range,previous?.range):chains[chain];
+  const [showUnderstanding,setShowUnderstanding]=useState(false);
+  const [understandingAyah,setUnderstandingAyah]=useState(session.range.ayahStart);
+  const openUnderstanding=(ayah=session.range.ayahStart)=>{if(session.stage==='recite')reveal();setUnderstandingAyah(ayah);setShowUnderstanding(true);};
   const attempt=root.recallAttempts.find(a=>a.id===attemptId);
   
   const stopAudio=(interrupted=true)=>{
     generation.current++; if(timer.current)clearTimeout(timer.current);timer.current=null;
-    if(audio.current){audio.current.onended=null;audio.current.onerror=null;audio.current.pause();audio.current.src='';audio.current=null;}
+    sessionAudio.cancel();
     if(interrupted&&eventRef.current&&(inFlight.current||playing)){const e=interruptPlayback(eventRef.current);eventRef.current=e;commitRef.current(r=>({...r,repetitionEvents:upsert(r.repetitionEvents,e)}));}
     inFlight.current=false;setPlaying(false);
   };
@@ -126,31 +131,36 @@ function SessionPanel({asset,session,root,commit,notify,storageError,onClose}:Se
     const next=ayah==null?revealAll(hide,ayahs):revealVerse(hide,ayahs,ayah);
     if(commit(r=>({...r,recallAttempts:r.recallAttempts.map(a=>a.id===id?{...a,helpEvents:[...a.helpEvents,{kind:ayah==null?'reveal_all':'reveal_verse',surah:session.range.surah,ayah,at:new Date().toISOString()}]}:a)})))setHide(next);
   };
-  const play=async()=>{
-    stopAudio();const token=generation.current;setPlaying(true);setCompleted(0);setAudioStatus('جارٍ تجهيز التلاوة…');
+  const cursor=useRef({group:0,verse:0,cycle:0});
+  const selectedReciter=useRef(reciter);selectedReciter.current=reciter;
+  const play=async(resume=false)=>{
+    if(!resume)stopAudio();if(!resume)cursor.current={group:0,verse:0,cycle:0};const token=generation.current;setPlaying(true);if(!resume)setCompleted(0);setAudioStatus('جارٍ تجهيز التلاوة…');
     const range=session.stage==='connect'?connected:session.range;
     const selected=selectRange(asset,range);
     const groups=scope==='verse'?selected.map(v=>[v]):scope==='group'?Array.from({length:Math.ceil(selected.length/2)},(_,i)=>selected.slice(i*2,i*2+2)):[selected];
-    let groupIndex=0,verseIndex=0,cycle=0;
-    const createEvent=()=>{const group=groups[groupIndex];const e=createRepetitionEvent({sessionId:session.id,scope,configured:repeat,newId:uid,surah:range.surah,ayah:scope==='verse'?group[0].a:undefined,groupRefs:group.map(v=>`${v.s}:${v.a}`),reciterId:reciter});eventRef.current=e;return commit(r=>({...r,repetitionEvents:[...r.repetitionEvents,e]}));};
-    if(!groups.length||!createEvent()){stopAudio();return;}
+    let groupIndex=cursor.current.group,verseIndex=cursor.current.verse,cycle=cursor.current.cycle;
+    const createEvent=()=>{const group=groups[groupIndex];const e=createRepetitionEvent({sessionId:session.id,scope,configured:repeat,newId:uid,surah:range.surah,ayah:scope==='verse'?group[0].a:undefined,groupRefs:group.map(v=>`${v.s}:${v.a}`),reciterId:selectedReciter.current});eventRef.current=e;return commit(r=>({...r,repetitionEvents:[...r.repetitionEvents,e]}));};
+    if(!groups.length||groupIndex>=groups.length){stopAudio();return;}
+    if(!resume||!eventRef.current){if(!createEvent()){stopAudio();return;}}else{const updated={...eventRef.current,reciterId:selectedReciter.current,reciterHistory:[...(eventRef.current.reciterHistory??[{reciterId:eventRef.current.reciterId??7,at:eventRef.current.createdAt,completedBefore:0}]),{reciterId:selectedReciter.current,at:new Date().toISOString(),completedBefore:eventRef.current.completed}]};eventRef.current=updated;commit(r=>({...r,repetitionEvents:upsert(r.repetitionEvents,updated)}));}
     const next=async():Promise<void>=>{
       if(token!==generation.current)return;
       const verse=groups[groupIndex][verseIndex];setAudioStatus(`الآية ${toArabicNumber(verse.a)} · تكرار ${toArabicNumber(cycle+1)} من ${toArabicNumber(repeat)}`);
-      const url=await resolveSessionAudio(reciter,verse.s,verse.a);
-      if(token!==generation.current)return;
-      if(!url){setAudioStatus('الصوت غير متاح. أعد المحاولة أو تابع دون صوت؛ لم يُحسب تشغيل.');stopAudio();return;}
-      const player=new Audio(url);audio.current=player;
-      player.onerror=()=>{if(token!==generation.current)return;setAudioStatus('تعذر تشغيل التلاوة. لم نتجاوز الآية ولم يُحسب تشغيل.');stopAudio();};
-      player.onended=()=>{
-        if(token!==generation.current)return;inFlight.current=false;verseIndex++;
-        if(verseIndex>=groups[groupIndex].length){verseIndex=0;cycle++;const e=completePlayback(eventRef.current!);eventRef.current=e;
-          if(!commit(r=>({...r,repetitionEvents:upsert(r.repetitionEvents,e)}))){stopAudio(false);return;}setCompleted(cycle);
-          if(cycle>=repeat){groupIndex++;cycle=0;if(groupIndex>=groups.length||!auto){setAudioStatus('اكتمل التكرار المحدد.');stopAudio(false);return;}if(!createEvent()){stopAudio(false);return;}}
-        }
-        timer.current=setTimeout(()=>void next(),pause*1000);
-      };
-      try{await player.play();if(token===generation.current)inFlight.current=true;else player.pause();}catch{if(token===generation.current){setAudioStatus('تعذر بدء الصوت. اضغط تشغيل لإعادة المحاولة.');stopAudio();}}
+      inFlight.current=true;
+      const result=await sessionAudio.playVerse({reciterId:selectedReciter.current,surah:verse.s,ayah:verse.a,title:`${referenceLabel(asset,verse.s,verse.a,verse.a)}`});
+      if(token!==generation.current||result==='cancelled')return;
+      inFlight.current=false;
+      if(result==='missing'){setAudioStatus('الصوت غير متاح. أعد المحاولة أو تابع دون صوت؛ لم يُحسب تشغيل.');stopAudio();return;}
+      if(result==='rejected-narration'){setAudioStatus('هذا القارئ غير متوافق مع نص حفص المعروض؛ لم يُستبدل بآخر ولم يُحسب تشغيل.');stopAudio();return;}
+      if(result==='error'){setAudioStatus('تعذر تشغيل التلاوة. لم نتجاوز الآية ولم يُحسب تشغيل.');stopAudio();return;}
+      if(result==='preempted'){setAudioStatus('توقف صوت الجلسة لأن تشغيلًا آخر بدأ أو أُوقف المشغّل. لم يُحسب تشغيل.');stopAudio();return;}
+      // ended: تشغيل مكتمل واحد يُحسب فقط
+      verseIndex++;
+      if(verseIndex>=groups[groupIndex].length){verseIndex=0;cycle++;const e=completePlayback(eventRef.current!);eventRef.current=e;
+        if(!commit(r=>({...r,repetitionEvents:upsert(r.repetitionEvents,e)}))){stopAudio(false);return;}setCompleted(cycle);
+        if(cycle>=repeat){groupIndex++;cycle=0;if(groupIndex>=groups.length||!auto){setAudioStatus('اكتمل التكرار المحدد.');stopAudio(false);return;}if(!createEvent()){stopAudio(false);return;}}
+      }
+      cursor.current={group:groupIndex,verse:verseIndex,cycle};
+      timer.current=setTimeout(()=>void next(),pause*1000);
     };
     void next();
   };
@@ -185,10 +195,11 @@ function SessionPanel({asset,session,root,commit,notify,storageError,onClose}:Se
     {session.stage==='understand'&&<div className="qm-card"><h3>الفهم قبل الحفظ</h3><p>اقرأ الآيات بتأنٍ. التفسير المعتمد موجود في مكتبة التفسير الحالية؛ لا نعرض نصًا تفسيريًا غير موثّق هنا.</p><p className="qm-notice">أسباب النزول: المصدر قيد المراجعة. معاني الكلمات قيد التحقق من مصدر موثوق وحدود كلمات معتمدة.</p></div>}
     {session.stage==='connect'&&<div className="qm-card"><h3>سلسلة الربط التدريجي</h3><p>١، ثم ١–٢، ثم ١–٣ حتى المقطع كاملًا. هذا تدريب ربط، وليس اختبار ترتيب الآيات.</p><div className="qm-chips">{chains.map((c,i)=><button key={i} aria-pressed={!connectPrevious&&chain===i} onClick={()=>{stopAudio();setChain(i);setConnectPrevious(false);}}>{toArabicNumber(c.ayahStart)}{c.ayahEnd!==c.ayahStart?`–${toArabicNumber(c.ayahEnd)}`:''}</button>)}</div>{previous&&<button aria-pressed={connectPrevious} onClick={()=>{stopAudio();setConnectPrevious(v=>!v);}}>اربط بالمقطع السابق: {referenceLabel(asset,previous.range.surah,previous.range.ayahStart,session.range.ayahEnd)}</button>}</div>}
     {masking&&<div className="qm-card"><h3>الإخفاء والاسترجاع</h3><div className="qm-chips">{HIDE_MODES.map(m=><button key={m.value} aria-pressed={hide.mode===m.value} onClick={()=>changeMode(m.value)}>{m.label}</button>)}<button disabled>إخفاء كلمات · قيد التحقق</button></div><p className="qm-muted">{HIDE_MODES.find(m=>m.value===hide.mode)?.hint}</p><button className="qm-primary" onClick={()=>reveal()}>إظهار الكل فورًا</button>{hide.mode==='D'&&<button onClick={()=>{const next=ayahs.find(a=>!isHidden(hide,a));if(next!=null)setHide(hideVerse(hide,next));}}>أخفي الآية التالية</button>}<p role="status" className="qm-muted">المخفي: {ayahs.filter(a=>isHidden(hide,a)).map(toArabicNumber).join('، ')||'لا توجد آيات مخفية'}</p></div>}
-    {session.stage!=='assess'&&<div className="qm-verses">{(session.stage==='connect'?selectRange(asset,connected):verses).map(v=><article key={v.a} className="qm-card"><QuranVerseText surah={v.s} ayah={v.a} text={v.t} hidden={masking&&isHidden(hide,v.a)}/><div className="qm-verse-actions"><small>{referenceLabel(asset,v.s,v.a)}</small>{masking&&<><button aria-label={`${isHidden(hide,v.a)?'إظهار الآية':'إخفاء الآية'} ${v.a}`} title={hiddenAriaLabel(hide.mode)} onClick={()=>{if(isHidden(hide,v.a)){reveal(v.a);}else setHide(hideVerse(hide,v.a));}}>{isHidden(hide,v.a)?'إظهار الآية':'إخفاء الآية'}</button><button aria-pressed={attempt?.difficultVerses.includes(`${v.s}:${v.a}`)??false} onClick={()=>{const id=ensureAttempt();if(id)commit(r=>({...r,recallAttempts:r.recallAttempts.map(a=>a.id===id?{...a,difficultVerses:a.difficultVerses.includes(`${v.s}:${v.a}`)?a.difficultVerses.filter(x=>x!==`${v.s}:${v.a}`):[...a.difficultVerses,`${v.s}:${v.a}`]}:a)}));}}>آية صعبة</button></>}</div></article>)}</div>}
-    {['listen','memorize','connect'].includes(session.stage)&&<div className="qm-card"><h3>التكرار الصوتي</h3><div className="qm-fields"><label>القارئ<select disabled={playing} value={reciter} onChange={e=>setReciter(Number(e.target.value))}>{SESSION_RECITERS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><label>النطاق<select disabled={playing} value={scope} onChange={e=>setScope(e.target.value as RepetitionScope)}><option value="verse">كل آية</option><option value="group">مجموعة آيتين</option><option value="passage">المقطع كاملًا</option></select></label><label>مرات التكرار<input disabled={playing} type="number" min="1" max="100" value={repeat} onChange={e=>setRepeat(Math.max(1,Math.min(100,Number(e.target.value)||1)))}/></label><label>وقفة بين الآيات (ثوانٍ)<input disabled={playing} type="number" min="0" max="30" value={pause} onChange={e=>setPause(Math.max(0,Math.min(30,Number(e.target.value)||0)))}/></label></div><div className="qm-chips">{REPETITION_PRESETS.map(n=><button disabled={playing} aria-pressed={repeat===n} key={n} onClick={()=>setRepeat(n)}>{toArabicNumber(n)}</button>)}</div><label className="qm-check"><input type="checkbox" checked={auto} disabled={playing} onChange={e=>setAuto(e.target.checked)}/>انتقال تلقائي للمجموعة التالية</label><p role="status">{audioStatus}</p><p className="qm-muted">المكتمل في النطاق الحالي: {toArabicNumber(completed)}. لا يُحسب التشغيل المقطوع. الصوت يحتاج اتصالًا ما لم يوفّره مخزن المتصفح.</p>{playing?<button onClick={()=>{stopAudio();setAudioStatus('توقف التشغيل. التشغيل غير المكتمل مسجل كمقطوع.');}}>إيقاف</button>:<button className="qm-primary" onClick={()=>void play()}>تشغيل التكرار</button>}</div>}
+    {session.stage!=='assess'&&<div className="qm-verses">{(session.stage==='connect'?selectRange(asset,connected):verses).map(v=><article key={v.a} className="qm-card"><QuranVerseText surah={v.s} ayah={v.a} text={v.t} hidden={masking&&isHidden(hide,v.a)}/><div className="qm-verse-actions"><small>{referenceLabel(asset,v.s,v.a)}</small><button onClick={()=>openUnderstanding(v.a)}>فهم الآية {toArabicNumber(v.a)}</button>{masking&&<><button aria-label={`${isHidden(hide,v.a)?'إظهار الآية':'إخفاء الآية'} ${v.a}`} title={hiddenAriaLabel(hide.mode)} onClick={()=>{if(isHidden(hide,v.a)){reveal(v.a);}else setHide(hideVerse(hide,v.a));}}>{isHidden(hide,v.a)?'إظهار الآية':'إخفاء الآية'}</button><button aria-pressed={attempt?.difficultVerses.includes(`${v.s}:${v.a}`)??false} onClick={()=>{const id=ensureAttempt();if(id)commit(r=>({...r,recallAttempts:r.recallAttempts.map(a=>a.id===id?{...a,difficultVerses:a.difficultVerses.includes(`${v.s}:${v.a}`)?a.difficultVerses.filter(x=>x!==`${v.s}:${v.a}`):[...a.difficultVerses,`${v.s}:${v.a}`]}:a)}));}}>آية صعبة</button></>}</div></article>)}</div>}
+    {['listen','memorize','connect'].includes(session.stage)&&<div className="qm-card"><h3>التكرار الصوتي</h3><div className="qm-fields"><label>القارئ<select aria-label="القارئ" value={reciter} onChange={e=>{const wasPlaying=playing;stopAudio();selectedReciter.current=Number(e.target.value);setReciter(selectedReciter.current);setAudioStatus('تم تغيير القارئ مع حفظ الآية والتكرارات المكتملة.');if(wasPlaying)void play(true);}}>{SESSION_RECITERS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><label>النطاق<select disabled={playing} value={scope} onChange={e=>setScope(e.target.value as RepetitionScope)}><option value="verse">كل آية</option><option value="group">مجموعة آيتين</option><option value="passage">المقطع كاملًا</option></select></label><label>مرات التكرار<input disabled={playing} type="number" min="1" max="100" value={repeat} onChange={e=>setRepeat(Math.max(1,Math.min(100,Number(e.target.value)||1)))}/></label><label>وقفة بين الآيات (ثوانٍ)<input disabled={playing} type="number" min="0" max="30" value={pause} onChange={e=>setPause(Math.max(0,Math.min(30,Number(e.target.value)||0)))}/></label></div><div className="qm-chips">{REPETITION_PRESETS.map(n=><button disabled={playing} aria-pressed={repeat===n} key={n} onClick={()=>setRepeat(n)}>{toArabicNumber(n)}</button>)}</div><label className="qm-check"><input type="checkbox" checked={auto} disabled={playing} onChange={e=>setAuto(e.target.checked)}/>انتقال تلقائي للمجموعة التالية</label><p role="status">{audioStatus}</p><p className="qm-muted">المكتمل في النطاق الحالي: {toArabicNumber(completed)}. لا يُحسب التشغيل المقطوع. الصوت يحتاج اتصالًا ما لم يوفّره مخزن المتصفح.</p>{playing?<button onClick={()=>{stopAudio();setAudioStatus('توقف التشغيل. التشغيل غير المكتمل مسجل كمقطوع.');}}>إيقاف</button>:<button className="qm-primary" onClick={()=>void play()}>تشغيل التكرار</button>}</div>}
     {session.stage==='recite'&&<div className="qm-card"><h3>سمّع من الذاكرة</h3><p>لا تحليل آليًا للصوت ولا درجات مخمّنة. التسجيل اختياري ومؤقت ومحلي، ويُحذف عند مغادرة الجلسة أو دخول الخلفية ما لم تحفظه صراحة على الجهاز.</p>{!recorder.current?<p>الميكروفون غير مدعوم هنا. يمكنك التسميع دون تسجيل.</p>:<><p role="status">{recorderSnapshot.status==='denied'?'لم يُمنح إذن الميكروفون. تابع دون تسجيل أو أعد المحاولة.':recorderSnapshot.status==='recording'?'جارٍ التسجيل محليًا…':recorderSnapshot.status==='requesting'?'بانتظار إذن الميكروفون…':'التسجيل اختياري'}</p><div className="qm-chips">{recorderSnapshot.status==='recording'?<button onClick={()=>recorder.current?.stop()}>إيقاف التسجيل</button>:<button disabled={recorderSnapshot.status==='requesting'} onClick={()=>void recorder.current?.start().then(()=>setRecorderSnapshot(recorder.current!.snapshot()))}>ابدأ التسجيل بإذني</button>}{recorderSnapshot.url&&<><audio controls src={recorderSnapshot.url} aria-label="تسجيل التسميع المؤقت"/><button onClick={()=>void saveLocalRecording()}>حفظ على الجهاز</button><button onClick={()=>recorder.current?.discard('user')}>حذف التسجيل</button></>}</div></>}</div>}
     {session.stage==='assess'&&<div className="qm-card"><h3>كيف كان استرجاعك؟</h3><p>التقييم ذاتي ومرتبط بمحاولة الاسترجاع. اختيار «متقن» لا يمنح الإتقان فورًا؛ يلزم دليل استرجاع متباعد بلا مساعدة على سلم المراجعة.</p>{attempt?.helpEvents.length? <p className="qm-notice">استُخدم الإظهار في هذه المحاولة. لن تبني دليل إتقان مستقلًا.</p>:null}<div className="qm-ratings">{ASSESSMENT_LABELS.map(a=><button key={a.value} disabled={!attempt?.completedAt&&!recallDone} onClick={()=>assess(a.value)}>{a.label}</button>)}</div></div>}
-    {session.stage!=='assess'&&<footer className="qm-footer">{session.stage==='recite'?<button className="qm-primary" onClick={finishRecall}>أنهيت محاولة الاسترجاع، انتقل للتقييم</button>:<button className="qm-primary" onClick={nextStage}>التالي: {STAGE_LABELS[session.stages[session.stages.indexOf(session.stage)+1]]}</button>}<small>موضعك محفوظ على جهازك فقط</small></footer>}
+    {showUnderstanding&&<UnderstandingSheet surah={session.range.surah} ayahStart={understandingAyah} ayahEnd={session.range.ayahEnd} verseText={(s,a)=>asset.verses.find(v=>v.s===s&&v.a===a)?.t??null} onClose={()=>setShowUnderstanding(false)}/>}
+    {session.stage!=='assess'&&<footer className="qm-footer"><button onClick={()=>openUnderstanding()}>فهم الآيات</button>{session.stage==='recite'?<button className="qm-primary" onClick={finishRecall}>أنهيت محاولة الاسترجاع، انتقل للتقييم</button>:<button className="qm-primary" onClick={nextStage}>التالي: {STAGE_LABELS[session.stages[session.stages.indexOf(session.stage)+1]]}</button>}<small>موضعك محفوظ على جهازك فقط</small></footer>}
   </section>;
     }
