@@ -12,7 +12,10 @@ import {
 
 // ============ أدوات التاريخ (محلية، مستقلة عن مخزن rabbani-v1) ============
 
-export const dateKey = (now = new Date()): string => new Intl.DateTimeFormat('en-CA').format(now);
+export const dateKey = (now = new Date()): string => {
+  const year=now.getFullYear(),month=String(now.getMonth()+1).padStart(2,'0'),day=String(now.getDate()).padStart(2,'0');
+  return `${year}-${month}-${day}`;
+};
 
 export function addDays(key: string, days: number): string {
   const value = new Date(`${key}T12:00:00`);
@@ -350,4 +353,4 @@ export function passageLabel(passage: MasteryPassage): string {
   return range.ayahStart === range.ayahEnd
     ? `آية ${range.ayahStart}`
     : `آية ${range.ayahStart}–${range.ayahEnd}`;
-}
+            }
