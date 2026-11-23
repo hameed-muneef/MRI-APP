@@ -2,6 +2,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import type { AudioCategory, AudioStatus, AudioTrack } from './types';
 
 export interface NativeAudioStateSnapshot {
+  completedTrackId?: string;
   status: AudioStatus;
   category: AudioCategory | null;
   currentIndex: number;
