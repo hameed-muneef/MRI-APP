@@ -99,4 +99,4 @@ export default function LocationPermissionPanel({ notify }: { notify?: (message:
       )}
     </div>
   );
-          }
+}
