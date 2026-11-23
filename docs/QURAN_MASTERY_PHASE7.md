@@ -1,3 +1,5 @@
+> Current scope update, 23 November2026: Tajweed lessons and their interim external links/checklist were removed by user request. Older phase records below are historical, not a remaining Tajweed delivery gate. Latest defect/audio verification is in QURAN_MASTERY_AUDIT.md.
+
 # Phase 7: final review-code verification
 
 Draft PR9 is stacked on draft Phase4: https://github.com/hameed-muneef/MRI-APP/pull/9 . No merge, release signing, package distribution or production deployment. Review code is prepared; this is not a claim that every originally specified phase is complete.
@@ -26,7 +28,7 @@ Draft PR9 is stacked on draft Phase4: https://github.com/hameed-muneef/MRI-APP/p
 | Native reminders | Original recurrence/start/end/snooze respected; bounded30-day due summaries, channel/category/quiet-hour/permission gates, serialized refresh and scoped cancellation. Mocked plugin test cancels stale reminders after due removal/permission loss without touching prayer/task alarms | Closed-app delivery, completion/deferral/pause on device, battery limits/reboot/horizon remain user tests |
 | Android compile | Unsigned Java21/SDK36 compile passes on code86c36c7: https://github.com/hameed-muneef/MRI-APP/actions/runs/45214070405/job/137830358473 | Earlier parallel push run881e77f failed with truncated Gradle log while its PR run passed; latest PR compile passes. No packaging/signing/upload. Deprecation warnings for actions remain |
 | Privacy/sync | Local-only unchanged; temporary recording with explicit private save; no upload; legacy data preserved | Sync/conflict testing is inapplicable while sync disabled, not a sync safety pass |
-| Trusted content | No Quran source changes, invented rules/examples or automatic recitation judgment; external source attribution and unknown/unavailable states retained | Embedded Tajweed lessons/exercises, token-level meanings and Asbab sources remain gated |
+| Trusted content | No Quran source changes, invented rules/examples or automatic recitation judgment; external source attribution and unknown/unavailable states retained | Tajweed lessons removed by user request; token-level meanings and Asbab sources remain gated |
 
 ## Physical Android protocol before release
 
