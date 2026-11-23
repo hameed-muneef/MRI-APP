@@ -124,4 +124,4 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       </div>
     </div>
   );
-  }
+}
