@@ -220,6 +220,7 @@ public class BackgroundAudioService extends Service {
     private final ExecutorService loaderExecutor = Executors.newSingleThreadExecutor();
     private final List<AudioTrackItem> queue = new ArrayList<>();
     private int currentIndex = -1;
+    private String completedTrackId = null;
     private String currentCategory = null;
     private String status = "idle"; // idle | loading | playing | paused | error
     private String lastError = null;
@@ -488,6 +489,7 @@ public class BackgroundAudioService extends Service {
             return;
         }
 
+        completedTrackId = null;
         currentIndex = index;
         AudioTrackItem track = queue.get(currentIndex);
         currentCategory = track.category;
@@ -949,7 +951,7 @@ public class BackgroundAudioService extends Service {
                 } else if (currentIndex + 1 < queue.size()) {
                     startTrackAt(currentIndex + 1);
                 } else {
-                    stopAllAndSelf();
+                    stopAllAndSelf(track.id);
                 }
             });
             mp.setOnErrorListener((player, what, extra) -> {
@@ -1129,7 +1131,10 @@ public class BackgroundAudioService extends Service {
         } catch (Exception ignored) {}
     }
 
-    private void stopAllAndSelf() {
+    private void stopAllAndSelf() {stopAllAndSelf(null);}
+
+    private void stopAllAndSelf(String endedTrackId) {
+        completedTrackId = endedTrackId;
         cancelPendingRetry();
         handler.removeCallbacks(sleepTimerRunnable);
         stopProgressTicker();
@@ -1480,6 +1485,7 @@ public class BackgroundAudioService extends Service {
                     durationSec = d > 0 ? d / 1000.0 : 0;
                 } catch (Exception ignored) {}
             }
+            snapshot.put("completedTrackId", completedTrackId != null ? completedTrackId : JSONObject.NULL);
             snapshot.put("status", status);
             snapshot.put("category", currentCategory != null ? currentCategory : JSONObject.NULL);
             snapshot.put("currentIndex", currentIndex);
@@ -1534,4 +1540,4 @@ public class BackgroundAudioService extends Service {
         }
         super.onDestroy();
     }
-}
+                    }
