@@ -1,3 +1,5 @@
+> Historical record only. The user removed Tajweed lessons on 23 November2026. The interim section, external links and checklist are no longer in the application or required scope.
+
 # Phase 5 interim: external reading, not embedded lessons
 
 User approved this interim choice on November23 while embedded reviewed six-topic lessons and exercises remain incomplete. No religious rule, example, PDF page or audio is redistributed by this feature.
