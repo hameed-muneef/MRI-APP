@@ -90,3 +90,8 @@
 - Added local per-ayah audio pack management, cold-offline resolution cache, production Quran precache, session-safe update behavior and bounded native review summaries with reconciliation.
 - Current local verification: 256 unit tests, 173 Node tests, typecheck, build and Quran manifest integrity pass. Four offline browser cases pass mobile/desktop, including a complete daily session with synthetic downloaded sound and no network. This does not validate real recitation quality or physical Android behavior.
 - Phase5 content gate remains open. Phase6 device demonstration and final Phase7 accessibility/performance/device matrix remain open. No merge, signing or release.
+
+### QURAN-MASTERY-REVIEW-CODE-HANDOFF (2026-11-23)
+- Draft PR9 stacks on Phase4, with approved external-reference interim, offline pack management and native reminder reconciliation. No merge/release.
+- Fetched review code86c36c7:257 unit,173 Node,82 browser cases in bounded batches plus4 theme/viewport checks; TypeScript, production build, source checksum and unsigned Android compile pass. Real-source downloaded first-ayah playback passed after production cold offline reload.
+- Embedded authorized reviewed Tajweed lessons/exercises remain incomplete. Physical Android microphone/call/background/audio/notifications, actual screen reader and user content/release review remain open. Full matrix in QURAN_MASTERY_PHASE7.md.
