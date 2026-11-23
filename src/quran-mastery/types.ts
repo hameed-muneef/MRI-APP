@@ -158,6 +158,14 @@ export type MasteryPlan = {
   title: string;
   /** نطاق كلي ثابت المراجع؛ لا نصوص. */
   range: VerseRange;
+  mode?: 'free' | 'organized';
+  preset?: 'beginner' | 'limited' | 'regular' | 'full' | 'revision';
+  ranges?: VerseRange[];
+  timeBudgetMinutes?: number;
+  weekdays?: number[];
+  timezone?: string;
+  reciterId?: number;
+  revisionLimit?: number;
   dailyTargetVerses: number;
   repeatPreset: number;
   status: MasteryPlanStatus;
