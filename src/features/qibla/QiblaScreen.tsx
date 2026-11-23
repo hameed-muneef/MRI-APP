@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Compass, MapPin, RotateCcw, Settings2, X } from 'lucide-react';
 import { useGeolocation, type GeoStatus } from '../../hooks/useGeolocation';
+import { useCentralLocation } from '../../hooks/useCentralLocation';
 import { useBackHandler } from '../../navigation/useBackHandler';
 import { useCompassHeading } from '../../hooks/useCompassHeading';
 import { qiblaBearing, distanceToKaabaKm, turnInstruction, bearingToCardinal } from '../../lib/qibla';
@@ -13,7 +14,9 @@ interface Props { notify?: (t: string) => void; }
 
 export default function QiblaScreen({ notify }: Props) {
   const geo = useGeolocation(true);
-  const [manualCity, setManualCity] = useState<QiblaCity | null>(null);
+  const central = useCentralLocation();
+  // المدينة اليدوية مشتركة مركزيًا: تنعكس على المواقيت والمساجد وتبقى بعد إعادة الفتح.
+  const manualCity = central.manual ? { name: central.manual.label, lat: central.manual.latitude, lon: central.manual.longitude } : null;
   const [query, setQuery] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [digitalOnly, setDigitalOnly] = useState(false);
@@ -54,14 +57,14 @@ export default function QiblaScreen({ notify }: Props) {
   };
 
   const handleSelectCity = (c: QiblaCity) => {
-    setManualCity(c);
+    central.setManual(c.lat, c.lon, `${c.name}، ${c.country}`);
     setShowPicker(false);
     setQuery('');
-    notify?.(`تم اختيار ${c.name}، ${c.country}`);
+    notify?.(`تم اختيار ${c.name}، ${c.country} — ستُستخدم في كل أجزاء التطبيق`);
   };
 
   const handleUseGps = () => {
-    setManualCity(null);
+    central.clearManual();
     geo.request();
   };
 
@@ -120,7 +123,7 @@ export default function QiblaScreen({ notify }: Props) {
             <div className="qibla-info-row">
               <span>الموقع</span>
               <strong>
-                {manualCity ? `${manualCity.name}، ${manualCity.country}` : (nearest ? `${nearest.name}، ${nearest.country}` : 'موقع GPS')}
+                {manualCity ? manualCity.name : (nearest ? `${nearest.name}، ${nearest.country}` : 'موقع GPS')}
                 <small> ({coords.latitude.toFixed(3)}°, {coords.longitude.toFixed(3)}°{!manualCity && geo.coords ? ` · ±${Math.round(geo.coords.accuracy)}م` : ''})</small>
               </strong>
             </div>
@@ -196,7 +199,7 @@ export default function QiblaScreen({ notify }: Props) {
       )}
 
       {manualCity && (
-        <button className="soft-btn qibla-reset" onClick={() => setManualCity(null)}>
+        <button className="soft-btn qibla-reset" onClick={() => central.clearManual()}>
           <RotateCcw size={16} /> العودة إلى GPS
         </button>
       )}

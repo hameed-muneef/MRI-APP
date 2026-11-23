@@ -243,6 +243,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
   const latestPrayerLocationRef = useRef(state.prayerLocation);
   latestPrayerLocationRef.current = state.prayerLocation;
+  const latestPassagesRef = useRef(state.quran?.passages ?? []);
+  latestPassagesRef.current = state.quran?.passages ?? [];
   const latestTaskContextRef = useRef({
     tasks: state.tasks,
     goals: state.goals,
@@ -298,6 +300,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
           prefs,
           reminders,
           taskContext: latestTaskContextRef.current,
+          passages: latestPassagesRef.current,
         });
         lastSyncContextRef.current = { signature: sig, atMs: Date.now() };
       } catch { /* ignore */ }
@@ -323,7 +326,37 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
       window.clearInterval(rolloverCheck);
       cleanupResume?.();
     };
-  }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, user?.id]);
+  }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
+
+  // الأذونات المركزية عند الإقلاع (تطبيق الهاتف فقط): طلب واحد لإذن الإشعارات
+  // حتى تصل المنبهات والتطبيق مغلق، وطلب واحد للموقع تشترك فيه المواقيت والقبلة
+  // والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا يُعاد السؤال تلقائيًا.
+  // على الويب يبقى طلب الأذونات مرتبطًا بأزرار صريحة داخل الشاشات.
+  useEffect(() => {
+    if (!LOCAL_ONLY && !user) return;
+    let cancelled = false;
+    void (async () => {
+      const [{ isNativePlatform: isNative }, locationStore, delivery] = await Promise.all([
+        import('./lib/device-location'),
+        import('./lib/location-store'),
+        import('./notifications/delivery'),
+      ]);
+      if (cancelled || !isNative()) return;
+      const display = await delivery.ensureSystemNotificationPermission();
+      if (cancelled) return;
+      if (display === 'granted') {
+        // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
+        const scheduler = await import('./notifications/native-prayer-scheduler');
+        scheduler.notifyNativePrefsChanged();
+      }
+      if (!locationStore.getCentralLocationState().manual) {
+        await locationStore.ensureCentralLocation({ timeout: 15000 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
 
   const accessMatchesView=featureAccess.view===view;
@@ -359,4 +392,3 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     </Suspense></ErrorBoundary>}
   </div><ScrollToTopFab enabled={canRenderView}/><footer>© 2026 الربانيون — جميع الحقوق محفوظة </footer></main>{!isOnline&&<div className="offline-pill" role="status" aria-live="polite"><WifiOff size={14} aria-hidden="true"/><span>وضع عدم الاتصال · التخزين المحلي نشط</span></div>}{toast&&<div className="toast"><Check size={16}/>{toast}</div>}<MiniAudioPlayer onOpenCategory={openAudioCategory}/><nav className="mobile-nav" aria-label="التنقل السفلي"><button className={view==='home'?'active':''} aria-current={view==='home'?'page':undefined} onClick={()=>navigate('home')}><Home size={20} aria-hidden="true"/><span>الرئيسية</span></button><button data-section="daily" className={inDailySuite(view)?'active':''} aria-current={inDailySuite(view)?'page':undefined} onClick={()=>navigate('day')}><CalendarDays size={20} aria-hidden="true"/><span>حياتي</span></button><button data-section="quran" className={view==='quran'?'active':''} aria-current={view==='quran'?'page':undefined} onClick={()=>navigate('quran')}><BookMarked size={20} aria-hidden="true"/><span>القرآن</span></button><button data-section="qibla" className={view==='qibla'?'active':''} aria-current={view==='qibla'?'page':undefined} onClick={()=>navigate('qibla')}><Compass size={20} aria-hidden="true"/><span>القبلة</span></button><button data-section="daily" className={view==='mosques'?'active':''} aria-label="المساجد القريبة" aria-current={view==='mosques'?'page':undefined} onClick={()=>navigate('mosques')}><MapPin size={20} aria-hidden="true"/><span>المساجد</span></button><button data-section="haramain" className={view==='haramain'?'active':''} aria-current={view==='haramain'?'page':undefined} onClick={()=>navigate('haramain')}><MonitorPlay size={20} aria-hidden="true"/><span>الحرمين</span></button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} aria-current={['reflect','wird'].includes(view)?'page':undefined} onClick={()=>navigate('reflect')}><Heart size={20} aria-hidden="true"/><span>المحاسبة</span></button></nav></div>;
 }
-
