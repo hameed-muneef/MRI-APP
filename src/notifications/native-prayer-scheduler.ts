@@ -908,4 +908,4 @@ export async function syncAllNativeNotifications(opts: {
 
 export function isNativePlatform(): boolean {
   return isNative();
-                                                   }
+}
