@@ -24,3 +24,20 @@ Actual progressive warning, storage-conflict warning and active-ayah pixels were
 ## Still open
 
 Embedded authorized/reviewed Tajweed lessons and validated exercises remain incomplete. The approved six-topic external reading interim is unchanged. Physical Android microphone/calls/background/notification/battery/reboot/lazy playback and actual TalkBack remain device gates. No iOS or automatic pronunciation assessment claim. No software audit proves absence of every defect.
+
+## Original-spec audio continuation
+
+The earlier closeout did not satisfy every original audio requirement. This continuation adds previous/next ayah selection within the session range, true pause/resume at the current media position, and session speeds 0.5/0.75/1/1.25/1.5/2. Whole-passage replay starts at the original range start. Previous/next stops the partial play and never counts it as completed. Pause holds both pending URL resolution and the inter-verse delay. Reciter changes retain the stable playback range and completed repetition count.
+
+Web speed survives the media load reset and is reapplied to each repeated verse. Android receives per-track rate metadata and an active rate command, using PlaybackParams with unchanged pitch; pause during preparation does not autoplay. Session tracks do not restore a prior verse's saved media position into a new repetition. This native path still requires real-device listening/interrupt testing, not merely compilation.
+
+Original-spec comparison also exposed the missing reciter comparison route during recall. Reference playback is now available in the recall stage alongside temporary recording replay. Reference playback reveals the text and records help, so it cannot earn unassisted mastery. Comparison preserves an existing temporary recording. Recording and reference playback stop each other; pending microphone permission blocks starting comparison. No speech recognition or automated pronunciation score is claimed.
+
+Verification for this continuation:271 unit tests,173 Node tests, TypeScript, production build and unchanged Quran checksum. Ten new configured browser cases (five scenarios on desktop/mobile) verify real HTMLAudioElement position/rate against controlled WAV audio: pause/resume and navigation evidence, whole-passage replay, assisted comparison, pause during resolution, and pause between verses. Twenty existing audio/audit regressions passed, including live Quran.com resolution/bytes. Four existing light/dark desktop/mobile accessibility cases passed. A combined command hit its overall time budget after twelve completed browser cases; all five mobile transport cases were then rerun in a bounded batch. No incomplete invocation is counted as a full pass. Actual paused mobile controls were visually inspected.
+
+## Remaining requirement classification
+
+- Reviewed religious-content/data dependencies: embedded six-topic Tajweed lessons, practical examples/exercises, reliable referenced Asbab al-Nuzul and validated word meanings remain incomplete. Accurate word-part hiding remains gated on verified word structure. No generated substitute religious content was added.
+- Deliberately restricted infrastructure: local-only learning, notes and recording storage remain enabled; authentication/cloud synchronization remain disabled by the user's project boundary. No claim of cross-device synchronization.
+- Device/release gates: physical Android audio rates/pitch, microphone, interruptions/calls, background/lazy playback, notification/battery/reboot and actual TalkBack remain unverified. No iOS, merge, signed artifact, packaging or release claim.
+- Existing implementable flows reviewed against the original request: free/organized range plans, adaptive review and catch-up, evidence-based mastery, dashboard/history, hide/reveal, progressive connection, attributed understanding/private notes, explicit recording storage and offline packs retain their existing implementation and automated coverage. This is not proof that no further defect exists.
