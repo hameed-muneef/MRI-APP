@@ -1,4 +1,6 @@
 import {useMemo} from 'react';
+import {dashboard} from '../../quran-mastery/planning';
+import {loadMasteryState} from '../../quran-mastery/storage';
 import {BookOpen, Brain, Clock3, Sparkles, Trash2, TrendingUp} from 'lucide-react';
 import type {QuranAsset, QuranLearningState} from '../../quran/types';
 import {
@@ -8,16 +10,21 @@ import {referenceLabel, toArabicNumber} from '../../quran/content';
 import {EmptyNote, ProgressBar} from './ui';
 
 type Props = {
+  rootMemorization?: {memorizedVerses: number; masteredVerses: number};
   asset: QuranAsset;
   state: QuranLearningState;
   onState: (next: QuranLearningState) => void;
   notify: (text: string) => void;
 };
 
-export default function QuranProgress({asset, state, onState, notify}: Props) {
+export default function QuranProgress({asset, state, onState, notify, rootMemorization}: Props) {
   const surahCounts = useMemo(() => new Map(asset.surahs.map(surah => [surah.n, surah.ayahs])), [asset]);
   const reading = readingStats(state.history);
-  const memorization = memorizationStats(state.passages, state.revisionEvents, surahCounts);
+  const rootMetrics = useMemo(() => { try { const m = dashboard(loadMasteryState()); return {memorizedVerses: m.started, masteredVerses: m.mastered}; } catch { return undefined; } }, []);
+  rootMemorization = rootMemorization ?? rootMetrics;
+  const legacyMemorization = memorizationStats(state.passages, state.revisionEvents, surahCounts);
+  // الجلسات الجديدة محفوظة في مخزن الإتقان؛ يُعرض الأكبر من المصدرين دون جمعهما لتفادي العدّ المزدوج.
+  const memorization = rootMemorization ? {...legacyMemorization, memorizedVerses: Math.max(legacyMemorization.memorizedVerses, rootMemorization.memorizedVerses), masteredVerses: Math.max(legacyMemorization.masteredVerses, rootMemorization.masteredVerses)} : legacyMemorization;
   const juz = masteredJuzCount(asset, state.passages);
   const streak = consistency(state.activityLog);
   const plans = state.plans.filter(plan => plan.contentType === 'quran');
