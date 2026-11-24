@@ -7,7 +7,7 @@ import {
 import '../quran.css';
 import '../quran-navigation.css';
 import type {QuranAsset, QuranLearningState} from '../quran/types';
-import type {Task} from '../app-state';
+import type {Task, TaskSchedule} from '../app-state';
 import {loadQuran} from '../quran/content';
 import MushafPages from './quran/MushafPages';
 import OfflineLibrary from './quran/OfflineLibrary';
@@ -30,6 +30,8 @@ type Props = {
   onState: (next: QuranLearningState) => void;
   tasks: Task[];
   onTasks: (tasks: Task[]) => void;
+  taskSchedules?: Record<string, TaskSchedule>;
+  onTaskSchedules?: (next: Record<string, TaskSchedule>) => void;
   notify: (text: string) => void;
   onOpenTasks: () => void;
   initialSection?: QuranSection;
@@ -50,7 +52,7 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
   {id: 'azkar', title: 'أذكار', description: 'حصن المسلم — أذكار الصباح والمساء وسائر الأوقات، مع عداد تكرار وصوت.', icon: Flower2}
 ];
 
-export default function QuranSunnahView({state, onState, tasks, onTasks, notify, onOpenTasks, initialSection}: Props) {
+export default function QuranSunnahView({state, onState, tasks, onTasks, taskSchedules, onTaskSchedules, notify, onOpenTasks, initialSection}: Props) {
   const [section, setSection] = useState<QuranSection>(initialSection === 'revision' ? 'hifz' : initialSection ?? 'mushaf');
   const [masteryPurpose, setMasteryPurpose] = useState<'new' | 'revision'>(initialSection === 'revision' ? 'revision' : 'new');
   const [autoPlayToken, setAutoPlayToken] = useState(0);
@@ -138,7 +140,7 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, notify,
             }}
           />
         )}
-        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
+        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
         {section === 'plans' && <QuranPlansCard asset={asset} state={state} onState={onState} notify={notify} onOpen={handleSectionChange} onOpenHifz={() => handleSectionChange('hifz')}/>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'muslim' && <HadithLibrary collectionKey="muslim" mode="library" state={state} onState={onState} notify={notify}/>}
