@@ -22,6 +22,20 @@ const TABS = ['القرآن','حياتي','القبلة','المساجد','ال�
 const issues = [];
 const b = await chromium.launch({channel: 'chrome', args: ['--no-sandbox']});
 
+// The service worker reloads the page once when it first takes control
+// (autoUpdate); retry page evaluations across that one-time navigation.
+async function evalSettled(p, fn, arg) {
+  for (let i = 0; i < 6; i++) {
+    try { return await p.evaluate(fn, arg); }
+    catch (e) {
+      if (!/context was destroyed|Target closed/i.test(String(e))) throw e;
+      await p.waitForLoadState('domcontentloaded').catch(() => {});
+      await p.waitForTimeout(700);
+    }
+  }
+  return p.evaluate(fn, arg);
+}
+
 // 1) Console/page errors + overflow across widths, themes and tabs.
 for (const width of [320, 390, 1280]) {
   for (const theme of ['light', 'dark']) {
@@ -31,11 +45,11 @@ for (const width of [320, 390, 1280]) {
     p.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 160)); });
     p.on('pageerror', e => errs.push('PAGEERROR: ' + String(e).slice(0, 160)));
     await p.goto(`http://127.0.0.1:${PORT}/`, {waitUntil: 'networkidle'});
-    await p.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
+    await evalSettled(p, t => document.documentElement.setAttribute('data-theme', t), theme);
     for (const tab of TABS) {
       const el = p.locator(`.mobile-nav button:has-text("${tab}")`).first();
       if (await el.count()) { await el.click().catch(() => {}); await p.waitForTimeout(900); }
-      const ov = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      const ov = await evalSettled(p, () => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) issues.push(`overflow ${width}/${theme}/${tab}: +${ov}px`);
     }
     if (errs.length) issues.push(`console ${width}/${theme}: ${[...new Set(errs)].slice(0, 5).join(' | ')}`);
@@ -70,7 +84,7 @@ for (const width of [320, 390, 1280]) {
   p.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 140)); });
   await p.goto(`http://127.0.0.1:${PORT}/`, {waitUntil: 'networkidle'});
   await p.waitForTimeout(1500);
-  if (!(await p.evaluate(() => !!document.querySelector('.hero')))) issues.push('geo denied: hero missing');
+  if (!(await evalSettled(p, () => !!document.querySelector('.hero')))) issues.push('geo denied: hero missing');
   if (errs.length) issues.push(`geo denied errors: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
   await ctx.close();
 }
@@ -85,7 +99,7 @@ for (const width of [320, 390, 1280]) {
   p.on('pageerror', e => errs.push(String(e).slice(0, 140)));
   await p.reload({waitUntil: 'networkidle'});
   await p.waitForTimeout(1500);
-  if (!(await p.evaluate(() => !!document.querySelector('.hero')))) issues.push('corrupt storage: app did not recover');
+  if (!(await evalSettled(p, () => !!document.querySelector('.hero')))) issues.push('corrupt storage: app did not recover');
   if (errs.length) issues.push(`corrupt storage errors: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
   await ctx.close();
 }
