@@ -539,7 +539,7 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
               ? <div className="hf-step hf-recite"><span>{stepTitle}</span><button type="button" className="hf-chip" aria-pressed={hidden} onClick={toggleHidden}>{hidden ? <Eye size={18}/> : <EyeOff size={18}/>}{hidden ? 'إظهار الآيات' : 'إخفاء الآيات'}</button><button type="button" className="hf-chip" onClick={() => void toggleRecord()}><Mic size={18}/>{rec.status === 'recording' ? 'إيقاف' : 'تسجيل'}</button></div>
               : stage === 'memorize'
                 ? <div className="hf-step hf-counter"><button type="button" className="hf-plus" aria-label="عدّ تكرارًا" onClick={() => setReps(n => n + 1)}><Plus size={22}/></button><i/><span>{stepTitle} ({toArabicNumber(reps)})</span></div>
-                : <button type="button" className="hf-step" aria-pressed={playing} onClick={() => void play()}>{playing ? <Square size={22}/> : <Play size={24}/>}<i/><span>{stepTitle}{stepCount}</span></button>}
+                : <button type="button" className="hf-step" aria-pressed={playing} aria-haspopup={playing ? undefined : 'dialog'} onClick={() => { if (playing) void play(); else openSheet(); }}>{playing ? <Square size={22}/> : <Play size={24}/>}<i/><span>{stepTitle}{stepCount}</span></button>}
           <button type="button" className="hf-next" onClick={next}>التالي</button>
         </>}
       </div>
