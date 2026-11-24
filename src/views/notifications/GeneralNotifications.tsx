@@ -7,16 +7,8 @@ import {channelLabel, SoundSelectField} from './SoundPanel';
 import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
 import {ensureSystemNotificationPermission} from '../../notifications/delivery';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  prayer: 'الصلاة والأذان',
-  reminder: 'المنبهات والتذكيرات',
-  worship: 'العبادات والأذكار',
-  goal: 'الأهداف',
-  task: 'المهام',
-};
-
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const GENERAL_KEYS = ['global_enabled', 'dnd_enabled', 'quiet_hours', 'categories', 'reminder_settings'] as const;
+const GENERAL_KEYS = ['global_enabled', 'dnd_enabled', 'quiet_hours', 'reminder_settings'] as const;
 
 export default function GeneralNotifications({notify}: {notify: (message: string) => void}) {
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
@@ -94,15 +86,7 @@ export default function GeneralNotifications({notify}: {notify: (message: string
             <label>إلى<input type="time" dir="ltr" value={quiet.end} onChange={event => change({quiet_hours: {...quiet, end: event.target.value}})}/></label>
           </div>
         )}
-        <details className="settings-inner-details"><summary>خيارات إضافية للتنبيهات</summary><fieldset className="notif-categories">
-          <legend>الفئات المفعّلة</legend>
-          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-            <label key={key} className="notif-switch">
-              <input type="checkbox" checked={prefs.categories?.[key] !== false} onChange={event => change({categories: {...prefs.categories, [key]: event.target.checked}})}/>
-              <span>{label}</span>
-            </label>
-          ))}
-        </fieldset>
+        <details className="settings-inner-details"><summary>خيارات إضافية للتنبيهات</summary>
         <div className="form-grid">
           <label>مكان ظهور التذكير
             <select value={prefs.reminder_settings.default_channel} onChange={event => change({reminder_settings: {...prefs.reminder_settings, default_channel: event.target.value as NotificationChannel}})}>
