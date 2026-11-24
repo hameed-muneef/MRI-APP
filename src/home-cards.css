@@ -386,3 +386,31 @@ html #root .app main.main .home-today-entry:not(.home-today-list) :is(small, spa
 html #root .app main.main .home-today-list .home-tasks-all { font-weight: 700; }
 html[data-theme="dark"] #root .app .mf-page-head { color: #E0C995; font-size: 12px; }
 html[data-theme="dark"] #root .app .mf-page-head .mf-page-juz { color: #F0DDAA; }
+
+/* Memorization flow: visible step progress, repetition counter, hidden-verse slots, completion panel */
+html #root .qm-journey-steps { margin: 6px 0 4px; }
+html #root .qm-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; align-items: center; }
+html #root .qm-steps li { display: flex; align-items: center; gap: 6px; font-size: 0; flex: 0 0 auto; }
+html #root .qm-steps li span { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 600; background: #EAF3FC; color: #20537A; border: 1px solid #9FC4E6; }
+html #root .qm-steps li[aria-current="step"] { font-size: 13px; font-weight: 700; color: #20537A; flex: 1 1 auto; }
+html #root .qm-steps li[aria-current="step"] span { background: #20537A; color: #fff; border-color: #20537A; }
+html[data-theme="dark"] #root .qm-steps li span { background: #1B3A56; color: #AED3EE; border-color: #26486B; }
+html[data-theme="dark"] #root .qm-steps li[aria-current="step"] { color: #E6F1FA; }
+html[data-theme="dark"] #root .qm-steps li[aria-current="step"] span { background: #AED3EE; color: #0E1A24; border-color: #AED3EE; }
+html #root .qm-tally-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+html #root .qm-tally-row strong { font-size: 20px; font-weight: 700; min-width: 64px; text-align: center; }
+html #root .qm-tally-row .qm-primary { min-width: 52px; min-height: 44px; font-size: 22px; }
+html #root .qm-tally-bar { height: 8px; border-radius: 999px; background: #D6E6F5; overflow: hidden; margin-top: 10px; }
+html #root .qm-tally-bar span { display: block; height: 100%; background: #20537A; border-radius: 999px; transition: width .2s; }
+html[data-theme="dark"] #root .qm-tally-bar { background: #101F2D; }
+html[data-theme="dark"] #root .qm-tally-bar span { background: #AED3EE; }
+html #root .qm-hidden-slot { display: inline-block; vertical-align: baseline; height: 1em; border-bottom: 2px dotted currentColor; opacity: .45; letter-spacing: 0; margin-inline: 2px; }
+html #root .qm-listenback { margin: 6px 0; }
+html #root .qm-done-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(14,26,36,.55); }
+html #root .qm-done { width: min(380px, 100%); text-align: center; background: #fff; color: #17324A; border: 1px solid #9FC4E6; border-radius: 18px; padding: 24px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.25); display: grid; gap: 12px; }
+html #root .qm-done h3 { margin: 0; font-size: 20px; font-weight: 700; color: #20537A; }
+html #root .qm-done p { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.8; }
+html #root .qm-done-mark { justify-self: center; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #20537A; color: #fff; font-size: 30px; }
+html[data-theme="dark"] #root .qm-done { background: #1B3A56; color: #E6F1FA; border-color: #26486B; }
+html[data-theme="dark"] #root .qm-done h3 { color: #AED3EE; }
+html[data-theme="dark"] #root .qm-done-mark { background: #AED3EE; color: #0E1A24; }
