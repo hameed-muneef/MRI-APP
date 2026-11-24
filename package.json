@@ -28,7 +28,8 @@
     "prayer:check": "node scripts/check-prayer-accuracy.mjs",
     "cache:purge": "node scripts/purge-cloudflare-cache.mjs",
     "build:local": "node scripts/build-local.mjs",
-    "dev:local": "node -e \"process.env.VITE_LOCAL_ONLY='true';require('child_process').spawn('npx', ['vite','--host','0.0.0.0'],{stdio:'inherit',shell:true,env:process.env})\""
+    "dev:local": "node -e \"process.env.VITE_LOCAL_ONLY='true';require('child_process').spawn('npx', ['vite','--host','0.0.0.0'],{stdio:'inherit',shell:true,env:process.env})\"",
+    "qa:scenarios": "node qa/scenarios.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",
