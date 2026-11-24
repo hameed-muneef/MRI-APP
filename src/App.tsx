@@ -31,6 +31,7 @@ import {mergeQuranState,logRoutineCompletion,syncRoutineTasks} from './quran/lea
 import {fetchQuranLearningState,saveQuranLearningState} from './quran/sync';
 import type {User} from '@supabase/supabase-js';
 import {changeWirdCount, normalizeWirds} from './wird-periods';
+import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
@@ -137,6 +138,21 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const pendingKey=`${storageKey}-pending`;
   const saveQueue=useRef<Promise<void>>(Promise.resolve());
   const saveRevision=useRef(0);
+  // المدينة المركزية اليدوية هي المرجع: إذا تغيّرت (من المساجد/القبلة) أو أُلغيت (العودة إلى GPS)
+  // لا يبقى prayerLocation قديمًا يعارضها. التغيير من منتقي المواقيت نفسه يطابق الإحداثيات فلا يُمسح.
+  useEffect(()=>{
+    let prev=getCentralLocationState().manual;
+    return subscribeCentralLocation(next=>{
+      const m=next.manual,old=prev;prev=m;
+      if(JSON.stringify(m)===JSON.stringify(old))return;
+      setState(cur=>{
+        const pl=cur.prayerLocation;
+        if(!pl)return cur;
+        const same=m&&Math.abs(pl.latitude-m.latitude)<0.005&&Math.abs(pl.longitude-m.longitude)<0.005;
+        return same?cur:{...cur,prayerLocation:undefined};
+      });
+    });
+  },[]);
   useEffect(()=>{try{localStorage.setItem(storageKey,JSON.stringify(state))}catch{setToast('تعذر حفظ البيانات على هذا الجهاز. صدّر بياناتك قبل إغلاق الصفحة.')}},[state,storageKey]);
   // Preload custom alarm tone (if any) so notifications can use it.
   useEffect(()=>{void (async()=>{try{const {loadCustomSound,customSoundUrl}=await import('./sounds/custom-store');const {setCustomAlarmUrl}=await import('./notifications/sound-selection');const rec=await loadCustomSound('alarm');if(rec)setCustomAlarmUrl(customSoundUrl(rec));}catch{/* ignore */}})()},[]);
