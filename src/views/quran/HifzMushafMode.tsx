@@ -6,6 +6,7 @@ import {TAFSIRS, TRANSLATIONS} from '../../quran/content-api';
 import type {QuranAsset} from '../../quran/types';
 import {basmalaText, referenceLabel, showsBasmala, surahInfo, toArabicNumber, verseBody, verseMarker} from '../../quran/content';
 import {selectRange, SESSION_RECITERS} from '../../quran-mastery/services';
+import {VERSE_RECITERS, verseReciterById, verseReciterLabel, searchVerseReciters} from '../../quran/verse-reciters';
 import {sessionAudio} from '../../quran/audio-adapter';
 import {createBrowserRecorder, type SessionRecorder} from '../../quran-mastery/recorder';
 import {buildPageLines, loadPageLines, type LineStart} from './MasteryWorkspace';
@@ -97,6 +98,7 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
   const [pageFrom, setPageFrom] = useState(1);
   const [pageTo, setPageTo] = useState(1);
   const [sheet, setSheet] = useState(false);
+  const [rq, setRq] = useState('');
   const [tip, setTip] = useState(true);
   const [listSheet, setListSheet] = useState(false);
   const [reps, setReps] = useState(0);
@@ -455,7 +457,7 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
     if (hidden && stage === 'recite') helpRef.current = [...helpRef.current, {kind: 'reveal_all', surah, at: new Date().toISOString()} as RecallHelpEvent];
     setHidden(h => !h);
   };
-  const openSheet = () => { setDraft({from, to, settings}); setSheet(true); };
+  const openSheet = () => { setRq(''); setDraft({from, to, settings}); setSheet(true); };
   const applySheet = () => {
     const cfg = {...draft.settings, passageRepeat: Math.max(1, draft.settings.passageRepeat), ayahRepeat: Math.max(1, draft.settings.ayahRepeat)};
     setSettings(cfg);
@@ -579,7 +581,13 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
           <div className="hf-field"><span>إلى الآية</span><select disabled={tail.length > 0} value={draft.to} onChange={e => setDraft(d => ({...d, to: Number(e.target.value)}))}>{ayahOptions.filter(n => n >= draft.from).map(n => <option key={n} value={n}>{n}</option>)}</select></div>
         </div>
         <div className="hf-pair">{stepper('ayahRepeat', 'تكرار الآية')}{stepper('passageRepeat', 'تكرار المقطع')}</div>
-        <div className="hf-field hf-full"><span>اختر المقرئ</span><select value={draft.settings.reciterId} onChange={e => setDraft(d => ({...d, settings: {...d.settings, reciterId: Number(e.target.value)}}))}>{SESSION_RECITERS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
+        <div className="hf-field hf-full hf-reciter"><span>اختر المقرئ ({toArabicNumber(VERSE_RECITERS.length)} قارئًا · رواية حفص عن عاصم)</span>
+          <input type="search" className="hf-rsearch" aria-label="ابحث عن قارئ بالاسم" placeholder="ابحث عن قارئ بالاسم" value={rq} onChange={e => setRq(e.target.value)}/>
+          <select aria-label="القارئ" value={draft.settings.reciterId} onChange={e => setDraft(d => ({...d, settings: {...d.settings, reciterId: Number(e.target.value)}}))}>
+            {(() => { const cur = verseReciterById(draft.settings.reciterId); const list = searchVerseReciters(rq); const shown = cur && !list.includes(cur) ? [cur, ...list] : list; return shown.length ? shown.map(r => <option key={r.id} value={r.id}>{verseReciterLabel(r)}</option>) : <option value="" disabled>لا يوجد قارئ بهذا الاسم</option>; })()}
+          </select>
+          <small className="hf-rnote">{(() => { const cur = verseReciterById(draft.settings.reciterId); return cur ? `الصوت آية بآية من ${cur.source === 'qurancom' ? 'Quran.com' : 'EveryAyah.com'} · ${cur.riwaya}` : ''; })()}{rq ? (searchVerseReciters(rq).length === 0 ? ' · لا يوجد قارئ بهذا الاسم' : ` · ${toArabicNumber(searchVerseReciters(rq).length)} نتيجة`) : ''}</small>
+        </div>
         <div className="hf-field hf-full"><span>سرعة التشغيل</span><div className="hf-speeds">{SPEEDS.map(v => <button key={v} type="button" aria-pressed={draft.settings.speed === v} className={draft.settings.speed === v ? 'on' : ''} onClick={() => setDraft(d => ({...d, settings: {...d.settings, speed: v}}))}>{v.toFixed(v === 1 ? 1 : v === 0.75 || v === 1.25 || v === 1.75 ? 2 : 1).replace(/0$/, v === 1 ? '0' : '')}x</button>)}</div></div>
         <label className="hf-follow"><input type="checkbox" checked={draft.settings.follow} onChange={e => setDraft(d => ({...d, settings: {...d.settings, follow: e.target.checked}}))}/> تتبع القارئ بقلب الصفحات تلقائيًا</label>
         {passageRecordings.length > 0 && <div className="hf-saved"><h3>تسجيلاتي المحفوظة لهذا المقطع</h3>
