@@ -4,7 +4,7 @@ import {Play, Square, Upload} from 'lucide-react';
 import {authClient} from '../../auth';
 import {LOCAL_ONLY} from '../../config';
 import {BUILTIN_SOUNDS, playBuiltInTone, previewSound, type SoundOption} from '../../notifications/builtin-sounds';
-import {playAudio, stopAudio} from '../../notifications/audio';
+import {getAudioElement, playAudio, stopAudio} from '../../notifications/audio';
 import {listAudioResources, uploadAudioResource} from '../../notifications/service';
 import type {AudioResource, NotificationChannel} from '../../notifications/types';
 import {getCustomAlarmUrl, setCustomAlarmUrl} from '../../notifications/sound-selection';
@@ -114,10 +114,12 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
         setPlaying(null);
         setMessage('ملف الصوت غير متوفر في هذه الحزمة؛ شُغِّلت نغمة بديلة (يمكنك رفع صوت من جهازك).');
       });
+      // الأذان طويل: تبقى الحالة «يعمل» حتى ينتهي الملف أو يضغط المستخدم إيقاف.
+      getAudioElement().addEventListener('ended', () => setPlaying(current => (current === sound.id ? null : current)), {once: true});
     } else {
       previewSound(sound);
+      window.setTimeout(() => setPlaying(current => (current === sound.id ? null : current)), 2500);
     }
-    window.setTimeout(() => setPlaying(current => (current === sound.id ? null : current)), 2500);
   };
 
   const upload = async (file: File) => {
@@ -160,8 +162,10 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
     }
   };
 
+  useEffect(() => () => { stopAudio(); }, []);
   return (
     <div className="notif-sound-panel">
+      {playing && <div className="notif-stop-bar"><button type="button" className="primary" onClick={stop}><Square size={15}/> إيقاف الصوت</button></div>}
       <ul className="notif-sound-list">
         {BUNDLED_ADHAN_SOUNDS.map(sound => (
           <li key={sound.soundId}>
