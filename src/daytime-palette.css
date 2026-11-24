@@ -146,10 +146,16 @@ html[data-theme="light"] #root .app .soft-btn {
   color: #20537A !important;
 }
 
-html[data-theme="light"] #root .app .hero,
 html[data-theme="light"] #root .app .lesson-banner,
 html[data-theme="light"] #root .app .toast {
   background: #1E3A56 !important;
+}
+
+/* Hero: keep the original zakhareph artwork, swap only the green tint to navy */
+html[data-theme="light"] #root .app .hero {
+  background:
+    linear-gradient(115deg, rgba(16,38,58,.92) 0%, rgba(20,46,70,.78) 55%, rgba(24,52,78,.55) 100%),
+    var(--art-hero) center/cover no-repeat !important;
 }
 
 /* ---------- Section accents -> one blue family (light mode) ----------
