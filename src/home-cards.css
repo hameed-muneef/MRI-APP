@@ -447,3 +447,4 @@ html #root .qm-w.qm-verse-playing,html #root .qm-w.qm-verse-selected{background:
 html #root .app main h1{font-size:21px!important;font-weight:600!important;line-height:1.35}
 html #root .app main h2{font-size:18px!important;font-weight:600!important;line-height:1.4}
 html #root .app main h3{font-size:16px!important;font-weight:600!important;line-height:1.4}
+html #root .app main .page-intro h1{font-size:21px!important;font-weight:600!important}
