@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Car, Footprints, LocateFixed, MapPin, RefreshCw, ShieldCheck, SlidersHorizontal, WifiOff } from 'lucide-react';
 import { formatArabicDistance } from '../../lib/geo';
 import { openAppSettings } from '../../lib/settings-opener';
-import { RADIUS_OPTIONS, useNearbyMosques } from '../../hooks/useNearbyMosques';
+import { MAX_RADIUS_METERS, MIN_RADIUS_METERS, RADIUS_OPTIONS, useNearbyMosques } from '../../hooks/useNearbyMosques';
 import { useOnline } from '../../online';
 import { useBackHandler } from '../../navigation/useBackHandler';
 import type { QiblaCity } from '../../lib/qibla-cities';
@@ -163,6 +163,31 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                 ))}
               </div>
 
+              <div className="mosques-radius-custom">
+                <label htmlFor="mosque-radius-km">المسافة المطلوبة (كم)</label>
+                <input
+                  id="mosque-radius-km"
+                  type="range"
+                  min={MIN_RADIUS_METERS / 1000}
+                  max={MAX_RADIUS_METERS / 1000}
+                  step={0.1}
+                  value={radiusMeters / 1000}
+                  onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  dir="ltr"
+                  min={MIN_RADIUS_METERS / 1000}
+                  max={MAX_RADIUS_METERS / 1000}
+                  step={0.1}
+                  value={Number((radiusMeters / 1000).toFixed(1))}
+                  aria-label="المسافة بالكيلومتر، حتى 40 كم"
+                  onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
+                />
+                <small>أي قيمة حتى 40 كم</small>
+              </div>
+
               <div className="mosques-mode-group" role="group" aria-label="وسيلة التنقل في خرائط Google">
                 <button
                   type="button"
@@ -259,7 +284,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
               <h2>لا توجد مساجد مسجّلة ضمن {formatArabicDistance(radiusMeters)}</h2>
               <p>جرّب توسيع نطاق البحث إلى مسافة أكبر أو اختيار مدينة قريبة.</p>
               <div className="mosque-state-actions">
-                {radiusMeters < 5000 && (
+                {radiusMeters < MAX_RADIUS_METERS && (
                   <button type="button" className="primary" onClick={widenRadius}>
                     توسيع النطاق
                   </button>
