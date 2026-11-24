@@ -123,7 +123,8 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
     setGeoError(null);
     void (async () => {
       // طلب GPS صريح من المستخدم عبر المخزن المركزي (مُدمَج مع بقية الأجزاء).
-      const { refreshDeviceLocation } = await import('../lib/location-store');
+      const { refreshDeviceLocation, clearManualLocation } = await import('../lib/location-store');
+      clearManualLocation();
       const res = await refreshDeviceLocation({ timeout: 15000, maximumAge: 0 });
       if (!mountedRef.current) return;
       if (res.ok) {
@@ -168,7 +169,15 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { syncCentralLocationPermission } = await import('../lib/location-store');
+      const { syncCentralLocationPermission, getCentralLocationState } = await import('../lib/location-store');
+      // المدينة اليدوية المشتركة (من المواقيت أو القبلة) لها الأولوية على GPS.
+      const shared = getCentralLocationState().manual;
+      if (shared) {
+        lastQueryRef.current = null;
+        setCoords({ latitude: shared.latitude, longitude: shared.longitude, source: 'manual', label: shared.label });
+        setStage('ready');
+        return;
+      }
       const p = await syncCentralLocationPermission();
       if (cancelled) return;
       if (p === 'granted') {
@@ -245,6 +254,7 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
         label,
       });
       setStage('ready');
+      void import('../lib/location-store').then((m) => m.setManualLocation(lat, lng, label));
     },
     [],
   );
