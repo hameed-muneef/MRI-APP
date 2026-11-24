@@ -218,39 +218,107 @@ html[data-theme="dark"] #root .app .mobile-nav button[data-section].active svg {
   color: #AED3EE !important;
 }
 
-/* Task rows inside the today's-tasks entry (nearest 3, user request 2026-11-24) */
-html #root .app main.main .home-today-entry .home-today-tasks {
-  margin-top: 8px;
-  width: 100%;
+/* Today's-tasks card: organized header, aligned rows, separate footer link */
+html #root .app main.main .home-today-entry.home-today-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  text-align: start;
 }
-html #root .app main.main .home-today-entry .home-task-overdue {
-  color: var(--status-error) !important;
+html #root .app main.main .home-today-list .home-tasks-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  flex: none;
 }
-
-/* Today's-tasks heading: larger and a distinct blue, separate from task names (user request 2026-11-24) */
-html #root .app main.main .home-today-entry > span > strong {
+html #root .app main.main .home-today-list .home-tasks-head .home-today-icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+html #root .app main.main .home-today-list .home-tasks-head > strong {
   font-size: 17px !important;
   font-weight: 800 !important;
   color: #20537A !important;
 }
-html[data-theme="dark"] #root .app main.main .home-today-entry > span > strong {
-  color: #AED3EE !important;
+html #root .app main.main .home-today-list .home-tasks-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-
-/* Smaller task names + labeled "all tasks" link */
-html #root .app main.main .home-today-entry .home-today-tasks .home-upcoming-title-line strong {
-  font-size: 13px !important;
-  font-weight: 700 !important;
+html #root .app main.main .home-today-list .home-tasks-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(31, 86, 117, .14);
 }
-html #root .app main.main .home-today-entry .home-tasks-all {
-  display: inline-flex;
+html #root .app main.main .home-today-list .home-task-name {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0F2C44;
+  overflow-wrap: anywhere;
+}
+html #root .app main.main .home-today-list .home-task-meta {
+  display: block;
+  flex: none;
+  max-width: 48%;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4E6E88;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+html #root .app main.main .home-today-list .home-task-meta.home-task-overdue {
+  color: var(--status-error) !important;
+}
+html #root .app main.main .home-today-list .home-tasks-empty {
+  color: #4E6E88;
+}
+html #root .app main.main .home-today-list .home-tasks-all {
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
-  margin-top: 6px;
+  justify-content: flex-start;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(31, 86, 117, .14);
   font-size: 13px;
   font-weight: 800;
   color: #20537A;
 }
-html[data-theme="dark"] #root .app main.main .home-today-entry .home-tasks-all {
-  color: #AED3EE;
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-head > strong,
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-all {
+  color: #AED3EE !important;
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-task-name {
+  color: #F0F6FC;
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-task-meta,
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-empty {
+  color: #A9C4DC;
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-row,
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-all {
+  border-top-color: rgba(174, 211, 238, .18);
+}
+html #root .app main.main .home-today-list .home-tasks-all svg {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 15px !important;
+  height: 15px !important;
+  color: inherit !important;
 }
