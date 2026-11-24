@@ -18,17 +18,20 @@ type Props = {
   ayahEnd: number;
   verseText: (surah: number, ayah: number) => string | null;
   onClose: () => void;
+  initialTopic?: 'tafsir'|'translation';
+  initialTafsirId?: number;
+  initialTranslationId?: number;
 };
 
 /**
  * لوحة فهم الآية داخل الجلسة: تفسير وترجمة وأسباب النزول ومعاني الكلمات،
  * وملاحظات خاصة محلية قابلة للحذف. لا تلمس حالة الجلسة؛ الإغلاق يعيد للنطاق كما كان.
  */
-export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEnd, verseText, onClose }: Props) {
-  const [topic,setTopic]=useState<'tafsir'|'translation'|'context'|'words'>('tafsir');
+export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEnd, verseText, onClose, initialTopic, initialTafsirId, initialTranslationId }: Props) {
+  const [topic,setTopic]=useState<'tafsir'|'translation'|'context'|'words'>(initialTopic ?? 'tafsir');
   const [ayah, setAyah] = useState(ayahStart);
-  const [tafsirId, setTafsirId] = useState(TAFSIRS[0].id);
-  const [translationId, setTranslationId] = useState(TRANSLATIONS[0].id);
+  const [tafsirId, setTafsirId] = useState(initialTafsirId ?? TAFSIRS[0].id);
+  const [translationId, setTranslationId] = useState(initialTranslationId ?? TRANSLATIONS[0].id);
   const [tafsir, setTafsir] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
   const [asbab, setAsbab] = useState<string | null>(null);
