@@ -180,21 +180,10 @@ describe('task-planner and engine integration', () => {
     const fired = new Set([`${due[0].key}:done`]);
     expect(pickDueItems([], null, prefs, fired, dueNow, [], {tasks, taskSchedules: schedules})).toEqual([]);
 
-    // Muted when task_notifications.enabled = false or category task = false or DND
-    const disabledPrefs = makePrefs({
-      reminder_settings: {
-        default_channel: 'both',
-        snooze_minutes: 10,
-        task_notifications: {
-          enabled: false,
-          remind_before_minutes: 15,
-          notify_at_time: true,
-          include_initial: true,
-          include_day_plan: false,
-          channel: 'both',
-        },
-      },
-    });
+    // Muted when the single app-wide switch is off, or category task = false, or DND.
+    // (The separate task_notifications.enabled master switch was removed; enabling is
+    // unified under global_enabled.)
+    const disabledPrefs = makePrefs({global_enabled: false});
     expect(pickDueItems([], null, disabledPrefs, new Set(), dueNow, [], {tasks, taskSchedules: schedules})).toEqual([]);
     expect(
       pickDueItems([], null, makePrefs({categories: {task: false}}), new Set(), dueNow, [], {tasks, taskSchedules: schedules}),
