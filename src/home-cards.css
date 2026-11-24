@@ -226,3 +226,31 @@ html #root .app main.main .home-today-entry .home-today-tasks {
 html #root .app main.main .home-today-entry .home-task-overdue {
   color: var(--status-error) !important;
 }
+
+/* Today's-tasks heading: larger and a distinct blue, separate from task names (user request 2026-11-24) */
+html #root .app main.main .home-today-entry > span > strong {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #20537A !important;
+}
+html[data-theme="dark"] #root .app main.main .home-today-entry > span > strong {
+  color: #AED3EE !important;
+}
+
+/* Smaller task names + labeled "all tasks" link */
+html #root .app main.main .home-today-entry .home-today-tasks .home-upcoming-title-line strong {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+html #root .app main.main .home-today-entry .home-tasks-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #20537A;
+}
+html[data-theme="dark"] #root .app main.main .home-today-entry .home-tasks-all {
+  color: #AED3EE;
+}
