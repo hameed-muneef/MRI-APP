@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from 'react';
 import {BellRing, Clock3, ChevronLeft} from 'lucide-react';
+import {useCentralLocation} from '../hooks/useCentralLocation';
 import usePrayerTimes from '../usePrayerTimes';
 import {sanitizePrayerLocation, type PrayerLocation} from '../prayer-location';
 import {loadReminders} from '../notifications/prefs-store';
@@ -42,7 +43,9 @@ export default function HomeDashboard({
   prayerLocation?: PrayerLocation;
   navigate: (view: View) => void;
 }) {
-  const located = usePrayerTimes(Boolean(prayerLocation), sanitizePrayerLocation(prayerLocation));
+  // الموقع المركزي المشترك: إن وُجد موقع للجهاز أو موقع يدوي تُحسب المواقيت منه دون طلب إضافي.
+  const sharedLocation = useCentralLocation();
+  const located = usePrayerTimes(Boolean(prayerLocation) || Boolean(sharedLocation.coords), sanitizePrayerLocation(prayerLocation));
   const [reminders, setReminders] = useState<Reminder[] | null>(null);
   const [now, setNow] = useState(() => new Date());
 
