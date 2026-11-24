@@ -1,4 +1,6 @@
 # Debug-only APK build for on-device testing of feat/daytime-blue-palette.
+# Isolated test variant: applicationId com.alrabbaniyoon.app.test and an Arabic test label,
+# set only inside the CI workspace (repo files are not changed), so it installs next to the real app.
 # No signing, no secrets, no release or publishing. Runs on push to this branch
 # only when this file changes, so it builds the exact branch head once.
 name: Android Debug (test branch)
@@ -30,7 +32,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
 
       - name: Type-check and run unit tests
         run: |
@@ -81,8 +83,30 @@ jobs:
       - name: Make gradle executable
         run: chmod +x android/gradlew
 
-      - name: Build debug APK (للتجربة الفورية)
+      - name: Make isolated test variant (CI workspace only)
+        run: |
+          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test"/' android/app/build.gradle
+          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي)</string>|' android/app/src/main/res/values/strings.xml
+          grep -n 'applicationId' android/app/build.gradle
+          grep -n 'app_name\|title_activity_main' android/app/src/main/res/values/strings.xml
+
+      - name: Build debug APK (isolated test variant)
         run: ./android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Inspect APK (manifest, version, signing, assets)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "HEAD=$(git rev-parse HEAD)"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label|launchable-activity|uses-permission" | head -20
+          "$BT/apksigner" verify --print-certs "$APK" | head -6
+          unzip -l "$APK" | grep -E "assets/public/(index.html|quran/mushaf-lines.json)" || true
+          unzip -p "$APK" assets/public/index.html | head -c 600
+          echo
+          unzip -l "$APK" | grep -cE "assets/public/assets/.*\.css" || true
+          unzip -p "$APK" 'assets/public/assets/*.css' 2>/dev/null | grep -c "qm-lines" || true
+          unzip -p "$APK" 'assets/public/assets/*.css' 2>/dev/null | grep -c "page-intro h1" || true
+          sha256sum "$APK"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
