@@ -427,8 +427,9 @@ html #root .qm-workspace .qm-heading h2 { font-size: 19px !important; }
 html #root .qm-done h3 { font-size: 18px !important; }
 html #root .qm-tally-row strong { font-size: 18px; font-weight: 600; }
 /* faithful mushaf line layout for memorization */
-html #root .qm-lines{font-family:'KFGQPC HAFS Uthmanic Script','Amiri Quran',serif;font-size:24px;line-height:1;direction:rtl}
-html #root .qm-line{display:flex;justify-content:space-between;align-items:center;white-space:nowrap;line-height:2.1;min-height:1.9em;overflow:hidden}
+html #root .qm-lines-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+html #root .qm-lines{width:max-content;min-width:100%;font-family:'KFGQPC HAFS Uthmanic Script','Amiri Quran',serif;font-size:24px;line-height:1;direction:rtl}
+html #root .qm-line{display:flex;justify-content:space-between;align-items:center;white-space:nowrap;line-height:2.1;min-height:1.9em;overflow:visible;gap:.3em}
 html #root .qm-line.qm-line-center{justify-content:center;gap:.35em}
 html #root .qm-w{cursor:pointer;display:inline-block}
 html #root .qm-w .quran-verse-marker{margin-inline-start:.25em}
