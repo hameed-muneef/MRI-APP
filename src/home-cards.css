@@ -255,10 +255,15 @@ html #root .app main.main .home-today-list .home-tasks-rows {
 html #root .app main.main .home-today-list .home-tasks-row {
   display: flex;
   flex-direction: row;
-  align-items: baseline;
+  align-items: stretch;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 0;
+  padding: 0;
+  border-top: 1px solid rgba(31, 86, 117, .14);
+}
+html #root .app main.main .home-today-list .home-tasks-row > .home-task-name,
+html #root .app main.main .home-today-list .home-tasks-row > .home-task-meta {
+  padding-block: 8px;
 }
 html #root .app main.main .home-today-list .home-task-dot {
   flex: none;
@@ -286,7 +291,12 @@ html #root .app main.main .home-today-list .home-task-name {
 html #root .app main.main .home-today-list .home-task-meta {
   display: block;
   flex: none;
+  width: 40%;
   max-width: 48%;
+  box-sizing: border-box;
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid rgba(31, 86, 117, .14);
+  text-align: start !important;
   font-size: 12px;
   font-weight: 500;
   color: #4E6E88;
@@ -323,6 +333,13 @@ html[data-theme="dark"] #root .app main.main .home-today-list .home-task-name {
 html[data-theme="dark"] #root .app main.main .home-today-list .home-task-meta,
 html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-empty {
   color: #A9C4DC;
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-row,
+html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-all {
+  border-top-color: rgba(174, 211, 238, .18);
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-task-meta {
+  border-inline-start-color: rgba(174, 211, 238, .18);
 }
 html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-all {
   border-top-color: rgba(174, 211, 238, .18);
