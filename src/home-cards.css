@@ -217,3 +217,27 @@ html[data-theme="dark"] #root .app .mobile-nav button.active svg,
 html[data-theme="dark"] #root .app .mobile-nav button[data-section].active svg {
   color: #AED3EE !important;
 }
+
+/* ---------- Light mode: neutral paper background (user request 2026-11-24) ----------
+   The warm beige page background (--bg-app #eeeae0 / --bg-page #f5f1e8) carried a
+   yellow cast that competed with the cool blue cards and bars. Per the user's
+   approval, the light-mode page background shifts to a neutral paper off-white
+   #F7F7F2: the paper feel stays, the cast goes. Tokens only, so every consumer
+   (app shell, .main, admin, auth, reader chrome) follows; the Quran reader keeps
+   its own forced paper palette. Dark mode untouched. */
+html[data-theme="light"] {
+  --bg-app: #F7F7F2;
+  --bg-page: #F7F7F2;
+  --color-canvas: #F7F7F2;
+}
+
+/* The mobile shell pins literal warm backgrounds (#EFEAE0) that token changes
+   cannot reach, so the app column and content area get explicit pins too. */
+html[data-theme="light"] #root .app,
+html[data-theme="light"] #root .app .main {
+  background: #F7F7F2 !important;
+}
+
+html[data-theme="light"] #root .app {
+  border-inline-color: #E0E2DA !important;
+}
