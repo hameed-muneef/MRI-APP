@@ -34,7 +34,6 @@ export default function WeeklyPlanner({tasks,onTasks}:Props){
         <p className="week-range">{dateLabel(days[0])} — {dateLabel(days[6])}</p>
         {hijriDate(days[0])&&<p className="week-hijri">الموافق هجريًا: {hijriDate(days[0])} — {hijriDate(days[6])}</p>}
       </div>
-      <p className="muted small">الترقيم وفق ISO: يبدأ الأسبوع يوم الاثنين وينتهي الأحد. يظهر التاريخ بجوار كل يوم لتختار موعدك بوضوح.</p>
     </section>
     <section className="panel" aria-label="مهام الأسبوع المختار">
       <div className="panel-head"><h2>مهام الأسبوع {selected.week.toLocaleString('ar-EG')}</h2></div>
