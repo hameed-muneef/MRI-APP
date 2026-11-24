@@ -404,7 +404,7 @@ html #root .qm-tally-bar { height: 8px; border-radius: 999px; background: #D6E6F
 html #root .qm-tally-bar span { display: block; height: 100%; background: #20537A; border-radius: 999px; transition: width .2s; }
 html[data-theme="dark"] #root .qm-tally-bar { background: #101F2D; }
 html[data-theme="dark"] #root .qm-tally-bar span { background: #AED3EE; }
-html #root .qm-hidden-slot { display: inline-block; vertical-align: baseline; height: 1em; border-bottom: 2px dotted currentColor; opacity: .45; letter-spacing: 0; margin-inline: 2px; }
+html #root .qm-hidden-slot { display: inline-block; max-width: 100%; box-sizing: border-box; vertical-align: baseline; height: 1em; border-bottom: 2px dotted currentColor; opacity: .45; letter-spacing: 0; margin-inline: 2px; }
 html #root .qm-listenback { margin: 6px 0; }
 html #root .qm-done-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(14,26,36,.55); }
 html #root .qm-done { width: min(380px, 100%); text-align: center; background: #fff; color: #17324A; border: 1px solid #9FC4E6; border-radius: 18px; padding: 24px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.25); display: grid; gap: 12px; }
@@ -414,3 +414,15 @@ html #root .qm-done-mark { justify-self: center; display: grid; place-items: cen
 html[data-theme="dark"] #root .qm-done { background: #1B3A56; color: #E6F1FA; border-color: #26486B; }
 html[data-theme="dark"] #root .qm-done h3 { color: #AED3EE; }
 html[data-theme="dark"] #root .qm-done-mark { background: #AED3EE; color: #0E1A24; }
+
+/* Mushaf page shown in memorization; calmer headings */
+html #root .qm-page-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; color: #20537A; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #9FC4E6; }
+html #root .qm-page-nav { display: inline-flex; gap: 6px; }
+html #root .qm-page-nav button { min-width: 36px; min-height: 36px; font-size: 18px; line-height: 1; border-radius: 10px; }
+html #root .qm-verse-context { opacity: .42; cursor: default; }
+html[data-theme="dark"] #root .qm-page-bar { color: #AED3EE; border-color: #26486B; }
+html #root .qm-workspace h2, html #root .quran-page h2 { font-size: 19px !important; font-weight: 600 !important; line-height: 1.5; }
+html #root .qm-workspace h3, html #root .quran-page h3 { font-size: 16px !important; font-weight: 600 !important; line-height: 1.5; }
+html #root .qm-workspace .qm-heading h2 { font-size: 19px !important; }
+html #root .qm-done h3 { font-size: 18px !important; }
+html #root .qm-tally-row strong { font-size: 18px; font-weight: 600; }
