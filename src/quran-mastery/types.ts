@@ -145,6 +145,10 @@ export type RevisionSchedule = {
   lapses: number;
   /** محاولات في اليوم نفسه لا ترفع الدليل؛ يُسجَّل آخر يوم بنى دليلًا فعليًا. */
   lastEvidenceDate?: string;
+  /** وقت محلي HH:MM اختاره المتعلم لجلسة تسميع مجدولة (اختياري). */
+  dueTime?: string;
+  /** الجلسة التي أُجّل تسميعها، للعودة إليها. */
+  scheduledSessionId?: string;
   deferrals: {date: string; reason: string}[];
   updatedAt: string;
 };
@@ -178,6 +182,8 @@ export type MasteryPassage = {
   id: string;
   planId?: string;
   range: VerseRange;
+  /** مقاطع اختيار متعدد السور (صفحات)؛ تُعاد فتحها معًا. */
+  group?: VerseRange[];
   order: number;
   schemaVersion: number;
   createdAt: string;
