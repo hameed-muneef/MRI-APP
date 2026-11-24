@@ -11,7 +11,7 @@
   <script>
     (function () { try {
       var saved = localStorage.getItem('rabbani-theme-v1');
-      var dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var dark = saved === 'dark';
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     } catch (e) {} })();
