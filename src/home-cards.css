@@ -217,3 +217,12 @@ html[data-theme="dark"] #root .app .mobile-nav button.active svg,
 html[data-theme="dark"] #root .app .mobile-nav button[data-section].active svg {
   color: #AED3EE !important;
 }
+
+/* Task rows inside the today's-tasks entry (nearest 3, user request 2026-11-24) */
+html #root .app main.main .home-today-entry .home-today-tasks {
+  margin-top: 8px;
+  width: 100%;
+}
+html #root .app main.main .home-today-entry .home-task-overdue {
+  color: var(--status-error) !important;
+}
