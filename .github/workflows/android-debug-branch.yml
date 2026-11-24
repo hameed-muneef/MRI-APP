@@ -1,0 +1,93 @@
+# Debug-only APK build for on-device testing of feat/daytime-blue-palette.
+# No signing, no secrets, no release or publishing. Runs on push to this branch
+# only when this file changes, so it builds the exact branch head once.
+name: Android Debug (test branch)
+
+on:
+  push:
+    branches:
+      - feat/daytime-blue-palette
+    paths:
+      - '.github/workflows/android-debug-branch.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check and run unit tests
+        run: |
+          npm run lint
+          npm run test:unit
+
+      - name: Check optional bundled Adhan audio assets (bundled in public/sounds/adhan + res/raw)
+        run: |
+          missing=0
+          for f in adhan_almulla.ogg adhan_madinah.ogg adhan_madinah2.ogg adhan_mohammed.ogg adhan_ahmad.ogg adhan_hamad.ogg takbeerat_eid.ogg; do
+            if [ ! -s "public/sounds/adhan/$f" ] || [ ! -s "android/app/src/main/res/raw/$f" ]; then
+              echo "::warning::Optional Adhan audio '$f' is missing (expected both public/sounds/adhan and res/raw); app falls back to default notification sound or built-in chime."
+              missing=$((missing + 1))
+            fi
+          done
+          echo "Optional missing Adhan audio checks: $missing"
+
+      - name: Build web assets, generate icons/splash, and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+
+      - name: Verify required Android resources and Capacitor setup
+        run: |
+          test -s "android/app/src/main/res/drawable/splash.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png"
+          test -s "android/app/src/main/assets/public/index.html"
+          npx cap doctor android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Android SDK components (platforms;android-36, build-tools 36.0.0)
+        run: |
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" 2>&1 | tail -20
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK (للتجربة الفورية)
+        run: ./android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 3
+
