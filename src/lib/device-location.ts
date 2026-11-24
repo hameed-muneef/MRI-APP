@@ -140,11 +140,24 @@ export async function requestDeviceLocation(options?: { timeout?: number; maximu
     }
     try {
       const { Geolocation } = await import('@capacitor/geolocation');
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout,
-        maximumAge,
-      });
+      // حارس صلب: لا يبقى الزر «جارٍ التحديد» إلى الأبد إن لم يردّ المستشعر.
+      const withGuard = <T,>(p: Promise<T>, ms: number): Promise<T> => Promise.race([
+        p,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+      ]);
+      const readOnce = (opts: { enableHighAccuracy: boolean; timeout: number; maximumAge: number }) =>
+        withGuard(Geolocation.getCurrentPosition(opts), opts.timeout + 4000);
+      let pos;
+      try {
+        pos = await readOnce({ enableHighAccuracy: false, timeout, maximumAge });
+      } catch (first) {
+        // محاولة ثانية تقبل آخر موقع معروف (حتى 10 دقائق) ثم موقعًا أدق، قبل إعلان الفشل.
+        try {
+          pos = await readOnce({ enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+        } catch {
+          pos = await readOnce({ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }).catch(() => { throw first; });
+        }
+      }
       return {
         ok: true,
         coords: {
