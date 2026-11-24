@@ -45,13 +45,13 @@ const schedules: Record<string, TaskSchedule> = {
     confirmedTime: '14:00',
   },
 };
-const taskContext = {tasks, taskSchedules: schedules, goals: [], dayPlan: null, prayers: {}};
+const taskContext = {tasks, taskSchedules: schedules, goals: [], dayPlan: undefined, prayers: {}};
 
 describe('master switch gates every delivery path', () => {
   it('blocks in-app/web engine items: reminders, prayers, tasks, reviews', () => {
     const reminder = {
-      id: 'r1', title: 'تذكير', description: '', category: 'reminder' as const,
-      recurrence: 'daily' as const, time: '13:59', enabled: true,
+      id: 'r1', user_id: '', title: 'تذكير', description: '', category: 'reminder' as const,
+      recurrence: 'daily' as const, time: '13:59', scheduled_at: '2026-11-20T13:59:00', enabled: true,
       created_at: now.toISOString(), updated_at: now.toISOString(),
     };
     const due = pickDueItems([reminder], {'الظهر': '14:00'}, offPrefs, new Set(), now, [], taskContext);
@@ -60,8 +60,8 @@ describe('master switch gates every delivery path', () => {
 
   it('blocks native reminder payloads', () => {
     const reminder = {
-      id: 'r1', title: 'تذكير', description: '', category: 'reminder' as const,
-      recurrence: 'daily' as const, time: '15:00', enabled: true,
+      id: 'r1', user_id: '', title: 'تذكير', description: '', category: 'reminder' as const,
+      recurrence: 'daily' as const, time: '15:00', scheduled_at: '2026-11-20T15:00:00', enabled: true,
       created_at: now.toISOString(), updated_at: now.toISOString(),
     };
     expect(buildNativeReminderPayloads([reminder], offPrefs, now, GENERAL_CHANNEL_ID, true)).toEqual([]);
