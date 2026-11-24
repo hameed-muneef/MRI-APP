@@ -241,7 +241,7 @@ html #root .app main.main .home-today-list .home-tasks-head .home-today-icon {
 }
 html #root .app main.main .home-today-list .home-tasks-head > strong {
   font-size: 17px !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   color: #20537A !important;
 }
 html #root .app main.main .home-today-list .home-tasks-rows {
@@ -284,7 +284,7 @@ html #root .app main.main .home-today-list .home-task-name {
   flex: 1 1 auto;
   min-width: 0;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: #0F2C44;
   overflow-wrap: anywhere;
 }
@@ -298,7 +298,7 @@ html #root .app main.main .home-today-list .home-task-meta {
   border-inline-start: 1px solid rgba(31, 86, 117, .14);
   text-align: start !important;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   color: #4E6E88;
   text-align: end;
   font-variant-numeric: tabular-nums;
@@ -377,3 +377,12 @@ html #root .app main .soft-btn { font-weight: 600; }
 html #root .app .mobile-nav button:not(.active) { font-weight: 500 !important; }
 html #root .app .mobile-nav button.active { font-weight: 700 !important; }
 html #root .app main .week-range { font-weight: 600; }
+
+/* وزن عادي للنص المساعد، والعريض للعناوين والتفاصيل المهمة */
+html #root .app :is(.week-hijri, .hijri-inline, .home-hijri-date, .home-greg-date, .goal-history-selected, .mf-status-text, .mf-speed-val, .mf-field-label, .mf-group-label) { font-weight: 400 !important; }
+html #root .app main :is(label, small, .muted):not(.mf-field-label) { font-weight: 400; }
+html #root .app main.main .home-today-entry:not(.home-today-list) strong { font-weight: 700 !important; }
+html #root .app main.main .home-today-entry:not(.home-today-list) :is(small, span:not(.home-today-icon)) { font-weight: 400; }
+html #root .app main.main .home-today-list .home-tasks-all { font-weight: 700; }
+html[data-theme="dark"] #root .app .mf-page-head { color: #E0C995; font-size: 12px; }
+html[data-theme="dark"] #root .app .mf-page-head .mf-page-juz { color: #F0DDAA; }
