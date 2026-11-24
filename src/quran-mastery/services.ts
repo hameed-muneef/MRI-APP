@@ -1,4 +1,5 @@
 import {fetchAyahAudioUrl} from '../quran/ayah-audio';
+import {VERSE_RECITERS, verseReciterLabel} from '../quran/verse-reciters';
 import type {QuranAsset, QuranVerse} from '../quran/types';
 import type {VerseRange} from './types';
 /** Shared canonical selection. Returns source objects, never reconstructs Quran text. */
@@ -9,4 +10,4 @@ export function selectRange(asset: QuranAsset, range: VerseRange): QuranVerse[] 
 }
 export {fetchAyahAudioUrl as resolveSessionAudio};
 /** Session audio only uses the existing Hafs-compatible Quran.com adapter. */
-export const SESSION_RECITERS = [{id:7,name:'مشاري راشد العفاسي'},{id:6,name:'محمود خليل الحصري'},{id:9,name:'محمد صديق المنشاوي (مرتل)'}];
+export const SESSION_RECITERS = VERSE_RECITERS.map(r => ({id: r.id, name: verseReciterLabel(r)}));
