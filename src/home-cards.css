@@ -612,3 +612,6 @@ html #root .hf-seg button{background:#fff;color:#20537A;border:1px solid #9FC4E6
 html #root .hf-seg button.on{background:#2f6b3f;color:#fff;border-color:#2f6b3f}
 html[data-theme="dark"] #root .hf-seg button{background:#101F2D;color:#EAF3FC;border:1px solid #26486B}
 html[data-theme="dark"] #root .hf-seg button.on{background:#2f6b3f;color:#fff;border-color:#3f8a53}
+
+/* فهم الآية فوق وضع الحفظ الكامل (z-index:2000): كانت اللوحة مرسومة تحته فلا يظهر نص التفسير */
+html .qm-sheet-backdrop{z-index:2600!important}
