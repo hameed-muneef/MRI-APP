@@ -253,7 +253,8 @@ export function getTaskNotificationSettings(prefs: NotificationPreference | null
       ? raw.channel
       : prefs?.reminder_settings?.default_channel ?? DEFAULT_TASK_NOTIFICATION_SETTINGS.channel;
   return {
-    enabled: raw?.enabled !== false,
+    // التفعيل موحّد تحت مفتاح «تفعيل كل الإشعارات والمنبهات»؛ لا مفتاح مستقل للمهام.
+    enabled: true,
     remind_before_minutes,
     notify_at_time: raw?.notify_at_time !== false,
     include_initial: raw?.include_initial !== false,
