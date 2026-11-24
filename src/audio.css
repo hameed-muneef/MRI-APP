@@ -144,6 +144,10 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  text-align: start;
 }
 
 .haramain-bg-btn.active {
