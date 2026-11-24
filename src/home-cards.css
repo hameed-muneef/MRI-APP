@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Homepage cards: unified pale-blue family (user request 2026-11-24).
+   All homepage cards (next prayer, reminders, today's tasks entry, admin
+   entry, the six feature cards and the three wide cards) share one calm
+   pale-blue surface with a soft blue border and dark navy text, matching
+   the reference palette the user approved: fill #EAF3FC, border ~#D6E3EC,
+   ink navy. Dark mode uses a single deep-blue counterpart instead of the
+   previous per-card color tints. Layout, spacing and behavior untouched —
+   colors only.
+   Loaded last in main.tsx. Selectors use `html` + `main.main` to outrank
+   the !important card rules in ui-hardening.css / theme-engine.css, and
+   stay scoped to the homepage so panels and other surfaces keep their
+   existing styling.
+   ========================================================================== */
+
+/* ---------- Light mode: unified pale-blue cards ---------- */
+
+html #root .app main.main .feature-card[data-view],
+html #root .app main.main .wide-card[data-section],
+html #root .app main.main .home-dashboard .home-next-card,
+html #root .app main.main .home-today-entry,
+html #root .app main.main .home-admin-entry {
+  background: #EAF3FC !important;
+  border: 1px solid #D3E2F0 !important;
+  color: #0F2C44 !important;
+  box-shadow: 0 4px 14px rgba(18, 48, 90, .06) !important;
+}
+
+html #root .app main.main .feature-card[data-view]:hover,
+html #root .app main.main .wide-card[data-section]:hover,
+html #root .app main.main .home-dashboard .home-next-card:hover,
+html #root .app main.main .home-today-entry:hover,
+html #root .app main.main .home-admin-entry:hover {
+  background: #E0EFFB !important;
+  border-color: #B7D3EA !important;
+  box-shadow: 0 8px 20px rgba(18, 48, 90, .10) !important;
+}
+
+/* Icon chips: soft blue tile, navy-blue icon */
+html #root .app main.main .feature-card[data-view] .feature-icon,
+html #root .app main.main .wide-card[data-section] .wide-icon,
+html #root .app main.main .home-dashboard .home-next-card .home-next-icon,
+html #root .app main.main .home-today-entry .home-today-icon,
+html #root .app main.main .home-admin-entry .home-admin-icon {
+  background: #DBEAF7 !important;
+  color: #20537A !important;
+  border: 1px solid #C9DEF0 !important;
+  box-shadow: none !important;
+}
+
+/* Card text: dark navy headings, muted blue secondary text */
+html #root .app main.main .feature-card[data-view] .feature-copy strong,
+html #root .app main.main .wide-card[data-section] h3,
+html #root .app main.main .home-dashboard .home-next-headline strong,
+html #root .app main.main .home-dashboard .home-upcoming-title-line strong,
+html #root .app main.main .home-today-entry strong,
+html #root .app main.main .home-admin-entry strong {
+  color: #0F2C44 !important;
+}
+
+html #root .app main.main .feature-card[data-view] .feature-copy > span,
+html #root .app main.main .wide-card[data-section] p,
+html #root .app main.main .home-dashboard .home-next-body small,
+html #root .app main.main .home-dashboard .home-upcoming-row small,
+html #root .app main.main .home-today-entry small,
+html #root .app main.main .home-admin-entry small {
+  color: #4E6E88 !important;
+}
+
+html #root .app main.main .home-dashboard .home-next-countdown,
+html #root .app main.main .home-dashboard .home-next-time,
+html #root .app main.main .wide-card[data-section] .inline-link {
+  color: #1F5675 !important;
+}
+
+html #root .app main.main .home-dashboard .home-upcoming-row {
+  border-top-color: rgba(31, 86, 117, .14) !important;
+}
+
+html #root .app main.main .feature-card[data-view] .feature-arrow,
+html #root .app main.main .home-dashboard .home-next-chevron,
+html #root .app main.main .home-today-entry > svg:last-child,
+html #root .app main.main .home-admin-entry > svg:last-child {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #5B84A8 !important;
+  opacity: 1;
+}
+
+/* ---------- Dark mode: single deep-blue counterpart ---------- */
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view],
+html[data-theme="dark"] #root .app main.main .wide-card[data-section],
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-card,
+html[data-theme="dark"] #root .app main.main .home-today-entry,
+html[data-theme="dark"] #root .app main.main .home-admin-entry {
+  background: #1B3A56 !important;
+  border: 1px solid #3A5F81 !important;
+  color: #F0F6FC !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .24) !important;
+}
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view]:hover,
+html[data-theme="dark"] #root .app main.main .wide-card[data-section]:hover,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-card:hover,
+html[data-theme="dark"] #root .app main.main .home-today-entry:hover,
+html[data-theme="dark"] #root .app main.main .home-admin-entry:hover {
+  background: #224566 !important;
+  border-color: #4A7296 !important;
+}
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view] .feature-icon,
+html[data-theme="dark"] #root .app main.main .wide-card[data-section] .wide-icon,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-card .home-next-icon,
+html[data-theme="dark"] #root .app main.main .home-today-entry .home-today-icon,
+html[data-theme="dark"] #root .app main.main .home-admin-entry .home-admin-icon {
+  background: #26486B !important;
+  color: #AED3EE !important;
+  border: 1px solid #3D6488 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view] .feature-copy strong,
+html[data-theme="dark"] #root .app main.main .wide-card[data-section] h3,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-headline strong,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-upcoming-title-line strong,
+html[data-theme="dark"] #root .app main.main .home-today-entry strong,
+html[data-theme="dark"] #root .app main.main .home-admin-entry strong {
+  color: #F0F6FC !important;
+}
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view] .feature-copy > span,
+html[data-theme="dark"] #root .app main.main .wide-card[data-section] p,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-body small,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-upcoming-row small,
+html[data-theme="dark"] #root .app main.main .home-today-entry small,
+html[data-theme="dark"] #root .app main.main .home-admin-entry small {
+  color: #A9C3D8 !important;
+}
+
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-countdown,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-time,
+html[data-theme="dark"] #root .app main.main .wide-card[data-section] .inline-link {
+  color: #9CC8E8 !important;
+}
+
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-upcoming-row {
+  border-top-color: rgba(156, 200, 232, .16) !important;
+}
+
+html[data-theme="dark"] #root .app main.main .feature-card[data-view] .feature-arrow,
+html[data-theme="dark"] #root .app main.main .home-dashboard .home-next-chevron,
+html[data-theme="dark"] #root .app main.main .home-today-entry > svg:last-child,
+html[data-theme="dark"] #root .app main.main .home-admin-entry > svg:last-child {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #7FA3BF !important;
+  opacity: 1;
+}
