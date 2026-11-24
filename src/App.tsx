@@ -326,10 +326,10 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     };
   }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
 
-  // الأذونات المركزية عند الإقلاع (تطبيق الهاتف فقط): طلب واحد لإذن الإشعارات
-  // حتى تصل المنبهات والتطبيق مغلق، وطلب واحد للموقع تشترك فيه المواقيت والقبلة
-  // والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا يُعاد السؤال تلقائيًا.
-  // على الويب يبقى طلب الأذونات مرتبطًا بأزرار صريحة داخل الشاشات.
+  // الأذونات المركزية عند الإقلاع: على الهاتف طلب واحد لإذن الإشعارات حتى تصل
+  // المنبهات والتطبيق مغلق، وعلى الهاتف والويب معًا طلب واحد للموقع تشترك فيه
+  // المواقيت والقبلة والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا
+  // يُعاد السؤال تلقائيًا.
   useEffect(() => {
     if (!LOCAL_ONLY && !user) return;
     let cancelled = false;
@@ -339,14 +339,17 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
         import('./lib/location-store'),
         import('./notifications/delivery'),
       ]);
-      if (cancelled || !isNative()) return;
-      const display = await delivery.ensureSystemNotificationPermission();
       if (cancelled) return;
-      if (display === 'granted') {
-        // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
-        const scheduler = await import('./notifications/native-prayer-scheduler');
-        scheduler.notifyNativePrefsChanged();
+      if (isNative()) {
+        const display = await delivery.ensureSystemNotificationPermission();
+        if (cancelled) return;
+        if (display === 'granted') {
+          // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
+          const scheduler = await import('./notifications/native-prayer-scheduler');
+          scheduler.notifyNativePrefsChanged();
+        }
       }
+      // الموقع يُطلب مركزيًا عند الإقلاع على الهاتف والويب معًا.
       if (!locationStore.getCentralLocationState().manual) {
         await locationStore.ensureCentralLocation({ timeout: 15000 });
       }
