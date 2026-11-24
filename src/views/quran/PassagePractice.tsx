@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {CheckCircle2, Eye, EyeOff, Mic, RotateCcw, Square, Volume2} from 'lucide-react';
 import type {MemorizationPassage, QuranAsset} from '../../quran/types';
+import {createBrowserRecorder, type SessionRecorder} from '../../quran-mastery/recorder';
 import {normalizeSearch, referenceLabel, toArabicNumber, verseBody, verseMarker} from '../../quran/content';
 
 type Props = {
@@ -31,10 +32,12 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
   const [blankChecked, setBlankChecked] = useState(false);
   const [order, setOrder] = useState<number[]>([]);
   const [shuffled, setShuffled] = useState<number[]>([]);
-  const [recording, setRecording] = useState(false);
-  const [audioUrl, setAudioUrl] = useState('');
-  const recorder = useRef<MediaRecorder | null>(null);
-  const stream = useRef<MediaStream | null>(null);
+  const [snap, setSnap] = useState<{status: string; url: string}>({status: 'idle', url: ''});
+  const recorder = useRef<SessionRecorder | null>(null);
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
+  const recording = snap.status === 'recording';
+  const audioUrl = snap.url;
 
   const reset = (next: Exercise) => {
     setExercise(next);
@@ -59,46 +62,35 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
     setBlankChecked(false);
     setOrder([]);
     setShuffled([]);
-    setAudioUrl(current => { if (current) URL.revokeObjectURL(current); return ''; });
+    recorder.current?.discard('passage');
   }, [passage.id]);
 
-  useEffect(() => () => {
-    stream.current?.getTracks().forEach(track => track.stop());
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const instance = createBrowserRecorder(event => {
+      const current = recorder.current;
+      if (current) setSnap(current.snapshot());
+      if (event.kind === 'denied') notifyRef.current('لم يُمنح إذن الميكروفون. يمكنك متابعة التدريب دون تسجيل أو إعادة المحاولة من إعدادات الجهاز.');
+      else if (event.kind === 'unsupported') notifyRef.current('تعذر تشغيل الميكروفون أو جهاز التسجيل. تابع دون تسجيل أو أعد المحاولة.');
+      else if (event.kind === 'discarded' && event.reason === 'background') notifyRef.current('حُذف التسجيل المؤقت لأن التطبيق انتقل إلى الخلفية.');
+    });
+    recorder.current = instance;
+    return () => { instance?.dispose(); recorder.current = null; };
   }, []);
 
   const startRecording = async () => {
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    const instance = recorder.current;
+    if (!instance) {
       notify('تسجيل الصوت غير مدعوم في هذا المتصفح.');
       return;
     }
-    try {
-      const media = await navigator.mediaDevices.getUserMedia({audio: true});
-      stream.current = media;
-      const chunks: BlobPart[] = [];
-      const instance = new MediaRecorder(media);
-      instance.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-      instance.onstop = () => {
-        const blob = new Blob(chunks, {type: instance.mimeType || 'audio/webm'});
-        setAudioUrl(current => { if (current) URL.revokeObjectURL(current); return URL.createObjectURL(blob); });
-        media.getTracks().forEach(track => track.stop());
-        stream.current = null;
-      };
-      recorder.current = instance;
-      instance.start();
-      setRecording(true);
-      notify('بدأ التسجيل المحلي بإذنك. لا يُرفع إلى الخادم.');
-    } catch {
-      notify('لم يُمنح إذن الميكروفون؛ يمكنك متابعة الاختبار دون تسجيل.');
-    }
+    if (instance.status === 'requesting' || instance.status === 'recording') return;
+    setSnap(instance.snapshot());
+    const result = await instance.start();
+    setSnap(instance.snapshot());
+    if (result === 'recording') notify('بدأ التسجيل المحلي بإذنك. لا يُرفع إلى الخادم.');
   };
 
-  const stopRecording = () => {
-    recorder.current?.stop();
-    recorder.current = null;
-    setRecording(false);
-  };
+  const stopRecording = () => { recorder.current?.stop(); };
 
   const words = (text: string) => verseBody(text).split(/\s+/).filter(Boolean);
   const hiddenWordIndex = (text: string) => Math.max(0, words(text).length - 1);
@@ -171,8 +163,8 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
       </div>
       <div className="quran-record-actions">
         {recording ? <button className="primary" onClick={stopRecording}><Square size={15}/> إيقاف التسجيل</button>
-          : <button className="soft-btn" onClick={() => void startRecording()}><Mic size={15}/> تسجيل صوتي محلي</button>}
-        {audioUrl && <audio controls src={audioUrl} aria-label="تسجيل صوتي محلي للمراجعة"/>}
+          : <button className="soft-btn" disabled={snap.status === 'requesting'} onClick={() => void startRecording()}><Mic size={15}/> {snap.status === 'requesting' ? 'بانتظار إذن الميكروفون…' : 'تسجيل صوتي محلي'}</button>}
+        {audioUrl && <><audio controls src={audioUrl} aria-label="تسجيل صوتي محلي للمراجعة"/><button className="soft-btn" onClick={() => recorder.current?.discard('user')}>حذف التسجيل</button></>}
       </div>
     </div>
 
