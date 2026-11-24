@@ -615,3 +615,23 @@ html[data-theme="dark"] #root .hf-seg button.on{background:#2f6b3f;color:#fff;bo
 
 /* فهم الآية فوق وضع الحفظ الكامل (z-index:2000): كانت اللوحة مرسومة تحته فلا يظهر نص التفسير */
 html .qm-sheet-backdrop{z-index:2600!important}
+/* الوضع الليلي للوحة فهم الآية ولوحة إعدادات الاستماع */
+html[data-theme="dark"] .qm-sheet{background:#142b40;color:#e6f0f8;box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+html[data-theme="dark"] .qm-sheet-head{background:#142b40}
+html[data-theme="dark"] .qm-sheet h3,html[data-theme="dark"] .qm-sheet h4,html[data-theme="dark"] .qm-sheet summary,html[data-theme="dark"] .qm-sheet label,html[data-theme="dark"] .qm-sheet .qm-muted{color:#e6f0f8}
+html[data-theme="dark"] .qm-sheet-verse{background:#1b3a56;color:#f1f7fc}
+html[data-theme="dark"] .qm-sheet button{background:#26486b;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] .qm-sheet button[aria-pressed="true"],html[data-theme="dark"] .qm-sheet .qm-primary{background:#3b82c4;color:#fff;border-color:#8cc0ee}
+html[data-theme="dark"] .qm-sheet .icon-btn{background:#26486b;color:#fff;border:1px solid #8cc0ee;opacity:1}
+html[data-theme="dark"] .qm-sheet .icon-btn svg{color:#fff;stroke:#fff;opacity:1}
+html[data-theme="dark"] .qm-sheet select,html[data-theme="dark"] .qm-sheet textarea{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet{background:#142b40;color:#e6f0f8}
+html[data-theme="dark"] #root .hf-sheet .hf-icon-btn,html[data-theme="dark"] #root .hf-sheet .hf-sheet-x{color:#fff}
+html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf-sheet input{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-sheet .hf-stepper button{background:#26486b;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{background:#3b82c4;color:#fff}
+html #root .hf-reciter{gap:6px}
+html #root .hf-rsearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid #9FC4E6;border-radius:12px;padding:8px 12px;font:inherit;background:#fff;color:#17324f}
+html #root .hf-rnote{color:#5b6f82;font-size:.8rem;line-height:1.5}
+html[data-theme="dark"] #root .hf-rsearch{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-rnote{color:#a9c0d4}
