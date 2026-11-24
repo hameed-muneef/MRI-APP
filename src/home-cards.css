@@ -426,3 +426,17 @@ html #root .qm-workspace h3, html #root .quran-page h3 { font-size: 16px !import
 html #root .qm-workspace .qm-heading h2 { font-size: 19px !important; }
 html #root .qm-done h3 { font-size: 18px !important; }
 html #root .qm-tally-row strong { font-size: 18px; font-weight: 600; }
+/* faithful mushaf line layout for memorization */
+html #root .qm-lines{font-family:'KFGQPC HAFS Uthmanic Script','Amiri Quran',serif;font-size:24px;line-height:1;direction:rtl}
+html #root .qm-line{display:flex;justify-content:space-between;align-items:center;white-space:nowrap;line-height:2.1;min-height:1.9em;overflow:hidden}
+html #root .qm-line.qm-line-center{justify-content:center;gap:.35em}
+html #root .qm-w{cursor:pointer;display:inline-block}
+html #root .qm-w .quran-verse-marker{margin-inline-start:.25em}
+html #root .qm-w.is-hidden .qm-w-text{color:transparent!important;border-bottom:2px dotted currentColor;opacity:1}
+html #root .qm-w.is-hidden .quran-verse-marker{opacity:.5}
+html #root .qm-w.qm-verse-context{cursor:default}
+html #root .qm-surah-head{text-align:center;margin:10px 0 6px}
+html #root .qm-basmala-line{text-align:center;margin:4px 0 6px;font-size:.9em}
+html #root .qm-verse-context{opacity:.68!important}
+html #root[data-theme="dark"] .qm-verse-context,html[data-theme="dark"] #root .qm-verse-context{opacity:.72!important}
+html #root .qm-w.qm-verse-playing,html #root .qm-w.qm-verse-selected{background:rgba(32,83,122,.16);border-radius:6px}
