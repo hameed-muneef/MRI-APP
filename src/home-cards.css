@@ -257,9 +257,22 @@ html #root .app main.main .home-today-list .home-tasks-row {
   flex-direction: row;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-top: 1px solid rgba(31, 86, 117, .14);
+  gap: 10px;
+  padding: 7px 0;
+}
+html #root .app main.main .home-today-list .home-task-dot {
+  flex: none;
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6FA3D0;
+}
+html #root .app main.main .home-today-list .home-tasks-row-overdue .home-task-dot {
+  background: var(--status-error);
+}
+html[data-theme="dark"] #root .app main.main .home-today-list .home-task-dot {
+  background: #AED3EE;
 }
 html #root .app main.main .home-today-list .home-task-name {
   display: block;
@@ -275,13 +288,14 @@ html #root .app main.main .home-today-list .home-task-meta {
   flex: none;
   max-width: 48%;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: #4E6E88;
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
 html #root .app main.main .home-today-list .home-task-meta.home-task-overdue {
   color: var(--status-error) !important;
+  font-weight: 600;
 }
 html #root .app main.main .home-today-list .home-tasks-empty {
   color: #4E6E88;
@@ -292,6 +306,7 @@ html #root .app main.main .home-today-list .home-tasks-all {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
+  margin-top: 4px;
   padding-top: 10px;
   border-top: 1px solid rgba(31, 86, 117, .14);
   font-size: 13px;
@@ -309,7 +324,6 @@ html[data-theme="dark"] #root .app main.main .home-today-list .home-task-meta,
 html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-empty {
   color: #A9C4DC;
 }
-html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-row,
 html[data-theme="dark"] #root .app main.main .home-today-list .home-tasks-all {
   border-top-color: rgba(174, 211, 238, .18);
 }
