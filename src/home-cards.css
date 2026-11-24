@@ -218,14 +218,12 @@ html[data-theme="dark"] #root .app .mobile-nav button[data-section].active svg {
   color: #AED3EE !important;
 }
 
-/* ---------- Light mode, homepage only: neutral paper background (user request 2026-11-24) ----------
-   The warm beige page background carried a yellow cast that competed with the
-   cool blue cards and bars on the homepage. Per the user's approval the
-   HOMEPAGE background shifts to a neutral paper off-white #F7F7F2: the paper
-   feel stays, the cast goes. Scoped strictly to the homepage (the only view
-   whose content holds .home-dashboard); admin, auth, reader chrome, settings
-   and every other view keep their original warm backgrounds. Dark mode
-   untouched. */
+/* ---------- Light mode, homepage only: white background (user request 2026-11-24) ----------
+   Final background choice after previewing the neutral paper: the user picked
+   white with the blue cards, matching the clean white-and-blue feel of the
+   memorization mushaf surfaces. Homepage only (the view whose content holds
+   .home-dashboard); admin, auth, settings, readers and all other views keep
+   their original warm backgrounds. Cards, bars and dark mode untouched. */
 html[data-theme="light"] #root .app main.main:has(> .content > .home-dashboard) {
-  background: #F7F7F2 !important;
+  background: #FFFFFF !important;
 }
