@@ -3833,3 +3833,9 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
     margin-inline-start: auto;
   }
 }
+
+/* خط Readex أعرض: يسمح للأزرار الطويلة بالالتفاف داخل عرض الشاشة بدل الخروج منه */
+#root .app main .soft-btn {
+  max-width: 100%;
+  white-space: normal;
+}
