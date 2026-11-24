@@ -1,6 +1,6 @@
-# Device test build run 4: unified plans stats, hifz mushaf flow, planner, qibla and mosques fixes.
+# Device test build run 5: shared manual city (prayers, qibla, mosques, settings), reciters library layout fix, reviewed browser journeys.
 # Debug-only APK build for on-device testing of feat/daytime-blue-palette.
-# Isolated test variant: applicationId com.alrabbaniyoon.app.test3 (new, separate empty data) and the label الربانيون (تجريبي ٣),
+# Isolated test variant: applicationId com.alrabbaniyoon.app.test4 (new, separate empty data) and the label الربانيون (تجريبي ٤),
 # set only inside the CI workspace (repo files are not changed), so it installs next to the real app.
 # No signing, no secrets, no release or publishing. Runs on push to this branch
 # only when this file changes, so it builds the exact branch head once.
@@ -86,8 +86,8 @@ jobs:
 
       - name: Make isolated test variant (CI workspace only)
         run: |
-          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test3"/' android/app/build.gradle
-          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي ٣)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي ٣)</string>|' android/app/src/main/res/values/strings.xml
+          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test4"/' android/app/build.gradle
+          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي ٤)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي ٤)</string>|' android/app/src/main/res/values/strings.xml
           grep -n 'applicationId' android/app/build.gradle
           grep -n 'app_name\|title_activity_main' android/app/src/main/res/values/strings.xml
 
@@ -113,7 +113,7 @@ jobs:
         id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk-test3
+          name: app-debug-apk-test4
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
