@@ -448,3 +448,56 @@ html #root .app main h1{font-size:21px!important;font-weight:600!important;line-
 html #root .app main h2{font-size:18px!important;font-weight:600!important;line-height:1.4}
 html #root .app main h3{font-size:16px!important;font-weight:600!important;line-height:1.4}
 html #root .app main .page-intro h1{font-size:21px!important;font-weight:600!important}
+
+/* القبلة: عند المحاذاة تتحول الشاشة إلى الأبيض مع اهتزاز، كما في تطبيقات القبلة المعروفة. */
+html #root .qibla-white-screen{position:fixed!important;inset:0!important;z-index:2500!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:10px!important;background:#fff!important;color:#14532d!important;text-align:center;pointer-events:none}
+html #root .qibla-white-screen span{font-size:96px!important;line-height:1;color:#16a34a!important}
+html #root .qibla-white-screen strong{font-size:22px!important;color:#14532d!important}
+html #root .qibla-white-screen small{font-size:16px!important;color:#475569!important}
+
+html #root .mosques-radius-custom{display:flex!important;flex-wrap:wrap;align-items:center;gap:8px;width:100%}
+html #root .mosques-radius-custom input[type=range]{flex:1 1 140px;min-width:120px}
+html #root .mosques-radius-custom input[type=number]{width:84px;padding:6px 8px}
+html #root .mosque-eta{display:flex;align-items:center;gap:6px;font-size:14px;margin:6px 0 2px}
+
+html #root .reciter-toggle{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;padding:6px 2px;text-align:right;font:inherit;color:inherit;cursor:pointer}
+html #root .reciter-toggle strong{flex:1 1 auto}
+html #root .reciter-toggle .reciter-meta-text{font-size:13px;opacity:.8}
+html #root .reciter-riwaya-groups{display:flex;flex-direction:column;gap:6px;width:100%}
+html #root .reciter-riwaya-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html #root .reciter-riwaya-group small{width:100%;opacity:.75}
+
+/* الحفظ: الصفحة الكاملة ثم ثلاثة أزرار تحتها */
+html #root .hifz-entry-actions{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+html #root .hifz-entry-actions button{flex:1 1 140px;min-height:48px}
+html #root .hifz-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+html #root .hifz-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+html #root .hifz-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:8px 6px;font-size:14px}
+html #root .hifz-modes{margin-top:8px}
+html #root .hifz-page{touch-action:pan-y}
+html #root .hifz-page .qm-page-nav button{min-width:40px;min-height:36px}
+html #root .hifz-actions{position:sticky;bottom:78px;z-index:30;padding:8px;border-radius:14px;background:#EAF3FC;border:1px solid #9FC4E6}
+html[data-theme="dark"] #root .hifz-actions,html #root[data-theme="dark"] .hifz-actions{background:#1B3A56;border-color:#26486B}
+
+/* جدول التخطيط اليومي (المستعاد): لوحة الألوان الزرقاء المعتمدة في الوضع النهاري، دون تغيير الأشكال */
+html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval{background:#EAF3FC!important;border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval-heading{background:#F4F8FC!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .planned-activity-card{background:#F4F8FC!important;border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .fixed-prayer-bar{background:linear-gradient(115deg,#20537A 0%,#1B4466 100%)!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-note.sunrise-marker,html:not([data-theme="dark"]) #root .app .day-plan-content .sunrise-in-slot{background:#F4F8FC!important;border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .group-add-trigger{background:#F4F8FC!important;border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .task-time-selects select,html:not([data-theme="dark"]) #root .app .day-plan-content .rename-activity input{border-color:#9FC4E6!important}
+
+/* الوضع الليلي: إزالة بقايا الأخضر في أزرار المخطط */
+html[data-theme="dark"] #root .app .day-plan-content .soft-btn,html[data-theme="dark"] #root .app .day-plan-content input[type="date"],html[data-theme="dark"] #root .app .day-plan-content .tabs button.active,html[data-theme="dark"] #root .app .day-plan-content [aria-pressed="true"],html[data-theme="dark"] #root .app .day-plan-content [aria-selected="true"]{background:#26486B!important;border-color:#3d6a94!important;color:#E3F0FB!important}
+
+/* شريط الأدوات الثلاثة ثابت أسفل الشاشة فوق شريط التنقل ليبقى في المتناول مع الصفحة الطويلة */
+html #root .hifz-actions{position:static!important}
+html #root .hifz-actions.hifz-actions-docked{position:fixed!important;left:10px;right:10px;bottom:76px;margin:0;z-index:60;box-shadow:0 -6px 18px rgba(20,50,80,.18)}
+html #root .hifz-page{padding-bottom:84px}
+/* أيقونة التقويم في حقل التاريخ في الوضع الليلي */
+html[data-theme="dark"] #root input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.6);opacity:1}
+html[data-theme="dark"] #root input[type="date"]{color-scheme:dark}
+html #root:has(.hifz-actions-docked) .scroll-top-fab-dock{display:none!important}
+html #root .hifz-actions button{font-size:12.5px!important;white-space:nowrap;padding:8px 4px!important;gap:4px!important}
+html #root .hifz-actions button svg{width:16px;height:16px;flex:none}
