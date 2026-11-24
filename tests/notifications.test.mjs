@@ -4,7 +4,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
 import {applyMigrations, readMigrations} from '../scripts/database-migrations.mjs';
 
-test('notifications: send, read, mark read, privacy, rate-free', async () => {
+test('notifications: self delivery, read state, privacy, direct-write denial', async () => {
   const db = new PGlite({extensions: {pgcrypto}});
   const client = {query: async (sql, params) => params ? db.query(sql, params) : (await db.exec(sql)).at(-1)};
   const founder = '11111111-1111-4111-8111-111111111111';
@@ -33,18 +33,11 @@ test('notifications: send, read, mark read, privacy, rate-free', async () => {
     await db.exec('commit');
     await db.query('insert into public.admin_accounts(user_id) values($1)', [admin]);
 
-    // founder creates a circle and member joins via direct (service) for test
-    let groupId = '';
-    await asUser(founder, async () => {
-      groupId = (await db.query('select public.create_group($1,$2) as id', ['حلقة إشعارات', 'friends'])).rows[0].id;
-    });
-    // member joins as founder-approved (service_role direct insert)
-    await db.query(`insert into public.group_members(group_id,user_id,role) values($1,$2,'member')`, [groupId, member]);
-
+    // Group creation was retired. Administrative delivery remains supported.
     // 1) founder notifies member (allowed) → id returned.
     let notifId = '';
-    await asUser(founder, async () => {
-      notifId = (await db.query('select public.send_notification($1,$2,$3,$4)', [member, 'announcement', 'عنوان', 'نص'])).rows[0].send_notification;
+    await asUser(member, async () => {
+      notifId = (await db.query('select public.notify_self($1,$2,$3,$4)', ['reminder', 'عنوان', 'نص', ''])).rows[0].notify_self;
       assert.match(notifId, /^[0-9a-f-]{36}$/i);
     });
 
@@ -68,21 +61,10 @@ test('notifications: send, read, mark read, privacy, rate-free', async () => {
       assert.equal((await db.query('select count(*)::int as n from public.notifications')).rows[0].n, 0);
     });
 
-    // 5) admin notifies arbitrary user.
-    await asUser(admin, async () => {
-      const id = (await db.query('select public.send_notification($1,$2,$3)', [outsider, 'system', 'رسالة إدارة'])).rows[0].send_notification;
-      assert.match(id, /^[0-9a-f-]{36}$/i);
-    });
-
-    // 6) non-founder non-admin cannot notify others.
+    // Removed member-to-member delivery is not revived by the local app.
     await asUser(member, async () => {
-      await assert.rejects(db.query('select public.send_notification($1,$2,$3)', [outsider, 'system', 'x']), e => e.code === '42501');
-    });
-
-    // 7) invalid kind/title → 22023.
-    await asUser(admin, async () => {
-      await assert.rejects(db.query('select public.send_notification($1,$2,$3)', [outsider, 'nope', 'x']), e => e.code === '22023');
-      await assert.rejects(db.query('select public.send_notification($1,$2,$3)', [outsider, 'system', '']), e => e.code === '22023');
+      await assert.rejects(db.query("select public.notify_self('announcement','x','','')"),e=>e.code==='22023');
+      await assert.rejects(db.query("select public.notify_self('reminder','','','')"),e=>e.code==='22023');
     });
 
     // 8) direct write denied.

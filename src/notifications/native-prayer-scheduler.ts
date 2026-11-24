@@ -1,3 +1,5 @@
+import {nativeMasteryReminders} from '../quran-mastery/reminders';
+import {loadMasteryState} from '../quran-mastery/storage';
 // src/notifications/native-prayer-scheduler.ts
 // جدولة أذان الصلاة (AlarmManager + AdhanPlaybackService) والمنبهات عبر @capacitor/local-notifications (Android/iOS).
 // تعمل فقط في بيئة Capacitor (native). في الويب تُتجاهل (no-op).
@@ -19,6 +21,7 @@ import {
   type NativeAdhanAlarmInput,
 } from '../lib/settings-opener';
 import type { PrayerLocation } from '../prayer-location';
+import type { MemorizationPassage } from '../quran/types';
 import {
   getSelectedDefaultAdhanId,
   resolvePrayerAdhan,
@@ -43,9 +46,15 @@ export const NATIVE_SCHEDULE_UPDATED_EVENT = 'rabbani:native-schedule-updated';
 const PRAYER_IDS_STORAGE_KEY = 'rabbani-native-prayer-ids-v1';
 const REMINDER_IDS_STORAGE_KEY = 'rabbani-native-reminder-ids-v1';
 const TASK_IDS_STORAGE_KEY = 'rabbani-native-task-ids-v1';
+const REVIEW_IDS_STORAGE_KEY = 'rabbani-native-review-ids-v1';
 const MAX_PRAYER_ALARMS = 350;
 const MAX_REMINDER_ALARMS = 80;
 const MAX_TASK_ALARMS = 80;
+const MAX_REVIEW_ALARMS = 40;
+/** أفق جدولة تنبيهات المراجعة على الهاتف (أيام). */
+const REVIEW_HORIZON_DAYS = 7;
+/** وقت تنبيه مراجعة الحفظ اليومي — يطابق محرك التسليم داخل التطبيق. */
+const REVIEW_HOUR = 9;
 
 export interface NativeScheduleOptions {
   location: PrayerLocation;
@@ -381,8 +390,11 @@ export function buildNativeReminderPayloads(
   const payloads: NativeNotificationPayload[] = [];
 
   for (const reminder of reminders) {
+    // Mastery due-state is evaluated live; do not schedule a stale daily alert while closed.
+    if(reminder.id==='quran-mastery-daily-review')continue;
     if (!reminder.enabled) continue;
-    if (!isReminderAllowed(reminder, prefs, now)) continue;
+    // Quiet hours are checked at each future occurrence, not at scheduling time.
+    if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
     const channelPref = prefs.reminder_settings?.default_channel ?? 'both';
     if (channelPref === 'in_app') continue;
 
@@ -403,6 +415,7 @@ export function buildNativeReminderPayloads(
     const occurrences = upcomingOccurrences(reminder, now, 5);
     for (const at of occurrences) {
       if (at.getTime() <= nowMs + 1000) continue;
+      if (snoozeAt && at <= snoozeAt && snoozeAt.getTime()-at.getTime()<=60*60*1000) continue;
       if (isQuietHoursActive(prefs, at)) continue;
       payloads.push({
         id: prayerId('rem', `${reminder.id}:${at.toISOString()}`),
@@ -465,6 +478,65 @@ export function buildNativeTaskPayloads(
 
   payloads.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
   return payloads.slice(0, MAX_TASK_ALARMS);
+}
+
+/**
+ * Pure builder for Quran/Hadith memorization review notifications on the phone.
+ * Mirrors the in-app engine: one notification per passage due date, at 9:00 local
+ * (the first 9:00 at or after both now and the due date), within a 7-day horizon.
+ */
+export function buildNativeReviewPayloads(
+  passages: readonly MemorizationPassage[],
+  prefs: NotificationPreference,
+  now = new Date(),
+  generalChannelId = GENERAL_CHANNEL_ID,
+  exactAlarm = true,
+): NativeNotificationPayload[] {
+  if (!prefs.global_enabled || prefs.dnd_enabled) {
+    return [];
+  }
+  if (prefs.categories?.['reminder'] === false) {
+    return [];
+  }
+  const channelPref = prefs.reminder_settings?.default_channel ?? 'both';
+  if (channelPref === 'in_app') {
+    return [];
+  }
+
+  const nowMs = now.getTime();
+  const horizonMs = REVIEW_HORIZON_DAYS * 24 * 60 * 60 * 1000;
+  const payloads: NativeNotificationPayload[] = [];
+
+  for (const passage of passages) {
+    if (!passage || typeof passage.id !== 'string' || !passage.id) continue;
+    if (typeof passage.dueDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(passage.dueDate)) continue;
+    const dueAt = new Date(`${passage.dueDate}T${String(REVIEW_HOUR).padStart(2, '0')}:00:00`);
+    if (Number.isNaN(dueAt.getTime())) continue;
+    let at = dueAt;
+    if (at.getTime() <= nowMs + 1000) {
+      at = new Date(now);
+      at.setHours(REVIEW_HOUR, 0, 0, 0);
+      if (at.getTime() <= nowMs + 1000) at.setDate(at.getDate() + 1);
+    }
+    if (at.getTime() - nowMs > horizonMs) continue;
+    if (isQuietHoursActive(prefs, at)) continue;
+
+    const surahName = passage.surah ? `سورة ${passage.surah}` : 'مقطع';
+    const ayahRange = passage.ayahStart && passage.ayahEnd ? ` (آية ${passage.ayahStart}–${passage.ayahEnd})` : '';
+    payloads.push({
+      id: prayerId('review', `${passage.id}:${passage.dueDate}`),
+      title: `مراجعة حفظ — ${surahName}${ayahRange}`,
+      body: 'حان وقت مراجعة مقطعك المحفوظ. «وَذَكِّرْ فَإِنَّ الذِّكْرَىٰ تَنفَعُ الْمُؤْمِنِينَ»',
+      schedule: { at, allowWhileIdle: true },
+      channelId: generalChannelId,
+      foreground: true,
+      isExactNotification: exactAlarm,
+      extra: { rabbaniKind: 'review', passageId: passage.id, dueDate: passage.dueDate },
+    });
+  }
+
+  payloads.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
+  return payloads.slice(0, MAX_REVIEW_ALARMS);
 }
 
 export async function ensureChannels(): Promise<ActiveChannelInfo> {
@@ -555,7 +627,7 @@ export async function requestPermissions(): Promise<{ display: string; exact: st
 
 async function cancelScopedNotifications(
   LN: NonNullable<Awaited<ReturnType<typeof loadPlugin>>>,
-  kind: 'prayer' | 'reminder' | 'task',
+  kind: 'prayer' | 'reminder' | 'task' | 'review',
   storageKey: string,
 ): Promise<number> {
   const tracked = new Set(loadTrackedIds(storageKey));
@@ -726,7 +798,7 @@ export async function scheduleNativePersonalReminders(
     if (perms.display !== 'granted') return 0;
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeReminderPayloads(reminders, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
     if (payloads.length === 0) return 0;
 
     try {
@@ -768,6 +840,35 @@ export async function scheduleNativeTaskNotifications(
   });
 }
 
+export async function scheduleNativeReviewNotifications(
+  passages: readonly MemorizationPassage[],
+  prefs: NotificationPreference,
+  now = new Date(),
+): Promise<number> {
+  return enqueueSync(async () => {
+    if (!isNative()) return 0;
+    const LN = await loadPlugin();
+    if (!LN) return 0;
+
+    const perms = await checkPermissions();
+    await ensureChannels();
+    await cancelScopedNotifications(LN, 'review', REVIEW_IDS_STORAGE_KEY);
+    if (perms.display !== 'granted') return 0;
+
+    const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
+    const payloads = buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    if (payloads.length === 0) return 0;
+
+    try {
+      const res = await LN.schedule({ notifications: payloads as never });
+      saveTrackedIds(REVIEW_IDS_STORAGE_KEY, payloads.map((p) => p.id));
+      return res.notifications?.length ?? payloads.length;
+    } catch {
+      return 0;
+    }
+  });
+}
+
 export async function cancelAllPrayerNotifications(): Promise<void> {
   await enqueueSync(async () => {
     if (!isNative()) return;
@@ -784,6 +885,7 @@ export async function syncAllNativeNotifications(opts: {
   prefs: NotificationPreference;
   reminders?: readonly Reminder[];
   taskContext?: TaskScheduleContext;
+  passages?: readonly MemorizationPassage[];
 }): Promise<NativeScheduleResult | null> {
   if (!isNative()) return null;
   let prayerResult: NativeScheduleResult | null = null;
@@ -802,9 +904,12 @@ export async function syncAllNativeNotifications(opts: {
   if (opts.taskContext) {
     await scheduleNativeTaskNotifications(opts.taskContext, opts.prefs);
   }
+  if (opts.passages) {
+    await scheduleNativeReviewNotifications(opts.passages, opts.prefs);
+  }
   return prayerResult;
 }
 
 export function isNativePlatform(): boolean {
   return isNative();
-}
+  }

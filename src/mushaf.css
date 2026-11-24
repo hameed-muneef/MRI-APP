@@ -28,6 +28,7 @@
 /* ============ Control panel ============ */
 :root {
   --primary: #163d34;
+  --on-primary: #ffffff;
   --primary-dark: #0f2822;
   --primary-soft: rgba(22,61,52,.08);
   --surface: #fbf8f1;
@@ -41,6 +42,7 @@
 }
 [data-theme="dark"] {
   --primary: #7fd2ae;
+  --on-primary: #0f2822;
   --primary-dark: #5fb892;
   --primary-soft: rgba(127,210,174,.12);
   --surface: #16241f;
@@ -74,6 +76,7 @@
   --dark-line-card: #d4ddd3;
   --dark-line-soft: #e2e8dd;
   --primary: #163d34;
+  --on-primary: #ffffff;
   --primary-dark: #0f2822;
   --primary-soft: rgba(22, 61, 52, .08);
   --border: rgba(22, 61, 52, .16);
@@ -104,7 +107,7 @@
   color: #1a2a24;
 }
 @media (prefers-color-scheme:dark){
-  :root{--surface:#16241f;--surface-2:#101b18;--border:rgba(255,255,255,.12);--text:#e9f1ee;--muted:#a8bdb6;--primary:#7fd2ae;--primary-dark:#5fb892;--primary-soft:rgba(127,210,174,.12)}
+  :root{--surface:#16241f;--surface-2:#101b18;--border:rgba(255,255,255,.12);--text:#e9f1ee;--muted:#a8bdb6;--primary:#7fd2ae;--on-primary:#0f2822;--primary-dark:#5fb892;--primary-soft:rgba(127,210,174,.12)}
 }
 
 .mf-toolbar{position:sticky;top:0;z-index:30;display:grid;gap:var(--gap);padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow)}
@@ -185,7 +188,7 @@
   .mf-btn,.mf-progress > span,.mf-nowplaying{transition:none}
 }
 @media (prefers-color-scheme:dark){
-  :root{--surface:#16241f;--surface-2:#101b18;--border:rgba(255,255,255,.12);--text:#e9f1ee;--muted:#a8bdb6;--primary:#7fd2ae;--primary-dark:#5fb892;--primary-soft:rgba(127,210,174,.12)}
+  :root{--surface:#16241f;--surface-2:#101b18;--border:rgba(255,255,255,.12);--text:#e9f1ee;--muted:#a8bdb6;--primary:#7fd2ae;--on-primary:#0f2822;--primary-dark:#5fb892;--primary-soft:rgba(127,210,174,.12)}
 }
 
 /* ============ Sheet (ayah options) ============ */
@@ -207,7 +210,7 @@
 .mf-sheet-content{display:grid;gap:6px;min-width:0;max-width:100%}
 .mf-content-select{display:flex;gap:6px;align-items:center;font-size:13px;min-width:0}
 .mf-content-select select{padding:5px 8px;border-radius:9px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit;font-size:13px;max-width:100%;min-width:0;text-overflow:ellipsis}
-.mf-content-text{margin:0;line-height:2;font-size:15px;overflow-wrap:anywhere;word-break:break-word}
+.mf-content-text{margin:0;line-height:2;font-size:15px;overflow-wrap:anywhere;word-break:break-word;white-space:pre-line}
 .mf-content-note{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
 .mf-sheet-note{display:grid;gap:6px;min-width:0;max-width:100%}
 .mf-sheet-note textarea{min-height:96px;padding:8px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit;font-size:16px;resize:vertical;width:100%;max-width:100%;box-sizing:border-box}
@@ -299,12 +302,17 @@
 .reciters-tabs::-webkit-scrollbar{display:none}
 .reciters-tabs button{flex:0 0 auto;min-height:40px;padding:6px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
 .reciters-tabs button:hover{background:var(--primary-soft)}
-.reciters-tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-[data-theme="dark"] .reciters-library:not(.mf-sheet .reciters-library) .reciters-tabs button.active{color:#0f2822}
+.reciters-tabs button.active{background:var(--primary);color:var(--on-primary,#fff);border-color:var(--primary)}
+/* قاعدة theme-engine العامة (#root .app button) أعلى تخصيصًا من أصناف الأزرار هنا،
+   فكانت تفرض لون النص الداكن فوق خلفية --primary الداكنة (نص داكن على داكن).
+   نعيد اللون الصحيح بتخصيص أعلى، مع --on-primary المتغيّر حسب السياق. */
+#root .app .reciters-tabs button.active,
+#root .app .reciter-btn-listen.selected{color:var(--on-primary,#fff)}
+#root .app .reciter-btn-listen{color:var(--primary)}
 
 .reciters-scope-bar{display:flex;align-items:center;gap:8px;min-width:0}
 .reciters-scope-label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;flex-shrink:0}
-.reciters-scope-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:2px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;min-width:0;flex:1}
+.reciters-scope-chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0;min-width:0;flex:1}
 .reciters-scope-chips::-webkit-scrollbar{display:none}
 .reciters-scope-chip{flex:0 0 auto;min-height:36px;padding:5px 11px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
 .reciters-scope-chip.active{background:var(--primary-soft);color:var(--primary);border-color:var(--primary)}
@@ -332,12 +340,22 @@
 .reciter-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
 .reciter-btn-listen,.reciter-btn-dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 12px;border-radius:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex:1 1 110px;transition:background .15s,border-color .15s,color .15s}
 .reciter-btn-listen{border:1px solid var(--primary);background:var(--primary-soft);color:var(--primary)}
-.reciter-btn-listen.selected{background:var(--primary);color:#fff}
-[data-theme="dark"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-btn-listen.selected{color:#0f2822}
+.reciter-btn-listen.selected{background:var(--primary);color:var(--on-primary,#fff)}
 .reciter-btn-dl{border:1px solid var(--border);background:var(--surface-2);color:var(--text)}
 .reciter-btn-dl.done{color:#17703F;border-color:rgba(23,112,63,.35)}
 [data-theme="dark"] .reciters-library:not(.mf-sheet .reciters-library) .reciter-btn-dl.done{color:#7fd2ae;border-color:rgba(127,210,174,.35)}
 .reciter-btn-dl:disabled,.reciter-btn-listen:disabled{opacity:.5;cursor:not-allowed}
+
+/* تنزيل المصحف كاملًا مباشرة من بطاقة القارئ: زر عريض هادئ يكمل ما بدأه المستخدم
+   (يستأنف السور الناقصة فقط) مع تأكيد قبل بدء تنزيل قد يكون كبيرًا. */
+.reciter-full-row{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+#root .app .reciter-btn-full{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 100%;min-height:40px;padding:7px 12px;border-radius:10px;border:1px dashed var(--primary);background:var(--primary-soft);color:var(--primary);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+#root .app .reciter-btn-full:hover:not(:disabled){background:var(--primary-soft);border-style:solid}
+#root .app .reciter-btn-full:disabled{opacity:.55;cursor:not-allowed}
+#root .app .reciter-btn-full.done{border:1px solid rgba(23,112,63,.35);background:transparent;color:#17703F}
+[data-theme="dark"] #root .app .reciters-library:not(.mf-sheet .reciters-library) .reciter-btn-full.done{color:#7fd2ae;border-color:rgba(127,210,174,.35)}
+#root .app .reciter-full-confirm{flex:1 1 100%}
+#root .app .reciter-full-confirm .soft-btn{flex:1;white-space:normal;text-align:center}
 .reciter-btn-trash{flex:0 0 auto;min-width:44px;min-height:44px}
 .reciter-confirm-del{display:flex;gap:6px;flex:1 1 100%}
 .reciter-confirm-del .soft-btn{min-height:40px;flex:1}
@@ -356,3 +374,7 @@
 @media (prefers-reduced-motion:reduce){
   .mf-btn,.mf-progress > span,.mf-nowplaying,.mf-khatmah-bar > span,.ol-progress > span,.reciters-tabs button,.reciters-scope-chip,.reciter-btn-listen,.reciter-btn-dl{transition:none}
 }
+.reciter-tag.narration-tag{background:#fff4e0;color:#8a5a00;border:1px solid #e8c47a}
+/* Keep library active tabs readable even inside inherited pale sheet palettes. */
+#root .app .reciters-library .reciters-tabs button[aria-selected="true"]{background:#174a3c!important;color:#fff!important;border-color:#174a3c!important}
+.reciters-tabs{scroll-padding-inline:8px}.reciters-tabs button{scroll-margin-inline:8px}

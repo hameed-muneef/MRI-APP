@@ -1,6 +1,7 @@
 import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,Flower2,ShieldCheck,MonitorPlay,Compass,MapPin} from 'lucide-react';
 import {type View} from '../app-state';
 import {type PrayerLocation} from '../prayer-location';
+import {hijriDate} from '../hijri';
 import HomeDashboard from './HomeDashboard';
 import {type SectionId} from '../section-theme';
 
@@ -13,11 +14,21 @@ const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string
   {id:'mosques',title:'المساجد القريبة',icon:MapPin,desc:'أقرب المساجد إليك مع الاتجاهات',section:'daily'},
 ];
 
-export default function HomeView({navigate,admin=false,prayers={},prayerLocation}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation}) {
+export default function HomeView({navigate,admin=false,prayers={},prayerLocation,currentDate}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation;currentDate?:string}) {
+  const dateObj = currentDate ? new Date(`${currentDate}T12:00:00`) : new Date();
+  const hijri = hijriDate(dateObj);
+  const gregorian = new Intl.DateTimeFormat('ar-EG', {weekday:'long', day:'numeric', month:'long'}).format(dateObj);
   return <>
+    <div className="home-date-bar" aria-label="تاريخ اليوم">
+      <CalendarDays size={16} aria-hidden="true"/>
+      <div className="home-date-text">
+        {hijri && <span className="home-hijri-date">{hijri}</span>}
+        <span className="home-greg-date">{gregorian}</span>
+      </div>
+    </div>
+    <section className="hero"><div className="hero-pattern"/><div className="hero-content"><span className="hero-tag"><Flower2 size={15}/> بسم الله الرحمن الرحيم</span><p className="hero-copy hero-ayah"><span className="hero-ayah-text">﴿يَٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُواْ ٱصۡبِرُواْ وَصَابِرُواْ وَرَابِطُواْ وَٱتَّقُواْ ٱللَّهَ لَعَلَّكُمۡ تُفۡلِحُونَ﴾</span><span className="hero-ayah-ref">آل عمران: ٢٠٠</span></p><button className="hero-btn" onClick={()=>navigate('day')}>ابدأ يومك <ArrowRight size={18}/></button></div><div className="hero-art"><div className="arch"><BookOpen size={64} strokeWidth={1.1}/><span>وَكُونُوا رَبَّانِيِّينَ</span></div></div></section>
     <HomeDashboard prayers={prayers} prayerLocation={prayerLocation} navigate={navigate}/>
     <button className="home-today-entry" onClick={()=>navigate('tasks')}><span className="home-today-icon"><CalendarClock size={21} aria-hidden="true"/></span><span><strong>مهام اليوم</strong><small>اليوم · غدًا · المهام المتأخرة</small></span><ChevronLeft size={18} aria-hidden="true"/></button>
-    <section className="hero"><div className="hero-pattern"/><div className="hero-content"><span className="hero-tag"><Flower2 size={15}/> بسم الله الرحمن الرحيم</span><h1>أهلًا وسهلًا برفقاء الطريق في رحلتنا الربانية</h1><p className="hero-copy"><strong>إلى الله نمضي...</strong><span>ببصيرة العارفين، وعمل الصالحين، وعزيمة المجاهدين، وإحسان المحسنين.</span><span>رحلة علمٍ وإيمانٍ وعملٍ وإحسان.</span></p><button className="hero-btn" onClick={()=>navigate('day')}>ابدأ يومك <ArrowRight size={18}/></button></div><div className="hero-art"><div className="arch"><BookOpen size={64} strokeWidth={1.1}/><span>وَكُونُوا رَبَّانِيِّينَ</span></div></div></section>
     {admin&&<a className="home-admin-entry" href="/admin"><span className="home-admin-icon"><ShieldCheck size={22}/></span><span><strong>لوحة الإدارة</strong><small>إدارة المنهج والموارد</small></span><ChevronLeft size={18}/></a>}
     <div className="section-title"><div><span className="eyebrow">تنظيم الحياة</span><h2>حياتي مع الله</h2><p>اجعل العبادة والعمل والأسرة والتعلم في خطة متوازنة.</p></div></div>
     <div className="feature-grid">{menu.map(m=><button key={m.id} data-section={m.section} data-view={m.id} className="feature-card" onClick={()=>navigate(m.id)}><span className="feature-icon"><m.icon size={22} aria-hidden="true"/></span><span className="feature-copy"><strong>{m.title}</strong><span>{m.desc}</span></span><ChevronLeft className="feature-arrow" size={18} aria-hidden="true"/></button>)}</div>

@@ -3,8 +3,9 @@
 import {useEffect, useState} from 'react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationChannel, type NotificationPreference} from '../../notifications/types';
-import {channelDescription, channelLabel, SoundSelectField} from './SoundPanel';
+import {channelLabel, SoundSelectField} from './SoundPanel';
 import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
+import {ensureSystemNotificationPermission} from '../../notifications/delivery';
 
 const CATEGORY_LABELS: Record<string, string> = {
   prayer: 'الصلاة والأذان',
@@ -57,6 +58,10 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       const merged = {...fresh};
       for (const key of GENERAL_KEYS) (merged as Record<string, unknown>)[key] = prefs[key];
       const result = await savePrefs(merged);
+      if (merged.global_enabled) {
+        // إذن النظام يُطلب مركزيًا من هنا أيضًا كي تصل التنبيهات على الهاتف.
+        void ensureSystemNotificationPermission();
+      }
       notifyNativePrefsChanged();
       setDirty(false);
       notify(result.source === 'cloud' ? 'حُفظت الإعدادات العامة في حسابك' : 'حُفظت الإعدادات العامة على هذا الجهاز');
@@ -89,7 +94,7 @@ export default function GeneralNotifications({notify}: {notify: (message: string
             <label>إلى<input type="time" dir="ltr" value={quiet.end} onChange={event => change({quiet_hours: {...quiet, end: event.target.value}})}/></label>
           </div>
         )}
-        <fieldset className="notif-categories">
+        <details className="settings-inner-details"><summary>خيارات إضافية للتنبيهات</summary><fieldset className="notif-categories">
           <legend>الفئات المفعّلة</legend>
           {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
             <label key={key} className="notif-switch">
@@ -99,11 +104,11 @@ export default function GeneralNotifications({notify}: {notify: (message: string
           ))}
         </fieldset>
         <div className="form-grid">
-          <label>طريقة وصول التذكيرات الافتراضية
+          <label>مكان ظهور التذكير
             <select value={prefs.reminder_settings.default_channel} onChange={event => change({reminder_settings: {...prefs.reminder_settings, default_channel: event.target.value as NotificationChannel}})}>
               {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => <option key={key} value={key}>{channelLabel(key)}</option>)}
             </select>
-            <small className="task-channel-hint">{channelDescription(prefs.reminder_settings.default_channel)}</small>
+
           </label>
           <label>صوت التذكيرات الافتراضي
             <SoundSelectField value={prefs.reminder_settings.default_sound_id} onChange={sound => change({reminder_settings: {...prefs.reminder_settings, default_sound_id: sound}})}/>
@@ -112,11 +117,11 @@ export default function GeneralNotifications({notify}: {notify: (message: string
             <input type="number" inputMode="numeric" min={1} max={120} value={prefs.reminder_settings.snooze_minutes}
               onChange={event => change({reminder_settings: {...prefs.reminder_settings, snooze_minutes: Math.max(1, Math.min(120, Math.round(Number(event.target.value)) || 10))}})}/>
           </label>
-        </div>
+        </div></details>
       </fieldset>
       <div className="notif-form-actions">
         <button type="button" className="primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? 'جارٍ الحفظ…' : dirty ? 'حفظ التغييرات' : 'تم الحفظ'}</button>
       </div>
     </div>
   );
-}
+                                                                                                         }

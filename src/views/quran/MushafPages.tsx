@@ -13,7 +13,7 @@ import {
 } from '../../quran/content';
 import {TRANSLATIONS, TAFSIRS, fetchTafsir, fetchTranslation, type FetchState} from '../../quran/content-api';
 import {
-  audioUrl, defaultMoshaf, loadReciters, type Reciter, type ReciterMoshaf
+  audioUrl, defaultMoshaf, loadReciters, moshafCategory, type Reciter, type ReciterMoshaf
 } from '../../quran/audio';
 import {
   DEFAULT_MP3QURAN_RECITER_ID, resolveSingleAyahUrl
@@ -179,7 +179,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
   const currentKey = activeQuranContinuous ? String(audioState.currentTrack?.meta?.key ?? '') : '';
   const playingKey =
     audioState.category === 'quran' && (audioState.status === 'playing' || audioState.status === 'loading')
-      ? String(audioState.currentTrack?.meta?.key ?? '')
+      && audioState.currentTrack?.meta?.mode==='ayah' ? String(audioState.currentTrack?.meta?.key ?? '')
       : '';
   const audioLoading = ayahLoading || (audioState.category === 'quran' && audioState.status === 'loading');
 
@@ -358,6 +358,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
       return;
     }
 
+    if(moshafCategory(activeMoshaf.name)!=='hafs'){notify('هذه الرواية للاستماع فقط من مكتبة القراء، ولا تُربط بنص حفص المعروض.');return;}
     const firstOfflineReady = isSurahOfflineDownloaded(activeMoshaf.id, startSurah);
     if (!online && !firstOfflineReady) {
       notify('هذه السورة غير منزَّلة لهذا القارئ؛ يمكنك تنزيلها عند توفر الإنترنت أو اختيار قارئ منزَّل.');
@@ -366,8 +367,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
 
     const tracks: AudioTrack[] = [];
     for (let s = startSurah; s <= lastSurah; s += 1) {
-      if (!activeMoshaf.surahList.includes(s)) continue;
-      if (!online && !isSurahOfflineDownloaded(activeMoshaf.id, s)) continue;
+      if (!activeMoshaf.surahList.includes(s)||(!online&&!isSurahOfflineDownloaded(activeMoshaf.id,s))){notify(`الصوت غير متاح للسورة ${s}؛ لن تُتجاوز في التلاوة المتتابعة.`);break;}
       const url = audioUrl(activeMoshaf, s);
       tracks.push({
         id: offlineTrackId(activeMoshaf.id, s),
@@ -405,9 +405,12 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
     const targetKey = `${verse.s}:${verse.a}`;
     if (playingKey === targetKey) { stopAudio(); return; }
     if (!online) { notify('تلاوة الآية الواحدة تحتاج اتصالًا بالإنترنت؛ أو شغّل السورة الكاملة إن كانت منزَّلة.'); return; }
+    if(!currentMoshaf||moshafCategory(currentMoshaf.name)!=='hafs'){notify('هذه الرواية للاستماع فقط في المكتبة، وليست متوافقة مع النص المعروض.');return;}
     setAyahLoading(true);
+    const requestedReciter=reciterId;
     const url = await resolveSingleAyahUrl(reciterId, currentMoshaf?.name, verse.s, verse.a);
     setAyahLoading(false);
+    if(requestedReciter!==reciterIdRef.current)return;
     if (!url) {
       notify('التلاوة آية بآية غير متوفرة لهذا القارئ؛ استخدم زر «تشغيل» للاستماع للسورة كاملة بصوته.');
       return;
@@ -1074,4 +1077,4 @@ const MushafPageList = function MushafPageList({asset, pages, surahStarts, sajda
     })}
     <p className="mf-source">النص العثماني من {asset.source} · رواية {asset.narration}. حدود الصفحات والأجزاء والأحزاب كما في مصدر المجمع. التلاوات المنزَّلة على الجهاز تعمل دون إنترنت، بينما البث المباشر والتلاوات غير المنزَّلة تحتاج اتصالًا.</p>
   </div>;
-}
+                                                 }

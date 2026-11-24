@@ -38,7 +38,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
 
     // 1. Clicking Home "التذكيرات القادمة" opens Settings directly on "المنبهات والتذكيرات" tab
     await page.locator('.home-next-card-reminders').click();
-    await expect(page.locator('.settings-tabs button[role="tab"][aria-selected="true"]')).toContainText('المنبهات والتذكيرات');
+    await expect(page.locator('.settings-tabs button[role="tab"][aria-selected="true"]')).toContainText('المنبهات');
     await expect(page.locator('.notif-add-btn')).toBeVisible();
     await assertMinTouchTargets(page, '.settings-tabs button, .notif-add-btn', 'alarms-tab');
     await assertNoPageOverflow(page, 'alarms-empty');
@@ -61,7 +61,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     }));
     console.log('DIAG AFTER SUBMIT:', JSON.stringify(diag));
 
-    const firstCard = page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'});
+    const firstCard = page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})});
     await expect(firstCard).toBeVisible();
     await assertMinTouchTargets(page, '.notif-reminder-actions button, .notif-power-switch', 'reminder-card-actions');
 
@@ -84,7 +84,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await expect(page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'})).toBeVisible();
 
     // 5. Snooze "صلاة الضحى" and verify HomeDashboard shows "مؤجل مؤقتًا"
-    const duhaCard = page.locator('.notif-reminder-card', {hasText: 'صلاة الضحى'});
+    const duhaCard = page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})});
     await duhaCard.locator('button', {hasText: 'تأجيل ١٠ د'}).click();
     await expect(duhaCard.locator('.notif-reminder-due')).toContainText('مؤجل مؤقتًا');
 
@@ -104,7 +104,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await duhaCard.locator('button', {hasText: 'حذف'}).click();
     await expect(duhaCard.locator('[role="alertdialog"]')).toBeVisible();
     await duhaCard.locator('[role="alertdialog"] button', {hasText: 'تأكيد الحذف'}).click();
-    await expect(page.locator('.notif-reminder-card', {hasText: /^صلاة الضحى$/})).toHaveCount(0);
+    await expect(page.locator('.notif-reminder-card').filter({has: page.locator('.notif-reminder-title-row strong').filter({hasText: /^صلاة الضحى$/})})).toHaveCount(0);
 
     // 7. Sub-tab: Scheduled task notifications
     await page.locator('.notif-subtabs button', {hasText: 'تذكيرات المهام المجدولة'}).click();
@@ -112,7 +112,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await assertNoPageOverflow(page, 'alarms-tasks-subtab');
 
     // 8. Tab 3: الأذان والصلوات — compact prayer card expands & saves
-    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'الأذان والصلوات'}).click();
+    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'الأذان'}).click();
     await expect(page.locator('.notif-prayer-card').first()).toBeVisible();
     const fajrCard = page.locator('.notif-prayer-card').first();
     await fajrCard.locator('.notif-prayer-expand').click();
@@ -123,7 +123,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await assertNoPageOverflow(page, 'adhan-tab');
 
     // 9. Tab 4: الهدوء والإشعارات — Quiet hours + Save
-    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'الهدوء والإشعارات'}).click();
+    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'الهدوء'}).click();
     await expect(page.locator('.notif-general-panel')).toBeVisible();
     await page.locator('.notif-general-panel label', {hasText: 'ساعات الهدوء'}).click();
     await page.locator('.notif-general-panel button', {hasText: 'حفظ التغييرات'}).click();
@@ -131,8 +131,9 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
     await assertNoPageOverflow(page, 'quiet-tab');
 
     // 10. Tab 1: المظهر والبيانات — Dark mode + 320px narrow mobile stress check
-    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'المظهر والبيانات'}).click();
-    await expect(page.locator('.settings-overview-grid')).toBeVisible();
+    await page.locator('.settings-tabs button[role="tab"]', {hasText: 'عام'}).click();
+    await expect(page.locator('.appearance-seg')).toBeVisible();
+    await expect(page.locator('.settings-tabs button[role="tab"]')).toHaveCount(4);
     await page.locator('.appearance-seg button', {hasText: 'ليلي'}).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
@@ -147,7 +148,7 @@ test.describe('Upcoming Reminders, Alarms & Settings Mobile Redesign', () => {
 
     // Click Home prayer card -> lands on Adhan tab
     await page.locator('.home-next-card-prayer').click();
-    await expect(page.locator('.settings-tabs button[role="tab"][aria-selected="true"]')).toContainText('الأذان والصلوات');
+    await expect(page.locator('.settings-tabs button[role="tab"][aria-selected="true"]')).toContainText('الأذان');
     await assertNoPageOverflow(page, 'settings-adhan-dark-320');
 
     expect(errors, `Runtime errors detected:\n${errors.join('\n')}`).toEqual([]);

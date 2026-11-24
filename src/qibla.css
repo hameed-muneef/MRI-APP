@@ -21,7 +21,7 @@
 .qibla-cardinal.s { bottom: 8px; left: 50%; transform: translateX(-50%); }
 .qibla-cardinal.w { left: 10px; top: 50%; transform: translateY(-50%); }
 .qibla-kaaba { position: absolute; top: 50%; left: 50%; transform-origin: 50% 50%; }
-.qibla-kaaba-icon { display: block; font-size: 26px; transform: translate(-50%, -50%); }
+.qibla-kaaba-icon { display: block; transform: translate(-50%, -50%); }
 .qibla-marker-top { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--accent-primary, #1d4d50); z-index: 2; }
 
 .qibla-status { font-size: 16px; font-weight: 700; min-height: 24px; text-align: center; }

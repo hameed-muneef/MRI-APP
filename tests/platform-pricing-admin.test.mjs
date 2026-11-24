@@ -36,8 +36,8 @@ test('admins configure per-feature prices and audit grants; feature entitlements
       ('${admin}','admin@example.test',now()),('${member}','member@example.test',now()),('${other}','other@example.test',now())`);
     await db.exec('begin');await applyMigrations(client,await readMigrations());await db.exec('commit');
     const catalog=(await db.query('select key,requires_premium,price_amount from public.platform_features order by key')).rows;
-    // 13 feature keys pre-dated the Quran & Sunnah module; that module adds 5.
-    assert.equal(catalog.length,18);
+    // The retired groups feature is absent from the current catalog.
+    assert.equal(catalog.length,17);
     assert.ok(catalog.every(feature=>!feature.requires_premium&&feature.price_amount===null));
     await db.query('insert into public.admin_accounts(user_id) values($1)',[admin]);
 

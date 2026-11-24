@@ -6,7 +6,6 @@ import {load,today,type State,type View} from './app-state';
 import {sectionOfView} from './section-theme';
 import {displayName,fetchProfile,saveProfile,type Profile} from './user-profile';
 import {uid} from './id';
-import {hijriDate} from './hijri';
 import {CalendarDays,Heart,Settings2,Home,ChevronLeft,ArrowRight,Check,ShieldCheck,UserRound,CreditCard,BookMarked,MonitorPlay,Compass,MapPin,WifiOff} from 'lucide-react';
 import AuthScreen from './AuthScreen';
 import {AppearanceToggle} from './AppearanceToggle';
@@ -31,11 +30,11 @@ import {fetchCloudState,saveCloudState} from './cloud-state';
 import {mergeQuranState,logRoutineCompletion,syncRoutineTasks} from './quran/learning';
 import {fetchQuranLearningState,saveQuranLearningState} from './quran/sync';
 import type {User} from '@supabase/supabase-js';
+import {changeWirdCount, normalizeWirds} from './wird-periods';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
 const StrongGoals=lazy(()=>import('./StrongGoals'));
-const TasksPanel=lazy(()=>import('./views/TasksPanel'));
 const WeeklyPlanner=lazy(()=>import('./views/WeeklyPlanner'));
 const MonthlyPlanner=lazy(()=>import('./views/MonthlyPlanner'));
 const ReflectionView=lazy(()=>import('./views/ReflectionView'));
@@ -106,6 +105,7 @@ export default function App(){
 function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const storageKey=user?`rabbani-v1-user-${user.id}`:'rabbani-v1';
   const [state,setState]=useState<State>(()=>load(storageKey));
+  const [currentDate,setCurrentDate]=useState(today);
   const [view,setView]=useState<View>('home');
   const [quranSection,setQuranSection]=useState<QuranSection|undefined>(undefined);
   const [featureAccess,setFeatureAccess]=useState<FeatureAccess>({view:'home',status:'allowed',price_amount:null,currency_code:null,billing_interval:null});
@@ -117,6 +117,18 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const isOnline=useOnline();
 
   useEffect(()=>{void requestPersistentStorage()},[]);
+  useEffect(()=>{
+    const refreshPeriods=()=>{setCurrentDate(today());setState(current=>{
+      const wirds=normalizeWirds(current.wirds);
+      return wirds===current.wirds?current:{...current,wirds};
+    })};
+    refreshPeriods();
+    const timer=window.setInterval(refreshPeriods,30000);
+    window.addEventListener('focus',refreshPeriods);
+    const onVisible=()=>{if(document.visibilityState==='visible')refreshPeriods()};
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>{window.clearInterval(timer);window.removeEventListener('focus',refreshPeriods);document.removeEventListener('visibilitychange',onVisible)};
+  },[]);
 
   const [cloudReady,setCloudReady]=useState(!user);
   const [cloudWritable,setCloudWritable]=useState(false);
@@ -163,12 +175,12 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   },[state.quran,user?.id,cloudReady,quranSynced]);
   // Keep the daily routine inside the existing task list without a second engine.
   useEffect(()=>{
-    const date=today();
+    const date=currentDate;
     setState(current=>{
       const next=syncRoutineTasks(current.tasks,current.quran.routine,date,current.quran.plans);
       return JSON.stringify(next.map(task=>[task.id,task.title,task.sourceLabel,task.period]))===JSON.stringify(current.tasks.map(task=>[task.id,task.title,task.sourceLabel,task.period]))?current:{...current,tasks:next};
     });
-  },[state.quran.routine,state.quran.plans]);
+  },[state.quran.routine,state.quran.plans,currentDate]);
   const completeQuranTask=(taskId:string)=>{
     update(current=>{
       const activity=current.quran.routine.find(item=>`quran:${item.id}`===taskId);
@@ -229,6 +241,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
   const latestPrayerLocationRef = useRef(state.prayerLocation);
   latestPrayerLocationRef.current = state.prayerLocation;
+  const latestPassagesRef = useRef(state.quran?.passages ?? []);
+  latestPassagesRef.current = state.quran?.passages ?? [];
   const latestTaskContextRef = useRef({
     tasks: state.tasks,
     goals: state.goals,
@@ -284,6 +298,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
           prefs,
           reminders,
           taskContext: latestTaskContextRef.current,
+          passages: latestPassagesRef.current,
         });
         lastSyncContextRef.current = { signature: sig, atMs: Date.now() };
       } catch { /* ignore */ }
@@ -309,7 +324,37 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
       window.clearInterval(rolloverCheck);
       cleanupResume?.();
     };
-  }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, user?.id]);
+  }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
+
+  // الأذونات المركزية عند الإقلاع (تطبيق الهاتف فقط): طلب واحد لإذن الإشعارات
+  // حتى تصل المنبهات والتطبيق مغلق، وطلب واحد للموقع تشترك فيه المواقيت والقبلة
+  // والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا يُعاد السؤال تلقائيًا.
+  // على الويب يبقى طلب الأذونات مرتبطًا بأزرار صريحة داخل الشاشات.
+  useEffect(() => {
+    if (!LOCAL_ONLY && !user) return;
+    let cancelled = false;
+    void (async () => {
+      const [{ isNativePlatform: isNative }, locationStore, delivery] = await Promise.all([
+        import('./lib/device-location'),
+        import('./lib/location-store'),
+        import('./notifications/delivery'),
+      ]);
+      if (cancelled || !isNative()) return;
+      const display = await delivery.ensureSystemNotificationPermission();
+      if (cancelled) return;
+      if (display === 'granted') {
+        // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
+        const scheduler = await import('./notifications/native-prayer-scheduler');
+        scheduler.notifyNativePrefsChanged();
+      }
+      if (!locationStore.getCentralLocationState().manual) {
+        await locationStore.ensureCentralLocation({ timeout: 15000 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
 
   const accessMatchesView=featureAccess.view===view;
@@ -320,14 +365,14 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   if(!cloudReady)return <div className="auth-loading" dir="rtl">جارٍ تحميل بيانات حسابك…</div>;
   return <div className="app"><aside className="sidebar"><button className="brand" onClick={()=>navigate('home')}><span className="brand-mark"><img src="/brand/book-mark.svg" alt=""/></span><span><strong>الرَّبَّانِيُّون</strong><small>على هدي الكتاب والسنة</small></span></button><div className="side-label">مسيرتك</div><nav><button className={view==='home'?'active':''} onClick={()=>navigate('home')}><Home size={19}/>الرئيسية</button><button data-section="daily" className={inDailySuite(view)?'active':''} onClick={()=>navigate('day')}><CalendarDays size={19}/>حياتي مع الله</button><button data-section="quran" className={view==='quran'?'active':''} onClick={()=>navigate('quran')}><BookMarked size={19}/>القرآن والسنة</button><button data-section="haramain" className={view==='haramain'?'active':''} onClick={()=>navigate('haramain')}><MonitorPlay size={19}/>من الحرمين الشريفين<InternetBadge compact/></button>
 <button data-section="qibla" className={view==='qibla'?'active':''} onClick={()=>navigate('qibla')}><Compass size={19}/>اتجاه القبلة</button><button data-section="daily" className={view==='mosques'?'active':''} onClick={()=>navigate('mosques')}><MapPin size={19}/>المساجد القريبة</button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} onClick={()=>navigate('reflect')}><Heart size={19}/>حاسب نفسك</button></nav><div className="side-bottom">{!LOCAL_ONLY&&<button onClick={()=>navigate('profile')}><UserRound size={18}/> {user?'حسابي':'الملف الشخصي'}</button>}
-{!LOCAL_ONLY&&<button onClick={()=>navigate('paymentHistory')}><CreditCard size={18}/> سجل الدفع</button>}<button onClick={()=>navigate('settings')}><Settings2 size={18}/> الإعدادات</button>{!LOCAL_ONLY&&<button className="session-button" onClick={async()=>{if(user)await authClient?.auth.signOut();else onLeave()}}>{user?'تسجيل الخروج':'العودة إلى صفحة الدخول'}</button>}<p>﴿وَلَٰكِنْ كُونُوا رَبَّانِيِّينَ﴾<br/><span>آل عمران: 79</span></p></div></aside><main data-section={sectionOfView(view)} className="main"><header className="topbar"><div className="crumb"><button type="button" className="crumb-home" onClick={()=>navigate('home')} aria-label="العودة إلى الرئيسية">الربانيون</button><ChevronLeft size={15}/><strong>{crumbs[view]}</strong></div><div className="top-actions">{admin&&<a className="admin-entry" href="/admin"><ShieldCheck size={15}/> لوحة الإدارة</a>}{(user||LOCAL_ONLY)&&<InstallAppButton/>}{(user||LOCAL_ONLY)&&<AppearanceToggle/>}{user&&<button className="user-chip" onClick={()=>navigate('profile')} aria-label={`حسابي: ${displayName(profile,user.email)}`}><span className="user-chip-avatar" aria-hidden="true">{displayName(profile,user.email).trim().charAt(0)}</span><span className="user-chip-name">{displayName(profile,user.email)}</span></button>}<LiveNotifications prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} passages={state.quran?.passages ?? []} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} onToast={notify}/><div className="top-date">{user&&(syncStatus==='offline'?<button className="cloud-status offline" onClick={()=>setRetrySync(x=>x+1)}>تعذر الاتصال · إعادة المحاولة</button>:<span className={'cloud-status '+syncStatus}>{syncStatus==='saved'?'محفوظ في السحابة':'جارٍ الحفظ…'}</span>)}{new Intl.DateTimeFormat('ar-EG',{weekday:'long',day:'numeric',month:'long'}).format(new Date())}<span className="hijri-inline">{hijriDate(new Date())}</span></div><NotificationCenter user={user} profile={profile} onNavigate={navigate}/><button type="button" className={`icon-btn topbar-settings${view==='settings'?' active':''}`} aria-label="الإعدادات" title="الإعدادات" aria-current={view==='settings'?'page':undefined} onClick={()=>navigate('settings')}><Settings2 size={18} aria-hidden="true"/></button></div></header><div className="content">{view!=='home'&&<div className="page-top-nav"><button className="back" onClick={()=>navigate('home')}><ArrowRight size={16}/>العودة للرئيسية</button>{inDailySuite(view)&&<nav className="section-subnav" aria-label="أقسام حياتي مع الله">{dailySuiteViews.map(item=><button key={item.id} type="button" className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}>{item.label}</button>)}</nav>}</div>}
+{!LOCAL_ONLY&&<button onClick={()=>navigate('paymentHistory')}><CreditCard size={18}/> سجل الدفع</button>}<button onClick={()=>navigate('settings')}><Settings2 size={18}/> الإعدادات</button>{!LOCAL_ONLY&&<button className="session-button" onClick={async()=>{if(user)await authClient?.auth.signOut();else onLeave()}}>{user?'تسجيل الخروج':'العودة إلى صفحة الدخول'}</button>}<p>﴿وَلَٰكِنْ كُونُوا رَبَّانِيِّينَ﴾<br/><span>آل عمران: 79</span></p></div></aside><main data-section={sectionOfView(view)} className="main"><header className="topbar"><div className="crumb"><button type="button" className="crumb-home" onClick={()=>navigate('home')} aria-label="العودة إلى الرئيسية">الربانيون</button><ChevronLeft size={15}/><strong>{crumbs[view]}</strong></div><div className="top-actions">{admin&&<a className="admin-entry" href="/admin"><ShieldCheck size={15}/> لوحة الإدارة</a>}{(user||LOCAL_ONLY)&&<InstallAppButton/>}{(user||LOCAL_ONLY)&&<AppearanceToggle/>}{user&&<button className="user-chip" onClick={()=>navigate('profile')} aria-label={`حسابي: ${displayName(profile,user.email)}`}><span className="user-chip-avatar" aria-hidden="true">{displayName(profile,user.email).trim().charAt(0)}</span><span className="user-chip-name">{displayName(profile,user.email)}</span></button>}<LiveNotifications prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} passages={state.quran?.passages ?? []} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} onToast={notify}/>{user&&<div className="top-date">{syncStatus==='offline'?<button className="cloud-status offline" onClick={()=>setRetrySync(x=>x+1)}>تعذر الاتصال · إعادة المحاولة</button>:<span className={'cloud-status '+syncStatus}>{syncStatus==='saved'?'محفوظ في السحابة':'جارٍ الحفظ…'}</span>}</div>}<NotificationCenter user={user} profile={profile} onNavigate={navigate}/><button type="button" className={`icon-btn topbar-settings${view==='settings'?' active':''}`} aria-label="الإعدادات" title="الإعدادات" aria-current={view==='settings'?'page':undefined} onClick={()=>navigate('settings')}><Settings2 size={18} aria-hidden="true"/></button></div></header><div className="content">{view!=='home'&&<div className="page-top-nav"><button className="back" onClick={()=>navigate('home')}><ArrowRight size={16}/>العودة للرئيسية</button>{inDailySuite(view)&&<nav className="section-subnav" aria-label="أقسام حياتي مع الله">{dailySuiteViews.map(item=><button key={item.id} type="button" className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}>{item.label}</button>)}</nav>}</div>}
     {checkingFeature&&<div className="auth-loading" dir="rtl" role="status">جارٍ التحقق من استحقاق الميزة…</div>}
     {deniedFeature&&<section className="panel feature-access-required" dir="rtl"><h1>{featureAccess.title||'هذه الميزة مدفوعة'}</h1>{featureAccess.enabled===false?<p>هذه الميزة معطلة حاليًا من الإدارة. لا يمكن الاشتراك فيها حتى تُفعّل. تواصل مع إدارة المنصة.</p>:<><p>هذه الميزة غير مشمولة باستحقاق حسابك. {featureAccess.price_amount&&featureAccess.currency_code?`السعر: ${new Intl.NumberFormat('ar-EG',{style:'currency',currency:featureAccess.currency_code,maximumFractionDigits:3}).format(featureAccess.price_amount)} ${featureAccess.billing_interval==='monthly'?'شهريًا':featureAccess.billing_interval==='yearly'?'سنويًا':''}.`:''}</p><p>للوصول، اشترك عبر الدفع (الدفع (sandbox) حتى اعتماد المزود). تفعيل الوصول يتم بعد تحقق المزود (webhook)، وليس بمجرد إعادة التوجيه.</p></>}<div className="feature-access-actions"><button className="soft-btn" onClick={()=>navigate('home')}>العودة إلى الرئيسية</button>{featureAccess.enabled!==false&&requiredFeature&&<button className="primary" onClick={()=>{setPaymentFeature(requiredFeature);navigate('payment')}}>اشترك الآن</button>}{user&&<button className="soft-btn" onClick={()=>navigate('paymentHistory')}>سجل الدفع</button>}</div></section>}
     {featureCheckFailed&&<section className="panel feature-access-required" dir="rtl" role="alert"><h2>تعذّر التحقق من صلاحية الميزة</h2><p>لم نفتح القسم لأن خدمة الصلاحيات لم تُرجع نتيجة موثوقة. تحقق من الاتصال ثم أعد المحاولة.</p><button className="soft-btn" onClick={()=>setRetryFeatureAccess(value=>value+1)}>إعادة التحقق</button></section>}
     {canRenderView&&<ErrorBoundary key={`${view}:${viewRecovery}`} fallback={<section className="panel feature-access-required" dir="rtl" role="alert"><h2>{typeof navigator!=='undefined'&&!navigator.onLine?'هذا القسم غير متاح دون اتصال بالإنترنت':'تعذر فتح هذا القسم'}</h2><p>{typeof navigator!=='undefined'&&!navigator.onLine?'تحقق من اتصالك بالإنترنت ثم أعد المحاولة؛ بيانات حسابك محفوظة وبقية الأقسام المحلية تعمل بلا اتصال.':'حدث خلل أثناء عرض الصفحة. بيانات حسابك محفوظة؛ جرّب إعادة فتح القسم.'}</p><button className="soft-btn" onClick={()=>setViewRecovery(value=>value+1)}>إعادة المحاولة</button></section>}><Suspense fallback={loadingView}>
-    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation}/>}
+    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} currentDate={currentDate}/>}
     {view==='tasks'&&<TodayTasksView tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
-    {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')} extraTasks={<details className="panel legacy-tasks"><summary>أنشطة إضافية محفوظة وخطوات أهدافي</summary><p className="muted small">أنشطتك السابقة وخطوات الأهداف المضافة إلى اليوم محفوظة هنا.</p>{view==='day'&&<TasksPanel period="daily" tasks={state.tasks.filter(t=>t.period==='daily')} prayers={state.prayers} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} onTasks={tasks=>update(s=>replacePeriodTasks(s,'daily',tasks))}/>}</details>}/>}
+    {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')}/>}
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
     {view==='goals'&&<StrongGoals goals={state.goals} onGoals={goals=>update(s=>({...s,goals}))}/>}
@@ -337,7 +382,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {view==='mosques'&&<MosquesScreen notify={notify}/>}
     {view==='reflect'&&<ReflectionView reflections={state.reflections} onAdd={text=>{update(s=>({...s,reflections:[newReflection(text),...s.reflections]}));notify('حُفظت المراجعة')}} onDelete={id=>update(s=>({...s,reflections:s.reflections.filter(x=>x.id!==id)}))} navigate={navigate}/>}
 
-    {view==='wird'&&<WirdsView wirds={state.wirds} onWirds={wirds=>update(s=>({...s,wirds}))} notify={notify} navigate={navigate}/>}
+    {view==='wird'&&<WirdsView wirds={state.wirds} onCountChange={(id,delta)=>update(s=>({...s,wirds:changeWirdCount(s.wirds,id,delta)}))} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate}/>}
     {!LOCAL_ONLY&&view==='profile'&&<ProfileView user={user!} notify={notify} onProfileSaved={()=>{}}/>}
     {view==='settings'&&<SettingsView state={state} onReplace={setState} notify={notify} onOpenProfile={()=>navigate('profile')}/>}
     {!LOCAL_ONLY&&view==='payment'&&<PaymentCheckout user={user!} featureKey={paymentFeature} onBack={()=>navigate('home')}/>}
@@ -345,6 +390,3 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     </Suspense></ErrorBoundary>}
   </div><ScrollToTopFab enabled={canRenderView}/><footer>© 2026 الربانيون — جميع الحقوق محفوظة </footer></main>{!isOnline&&<div className="offline-pill" role="status" aria-live="polite"><WifiOff size={14} aria-hidden="true"/><span>وضع عدم الاتصال · التخزين المحلي نشط</span></div>}{toast&&<div className="toast"><Check size={16}/>{toast}</div>}<MiniAudioPlayer onOpenCategory={openAudioCategory}/><nav className="mobile-nav" aria-label="التنقل السفلي"><button className={view==='home'?'active':''} aria-current={view==='home'?'page':undefined} onClick={()=>navigate('home')}><Home size={20} aria-hidden="true"/><span>الرئيسية</span></button><button data-section="daily" className={inDailySuite(view)?'active':''} aria-current={inDailySuite(view)?'page':undefined} onClick={()=>navigate('day')}><CalendarDays size={20} aria-hidden="true"/><span>حياتي</span></button><button data-section="quran" className={view==='quran'?'active':''} aria-current={view==='quran'?'page':undefined} onClick={()=>navigate('quran')}><BookMarked size={20} aria-hidden="true"/><span>القرآن</span></button><button data-section="qibla" className={view==='qibla'?'active':''} aria-current={view==='qibla'?'page':undefined} onClick={()=>navigate('qibla')}><Compass size={20} aria-hidden="true"/><span>القبلة</span></button><button data-section="daily" className={view==='mosques'?'active':''} aria-label="المساجد القريبة" aria-current={view==='mosques'?'page':undefined} onClick={()=>navigate('mosques')}><MapPin size={20} aria-hidden="true"/><span>المساجد</span></button><button data-section="haramain" className={view==='haramain'?'active':''} aria-current={view==='haramain'?'page':undefined} onClick={()=>navigate('haramain')}><MonitorPlay size={20} aria-hidden="true"/><span>الحرمين</span></button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} aria-current={['reflect','wird'].includes(view)?'page':undefined} onClick={()=>navigate('reflect')}><Heart size={20} aria-hidden="true"/><span>المحاسبة</span></button></nav></div>;
 }
-
-
-

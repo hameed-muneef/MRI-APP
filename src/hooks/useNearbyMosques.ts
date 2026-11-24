@@ -116,8 +116,9 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
     setStage('locating');
     setGeoError(null);
     void (async () => {
-      const { requestDeviceLocation } = await import('../lib/device-location');
-      const res = await requestDeviceLocation({ timeout: 15000, maximumAge: 0 });
+      // طلب GPS صريح من المستخدم عبر المخزن المركزي (مُدمَج مع بقية الأجزاء).
+      const { refreshDeviceLocation } = await import('../lib/location-store');
+      const res = await refreshDeviceLocation({ timeout: 15000, maximumAge: 0 });
       if (!mountedRef.current) return;
       if (res.ok) {
         setCountryOverride('');
@@ -148,8 +149,8 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
     if (stage !== 'denied' || coords) return;
     return addAppResumeListener(() => {
       void (async () => {
-        const { checkLocationPermission } = await import('../lib/device-location');
-        const p = await checkLocationPermission();
+        const { syncCentralLocationPermission } = await import('../lib/location-store');
+        const p = await syncCentralLocationPermission();
         if (p === 'granted' || p === 'prompt') {
           requestGps();
         }
@@ -161,8 +162,8 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { checkLocationPermission } = await import('../lib/device-location');
-      const p = await checkLocationPermission();
+      const { syncCentralLocationPermission } = await import('../lib/location-store');
+      const p = await syncCentralLocationPermission();
       if (cancelled) return;
       if (p === 'granted') {
         requestGps();

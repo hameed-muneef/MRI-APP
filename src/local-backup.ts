@@ -1,3 +1,7 @@
+import {masteryRootSchema} from './quran-mastery/storage';
+import {z} from 'zod';
+import {prefsSchema,reminderSchema} from './notifications/storage-schema';
+import {parseStoredState} from './state-schema';
 import {loadFromRaw, type State} from './app-state';
 import {installAppearance} from './appearance';
 import {notifyNativePrefsChanged} from './notifications/native-prayer-scheduler';
@@ -90,7 +94,7 @@ export function exportLocalBackup(): LocalBackupPayload {
 
 export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'): State | null {
   const parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
-  if (!parsed || typeof parsed !== 'object' || parsed.app !== BACKUP_APP_ID || typeof parsed.storage !== 'object' || !parsed.storage) {
+  if (!parsed || typeof parsed !== 'object' || parsed.app !== BACKUP_APP_ID || parsed.version !== BACKUP_FORMAT_VERSION || typeof parsed.storage !== 'object' || !parsed.storage || Array.isArray(parsed.storage)) {
     throw new Error('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
   }
 
@@ -101,16 +105,36 @@ export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'
     throw new Error('لم يُعثر على بيانات قابلة للاستيراد داخل الملف.');
   }
 
+  // Validate all app-state snapshots before writing even a single key.
   for (const [key, value] of entries) {
-    window.localStorage.setItem(key, value);
+    if (/^rabbani-v1(?:-user-.+)?$/.test(key)) parseStoredState(value as string);
+    if (key==='rabbani-mastery-v1') masteryRootSchema.parse(JSON.parse(value as string));
+    if (key==='rabbani-notif-prefs-v1') prefsSchema.parse(JSON.parse(value as string));
+    if (key==='rabbani-notif-reminders-v1') z.array(reminderSchema).parse(JSON.parse(value as string));
+  }
+  const mainRaw = parsed.storage[activeStateKey] ?? parsed.storage['rabbani-v1'] ?? null;
+  const restored = mainRaw ? loadFromRaw(mainRaw) : null;
+  const previous = entries.map(([key]) => [key, window.localStorage.getItem(key)] as const);
+  try {
+    for (const [key, value] of entries) window.localStorage.setItem(key, value as string);
+    // A backup from a different storage key must also survive a reload.
+    if (mainRaw && !entries.some(([key]) => key === activeStateKey)) {
+      previous.push([activeStateKey, window.localStorage.getItem(activeStateKey)]);
+      window.localStorage.setItem(activeStateKey, mainRaw);
+    }
+  } catch (error) {
+    for (const [key, value] of previous) {
+      try {if (value === null) window.localStorage.removeItem(key); else window.localStorage.setItem(key, value)} catch { /* original quota failure wins */ }
+    }
+    throw error;
   }
 
   installAppearance();
   notifyNativePrefsChanged();
   window.dispatchEvent(new CustomEvent(LOCAL_NOTIFICATIONS_EVENT));
+  if(entries.some(([key])=>key==='rabbani-mastery-v1'))window.dispatchEvent(new Event('rabbani-mastery-changed'));
 
-  const mainRaw = parsed.storage[activeStateKey] ?? parsed.storage['rabbani-v1'] ?? null;
-  return mainRaw ? loadFromRaw(mainRaw) : null;
+  return restored;
 }
 
 export function formatStorageBytes(bytes: number | null): string {

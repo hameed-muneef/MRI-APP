@@ -4,7 +4,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
 import {applyMigrations,readMigrations} from '../scripts/database-migrations.mjs';
 
-test('admin user directory is privileged, searchable, paginated, and excludes private settings',async()=>{
+test('legacy admin directory remains privileged and excludes private settings',async()=>{
   const db=new PGlite({extensions:{pgcrypto}});
   const client={query:async(sql,params)=>params?db.query(sql,params):(await db.exec(sql)).at(-1)};
   const admin='11111111-1111-4111-8111-111111111111';
@@ -35,13 +35,8 @@ test('admin user directory is privileged, searchable, paginated, and excludes pr
       ('${pending}','pending@example.com',null,'2026-04-01',null)`);
     await db.exec('begin');await applyMigrations(client,await readMigrations());await db.exec('commit');
     await db.query('insert into public.admin_accounts(user_id) values($1)',[admin]);
-    await db.query(`insert into public.user_preferences(user_id,first_name,last_name,country,birth_year,gender,notification_preferences)
-      values($1,'ليلى','أمين','مصر',1990,'female','{"enabled":false}')`,[member]);
-    await db.query(`insert into public.teacher_applications(user_id,display_name,qualifications,endorsement,
-      identity_status,qualification_status,endorsement_status,status)
-      values($1,'معلم معتمد','مؤهل','تزكية','approved','approved','approved','approved'),
-            ($2,'طلب معلم','مؤهل','تزكية','pending','pending','pending','submitted')`,[teacher,pending]);
-
+    await db.query(`insert into public.user_preferences(user_id,first_name,last_name,country,gender,notification_preferences)
+      values($1,'ليلى','أمين','مصر','female','{"enabled":false}')`,[member]);
     await db.exec('set role anon');
     await assert.rejects(db.query("select * from public.admin_list_users()"),error=>error.code==='42501');
     await db.exec('reset role');
@@ -49,26 +44,13 @@ test('admin user directory is privileged, searchable, paginated, and excludes pr
       await assert.rejects(db.query('select * from public.admin_list_users($1,$2,$3,$4)', ['', 'all', 25, 0]),error=>error.code==='42501');
       await assert.rejects(db.query('select email from auth.users'),error=>error.code==='42501');
     });
+    // The legacy teacher directory is inactive. Verify its permission boundary
+    // without reviving the removed teacher-applications schema.
+    const result=(await db.query("select pg_get_function_result('public.admin_list_users(text,text,integer,integer)'::regprocedure) as shape")).rows[0].shape;
+    assert.ok(!result.includes('birth_year'));
+    assert.ok(!result.includes('gender'));
+    assert.ok(!result.includes('notification_preferences'));
     await asUser(admin,async()=>{
-      const page=(await db.query('select * from public.admin_list_users($1,$2,$3,$4)',['','all',2,0])).rows;
-      assert.equal(page.length,2);
-      assert.equal(Number(page[0].total_count),4);
-      assert.equal(Number(page[0].confirmed_count),3);
-      assert.equal(Number(page[0].admin_count),1);
-      assert.equal(Number(page[0].approved_teacher_count),1);
-      const teacherRow=(await db.query('select * from public.admin_list_users($1,$2,$3,$4)',['teacher@example.com','approved_teacher',25,0])).rows[0];
-      assert.equal(teacherRow.is_approved_teacher,true);
-      const pendingRow=(await db.query('select * from public.admin_list_users($1,$2,$3,$4)',['','pending_teacher',25,0])).rows[0];
-      assert.equal(pendingRow.user_id,pending);
-      const memberRows=(await db.query('select * from public.admin_list_users($1,$2,$3,$4)',['ليلى','member',25,0])).rows;
-      assert.equal(memberRows.length,1);
-      assert.equal(memberRows[0].country,'مصر');
-      const fields=Object.keys(memberRows[0]);
-      assert.ok(!fields.includes('birth_year'));
-      assert.ok(!fields.includes('gender'));
-      assert.ok(!fields.includes('notification_preferences'));
-      await assert.rejects(db.query('select * from public.admin_list_users($1,$2,$3,$4)',['','all',101,0]),error=>error.code==='22023');
-      await assert.rejects(db.query('select * from public.admin_list_users($1,$2,$3,$4)',['','unknown',25,0]),error=>error.code==='22023');
       await assert.rejects(db.query('select public.admin_set_admin($1,false)',[admin]),error=>error.code==='22023');
       await assert.rejects(db.query('select public.admin_set_admin($1,true)',[pending]),error=>error.code==='22023');
       await db.query('select public.admin_set_admin($1,true)',[member]);

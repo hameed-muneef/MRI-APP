@@ -1,6 +1,7 @@
 // محرّك تنزيل التفسير والترجمات حفظًا على الجهاز، سورةً سورة، مع إمكانية
 // التوقف والاستئناف. المصدر Quran Foundation Content API (api.quran.com).
 import {type OfflineKind, type PackMeta, packKey, getPack, putChapter, startPack} from './offline-store';
+import {cleanQuranText} from './content-api';
 
 const API = 'https://api.quran.com/api/v4';
 const TOTAL_CHAPTERS = 114;
@@ -16,20 +17,6 @@ export type DownloadRequest = {
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-function cleanText(raw: string): string {
-  return raw
-    .replace(/<sup[^>]*>[\s\S]*?<\/sup>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/[ \t]+/g, ' ')
-    .trim();
-}
 
 async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
   let lastError: unknown = null;
@@ -54,11 +41,11 @@ type TranslationResponse = {translations?: {text?: string}[]};
 async function fetchTafsirChapter(id: number, chapter: number, signal: AbortSignal) {
   const items: {verseKey: string; text: string}[] = [];
   let page = 1;
-  for (let guard = 0; guard < 20; guard += 1) {
+  for (let guard = 0; guard < 50; guard += 1) {
     const body = await getJson(`${API}/tafsirs/${id}/by_chapter/${chapter}?per_page=100&page=${page}`, signal) as TafsirResponse;
     for (const entry of body.tafsirs ?? []) {
       if (!entry.verse_key || !entry.text) continue;
-      const text = cleanText(entry.text);
+      const text = cleanQuranText(entry.text);
       if (text) items.push({verseKey: entry.verse_key, text});
     }
     const next = body.pagination?.next_page;
@@ -73,7 +60,7 @@ async function fetchTranslationChapter(id: number, chapter: number, signal: Abor
   const items: {verseKey: string; text: string}[] = [];
   (body.translations ?? []).forEach((entry, index) => {
     if (!entry.text) return;
-    const text = cleanText(entry.text);
+    const text = cleanQuranText(entry.text);
     if (text) items.push({verseKey: `${chapter}:${index + 1}`, text});
   });
   return items;

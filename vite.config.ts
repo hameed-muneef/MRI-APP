@@ -10,6 +10,8 @@ export default defineConfig({plugins:[react(),VitePWA({
     skipWaiting: true,
     clientsClaim: true,
     cleanupOutdatedCaches: true,
+    maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+    additionalManifestEntries: [{url:'/quran/quran-hafs-uthmani.json',revision:'kfgqpc-hafs-v3.0-7d07a93a4caa556b'}],
     // الملفات الضخمة (كتب الحديث ~18MB، نص القرآن، نص الكتب) تُستثنى من التخزين المسبق
     // وتُخزَّن عند الطلب بدلًا من ذلك — كي لا يُعطّل تثبيت نسخة جديدة حتى تنزل كلًّا منها.
     runtimeCaching:[

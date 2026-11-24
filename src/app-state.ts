@@ -1,9 +1,12 @@
+import {parseStoredState} from './state-schema';
 import {type DayPlan} from './DayPlanner';
 import {type DayRecords} from './day-tracking';
 import {type Goal} from './goal-plan';
 import {type PrayerLocation} from './prayer-location';
 import {createQuranState} from './quran/learning';
 import type {QuranLearningState} from './quran/types';
+import {periodKey, normalizeWirds} from './wird-periods';
+export {periodKey} from './wird-periods';
 
 // أنواع الحالة المشتركة ومساعداتها، لاستخدامها في App والواجهات المستخرجة
 export type View='home'|'day'|'tasks'|'week'|'month'|'goals'|'quran'|'haramain'|'reflect'|'wird'|'profile'|'settings'|'payment'|'paymentHistory'|'qibla'|'mosques';
@@ -15,7 +18,6 @@ export type Wird={id:string;title:string;target:number;count:number;period:Perio
 export type State={dayPlan?:DayPlan;dayRecords?:DayRecords;taskSchedules?:Record<string,TaskSchedule>;tasks:Task[];goals:Goal[];wirds:Wird[];reflections:{id:string;date:string;text:string}[];lessonStep:number;prayers:Record<string,string>;prayerLocation?:PrayerLocation;quran:QuranLearningState};
 
 export const today=()=>new Date().toLocaleDateString('en-CA');
-export const periodKey=(p:Period)=>{const d=new Date();if(p==='daily')return today();if(p==='monthly')return `${d.getFullYear()}-${d.getMonth()+1}`;const start=new Date(d.getFullYear(),0,1);return `${d.getFullYear()}-W${Math.ceil((((d.getTime()-start.getTime())/86400000)+start.getDay()+1)/7)}`};
 
 export function createSeed():State{
   return {tasks:[
@@ -30,13 +32,15 @@ export function createSeed():State{
   ],reflections:[],lessonStep:0,prayers:{},quran:createQuranState()};
 }
 
-export function load(storageKey='rabbani-v1'):State{return loadFromRaw(localStorage.getItem(storageKey))}
+export function load(storageKey='rabbani-v1'):State{
+  try{return loadFromRaw(localStorage.getItem(storageKey))}catch{return createSeed()}
+}
 
 export function loadFromRaw(raw:string|null):State{
   try{
     if(raw){
-      const x=JSON.parse(raw) as State;
-      return {...createSeed(),...x,quran:{...createQuranState(),...(x.quran??{})},wirds:(x.wirds||[]).map(w=>w.periodKey===periodKey(w.period)?w:{...w,count:0,periodKey:periodKey(w.period)})};
+      const x=parseStoredState(raw);
+      return {...createSeed(),...x,quran:{...createQuranState(),...(x.quran??{})},wirds:normalizeWirds(x.wirds||[])};
     }
   }catch{/* تجاهل: بيانات تالفة تعني البدء من الصفر */}
   return createSeed();

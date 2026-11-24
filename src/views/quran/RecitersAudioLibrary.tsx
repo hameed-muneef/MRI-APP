@@ -1,3 +1,4 @@
+import {backgroundAudio} from '../../audio/background-player';
 // مكتبة القراء والتلاوات: تصفح ٢٤٠+ قارئًا مشهورًا بجميع الروايات،
 // مع البحث السريع، والاستماع المباشر عند الفتح، وتنزيل السور على الموبايل
 // للعمل دون إنترنت (في Android التخزين الخاص + Web Cache Storage).
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
 import {
-  defaultMoshaf, loadReciters, moshafCategory, searchReciters,
+  defaultMoshaf, loadReciters, moshafCategory, searchReciters, audioUrl,
   type Reciter, type ReciterMoshaf,
 } from '../../quran/audio';
 import {resolveAyahSourceForMp3QuranReciter} from '../../quran/ayah-audio';
@@ -32,6 +33,11 @@ type Props = {
   compact?: boolean;
   onSelectReciter?: (reciter: Reciter, moshaf: ReciterMoshaf, autoPlay: boolean) => void;
 };
+
+/** كل سور المصحف المتاحة في رواية القارئ (١١٤ أو ما توفر منها)، مرتبة. */
+export function fullMushafChapters(moshaf: ReciterMoshaf): number[] {
+  return [...new Set(moshaf.surahList.filter(ch => Number.isFinite(ch) && ch >= 1 && ch <= 114))].sort((a, b) => a - b);
+}
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '٠ بايت';
@@ -65,6 +71,7 @@ export default function RecitersAudioLibrary({
   const [downloadingMoshafId, setDownloadingMoshafId] = useState<number | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<AudioDownloadProgress | null>(null);
   const [confirmDeleteMoshafId, setConfirmDeleteMoshafId] = useState<number | null>(null);
+  const [confirmFullMoshafId, setConfirmFullMoshafId] = useState<number | null>(null);
   const [visibleLimit, setVisibleLimit] = useState(40);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -129,6 +136,7 @@ export default function RecitersAudioLibrary({
       const found = reciter.moshaf.find(m => m.id === manualId);
       if (found) return found;
     }
+    if(tab==='narrations')return reciter.moshaf.find(m=>moshafCategory(m.name)!=='hafs')??reciter.moshaf[0];
     return defaultMoshaf(reciter) ?? reciter.moshaf[0];
   };
 
@@ -185,7 +193,7 @@ export default function RecitersAudioLibrary({
     return filteredReciters.slice(0, visibleLimit);
   }, [filteredReciters, query, tab, visibleLimit]);
 
-  const startDownload = async (reciter: Reciter, moshaf: ReciterMoshaf) => {
+  const startDownload = async (reciter: Reciter, moshaf: ReciterMoshaf, explicitChapters?: number[], explicitLabel?: string) => {
     if (!online) {
       notify('تنزيل التلاوات يحتاج اتصالًا بالإنترنت. السور المنزّلة مسبقًا تعمل بلا اتصال.');
       return;
@@ -195,7 +203,9 @@ export default function RecitersAudioLibrary({
       return;
     }
 
-    const available = targetChapters.filter(ch => moshaf.surahList.includes(ch));
+    const targets = explicitChapters ?? targetChapters;
+    const targetLabel = explicitLabel ?? scopeLabel;
+    const available = targets.filter(ch => moshaf.surahList.includes(ch));
     if (available.length === 0) {
       notify('السورة المختارة غير متوفرة لدى هذا القارئ في هذه الرواية.');
       return;
@@ -204,7 +214,7 @@ export default function RecitersAudioLibrary({
     const existing = packs[moshaf.id];
     const remaining = available.filter(ch => !existing?.chapters.includes(ch));
     if (remaining.length === 0) {
-      notify(`${reciter.name}: ${scopeLabel} منزَّلة بالكامل على الجهاز.`);
+      notify(`${reciter.name}: ${targetLabel} منزَّلة بالكامل على الجهاز.`);
       return;
     }
 
@@ -225,7 +235,7 @@ export default function RecitersAudioLibrary({
         },
       });
       setPacks(prev => ({...prev, [donePack.moshafId]: donePack}));
-      notify(`اكتمل تحميل ${reciter.name} (${scopeLabel}) على الجهاز.`);
+      notify(`اكتمل تحميل ${reciter.name} (${targetLabel}) على الجهاز.`);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         notify('أُوقف التحميل مع حفظ السور التي اكتملت. يمكنك الاستئناف لاحقًا.');
@@ -253,6 +263,12 @@ export default function RecitersAudioLibrary({
   };
 
   const handleSelect = (reciter: Reciter, moshaf: ReciterMoshaf, autoPlay: boolean) => {
+    if(moshafCategory(moshaf.name)!=='hafs'){
+      const chapter=targetChapters.find(ch=>moshaf.surahList.includes(ch));
+      if(!chapter){notify('السورة المختارة غير متاحة بهذه الرواية.');return;}
+      if(autoPlay)void backgroundAudio.playSingle({id:`listen-only:${moshaf.id}:${chapter}`,title:asset.surahs.find(s=>s.n===chapter)?.name??String(chapter),subtitle:`${reciter.name}، ${moshaf.name}، للاستماع فقط`,url:audioUrl(moshaf,chapter),category:'quran',meta:{mode:'listen-only',moshafId:moshaf.id,surah:chapter}});
+      notify('تشغيل مستقل للاستماع فقط؛ لم تتغير رواية النص أو إعدادات الحفظ.');return;
+    }
     saveSelectedReciterPref({
       reciterId: reciter.id,
       moshafId: moshaf.id,
@@ -317,16 +333,16 @@ export default function RecitersAudioLibrary({
         </label>
 
         <div className="reciters-tabs" role="tablist" aria-label="تصنيف القراء">
-          <button type="button" role="tab" aria-selected={tab === 'famous'} className={tab === 'famous' ? 'active' : ''} onClick={() => setTab('famous')}>
+          <button type="button" role="tab" aria-selected={tab === 'famous'} className={tab === 'famous' ? 'active' : ''} onClick={e => {setTab('famous');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             الأشهر
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>
+          <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'active' : ''} onClick={e => {setTab('all');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             الكل ({toArabicNumber(reciters.length)})
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'downloaded'} className={tab === 'downloaded' ? 'active' : ''} onClick={() => setTab('downloaded')}>
+          <button type="button" role="tab" aria-selected={tab === 'downloaded'} className={tab === 'downloaded' ? 'active' : ''} onClick={e => {setTab('downloaded');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             المنزّلون ({toArabicNumber(Object.keys(packs).length)})
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'narrations'} className={tab === 'narrations' ? 'active' : ''} onClick={() => setTab('narrations')}>
+          <button type="button" role="tab" aria-selected={tab === 'narrations'} className={tab === 'narrations' ? 'active' : ''} onClick={e => {setTab('narrations');e.currentTarget.scrollIntoView({block:'nearest',inline:'nearest'});}}>
             ورش وغيرها
           </button>
         </div>
@@ -392,6 +408,10 @@ export default function RecitersAudioLibrary({
             const isSelected = selectedReciterId === reciter.id && (!selectedMoshafId || selectedMoshafId === moshaf.id);
             const hasAyahAudio = Boolean(resolveAyahSourceForMp3QuranReciter(reciter.id, moshaf.name));
             const downloadedCount = pack?.chapters.length ?? 0;
+            const fullTargets = fullMushafChapters(moshaf);
+            const fullRemaining = fullTargets.filter(ch => !pack?.chapters.includes(ch));
+            const fullDone = fullTargets.length > 0 && fullRemaining.length === 0;
+            const fullScopeLabel = fullTargets.length === 114 ? 'المصحف كاملًا' : 'كل السور المتاحة';
             const allTargetDone = targetChapters
               .filter(ch => moshaf.surahList.includes(ch))
               .every(ch => pack?.chapters.includes(ch));
@@ -434,6 +454,7 @@ export default function RecitersAudioLibrary({
                         </span>
                       )}
                       {hasAyahAudio && <span className="reciter-tag ayah-tag">آية بآية</span>}
+                      {moshafCategory(moshaf.name) !== 'hafs' && <span className="reciter-tag narration-tag">رواية غير حفص، للاستماع فقط</span>}
                       {pack && pack.bytes > 0 && <span className="reciter-tag">{formatBytes(pack.bytes)}</span>}
                     </div>
                   </div>
@@ -493,6 +514,42 @@ export default function RecitersAudioLibrary({
                     )
                   )}
                 </div>
+
+                {fullTargets.length > 0 && !isDownloading && (
+                  <div className="reciter-full-row">
+                    {fullDone ? (
+                      <button type="button" className="reciter-btn-full done" disabled>
+                        <CheckCircle2 size={14}/> {fullScopeLabel} محفوظ على الجهاز
+                      </button>
+                    ) : confirmFullMoshafId === moshaf.id ? (
+                      <div className="reciter-confirm-del reciter-full-confirm">
+                        <button
+                          type="button"
+                          className="soft-btn"
+                          onClick={() => {
+                            setConfirmFullMoshafId(null);
+                            void startDownload(reciter, moshaf, fullTargets, fullScopeLabel);
+                          }}
+                        >
+                          تأكيد تنزيل {toArabicNumber(fullRemaining.length)} سورة دفعة واحدة (قد يستغرق وقتًا ومساحة)
+                        </button>
+                        <button type="button" className="soft-btn" onClick={() => setConfirmFullMoshafId(null)}>إلغاء</button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="reciter-btn-full"
+                        disabled={downloadingMoshafId !== null || !online}
+                        onClick={() => setConfirmFullMoshafId(moshaf.id)}
+                      >
+                        <Download size={14}/> {fullScopeLabel === 'المصحف كاملًا'
+                          ? `تحميل المصحف كاملًا (${toArabicNumber(fullTargets.length)} سورة)`
+                          : `تحميل ${fullScopeLabel} (${toArabicNumber(fullTargets.length)} سورة)`}
+                        {downloadedCount > 0 && fullRemaining.length > 0 ? ` · متبقٍ ${toArabicNumber(fullRemaining.length)}` : ''}
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -514,4 +571,4 @@ export default function RecitersAudioLibrary({
       )}
     </section>
   );
-}
+  }

@@ -115,8 +115,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
       <div className="notif-prayer-list-head">
         <h4>تخصيص كل صلاة</h4>
         <p className="muted small">
-          اضغط «تخصيص» على أي صلاة لضبط الأذان والتذكير قبل/بعد الوقت.
-          {!prefs.global_enabled && ' (الإشعارات العامة متوقفة حاليًا من تبويب الهدوء والإشعارات)'}
+          {!prefs.global_enabled && 'الإشعارات متوقفة من إعدادات الهدوء والإشعارات.'}
         </p>
       </div>
 

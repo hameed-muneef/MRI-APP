@@ -141,10 +141,10 @@ html[data-theme="dark"] #root .app .topbar,
 
 html[data-theme="light"] #root .app .topbar,
 #root .app .topbar {
-  background: linear-gradient(180deg, #1A4049 0%, #14343C 100%) !important;
-  border-bottom: 1.5px solid rgba(218, 191, 126, 0.42) !important;
-  color: #FBF8F1 !important;
-  box-shadow: 0 4px 16px rgba(14, 34, 38, .18) !important;
+  background: linear-gradient(135deg, #E2F1FB 0%, #E7F6EE 52%, #DCF2E9 100%) !important;
+  border-bottom: 1.5px solid #BDD9D7 !important;
+  color: #133B3C !important;
+  box-shadow: 0 4px 16px rgba(20, 74, 82, 0.08) !important;
 }
 
 html[data-theme="dark"] #root .app .topbar,
@@ -169,7 +169,7 @@ html[data-theme="dark"] #root .app .topbar,
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
-  color: #FBF8F1 !important;
+  color: #133B3C !important;
 }
 
 #root .app .topbar > .crumb > span:first-child,
@@ -183,10 +183,21 @@ html[data-theme="dark"] #root .app .topbar,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #FBF8F1 !important;
+  color: #133B3C !important;
 }
 
 #root .app .topbar > .crumb .crumb-home:hover {
+  background: rgba(20, 74, 82, 0.10) !important;
+  color: #0D2D2E !important;
+}
+
+html[data-theme="dark"] #root .app .topbar > .crumb,
+html[data-theme="dark"] #root .app .topbar > .crumb strong,
+html[data-theme="dark"] #root .app .topbar > .crumb .crumb-home {
+  color: #FBF8F1 !important;
+}
+
+html[data-theme="dark"] #root .app .topbar > .crumb .crumb-home:hover {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #FFFFFF !important;
 }
@@ -205,11 +216,11 @@ html[data-theme="dark"] #root .app .topbar,
   gap: 1px;
   line-height: 1.3;
   font-size: 11px;
-  color: #CFE1E5 !important;
+  color: #365D60 !important;
 }
 
 #root .app .topbar .top-date .hijri-inline {
-  color: #EBD193 !important;
+  color: #17524A !important;
 }
 
 html[data-theme="dark"] #root .app .topbar .top-actions .top-date {
@@ -236,6 +247,10 @@ html[data-theme="dark"] #root .app .topbar .top-date .hijri-inline {
   width: auto;
   margin-inline: 2px;
   font-size: 12px;
+  color: #133B3C !important;
+}
+
+html[data-theme="dark"] #root .app .topbar .top-actions .top-clock {
   color: #FBF8F1 !important;
 }
 
@@ -245,31 +260,42 @@ html[data-theme="dark"] #root .app .topbar .top-date .hijri-inline {
   min-width: 38px;
   min-height: 38px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.20);
-  color: #FBF8F1 !important;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #B4D1D2;
+  color: #154344 !important;
 }
 
 #root .app .topbar .icon-btn:hover,
 #root .app .topbar .notif-bell:hover,
 #root .app .topbar .topbar-settings:hover {
-  background: rgba(255, 255, 255, 0.17);
-  border-color: rgba(235, 209, 147, 0.45);
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #7FAEB2;
 }
 
 #root .app .topbar .topbar-settings.active {
-  background: #275B64 !important;
-  border-color: #E4C680 !important;
-  color: #FFF7DF !important;
+  background: #1C5A58 !important;
+  border-color: #164947 !important;
+  color: #FFFFFF !important;
 }
 
 #root .app .topbar .user-chip {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: #B4D1D2;
+  color: #133B3C;
+}
+
+#root .app .topbar .user-chip-avatar {
+  background: #1C5A58;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] #root .app .topbar .user-chip {
   background: rgba(255, 255, 255, 0.10);
   border-color: rgba(218, 191, 126, 0.36);
   color: #FBF8F1;
 }
 
-#root .app .topbar .user-chip-avatar {
+html[data-theme="dark"] #root .app .topbar .user-chip-avatar {
   background: #E4C680;
   color: #14343C;
 }
@@ -316,8 +342,14 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 /* Mobile-native grids at every viewport inside the 480px mobile app frame */
 #root .app .hero {
   min-height: 0;
-  padding: 22px 18px;
+  padding: 16px 18px;
   border-radius: 16px;
+  margin-bottom: 14px;
+}
+
+#root .app main .hero .hero-tag {
+  font-size: 14.5px;
+  margin: 0 0 6px;
 }
 
 #root .app .hero h1 {
@@ -326,6 +358,35 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 
 #root .app .hero p {
   font-size: 14px;
+}
+
+#root .app .hero p.hero-ayah {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #F6F8F4 !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .55);
+}
+
+#root .app .hero .hero-ayah-text {
+  display: block;
+  font-family: 'KFGQPC HAFS Uthmanic Script', 'Amiri', serif;
+  font-size: clamp(17.5px, 4.3vw, 20px);
+  line-height: 1.8;
+  color: #FAFBF7 !important;
+}
+
+#root .app .hero .hero-ayah-ref {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #E3C991 !important;
+}
+
+#root .app .hero .hero-btn {
+  margin-top: 12px;
+  min-height: 42px;
+  padding: 9px 16px;
 }
 
 #root .app .hero-art {
@@ -466,9 +527,9 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
   gap: 2px;
   padding: 6px 6px max(8px, env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background: #14343C !important;
-  border-top: 1.5px solid rgba(218, 191, 126, 0.42) !important;
-  box-shadow: 0 -8px 24px rgba(14, 34, 38, .18) !important;
+  background: linear-gradient(135deg, #E2F1FB 0%, #E7F6EE 52%, #DCF2E9 100%) !important;
+  border-top: 1.5px solid #BDD9D7 !important;
+  box-shadow: 0 -6px 22px rgba(20, 74, 82, 0.10) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -495,13 +556,13 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: #C4D9DD;
+  color: #355E61;
   font-weight: 700;
 }
 
 #root .app .mobile-nav button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FBF8F1;
+  background: rgba(255, 255, 255, 0.58);
+  color: #133B3C;
 }
 
 [data-theme="dark"] #root .app .mobile-nav button {
@@ -515,15 +576,16 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 
 #root .app .mobile-nav button.active,
 #root .app .mobile-nav button[data-section].active {
-  background: #24555E !important;
-  border-color: rgba(235, 209, 147, 0.48) !important;
-  color: #FFF9E8 !important;
+  background: rgba(255, 255, 255, 0.90) !important;
+  border-color: #87B9B5 !important;
+  color: #144B48 !important;
   font-weight: 800;
+  box-shadow: 0 2px 8px rgba(20, 74, 82, 0.10);
 }
 
 #root .app .mobile-nav button.active svg,
 #root .app .mobile-nav button[data-section].active svg {
-  color: #EED394 !important;
+  color: #1B685E !important;
 }
 
 [data-theme="dark"] #root .app .mobile-nav button.active,
@@ -559,11 +621,14 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 
 #root .app .mini-audio-player {
   position: fixed;
-  left: 50%;
-  right: auto;
-  inset-inline: auto;
-  transform: translateX(-50%);
+  /* Centre with explicit left/right + auto margins. A logical `inset-inline: auto`
+     here used to reset `left`, which pushed the bar off-screen in RTL. */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  transform: none;
   width: min(456px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
   bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   border-radius: 12px;
   z-index: 940;
@@ -1718,6 +1783,63 @@ body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
 }
 
 /* 4) Home Screen Polish — Distinct Per-Card Color Differentiation */
+#root .app .home-date-bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #E5F2FA 0%, #EAF6EF 100%);
+  border: 1px solid #C2DCD9;
+  color: #143B3C;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#root .app .home-date-bar svg {
+  color: #1B685E;
+  flex-shrink: 0;
+}
+
+#root .app .home-date-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+#root .app .home-hijri-date {
+  font-weight: 800;
+  color: #17524A;
+}
+
+#root .app .home-greg-date {
+  font-weight: 600;
+  color: #466668;
+}
+
+[data-theme="dark"] #root .app .home-date-bar {
+  background: #122433;
+  border-color: #29455B;
+  color: #E2EEF5;
+}
+
+[data-theme="dark"] #root .app .home-date-bar svg {
+  color: #9ED3B7;
+}
+
+[data-theme="dark"] #root .app .home-hijri-date {
+  color: #E6CA85;
+}
+
+[data-theme="dark"] #root .app .home-greg-date {
+  color: #B4C7D4;
+}
+
 #root .app .home-dashboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -2163,6 +2285,58 @@ body:has(.ios-install-backdrop) #root .app .scroll-top-fab {
   border-radius: 12px;
   flex-shrink: 0;
   border: 1px solid transparent;
+}
+
+/* Home cards (Light mode): soft light-blue + white surfaces with blue borders matching Quran Mastery */
+html:not([data-theme="dark"]) #root .app .home-next-card,
+html:not([data-theme="dark"]) #root .app .home-next-card:nth-child(1),
+html:not([data-theme="dark"]) #root .app .home-next-card:nth-child(2),
+html:not([data-theme="dark"]) #root .app .home-today-entry,
+html:not([data-theme="dark"]) #root .app .home-admin-entry,
+html:not([data-theme="dark"]) #root .app .feature-card[data-view],
+html:not([data-theme="dark"]) #root .app .wide-card[data-section] {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3F8FE 100%) !important;
+  border: 1.5px solid #96BEE4 !important;
+  color: #12305A !important;
+  box-shadow: 0 4px 14px rgba(18, 48, 90, 0.06) !important;
+}
+
+html:not([data-theme="dark"]) #root .app .home-next-card:hover,
+html:not([data-theme="dark"]) #root .app .home-today-entry:hover,
+html:not([data-theme="dark"]) #root .app .home-admin-entry:hover,
+html:not([data-theme="dark"]) #root .app .feature-card[data-view]:hover,
+html:not([data-theme="dark"]) #root .app .wide-card[data-section]:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #EAF3FB 100%) !important;
+  border-color: #1E5AA8 !important;
+  box-shadow: 0 8px 20px rgba(30, 90, 168, 0.12) !important;
+}
+
+html:not([data-theme="dark"]) #root .app .home-next-icon,
+html:not([data-theme="dark"]) #root .app .home-next-card:nth-child(1) .home-next-icon,
+html:not([data-theme="dark"]) #root .app .home-next-card:nth-child(2) .home-next-icon,
+html:not([data-theme="dark"]) #root .app .home-today-icon,
+html:not([data-theme="dark"]) #root .app .home-admin-icon,
+html:not([data-theme="dark"]) #root .app .feature-card[data-view] .feature-icon,
+html:not([data-theme="dark"]) #root .app .wide-card[data-section] .wide-icon {
+  background: #EAF3FB !important;
+  color: #174A8C !important;
+  border: 1px solid #C5DDF3 !important;
+}
+
+html:not([data-theme="dark"]) #root .app :is(.home-next-headline strong, .home-upcoming-title-line strong, .home-today-entry strong, .home-admin-entry strong, .feature-card[data-view] .feature-copy strong, .wide-card[data-section] h3) {
+  color: #12305A !important;
+}
+
+html:not([data-theme="dark"]) #root .app :is(.home-next-body small, .home-upcoming-row small, .home-today-entry small, .home-admin-entry small, .feature-card[data-view] .feature-copy > span, .wide-card[data-section] p) {
+  color: #42617D !important;
+}
+
+html:not([data-theme="dark"]) #root .app :is(.home-next-countdown, .home-next-time, .home-next-chevron, .feature-card[data-view] .feature-arrow, .wide-card[data-section] .inline-link) {
+  color: #1E5AA8 !important;
+}
+
+html:not([data-theme="dark"]) #root .app .home-upcoming-row {
+  border-top-color: #DCE9F7 !important;
 }
 
 /* 5) Segmented Switch, Distinct Wirds Cards, Prayer Cards & Goal Period Dark Cards */
@@ -2861,13 +3035,14 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
 }
 
 #root .app .settings-tabs button {
-  flex: 1 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border: 0;
   border-radius: 10px;
   background: transparent;
@@ -2877,67 +3052,21 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   white-space: nowrap;
   transition: background .15s ease, color .15s ease, box-shadow .15s ease;
 }
+@media (max-width: 420px) {
+  #root .app .settings-tabs button {
+    padding: 8px 6px;
+    gap: 5px;
+    font-size: 13px;
+  }
+  #root .app .settings-tabs button svg {
+    display: none;
+  }
+}
 
 #root .app .settings-tabs button.active {
   background: #1B5140;
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(27, 81, 64, 0.24);
-}
-
-#root .app .settings-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
-}
-
-#root .app .settings-overview-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 13px 14px;
-  min-height: 68px;
-  border-radius: 14px;
-  border: 1px solid #D9D2C3;
-  background: #FCFBF7;
-  color: #1D3036;
-  text-align: start;
-  cursor: pointer;
-  transition: border-color .15s ease, transform .15s ease;
-}
-
-#root .app .settings-overview-card:hover {
-  border-color: #1B5140;
-  transform: translateY(-1px);
-}
-
-#root .app .settings-overview-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: #E8F1EC;
-  color: #1B5140;
-  display: grid;
-  place-items: center;
-  flex: none;
-}
-
-#root .app .settings-overview-body {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-#root .app .settings-overview-body strong {
-  font-size: 14.5px;
-  font-weight: 800;
-}
-
-#root .app .settings-overview-body small {
-  font-size: 12px;
-  color: #5A6B66;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 #root .app .settings-inner-details {
@@ -3492,7 +3621,6 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   box-shadow: 0 2px 10px rgba(0, 0, 0, .3) !important;
 }
 
-[data-theme="dark"] #root .app .settings-overview-card,
 [data-theme="dark"] #root .app .notif-subtabs button,
 [data-theme="dark"] #root .app .notif-reminder-form,
 [data-theme="dark"] #root .app .notif-reminder-card,
@@ -3504,17 +3632,10 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   color: #F1F5F8 !important;
 }
 
-[data-theme="dark"] #root .app .settings-overview-card:hover,
 [data-theme="dark"] #root .app .notif-template:hover {
   border-color: #6CA58B !important;
 }
 
-[data-theme="dark"] #root .app .settings-overview-icon {
-  background: #204237 !important;
-  color: #9ED3B7 !important;
-}
-
-[data-theme="dark"] #root .app .settings-overview-body small,
 [data-theme="dark"] #root .app .notif-reminder-meta,
 [data-theme="dark"] #root .app .notif-template small,
 [data-theme="dark"] #root .app .notif-prayer-summary,
@@ -3660,4 +3781,55 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Narrow phones: crumb holds brand + view title in little space, truncating both.
+   Give the view title the full crumb width; home stays reachable via the back
+   button under the topbar and the bottom mobile-nav. */
+@media (max-width: 480px) {
+  #root .app .topbar > .crumb .crumb-home {
+    display: none;
+  }
+  #root .app .topbar > .crumb strong {
+    max-width: 100%;
+  }
+  html[data-theme="light"] #root .app .topbar,
+  html[data-theme="dark"] #root .app .topbar {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  #root .app .topbar > .crumb {
+    gap: 4px;
+  }
+  #root .app .topbar .top-actions {
+    gap: 4px;
+  }
+  #root .app .topbar .top-actions .top-date {
+    font-size: 10px;
+  }
+  #root .app .topbar .icon-btn,
+  #root .app .topbar .notif-bell,
+  #root .app .topbar .topbar-settings {
+    min-width: 34px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+}
+
+/* Very narrow handsets (~320px): let the topbar wrap so the crumb takes a full
+   row; every title fits and no control or the date is lost. */
+@media (max-width: 340px) {
+  html[data-theme="light"] #root .app .topbar,
+  html[data-theme="dark"] #root .app .topbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  #root .app .topbar > .crumb {
+    flex: 1 1 100%;
+    order: 2;
+  }
+  #root .app .topbar .top-actions {
+    order: 1;
+    margin-inline-start: auto;
+  }
 }

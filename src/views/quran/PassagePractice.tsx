@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {CheckCircle2, Eye, EyeOff, Mic, RotateCcw, Square, Volume2} from 'lucide-react';
 import type {MemorizationPassage, QuranAsset} from '../../quran/types';
-import {normalizeSearch, referenceLabel, toArabicNumber, verseBody} from '../../quran/content';
+import {normalizeSearch, referenceLabel, toArabicNumber, verseBody, verseMarker} from '../../quran/content';
 
 type Props = {
   asset: QuranAsset;
@@ -16,8 +16,6 @@ type Exercise = 'read' | 'hide' | 'first' | 'blank' | 'order' | 'recall';
 const EXERCISES: {value: Exercise; label: string}[] = [
   {value: 'read', label: 'قراءة'},
   {value: 'hide', label: 'إخفاء الآيات'},
-  {value: 'first', label: 'أول الكلمة'},
-  {value: 'blank', label: 'املأ الفراغ'},
   {value: 'order', label: 'ترتيب الآيات'},
   {value: 'recall', label: 'استرجاع كامل'}
 ];
@@ -119,6 +117,7 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
       <div className="quran-exercise-tabs">{EXERCISES.map(item => <button key={item.value} className={exercise === item.value ? 'primary' : 'soft-btn'} onClick={() => reset(item.value)}>{item.label}</button>)}</div>
     </header>
 
+    <p className="muted small">التدريب على مستوى الكلمات مقيد حتى اعتماد بيانات حدود الكلمات. استخدم الجلسة الجديدة للإخفاء والاسترجاع.</p>
     <div className="quran-practice-verses">
       {verses.map(verse => {
         const hidden = exercise === 'recall' ? !revealed.has(verse.a)
@@ -139,7 +138,7 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
                 : <span key={index}>{word} </span>)}
             </> : hidden ? <span className="quran-hidden-passage">{exercise === 'first' ? `${firstWord} …` : '••••••••••••••••••'}</span>
               : verseBody(verse.t)}
-            <span className="quran-verse-marker">۝{toArabicNumber(verse.a)}</span>
+            <span className="quran-verse-marker">{verseMarker(verse.t) || `۝${toArabicNumber(verse.a)}`}</span>
           </div>
           <div className="quran-practice-actions">
             <small>{referenceLabel(asset, verse.s, verse.a)}</small>
@@ -192,4 +191,4 @@ export default function PassagePractice({asset, passage, notify, onMemorized, on
       </div>
     </div>}
   </div>;
-}
+        }

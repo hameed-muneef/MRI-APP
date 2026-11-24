@@ -3,6 +3,7 @@
 // بلا حساب/قاعدة بيانات ويُزامَن لاحقًا. نفس الحقول والجداول تخدم تطبيقات
 // الجوال المستقبلية دون تغيير نموذج البيانات.
 
+import {prefsSchema,reminderSchema} from './storage-schema';
 import {authClient} from '../auth';
 import {
   DEFAULT_NOTIFICATION_PREFERENCE,
@@ -25,7 +26,8 @@ function storage(): Storage | null {
 
 /** يدمج المُحفَّظ على الطبقات الافتراضية بشكل آمن (بلا حقول تالفة) */
 function mergePrefs(stored: unknown, fallback: NotificationPreference): NotificationPreference {
-  const value = (stored ?? {}) as Partial<NotificationPreference>;
+  const checked=prefsSchema.safeParse(stored);
+  const value = (checked.success ? checked.data : {}) as Partial<NotificationPreference>;
   const merged: NotificationPreference = {
     ...fallback,
     ...value,
@@ -43,6 +45,9 @@ function mergePrefs(stored: unknown, fallback: NotificationPreference): Notifica
     },
     quiet_hours: {...fallback.quiet_hours, ...(value.quiet_hours ?? {})},
   };
+  for (const prayer of Object.keys(fallback.prayer_settings) as (keyof NotificationPreference['prayer_settings'])[]) {
+    merged.prayer_settings[prayer]={...fallback.prayer_settings[prayer],...value.prayer_settings?.[prayer]};
+  }
   merged.global_enabled = value.global_enabled !== false;
   merged.dnd_enabled = value.dnd_enabled === true;
   return merged;
@@ -59,7 +64,9 @@ function loadLocalPrefs(): NotificationPreference {
 }
 
 function sanitizeReminder(value: unknown): Reminder | null {
-  const item = value as Partial<Reminder> | null;
+  const parsed=reminderSchema.safeParse(value);
+  if(!parsed.success)return null;
+  const item = parsed.data as Partial<Reminder>;
   if (!item || typeof item.id !== 'string' || !item.id
     || typeof item.title !== 'string' || !item.title.trim()
     || typeof item.scheduled_at !== 'string' || Number.isNaN(new Date(item.scheduled_at).getTime())) return null;
@@ -162,7 +169,8 @@ export async function loadReminders(): Promise<{reminders: Reminder[]; source: P
 }
 
 /** ينسخ الكتلة المحدَّثة إلى الذاكرة/المحلي، ثم يحاول المزامنة السحابية عبر دالة المُحدِّثة */
-export function storeLocalReminder(next: Reminder[]): Reminder[] {
-  saveLocalReminders(next);
+export function storeLocalReminder(next: Reminder[], strict = false): Reminder[] {
+  if(strict){const target=storage();if(!target)throw new Error("Local storage unavailable");target.setItem(REMINDERS_CACHE,JSON.stringify(next.slice(0,200)));}
+  else saveLocalReminders(next);
   return next;
 }

@@ -171,7 +171,7 @@ export function isDue(passage: MemorizationPassage, date = dateKey()): boolean {
 }
 
 export function duePassages(passages: MemorizationPassage[], date = dateKey()): MemorizationPassage[] {
-  return passages.filter(passage => passage.state !== 'mastered' && isDue(passage, date))
+  return passages.filter(passage => isDue(passage, date))
     .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''));
 }
 
@@ -216,7 +216,22 @@ export function buildPlanPassages(
   now = new Date()
 ): MemorizationPassage[] {
   const stamp = now.toISOString();
-  return chunkVerses(verses, plan.dailyTarget, plan.targetUnit).map(chunk => ({
+  // A passage has one surah. Split a daily chunk at each surah boundary
+  // so its verse range always refers to actual verses in that surah.
+  const chunks = chunkVerses(verses, plan.dailyTarget, plan.targetUnit);
+  const passages: PlanVerse[][] = [];
+  for (const chunk of chunks) {
+    let current: PlanVerse[] = [];
+    for (const verse of chunk) {
+      if (current.length && current[0].s !== verse.s) {
+        passages.push(current);
+        current = [];
+      }
+      current.push(verse);
+    }
+    if (current.length) passages.push(current);
+  }
+  return passages.map(chunk => ({
     id: newId(), planId: plan.id, contentType: 'quran' as const,
     surah: chunk[0].s, ayahStart: chunk[0].a, ayahEnd: chunk[chunk.length - 1].a,
     state: 'new' as const, ease: 2.5, intervalDays: 0, reviewCount: 0, lapses: 0,
@@ -361,7 +376,9 @@ export function logRoutineCompletion(
   state: QuranLearningState, activity: RoutineActivity, date = dateKey(), now = new Date()
 ): QuranLearningState {
   const exists = state.activityLog.some(entry => entry.activityId === activity.id && entry.date === date);
-  const activityLog = exists ? state.activityLog : [...state.activityLog, {activityId: activity.id, date, kind: activity.kind}];
+  // Rechecking the same daily task must not advance the next new passage.
+  if (exists) return state;
+  const activityLog = [...state.activityLog, {activityId: activity.id, date, kind: activity.kind}];
   let passages = state.passages;
   let history = state.history;
   if (activity.kind === 'quran_memorization') {
@@ -376,7 +393,7 @@ export function logRoutineCompletion(
   if (activity.kind === 'quran_reading' && activity.config.surah && activity.config.ayahFrom) {
     const ayahStart = activity.config.ayahFrom;
     const ayahEnd = Math.max(ayahStart, activity.config.ayahTo ?? ayahStart);
-    const recorded = state.history.some(entry => entry.surah === activity.config.surah && entry.ayahStart === ayahStart && entry.readAt.slice(0, 10) === date);
+    const recorded = state.history.some(entry => entry.surah === activity.config.surah && entry.ayahStart === ayahStart && dateKey(new Date(entry.readAt)) === date);
     if (!recorded) {
       history = [{id: `routine-${activity.id}-${date}`, surah: activity.config.surah, ayahStart, ayahEnd, readAt: now.toISOString()}, ...history].slice(0, 500);
     }

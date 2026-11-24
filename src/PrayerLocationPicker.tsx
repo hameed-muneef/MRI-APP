@@ -34,8 +34,9 @@ export default function PrayerLocationPicker({location,onChange}:Props){
   };
   const detect=async()=>{
     setBusy(true);setMessage('جارٍ تحديد موقعك…');setDenied(false);
-    const {requestDeviceLocation}=await import('./lib/device-location');
-    const res=await requestDeviceLocation({timeout:10000,maximumAge:600000});
+    // المخزن المركزي: نفس طلب الإذن الواحد المشترك بين كل أجزاء التطبيق.
+    const {ensureCentralLocation}=await import('./lib/location-store');
+    const res=await ensureCentralLocation({timeout:10000,maximumAge:600000});
     setBusy(false);
     if(!res.ok){ setMessage(res.message); setDenied(res.reason==='denied'||res.reason==='permanently-denied'); return; }
     const next=sanitizePrayerLocation({name:'موقعي الحالي',country:'',latitude:res.coords.latitude,longitude:res.coords.longitude,

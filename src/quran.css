@@ -750,8 +750,8 @@
 /* Prevent horizontal overflow in the reader on small screens. */
 .quran-reader, .quran-mushaf, .quran-verse, .quran-verse-text {
   max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .quran-basmala {
@@ -781,17 +781,21 @@
 }
 
 .quran-continuous-flow {
+  font-family: 'KFGQPC HAFS Uthmanic Script', 'Amiri Quran', serif;
+  font-weight: 400;
   font-size: clamp(22px, 2.5vw, 30px);
   line-height: 2.6;
   text-align: justify;
   text-justify: inter-word;
+  word-spacing: 0;
   hyphens: none;
   max-width: 100%;
   margin-inline: auto;
   padding: 12px 8px;
   color: var(--color-ink, #27332E);
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: normal;
+  font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
 .quran-flow-ayah {
@@ -856,11 +860,12 @@
 
 .quran-verse-text {
   margin: 0;
+  font-family: 'KFGQPC HAFS Uthmanic Script', 'Amiri Quran', serif;
   font-size: 1em;
   font-weight: 400;
   line-height: var(--quran-line-height);
   text-align: justify;
-  word-spacing: 0.06em;
+  word-spacing: 0;
   direction: rtl;
   unicode-bidi: plaintext;
   font-feature-settings: 'kern' 1, 'liga' 1;
@@ -1149,10 +1154,15 @@
 }
 
 .quran-practice-text {
+  font-family: 'KFGQPC HAFS Uthmanic Script', 'Amiri Quran', serif;
+  font-weight: 400;
   font-size: 27px;
   line-height: 2.3;
+  word-spacing: 0;
   color: var(--color-ink);
   text-align: justify;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .quran-practice-text .quran-verse-marker {

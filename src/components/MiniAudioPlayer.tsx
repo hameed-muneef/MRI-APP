@@ -59,7 +59,17 @@ export default function MiniAudioPlayer({ onOpenCategory }: MiniAudioPlayerProps
                   ? 'جارٍ التحميل…'
                   : isLive
                     ? `بث مباشر • ${currentTrack.subtitle ?? ''}`
-                    : `${currentTrack.subtitle ?? ''}${duration > 0 ? ` • ${formatAudioClock(currentTime)} / ${formatAudioClock(duration)}` : ''}`}
+                    : (
+                      <>
+                        {currentTrack.subtitle ?? ''}
+                        {duration > 0 && (
+                          <>
+                            {' • '}
+                            <span className="mini-audio-clock" dir="ltr">{formatAudioClock(Math.min(currentTime, duration))} / {formatAudioClock(duration)}</span>
+                          </>
+                        )}
+                      </>
+                    )}
             </small>
           </span>
         </button>

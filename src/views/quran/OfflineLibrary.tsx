@@ -4,7 +4,10 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {CheckCircle2, Download, HardDrive, Pause, Trash2} from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
-import {TAFSIRS, TRANSLATIONS} from '../../quran/content-api';
+import {
+  ASBAB_ATTRIBUTION, ASBAB_PROVIDER, TAFSIRS, TRANSLATIONS,
+  WORD_MEANINGS_ATTRIBUTION, WORD_MEANINGS_PROVIDER
+} from '../../quran/content-api';
 import {type OfflineKind, type PackMeta, listPacks, deletePack, getPack, storageEstimate} from '../../quran/offline-store';
 import {downloadPack, TOTAL_CHAPTERS} from '../../quran/offline-download';
 import {toArabicNumber} from '../../quran/content';
@@ -140,7 +143,7 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
         const running = runningId === source.id;
         const done = pack && pack.chapters.length >= TOTAL_CHAPTERS;
         const partial = pack && pack.chapters.length > 0 && !done;
-        const percent = pack ? Math.min(100, Math.round(pack.chapters.length / Math.max(1, targetCount) * 100)) : 0;
+        const percent = pack ? Math.min(100, Math.round(pack.chapters.length / TOTAL_CHAPTERS * 100)) : 0;
         return <li key={source.id} className="ol-row">
           <div className="ol-info">
             <strong>{source.name}</strong>
@@ -148,10 +151,10 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
               {source.language === 'ar' ? 'عربي' : source.language === 'en' ? 'إنجليزي' : source.language}
               {pack && pack.entries > 0 ? ` · ${toArabicNumber(pack.chapters.length)} سورة · ${formatBytes(pack.bytes)}` : ' · غير منزَّل'}
             </small>
-            {running && <div className="ol-progress" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-              <span style={{width: `${Math.max(3, percent)}%`}}/>
+            {running && <div className="ol-progress" role="progressbar" aria-valuenow={targetCount === 1 ? 50 : percent} aria-valuemin={0} aria-valuemax={100}>
+              <span style={{width: `${targetCount === 1 ? 60 : Math.max(3, percent)}%`}}/>
             </div>}
-            {running && <small className="muted">{percent}٪ — جارٍ التنزيل…</small>}
+            {running && <small className="muted">{targetCount === 1 ? 'جارٍ تنزيل السورة…' : `${toArabicNumber(percent)}٪ — جارٍ التنزيل…`}</small>}
           </div>
           <div className="ol-actions">
             {done ? <span className="ol-done"><CheckCircle2 size={15}/> متاح دون اتصال</span>
@@ -176,9 +179,16 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
       })}
     </ul>
 
-    <p className="ol-foot muted small">
-      المصدر: Quran Foundation Content API — النصوص تُنزَّل كما هي من مصدرها المعلن، وتُحفظ على هذا الجهاز فقط للاستخدام الشخصي.
-      راجع ترخيص كل طبعة قبل أي إعادة نشر.
-    </p>
+    <div className="ol-foot muted small">
+      <p>
+        المصدر: التفاسير (ومنها التفسير الميسر) والترجمات عبر Quran.com API v4 (Quran Foundation Content API)، إصدار النص غير محدد من المزود — النصوص تُنزَّل كما هي وتُحفظ على هذا الجهاز فقط للاستخدام الشخصي. راجع ترخيص كل طبعة قبل أي إعادة نشر.
+      </p>
+      {kind === 'tafsir' && (
+        <>
+          <p>المصدر: {ASBAB_ATTRIBUTION}، {ASBAB_PROVIDER}.</p>
+          <p>المصدر: {WORD_MEANINGS_ATTRIBUTION}، {WORD_MEANINGS_PROVIDER}. شروح عربية للكلمات قد تتضمن ملاحظات نحوية، وليست ترجمة آلية كلمة بكلمة.</p>
+        </>
+      )}
+    </div>
   </section>;
 }
