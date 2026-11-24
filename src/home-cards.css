@@ -432,7 +432,9 @@ html #root .qm-line{display:flex;justify-content:space-between;align-items:cente
 html #root .qm-line.qm-line-center{justify-content:center;gap:.35em}
 html #root .qm-w{cursor:pointer;display:inline-block}
 html #root .qm-w .quran-verse-marker{margin-inline-start:.25em}
-html #root .qm-w.is-hidden .qm-w-text{color:transparent!important;border-bottom:2px dotted currentColor;opacity:1}
+html #root .qm-w.is-hidden .qm-w-text{color:transparent!important;-webkit-text-fill-color:transparent;border-bottom:2px dotted #5b88b3;opacity:1;background:none!important;display:inline-block;line-height:1.6}
+html[data-theme="dark"] #root .qm-w.is-hidden .qm-w-text{border-bottom-color:#8fb7dc}
+html #root .qm-w.is-hidden{background:none!important}
 html #root .qm-w.is-hidden .quran-verse-marker{opacity:.5}
 html #root .qm-w.qm-verse-context{cursor:default}
 html #root .qm-surah-head{text-align:center;margin:10px 0 6px}
