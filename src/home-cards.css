@@ -159,3 +159,61 @@ html[data-theme="dark"] #root .app main.main .home-admin-entry > svg:last-child 
   color: #7FA3BF !important;
   opacity: 1;
 }
+
+/* ---------- Top bar + bottom nav: coordinated with the card family ----------
+   User-approved bar treatment (2026-11-24): light bars #F4F8FC so the
+   pale-blue cards stay distinct; dark bars #101F2D, one step deeper than
+   the dark cards. Active nav icon turns blue in light mode and light sky
+   in dark mode instead of green. Layout and behavior untouched. */
+
+html #root .app main.main .topbar {
+  background: #F4F8FC !important;
+  border-bottom-color: #D3E2F0 !important;
+}
+
+html #root .app .mobile-nav {
+  background: #F4F8FC !important;
+  border-top-color: #D3E2F0 !important;
+}
+
+html #root .app .mobile-nav button {
+  color: #5E7A92 !important;
+}
+
+html #root .app .mobile-nav button.active,
+html #root .app .mobile-nav button[data-section].active {
+  background: #DBEAF7 !important;
+  border-color: #B7D3EA !important;
+  color: #1F5675 !important;
+}
+
+html #root .app .mobile-nav button.active svg,
+html #root .app .mobile-nav button[data-section].active svg {
+  color: #20537A !important;
+}
+
+html[data-theme="dark"] #root .app main.main .topbar {
+  background: #101F2D !important;
+  border-bottom-color: #2A4A68 !important;
+}
+
+html[data-theme="dark"] #root .app .mobile-nav {
+  background: #101F2D !important;
+  border-top-color: #2A4A68 !important;
+}
+
+html[data-theme="dark"] #root .app .mobile-nav button {
+  color: #8FA9BE !important;
+}
+
+html[data-theme="dark"] #root .app .mobile-nav button.active,
+html[data-theme="dark"] #root .app .mobile-nav button[data-section].active {
+  background: #26486B !important;
+  border-color: #3D6488 !important;
+  color: #F0F6FC !important;
+}
+
+html[data-theme="dark"] #root .app .mobile-nav button.active svg,
+html[data-theme="dark"] #root .app .mobile-nav button[data-section].active svg {
+  color: #AED3EE !important;
+}
