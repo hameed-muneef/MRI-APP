@@ -346,3 +346,79 @@ html[data-theme="dark"] #root .app .day-planner .day-page-header {
   background: #162837 !important;
   border-color: #2A4358 !important;
 }
+
+/* Notification/settings surfaces: warm beige + teal leftovers -> blue coherence */
+
+html[data-theme="light"] #root .app .notif-switch {
+  background: #EAF3FC !important;
+  border-color: #9FC4E6 !important;
+}
+
+html[data-theme="light"] #root .app .notif-switch input[type="checkbox"] {
+  accent-color: #20537A;
+}
+
+html[data-theme="light"] #root .app .notif-sound-list li,
+html[data-theme="light"] #root .app .notif-day {
+  background: #F4F8FC !important;
+  border-color: #9FC4E6 !important;
+}
+
+html[data-theme="light"] #root .app .notif-upload {
+  background: #F4F8FC !important;
+  border-color: #9FC4E6 !important;
+  color: #20537A !important;
+}
+
+html[data-theme="light"] #root .app :is(.task-notif-quick-save, .notif-form-actions) button.primary:disabled {
+  background: #DCE8F4 !important;
+  border-color: #9FC4E6 !important;
+  color: #4A6A86 !important;
+}
+
+/* Topbar settings chip + user avatar: teal -> blue */
+html[data-theme="light"] #root .app .topbar .topbar-settings {
+  border-color: #C9DEF0 !important;
+  color: #20537A !important;
+}
+
+html[data-theme="light"] #root .app .topbar .topbar-settings:hover {
+  border-color: #9FC4E6 !important;
+}
+
+html[data-theme="light"] #root .app .topbar .topbar-settings.active {
+  background: #20537A !important;
+  border-color: #1A4265 !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="light"] #root .app .topbar .user-chip {
+  border-color: #C9DEF0 !important;
+  color: #1A4265 !important;
+}
+
+html[data-theme="light"] #root .app .topbar .user-chip-avatar {
+  background: #20537A !important;
+}
+
+/* Dark mode: align the same surfaces to the navy palette */
+html[data-theme="dark"] #root .app .notif-switch {
+  background: #1B3A56 !important;
+  border-color: #34526A !important;
+}
+
+html[data-theme="dark"] #root .app .notif-switch input[type="checkbox"] {
+  accent-color: #AED3EE !important;
+}
+
+html[data-theme="dark"] #root .app .notif-sound-list li,
+html[data-theme="dark"] #root .app .notif-day {
+  background: #1B3A56 !important;
+  border-color: #34526A !important;
+}
+
+html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
+  background: #26486B !important;
+  border-color: #3D6C96 !important;
+  color: #F1F6F2 !important;
+}
