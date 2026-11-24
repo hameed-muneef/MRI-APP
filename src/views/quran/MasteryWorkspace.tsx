@@ -19,13 +19,13 @@ import '../../quran-mastery/mastery.css';
 
 type Props={asset:QuranAsset;purpose:SessionPurpose;notify:(text:string)=>void};
 const upsert=<T extends {id:string}>(list:T[],item:T)=>[...list.filter(v=>v.id!==item.id),item];
-type LineStart=[number,number,number,number?];
-type PageWord={s:number;a:number;w:number;text:string;last:boolean;marker:string};
+export type LineStart=[number,number,number,number?];
+export type PageWord={s:number;a:number;w:number;text:string;last:boolean;marker:string};
 let pageLinesPromise:Promise<Record<string,LineStart[]>|null>|null=null;
 // Madinah mushaf line breaks: Quran.com API v4 verses/by_page word line_number, compacted into /quran/mushaf-lines.json.
-const loadPageLines=()=>{pageLinesPromise??=fetch('/quran/mushaf-lines.json').then(r=>r.ok?r.json():null).then(j=>(j&&j.pages)||null).catch(()=>null);return pageLinesPromise;};
+export const loadPageLines=()=>{pageLinesPromise??=fetch('/quran/mushaf-lines.json').then(r=>r.ok?r.json():null).then(j=>(j&&j.pages)||null).catch(()=>null);return pageLinesPromise;};
 const verseTokens=(t:string)=>{const parts=t.replace(/\s*۝.*$/u,'').trim().split(/\s+/).filter(Boolean);const out:string[]=[];let pend='';for(const w of parts){if(!/\p{L}/u.test(w)){pend+=w+' ';continue;}out.push(pend+w);pend='';}if(pend&&out.length)out[out.length-1]+=' '+pend.trim();return out;};
-const buildPageLines=(asset:QuranAsset,starts:LineStart[]|undefined):PageWord[][]|null=>{
+export const buildPageLines=(asset:QuranAsset,starts:LineStart[]|undefined):PageWord[][]|null=>{
   if(!starts||starts.length<2)return null;
   const first=starts[0],end=starts[starts.length-1];
   const verses=asset.verses;const i0=verses.findIndex(v=>v.s===first[0]&&v.a===first[1]);if(i0<0)return null;
