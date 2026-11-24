@@ -443,3 +443,7 @@ html #root .qm-basmala-line{text-align:center;margin:4px 0 6px;font-size:.9em}
 html #root .qm-verse-context{opacity:.68!important}
 html #root[data-theme="dark"] .qm-verse-context,html[data-theme="dark"] #root .qm-verse-context{opacity:.72!important}
 html #root .qm-w.qm-verse-playing,html #root .qm-w.qm-verse-selected{background:rgba(32,83,122,.16);border-radius:6px}
+/* app-wide calmer headings: smaller and lighter, hierarchy kept (h1 > h2 > h3) */
+html #root .app main h1{font-size:21px!important;font-weight:600!important;line-height:1.35}
+html #root .app main h2{font-size:18px!important;font-weight:600!important;line-height:1.4}
+html #root .app main h3{font-size:16px!important;font-weight:600!important;line-height:1.4}
