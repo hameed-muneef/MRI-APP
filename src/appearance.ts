@@ -1,13 +1,14 @@
-// مظهر المنصة: فاتح/داكن/تلقائي. يطبّق `data-theme` على <html>، يحفظ الاختيار،
-// ويرجع تفضيل نظام التشغيل في «تلقائي». المكوّنات تقرأ عبر `resolvedTheme`/الأحداث.
+// مظهر المنصة: نهاري/ليلي فقط، والافتراضي نهاري. يطبّق `data-theme` على <html>
+// ويحفظ الاختيار. القيم القديمة («system» أو غير المعروفة) تُهاجر إلى «نهاري»،
+// والاختيار الليلي الصريح يبقى كما هو. المكوّنات تقرأ عبر `resolvedTheme`/الأحداث.
 
-export type Appearance = 'light' | 'dark' | 'system';
+export type Appearance = 'light' | 'dark';
 
 const STORAGE_KEY = 'rabbani-theme-v1';
 export const APPEARANCE_EVENT = 'rabbani-appearance';
 
 export function isAppearance(value: unknown): value is Appearance {
-  return value === 'light' || value === 'dark' || value === 'system';
+  return value === 'light' || value === 'dark';
 }
 
 export function readAppearance(storage: Pick<Storage, 'getItem'> | null): Appearance {
@@ -15,7 +16,8 @@ export function readAppearance(storage: Pick<Storage, 'getItem'> | null): Appear
     const value = storage?.getItem(STORAGE_KEY);
     if (isAppearance(value)) return value;
   } catch {/* التخزين قد يكون مقفولًا */}
-  return 'system';
+  // الافتراضي نهاري؛ أي قيمة قديمة («system») أو غير صالحة تعود نهارية.
+  return 'light';
 }
 
 /** وصول آمن للتخزين: قد يُمنع في الإطارات المضمَّنة أو وضع الخصوصية — لا يُسقط التطبيق. */
@@ -27,42 +29,29 @@ export function saveAppearance(storage: Pick<Storage, 'setItem'> | null, value: 
   try {storage?.setItem(STORAGE_KEY, value)} catch {/* تجاهل */}
 }
 
-/** يحسم الوضع النهائي: «تلقائي» يفهرس تفضيل النظام. */
-export function resolvedTheme(mode: Appearance, systemPrefersDark: boolean): 'light' | 'dark' {
-  if (mode === 'dark') return 'dark';
-  if (mode === 'light') return 'light';
-  return systemPrefersDark ? 'dark' : 'light';
-}
-
-export function systemDark(): boolean {
-  try {return window.matchMedia('(prefers-color-scheme: dark)').matches} catch {return false}
+/** الوضع النهائي هو الاختيار نفسه: نهاري أو ليلي. */
+export function resolvedTheme(mode: Appearance): 'light' | 'dark' {
+  return mode === 'dark' ? 'dark' : 'light';
 }
 
 /** يطبّق الوضع الفعلي على المستند: السمة + لون شريط المتصفح. */
 export function applyTheme(mode: Appearance, doc: Document = document): void {
-  const dark = resolvedTheme(mode, systemDark()) === 'dark';
+  const dark = resolvedTheme(mode) === 'dark';
   const root = doc.documentElement;
   root.setAttribute('data-theme', dark ? 'dark' : 'light');
   root.style.colorScheme = dark ? 'dark' : 'light';
   const meta = doc.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', dark ? '#08192B' : '#173F35');
+  if (meta) meta.setAttribute('content', dark ? '#0E1A24' : '#F4F8FC');
 }
 
 export function installAppearance(doc: Document = document, win: Window = window): void {
   const storage = safeLocalStorage(win);
-  let mode = readAppearance(storage);
-  applyTheme(mode, doc);
+  applyTheme(readAppearance(storage), doc);
   win.addEventListener('storage', event => {
     if (event.key === STORAGE_KEY) {
-      mode = readAppearance(safeLocalStorage(win));
-      applyTheme(mode, doc);
+      applyTheme(readAppearance(safeLocalStorage(win)), doc);
     }
   });
-  try {
-    const mq = win.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => {if (mode === 'system') applyTheme(mode, doc)};
-    mq.addEventListener?.('change', onChange);
-  } catch {/* متصفح بلا matchMedia */}
 }
 
 export function setAppearance(value: Appearance, doc: Document = document, win: Window = window): void {
