@@ -21,8 +21,9 @@ export default function QuranPlansCard({asset, state, onState, notify, onOpen, o
     try { saveMasteryState(next, rootRef.current); rootRef.current = next; setRoot(next); return true; }
     catch { notify('تعذر الحفظ على الجهاز. لم يُسجّل التغيير.'); return false; }
   };
-  const open = (range: VerseRange) => {
-    try { localStorage.setItem(PENDING_RANGE_KEY, JSON.stringify(range)); } catch { /* ignore */ }
+  const open = (range: VerseRange, passageId?: string) => {
+    const group = passageId ? rootRef.current.passages.find(p => p.id === passageId)?.group : undefined;
+    try { localStorage.setItem(PENDING_RANGE_KEY, JSON.stringify(group && group.length > 1 ? {...range, group} : range)); } catch { /* ignore */ }
     onOpenHifz();
   };
   let last: {surah: number; from: number; to: number; page: number; mode: string} | null = null;
