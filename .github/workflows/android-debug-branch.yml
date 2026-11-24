@@ -1,3 +1,4 @@
+# Device test build run 3: hifz mushaf flow, planner, qibla and mosques fixes.
 # Debug-only APK build for on-device testing of feat/daytime-blue-palette.
 # Isolated test variant: applicationId com.alrabbaniyoon.app.test and an Arabic test label,
 # set only inside the CI workspace (repo files are not changed), so it installs next to the real app.
