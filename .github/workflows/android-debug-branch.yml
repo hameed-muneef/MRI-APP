@@ -1,6 +1,6 @@
-# Device test build run 3: hifz mushaf flow, planner, qibla and mosques fixes.
+# Device test build run 4: unified plans stats, hifz mushaf flow, planner, qibla and mosques fixes.
 # Debug-only APK build for on-device testing of feat/daytime-blue-palette.
-# Isolated test variant: applicationId com.alrabbaniyoon.app.test and an Arabic test label,
+# Isolated test variant: applicationId com.alrabbaniyoon.app.test3 (new, separate empty data) and the label الربانيون (تجريبي ٣),
 # set only inside the CI workspace (repo files are not changed), so it installs next to the real app.
 # No signing, no secrets, no release or publishing. Runs on push to this branch
 # only when this file changes, so it builds the exact branch head once.
@@ -86,8 +86,8 @@ jobs:
 
       - name: Make isolated test variant (CI workspace only)
         run: |
-          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test"/' android/app/build.gradle
-          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي)</string>|' android/app/src/main/res/values/strings.xml
+          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test3"/' android/app/build.gradle
+          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي ٣)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي ٣)</string>|' android/app/src/main/res/values/strings.xml
           grep -n 'applicationId' android/app/build.gradle
           grep -n 'app_name\|title_activity_main' android/app/src/main/res/values/strings.xml
 
@@ -110,9 +110,15 @@ jobs:
           sha256sum "$APK"
 
       - name: Upload debug APK
+        id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
+          name: app-debug-apk-test3
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 3
+          retention-days: 7
 
+      - name: Report artifact
+        run: |
+          echo "artifact-id=${{ steps.upload.outputs.artifact-id }}"
+          echo "artifact-url=${{ steps.upload.outputs.artifact-url }}"
+          echo "artifact-digest=${{ steps.upload.outputs.artifact-digest }}"
