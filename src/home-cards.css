@@ -353,3 +353,27 @@ html #root .app main.main .home-today-list .home-tasks-all svg {
   height: 15px !important;
   color: inherit !important;
 }
+
+/* مراجعة الاتساق: تباين أعلى للنصوص الصغيرة وأهداف لمس لا تقل عن 40px */
+html[data-theme="dark"] #root .app .mobile-nav button:not(.active) { color: #A9C4DC !important; }
+@media (max-width: 390px) {
+  html #root .app .mobile-nav button { font-size: 10px !important; }
+}
+#root .app .section-subnav button { min-height: 40px; }
+#root .app .topbar .icon-btn,
+#root .app .topbar .notif-bell,
+#root .app .topbar .topbar-settings { min-width: 40px; min-height: 40px; }
+html[data-theme="dark"] #root .app .goal-history-empty,
+html[data-theme="dark"] #root .app .goal-period-empty,
+html[data-theme="dark"] #root .app .day-plan-content .prayer-grid .prayer-tag,
+html[data-theme="dark"] #root .app .day-plan-content label { color: #B9CFE2 !important; }
+#root .app .day-plan-content .prayer-grid .prayer-tag { font-size: 11px; }
+
+/* أوزان الخط: النص العادي بوزن خفيف، والعريض للعناوين والتفاصيل المهمة والأزرار الرئيسية فقط */
+html #root .app :is(.week-hijri, .hijri-inline, .home-hijri-date, .home-greg-date, .goal-history-selected, .mf-status-text, .mf-speed-val, .mf-field-label, .mf-group-label) { font-weight: 500 !important; }
+html #root .app main :is(label, small):not(.mf-field-label) { font-weight: 500; }
+html #root .app .section-subnav button:not(.active) { font-weight: 500; }
+html #root .app main .soft-btn { font-weight: 600; }
+html #root .app .mobile-nav button:not(.active) { font-weight: 500 !important; }
+html #root .app .mobile-nav button.active { font-weight: 700 !important; }
+html #root .app main .week-range { font-weight: 600; }
