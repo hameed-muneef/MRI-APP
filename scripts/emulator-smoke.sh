@@ -16,6 +16,8 @@ echo "density: $(adb shell wm density | tr -d '\r' | tail -1)"
 
 adb install -r "$APK" || { echo "FAIL: install"; exit 1; }
 adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS 2>/dev/null || true
+# Emulator-only: stop slow system apps (e.g. the launcher) from covering the app with an ANR dialog.
+adb shell settings put global hide_error_dialogs 1 || true
 adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r'
 sleep 100
