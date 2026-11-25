@@ -228,6 +228,7 @@ public final class NativeReminderQueue {
             SharedPreferences.Editor e = prefs(c).edit();
             for (String k : KINDS) e.remove(key(k));
             e.commit();
+            NativeReminderRules.clear(c);
             refreshKeepAlive(c);
         } catch (Throwable ignored) {}
     }
@@ -239,7 +240,7 @@ public final class NativeReminderQueue {
             long now = System.currentTimeMillis();
             for (String k : KINDS) if (!prune(parse(prefs(c).getString(key(k), null)), now).isEmpty()) return true;
         } catch (Throwable ignored) {}
-        return false;
+        return NativeReminderRules.hasRules(c);
     }
 
     /**
@@ -295,6 +296,12 @@ public final class NativeReminderQueue {
                 for (Item it : due(prune(parse(prefs(c).getString(key(kind), null)), now), now, WINDOW_MS, MAX_ITEMS_PER_KIND)) {
                     chosen.add(it); kinds.add(kind);
                 }
+            }
+            // daily/weekly rules: occurrences after the app's last planned one (separate class and preference file)
+            java.util.Set<Integer> have = new java.util.HashSet<>();
+            for (Item it : chosen) have.add(it.id);
+            for (Item it : NativeReminderRules.dueItems(c, now, WINDOW_MS)) {
+                if (have.add(it.id)) { chosen.add(it); kinds.add("reminder"); }
             }
             // earliest first across kinds; stable pairing of item and kind
             Integer[] order = new Integer[chosen.size()];
