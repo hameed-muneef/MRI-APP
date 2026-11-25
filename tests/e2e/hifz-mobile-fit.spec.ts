@@ -34,7 +34,7 @@ test.describe('Hifz & Mastery mobile viewport fit (360x780)', () => {
     await checkNoOverflow(page, 'hifz-entry');
 
     // 1. Range picker (بالآيات + بالصفحات)
-    await page.locator('.hf-choice', {hasText: 'حفظ'}).click();
+    await page.locator('.hf-choice', {has: page.locator('span', {hasText: /^حفظ$/})}).click();
     await expect(page.locator('.hf-range-card')).toBeVisible();
     await checkNoOverflow(page, 'hifz-range-ayah');
 
@@ -97,11 +97,12 @@ test.describe('Hifz & Mastery mobile viewport fit (360x780)', () => {
     // Advance stages to inspect understand, memorize, connect, recite, assess on 360px
     for (const label of ['understand', 'memorize', 'connect', 'recite', 'assess']) {
       await page.locator('.hf-next').click();
+      // مرحلة التسميع تفتح أولًا سؤال «هل تريد التسميع الآن؟» فوق كل شيء؛ أجب عنه قبل لمس أي ستارة تعليمية.
+      const startRecite = page.locator('.hf-ask .hf-ok');
+      if (await startRecite.count()) await startRecite.click();
       const dismiss = page.locator('.hf-scrim');
-      if (await dismiss.count()) await dismiss.click();
-      if (label === 'recite') {
-        const startRecite = page.locator('.hf-ask .hf-ok');
-        if (await startRecite.count()) await startRecite.click();
+      if (await dismiss.count()) {
+        try { await dismiss.click({timeout: 3000}); } catch { /* الستارة اختفت وحدها */ }
       }
       await checkNoOverflow(page, `hifz-stage-${label}`);
     }
