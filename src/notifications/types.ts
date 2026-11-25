@@ -211,8 +211,8 @@ export const DEFAULT_PRAYER_PREFERENCES: Record<PrayerName, {
   channel: NotificationChannel;
 }> = {
   الفجر: {enabled: true, adhan_type: 'full', channel: 'both'},
-  الظهر: {enabled: true, adhan_type: 'short', channel: 'in_app'},
-  العصر: {enabled: true, adhan_type: 'short', channel: 'in_app'},
+  الظهر: {enabled: true, adhan_type: 'short', channel: 'both'},
+  العصر: {enabled: true, adhan_type: 'short', channel: 'both'},
   المغرب: {enabled: true, adhan_type: 'full', remind_after_minutes: 0, channel: 'both'},
   العشاء: {enabled: true, adhan_type: 'full', remind_before_minutes: 10, channel: 'both'},
 };
