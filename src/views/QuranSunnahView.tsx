@@ -140,7 +140,7 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, taskSch
             }}
           />
         )}
-        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
+        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} onExit={() => setSection('mushaf')} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
         {section === 'plans' && <QuranPlansCard asset={asset} state={state} onState={onState} notify={notify} onOpen={handleSectionChange} onOpenHifz={() => handleSectionChange('hifz')}/>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'muslim' && <HadithLibrary collectionKey="muslim" mode="library" state={state} onState={onState} notify={notify}/>}
