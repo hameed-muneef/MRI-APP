@@ -33,7 +33,7 @@ const fin=await p.evaluate(()=>document.querySelector('.qm-notice')?.innerText);
 await p.evaluate(()=>{const k=Object.keys(localStorage).find(k=>/rabbani-mastery-v1$/.test(k));const r=JSON.parse(localStorage.getItem(k));const t=new Date();const ymd=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;r.schedules=r.schedules.map(x=>({...x,dueDate:ymd}));localStorage.setItem(k,JSON.stringify(r));localStorage.removeItem('rabbani-hifz-mushaf-v1')});
 for(const idx of [0,2]){
 await go();await p.evaluate(()=>{const x=[...document.querySelectorAll('.wide-card')].find(e=>e.dataset.section==='quran');x&&x.click()});await p.waitForTimeout(800);
-await p.evaluate(()=>document.querySelector('[data-quran-tab="plans"]')?.click());await p.waitForTimeout(1000);
+await p.evaluate(()=>document.querySelector('[data-quran-tab="hifz"]')?.click());await p.waitForTimeout(1000);
 const n=await p.evaluate(i=>{const bs=[...document.querySelectorAll('#root button')].filter(b=>b.innerText.includes('ابدأ هذه المراجعة'));bs[i]?.click();return bs.length},idx);
 await p.waitForTimeout(1200);
 console.log('due-buttons',n,'idx',idx);
