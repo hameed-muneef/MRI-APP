@@ -43,14 +43,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[]; until: string } | null>(null);
 
   const refresh = useCallback(async () => {
-    const [p, ch, env] = await Promise.all([
-      checkPermissions(),
-      ensureChannels(),
-      getAndroidEnvironmentStatus(),
-    ]);
-    setPerm(p);
-    setChannelInfo(ch);
-    setEnvStatus(env);
+    // حالة الجدولة تُحسب محليًا ولا تتوقف على استجابة إضافات النظام.
     try {
       const { prefs } = await loadPrefs();
       const loc = resolveSchedulingLocation(prayerLocation);
@@ -61,6 +54,16 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       const inAppOnly = (Object.keys(prefs.prayer_settings) as Array<keyof typeof prefs.prayer_settings>)
         .filter((n) => prefs.prayer_settings[n].enabled && prefs.prayer_settings[n].channel === 'in_app');
       setHealth({ hasLocation: !!loc, upcoming, inAppOnly, until });
+    } catch { /* ignore */ }
+    try {
+      const [p, ch, env] = await Promise.all([
+        checkPermissions(),
+        ensureChannels(),
+        getAndroidEnvironmentStatus(),
+      ]);
+      setPerm(p);
+      setChannelInfo(ch);
+      setEnvStatus(env);
     } catch { /* ignore */ }
   }, [prayerLocation]);
 
@@ -319,7 +322,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
           <li>Android 12+: صلاحية SCHEDULE_EXACT_ALARM (exact alarm) — توجيه المستخدم لإعدادات النظام، مع استمرار العمل بالمنبه التقريبي عند الرفض.</li>
           <li>استثناء توفير البطارية: Settings → Battery → Battery optimization → Al-Rabbaniyyun → Don't optimize.</li>
           <li>Xiaomi/Huawei/Oppo: فعّل "التشغيل التلقائي" (Auto-start) و"التشغيل في الخلفية" (Background activity) و"عرض الإشعارات على شاشة القفل".</li>
-          <li>إعادة تشغيل الجهاز وتحديث التطبيق وتغيير الوقت/المنطقة الزمنية ومنح إذن المنبهات الدقيقة: يستعيد النظام المنبهات المحفوظة تلقائيًا عبر مستقبل النظام، وتُحدّث الجدولة لـ 10 أيام عند فتح التطبيق.</li>
+          <li>إعادة تشغيل الجهاز وتحديث التطبيق وتغيير الوقت/المنطقة الزمنية ومنح إذن المنبهات الدقيقة: يستعيد النظام المنبهات المحفوظة تلقائيًا عبر مستقبل النظام، وتُحدّث الجدولة لـ 30 يومًا عند كل فتح للتطبيق.</li>
         </ul>
       </details>
 
