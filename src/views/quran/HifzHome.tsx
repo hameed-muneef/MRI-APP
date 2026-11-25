@@ -5,12 +5,12 @@ import type {SessionPurpose} from '../../quran-mastery/types';
 import HifzMushafMode from './HifzMushafMode';
 import MasteryWorkspace from './MasteryWorkspace';
 
-type Props = {asset: QuranAsset; purpose: SessionPurpose; notify: (text: string) => void; tasks?: Task[]; onTasks?: (t: Task[]) => void; taskSchedules?: Record<string, TaskSchedule>; onTaskSchedules?: (n: Record<string, TaskSchedule>) => void};
+type Props = {asset: QuranAsset; purpose: SessionPurpose; notify: (text: string) => void; onExit?: () => void; tasks?: Task[]; onTasks?: (t: Task[]) => void; taskSchedules?: Record<string, TaskSchedule>; onTaskSchedules?: (n: Record<string, TaskSchedule>) => void};
 
 // المسار الافتراضي: الصفحة الكاملة أولًا. الجلسة المفصّلة تبقى متاحة من شاشة البداية بلا فقد للبيانات.
-export default function HifzHome({asset, purpose, notify, tasks, onTasks, taskSchedules, onTaskSchedules}: Props) {
+export default function HifzHome({asset, purpose, notify, onExit, tasks, onTasks, taskSchedules, onTaskSchedules}: Props) {
   const [detailed, setDetailed] = useState(false);
   return detailed
     ? <><button type="button" className="soft-btn" onClick={() => setDetailed(false)}>← الصفحة الكاملة</button><MasteryWorkspace asset={asset} purpose={purpose} notify={notify}/></>
-    : <HifzMushafMode asset={asset} notify={notify} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules} onTaskSchedules={onTaskSchedules}/>;
+    : <HifzMushafMode asset={asset} notify={notify} onExit={onExit} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules} onTaskSchedules={onTaskSchedules}/>;
 }
