@@ -9,7 +9,7 @@ for(const theme of ['light','dark'])for(const width of [320,390,1280])test(`unif
  await expect(nav.getByRole('button',{name:'مصحف الحفظ والإتقان'})).toHaveCount(1);
  await expect(nav.locator('[data-quran-tab="revision"]')).toHaveCount(0);
  await nav.locator('[data-quran-tab="hifz"]').click();
- const ui=page.locator('.qm-workspace');
+ const ui=page.locator('.qm-workspace').first();
  await expect(ui).toBeVisible();
  await expect(nav.locator('[aria-current="page"]')).toHaveText(/مصحف الحفظ والإتقان/);
  await page.mouse.move(0,0);
@@ -45,7 +45,7 @@ for(const theme of ['light','dark'])for(const width of [320,390,1280])test(`unif
 
 for(const theme of ['light','dark'])for(const width of [320,390,1280])test(`guided entry and safe exit ${theme} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.addInitScript(t=>localStorage.setItem('rabbani-theme-v1',t),theme);await page.goto('/');
- await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();const ui=page.locator('.qm-workspace');
+ await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();const ui=page.locator('.qm-workspace').first();
  await expect(ui.locator('h2')).toHaveText('ابدأ حفظك خطوة بخطوة');
  await expect(ui.getByRole('button',{name:'ابدأ الحفظ',exact:true})).toBeVisible();
  await expect(ui.getByRole('heading',{name:'تقدم مبني على التقييم الذاتي'})).toBeHidden();
@@ -61,14 +61,14 @@ for(const theme of ['light','dark'])for(const width of [320,390,1280])test(`guid
  await ui.getByRole('button',{name:'التالي: احفظ',exact:true}).click();
  await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();await expect(ui.locator('.quran-verse-hidden')).toHaveCount(3);
  await ui.getByRole('button',{name:'رجوع وحفظ الموضع',exact:true}).click();await expect(page.locator('.quran-section-grid')).toBeVisible();
- await page.reload();await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
+ await page.reload();await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
  await ui.getByRole('button',{name:/استئناف/}).click();await expect(ui.locator('h2')).toHaveText('احفظ');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 for(const theme of ['light','dark'])test(`one understanding source and simple settings ${theme}`,async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.addInitScript(t=>localStorage.setItem('rabbani-theme-v1',t),theme);await page.goto('/');
- await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
+ await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();const ui=page.locator('.qm-workspace').first();await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();const sheet=page.getByRole('dialog',{name:'لوحة فهم الآية'});
  await expect(sheet.getByLabel('التفسير',{exact:true})).toBeVisible();await expect(sheet.getByLabel('الترجمة',{exact:true})).toHaveCount(0);
  await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();await expect(sheet.getByLabel('الترجمة',{exact:true})).toBeVisible();await expect(sheet.getByLabel('التفسير',{exact:true})).toHaveCount(0);
