@@ -30,6 +30,7 @@ import {
 import { buildNativeRecomputeSpec } from './native-recompute-spec';
 import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
+import { setNativeReminderQueue } from '../lib/settings-opener';
 import { dailyTaskEvents, type TaskScheduleContext } from './task-planner';
 import {
   getTaskNotificationSettings,
@@ -62,6 +63,27 @@ const MAX_REVIEW_ALARMS = 40;
 const REVIEW_HORIZON_DAYS = 7;
 /** وقت تنبيه مراجعة الحفظ اليومي — يطابق محرك التسليم داخل التطبيق. */
 const REVIEW_HOUR = 9;
+
+/** Marker option: build the same payloads over the long "far queue" window (see syncFarQueue). */
+export interface FarQueueExtent { far: true }
+export const FAR_QUEUE: FarQueueExtent = { far: true };
+export const FAR_QUEUE_DAYS = 30;
+export const FAR_QUEUE_OCCURRENCES = 40;
+export const FAR_QUEUE_MAX_ITEMS = 400;
+
+/**
+ * Pure: the payloads of the long window that LocalNotifications did not register, as plain queue rows.
+ * Same ids, titles, bodies and channels as the registered ones, so nothing is duplicated or reworded.
+ */
+export function farQueueItems(
+  extended: readonly NativeNotificationPayload[],
+  registered: readonly NativeNotificationPayload[],
+): Array<{ id: number; at: number; title: string; body: string; channelId: string }> {
+  const have = new Set(registered.map((p) => p.id));
+  return extended
+    .filter((p) => !have.has(p.id))
+    .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID }));
+}
 
 export interface NativeScheduleOptions {
   location: PrayerLocation;
@@ -386,6 +408,7 @@ export function buildNativeReminderPayloads(
   now = new Date(),
   generalChannelId = GENERAL_CHANNEL_ID,
   exactAlarm = true,
+  ext?: FarQueueExtent,
 ): NativeNotificationPayload[] {
   if (!prefs.global_enabled || prefs.dnd_enabled) {
     return [];
@@ -415,7 +438,7 @@ export function buildNativeReminderPayloads(
       });
     }
 
-    const occurrences = upcomingOccurrences(reminder, now, 5);
+    const occurrences = upcomingOccurrences(reminder, now, ext ? FAR_QUEUE_OCCURRENCES : 5);
     for (const at of occurrences) {
       if (at.getTime() <= nowMs + 1000) continue;
       if (snoozeAt && at <= snoozeAt && snoozeAt.getTime()-at.getTime()<=60*60*1000) continue;
@@ -434,7 +457,7 @@ export function buildNativeReminderPayloads(
   }
 
   payloads.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
-  return payloads.slice(0, MAX_REMINDER_ALARMS);
+  return payloads.slice(0, ext ? FAR_QUEUE_MAX_ITEMS : MAX_REMINDER_ALARMS);
 }
 
 /**
@@ -446,6 +469,7 @@ export function buildNativeTaskPayloads(
   now = new Date(),
   generalChannelId = GENERAL_CHANNEL_ID,
   exactAlarm = true,
+  ext?: FarQueueExtent,
 ): NativeNotificationPayload[] {
   const settings = getTaskNotificationSettings(prefs);
   if (!prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false || !settings.enabled) {
@@ -453,7 +477,7 @@ export function buildNativeTaskPayloads(
   }
 
   const nowMs = now.getTime();
-  const events = dailyTaskEvents(taskContext, prefs, now, 7);
+  const events = dailyTaskEvents(taskContext, prefs, now, ext ? FAR_QUEUE_DAYS : 7);
   const payloads: NativeNotificationPayload[] = [];
 
   for (const event of events) {
@@ -477,7 +501,7 @@ export function buildNativeTaskPayloads(
   }
 
   payloads.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
-  return payloads.slice(0, MAX_TASK_ALARMS);
+  return payloads.slice(0, ext ? FAR_QUEUE_MAX_ITEMS : MAX_TASK_ALARMS);
 }
 
 /**
@@ -491,6 +515,7 @@ export function buildNativeReviewPayloads(
   now = new Date(),
   generalChannelId = GENERAL_CHANNEL_ID,
   exactAlarm = true,
+  ext?: FarQueueExtent,
 ): NativeNotificationPayload[] {
   if (!prefs.global_enabled || prefs.dnd_enabled) {
     return [];
@@ -500,7 +525,7 @@ export function buildNativeReviewPayloads(
   }
 
   const nowMs = now.getTime();
-  const horizonMs = REVIEW_HORIZON_DAYS * 24 * 60 * 60 * 1000;
+  const horizonMs = (ext ? FAR_QUEUE_DAYS : REVIEW_HORIZON_DAYS) * 24 * 60 * 60 * 1000;
   const payloads: NativeNotificationPayload[] = [];
 
   for (const passage of passages) {
@@ -532,7 +557,7 @@ export function buildNativeReviewPayloads(
   }
 
   payloads.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
-  return payloads.slice(0, MAX_REVIEW_ALARMS);
+  return payloads.slice(0, ext ? FAR_QUEUE_MAX_ITEMS : MAX_REVIEW_ALARMS);
 }
 
 export async function ensureChannels(): Promise<ActiveChannelInfo> {
@@ -809,10 +834,12 @@ export async function scheduleNativePersonalReminders(
     const perms = await checkPermissions();
     await ensureChannels();
     await cancelScopedNotifications(LN, 'reminder', REMINDER_IDS_STORAGE_KEY);
-    if (perms.display !== 'granted') return 0;
+    if (perms.display !== 'granted') { await setNativeReminderQueue('reminder', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const farItems = farQueueItems(buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
+    await setNativeReminderQueue('reminder', farItems);
     if (payloads.length === 0) return 0;
 
     try {
@@ -838,10 +865,12 @@ export async function scheduleNativeTaskNotifications(
     const perms = await checkPermissions();
     await ensureChannels();
     await cancelScopedNotifications(LN, 'task', TASK_IDS_STORAGE_KEY);
-    if (perms.display !== 'granted') return 0;
+    if (perms.display !== 'granted') { await setNativeReminderQueue('task', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const farItems = farQueueItems(buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
+    await setNativeReminderQueue('task', farItems);
     if (payloads.length === 0) return 0;
 
     try {
@@ -867,10 +896,12 @@ export async function scheduleNativeReviewNotifications(
     const perms = await checkPermissions();
     await ensureChannels();
     await cancelScopedNotifications(LN, 'review', REVIEW_IDS_STORAGE_KEY);
-    if (perms.display !== 'granted') return 0;
+    if (perms.display !== 'granted') { await setNativeReminderQueue('review', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const farItems = farQueueItems(buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
+    await setNativeReminderQueue('review', farItems);
     if (payloads.length === 0) return 0;
 
     try {
