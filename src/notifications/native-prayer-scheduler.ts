@@ -47,6 +47,9 @@ const PRAYER_IDS_STORAGE_KEY = 'rabbani-native-prayer-ids-v1';
 const REMINDER_IDS_STORAGE_KEY = 'rabbani-native-reminder-ids-v1';
 const TASK_IDS_STORAGE_KEY = 'rabbani-native-task-ids-v1';
 const REVIEW_IDS_STORAGE_KEY = 'rabbani-native-review-ids-v1';
+/** أفق جدولة الأذان بالأيام. يُحدَّث عند كل فتح للتطبيق (يوميًا)، فيبقى الأفق ≥ 29 يومًا بعد أي فتح. */
+export const MAX_SCHEDULE_DAYS = 30;
+export const DEFAULT_SCHEDULE_DAYS = 30;
 const MAX_PRAYER_ALARMS = 350;
 const MAX_REMINDER_ALARMS = 80;
 const MAX_TASK_ALARMS = 80;
@@ -59,7 +62,7 @@ const REVIEW_HOUR = 9;
 export interface NativeScheduleOptions {
   location: PrayerLocation;
   prefs: NotificationPreference;
-  days?: number; // 7..14
+  days?: number; // 7..30
   method?: PrayerMethod;
   madhab?: PrayerMadhab;
   now?: Date;
@@ -183,7 +186,7 @@ export function buildNativeAdhanAlarmInputs(opts: {
 
   const now = opts.now ?? new Date();
   const nowMs = now.getTime();
-  const days = Math.max(7, Math.min(14, opts.days ?? 10));
+  const days = Math.max(7, Math.min(MAX_SCHEDULE_DAYS, opts.days ?? DEFAULT_SCHEDULE_DAYS));
   const method = opts.method ?? (location.method === undefined
     ? defaultMethodForCoordinates(location.latitude, location.longitude)
     : mapAlAdhanMethod(location.method));
@@ -253,7 +256,7 @@ export function buildNativeBeforeAfterPayloads(opts: {
 
   const now = opts.now ?? new Date();
   const nowMs = now.getTime();
-  const days = Math.max(7, Math.min(14, opts.days ?? 10));
+  const days = Math.max(7, Math.min(MAX_SCHEDULE_DAYS, opts.days ?? DEFAULT_SCHEDULE_DAYS));
   const method = opts.method ?? (location.method === undefined
     ? defaultMethodForCoordinates(location.latitude, location.longitude)
     : mapAlAdhanMethod(location.method));
@@ -893,7 +896,7 @@ export async function syncAllNativeNotifications(opts: {
     prayerResult = await schedulePrayerNotifications({
       location: opts.location,
       prefs: opts.prefs,
-      days: 10,
+      days: DEFAULT_SCHEDULE_DAYS,
     });
   } else {
     await cancelAllPrayerNotifications();
