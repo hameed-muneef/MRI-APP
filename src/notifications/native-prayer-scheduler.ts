@@ -216,7 +216,6 @@ export function buildNativeAdhanAlarmInputs(opts: {
     const setting = prefs.prayer_settings?.[prayerName];
     if (!setting?.enabled) continue;
     const adhanType = setting.adhan_type ?? 'full';
-    if (adhanType === 'silent') continue;
 
     if (item.at.getTime() > nowMs + 1000 && !isQuietHoursActive(prefs, item.at)) {
       const adhan = resolvePrayerAdhan(setting.sound_id, fallbackAdhanId);
@@ -224,10 +223,10 @@ export function buildNativeAdhanAlarmInputs(opts: {
         id: prayerId(item.date, item.prayer),
         triggerAtMs: item.at.getTime(),
         title: `حان وقت صلاة ${prayerNameAr(item.prayer)}`,
-        body: `وقت ${prayerNameAr(item.prayer)}: ${item.hhmm} · ${adhan.name}`,
+        body: adhanType === 'silent' ? `وقت ${prayerNameAr(item.prayer)}: ${item.hhmm}` : `وقت ${prayerNameAr(item.prayer)}: ${item.hhmm} · ${adhan.name}`,
         rawSound: adhan.rawName,
         soundTitle: adhan.name,
-        adhanType: adhanType === 'short' ? 'short' : 'full',
+        adhanType: adhanType === 'short' ? 'short' : adhanType === 'silent' ? 'silent' : 'full',
         prayerKey: `${item.date}:${item.prayer}`,
       });
     }
