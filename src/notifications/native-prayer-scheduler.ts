@@ -30,7 +30,8 @@ import {
 import { buildNativeRecomputeSpec } from './native-recompute-spec';
 import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
-import { rebalanceNativeReminderQueue, setNativeReminderQueue } from '../lib/settings-opener';
+import { rebalanceNativeReminderQueue, setNativeReminderQueue, setNativeReminderRules } from '../lib/settings-opener';
+import { buildNativeRecurrenceRules } from './native-recurrence-rules';
 import { dailyTaskEvents, type TaskScheduleContext } from './task-planner';
 import {
   getTaskNotificationSettings,
@@ -863,12 +864,14 @@ export async function scheduleNativePersonalReminders(
     const perms = await checkPermissions();
     await ensureChannels();
     await cancelScopedNotifications(LN, 'reminder', REMINDER_IDS_STORAGE_KEY);
-    if (perms.display !== 'granted') { await setNativeReminderQueue('reminder', []); return 0; }
+    if (perms.display !== 'granted') { await setNativeReminderRules([]); await setNativeReminderQueue('reminder', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
     const extended = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
     const farItems = farQueueItems(extended, payloads);
+    // Daily and weekly reminders keep renewing on the device past the planned window; replaced (or emptied) on every run, before the queue.
+    await setNativeReminderRules(buildNativeRecurrenceRules(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, extended, GENERAL_CHANNEL_ID));
     if (payloads.length === 0) { await setNativeReminderQueue('reminder', farItems); return 0; }
 
     try {
