@@ -46,6 +46,7 @@ interface SettingsOpenerPlugin {
   setNativeRecomputeSpec(opts: { spec: string }): Promise<void>;
   clearNativeRecomputeSpec(): Promise<void>;
   setNativeReminderQueue(opts: { kind: string; items: string }): Promise<{ armed: number }>;
+  rebalanceNativeReminderQueue(): Promise<{ armed: number }>;
   clearNativeReminderQueue(): Promise<void>;
   getNativeRecomputeState(): Promise<NativeRecomputeState>;
   runNativeRecomputeNow(): Promise<{ result: string }>;
@@ -145,6 +146,17 @@ export async function setNativeReminderQueue(
   if (!isNative()) return false;
   try {
     await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(items) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Re-applies the shared alarm budget after other alarms (prayer reminders) were registered. */
+export async function rebalanceNativeReminderQueue(): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    await SettingsOpener.rebalanceNativeReminderQueue();
     return true;
   } catch {
     return false;
