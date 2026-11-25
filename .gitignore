@@ -47,3 +47,4 @@ _defs.sql
 upload-keystore.jks
 keystore-base64.txt
 android/app/src/test/resources/native-plan-parity.jsonl
+android/app/src/test/resources/recurrence-parity.jsonl
