@@ -235,6 +235,13 @@ public class SettingsOpenerPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void rebalanceNativeReminderQueue(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("armed", NativeReminderQueue.promote(getContext()));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
     public void clearNativeReminderQueue(PluginCall call) {
         NativeReminderQueue.clearAll(getContext());
         call.resolve();
