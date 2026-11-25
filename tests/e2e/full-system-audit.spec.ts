@@ -86,6 +86,12 @@ test.describe('full-system audit',()=>{
       await page.locator(`[data-quran-tab="${s}"]`).click();
       await page.waitForTimeout(s==='mushaf'?2500:700);
       await shot(page,info,`quran-${s}`);
+      if(s==='hifz'){
+        // مصحف الحفظ والإتقان يفتح كشاشة كاملة فوق الأقسام؛ زر رجوع يعيدنا إلى قسم المصحف.
+        await expect(page.locator('.hf-entry')).toBeVisible({timeout:15_000});
+        await page.locator('.hf-entry-head button[aria-label="رجوع"]').click();
+        await expect(page.locator('.hf-entry')).toBeHidden();
+      }
     }
     expect(problems,problems.join('\n')).toEqual([]);
   });
@@ -98,25 +104,29 @@ test.describe('full-system audit',()=>{
     expect(text.length).toBeGreaterThan(400);
   });
 
-  test('daily task add/complete/delete persists across reload',async({page})=>{
+  test('daily task add/complete/delete persists across reload',async({page,context})=>{
     const problems=collectProblems(page);
+    // الجدول اليومي لا يظهر قبل تحميل مواقيت الصلاة؛ نمنح موقعًا ثابتًا لتتحمّل المواقيت.
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({latitude:21.4225,longitude:39.8262});
     await page.goto('/');
     await sideNav(page,'حياتي');
-    await page.locator('details.legacy-tasks summary').click();
-    const input=page.getByPlaceholder('أضف نشاطًا يناسبك...');
-    await input.fill('نشاط اختباري');
-    await page.getByRole('button',{name:'إضافة',exact:true}).click();
-    const task=page.locator('.task',{hasText:'نشاط اختباري'});
-    await expect(task).toBeVisible();
-    await task.getByRole('checkbox').check();
-    await expect(task.locator('span')).toHaveClass(/completed/);
+    // المخطط الجديد: إضافة عمل لفترة من فترات اليوم ثم تأكيده، ويُحفظ محليًا ويُحذف من نفس البطاقة.
+    await expect(page.locator('.day-plan-content')).toBeVisible();
+    await expect(page.locator('.prayer-timeline')).toBeVisible({timeout:20_000});
+    await page.locator('.group-add-trigger').first().click();
+    await page.getByPlaceholder('أضف عملًا مناسبًا لهذه الفترة').fill('نشاط اختباري');
+    await page.getByRole('button',{name:'إضافة وتأكيد',exact:true}).click();
+    const card=page.locator('.planned-activity-card',{hasText:'نشاط اختباري'});
+    await expect(card).toBeVisible();
     await page.reload();
     await sideNav(page,'حياتي');
-    await page.locator('details.legacy-tasks summary').click();
-    const again=page.locator('.task',{hasText:'نشاط اختباري'});
-    await expect(again).toBeVisible();
-    await again.getByRole('button',{name:'حذف نشاط اختباري'}).click();
-    await expect(page.locator('.task',{hasText:'نشاط اختباري'})).toHaveCount(0);
+    await expect(page.locator('.planned-activity-card',{hasText:'نشاط اختباري'})).toBeVisible();
+    await page.getByRole('button',{name:'حذف نشاط اختباري',exact:true}).click();
+    await expect(page.locator('.planned-activity-card',{hasText:'نشاط اختباري'})).toHaveCount(0);
+    await page.reload();
+    await sideNav(page,'حياتي');
+    await expect(page.locator('.planned-activity-card',{hasText:'نشاط اختباري'})).toHaveCount(0);
     expect(problems,problems.join('\n')).toEqual([]);
   });
 
@@ -204,7 +214,7 @@ test.describe('full-system audit',()=>{
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-theme','light');
     const toggle=page.getByRole('button',{name:/المظهر:/});
-    await toggle.click();
+    // المبدّل الجديد ثنائي: نهاري ⇄ ليلي.
     await expect(toggle).toHaveAttribute('data-appearance-mode','light');
     await toggle.click();
     await expect(toggle).toHaveAttribute('data-appearance-mode','dark');
@@ -216,13 +226,12 @@ test.describe('full-system audit',()=>{
     await page.waitForTimeout(1500);
     await shot(page,info,'dark-quran');
     await sideNav(page,'الإعدادات');
-    // settings view is lazy-loaded: wait for real content, not the loading fallback
     await expect(page.getByText('جاري تحميل الصفحة')).toBeHidden();
     await expect(page.getByText('الإعدادات والمنبهات')).toBeVisible();
     await shot(page,info,'dark-settings');
-    // restore system default
+    // استعادة النهاري
     await page.getByRole('button',{name:/المظهر:/}).click();
-    await expect(page.getByRole('button',{name:/المظهر:/})).toHaveAttribute('data-appearance-mode','system');
+    await expect(page.getByRole('button',{name:/المظهر:/})).toHaveAttribute('data-appearance-mode','light');
     expect(problems,problems.join('\n')).toEqual([]);
   });
 
