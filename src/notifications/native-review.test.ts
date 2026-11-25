@@ -71,7 +71,7 @@ describe('buildNativeReviewPayloads', () => {
     expect(out).toHaveLength(0);
   });
 
-  it('respects global kill-switch, DND, the reminder category and the in_app channel', () => {
+  it('respects global kill-switch, DND, the reminder category; a legacy in_app channel still schedules a device alarm', () => {
     const p = passage('2026-11-26');
     expect(buildNativeReviewPayloads([p], makePrefs({global_enabled: false}), NOW)).toHaveLength(0);
     expect(buildNativeReviewPayloads([p], makePrefs({dnd_enabled: true}), NOW)).toHaveLength(0);
@@ -80,7 +80,7 @@ describe('buildNativeReviewPayloads', () => {
     expect(buildNativeReviewPayloads([p], noCategory, NOW)).toHaveLength(0);
     const inApp = makePrefs();
     inApp.reminder_settings = {...inApp.reminder_settings, default_channel: 'in_app'};
-    expect(buildNativeReviewPayloads([p], inApp, NOW)).toHaveLength(0);
+    expect(buildNativeReviewPayloads([p], inApp, NOW)).not.toHaveLength(0);
   });
 
   it('does not schedule a review during quiet hours', () => {
