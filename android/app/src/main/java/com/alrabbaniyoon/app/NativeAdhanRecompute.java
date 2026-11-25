@@ -15,6 +15,12 @@ import java.util.TimeZone;
  * does nothing when the spec is absent, invalid, of another version or uses an unsupported method.
  * Runs after boot/time/timezone/package-replace and after each fired Adhan alarm.
  * Scope: main Adhan alarms only. Before/after reminders, tasks, review and custom reminders are not renewed here.
+ *
+ * Concurrency: reading the spec, planning and adding alarms happen inside one critical section on
+ * NativeAdhanStore.class, the same monitor used by scheduleAll/cancelAll/addMissingAlarms and by spec writes.
+ * cancelAllAndClearSpec() cancels the alarms and clears the spec in that same critical section, so a refresh can
+ * never read an old spec and re-add alarms after the user disabled or cancelled them. Alarm ids are deterministic and
+ * the PendingIntent is keyed by id, so an interrupted refresh is safe to repeat (re-arming replaces, never duplicates).
  */
 public final class NativeAdhanRecompute {
     private NativeAdhanRecompute() {}
@@ -23,13 +29,65 @@ public final class NativeAdhanRecompute {
     private static final String KEY_SPEC = "spec_json";
     private static final String KEY_STATE = "state_json";
 
+    /** Storage/arming seam so the decision logic can be unit tested without Android. */
+    public interface Backend {
+        String readSpec();
+        int addMissing(List<NativeAdhanPlanner.Planned> planned);
+        void writeState(String result, int added, String detail);
+    }
+
+    /** Pure decision logic. Never throws; returns the result code. Leaves existing alarms untouched on any problem. */
+    public static String refreshWith(Backend b, long nowMs, TimeZone tz, String reason) {
+        try {
+            String raw = b.readSpec();
+            if (raw == null || raw.isEmpty()) { b.writeState("no_spec", 0, reason); return "no_spec"; }
+            JSONObject spec;
+            try { spec = new JSONObject(raw); } catch (JSONException e) { b.writeState("invalid_spec", 0, "parse"); return "invalid_spec"; }
+            String problem = NativeAdhanPlanner.validate(spec);
+            if (problem != null) {
+                String code = "unsupported_method".equals(problem) ? "unsupported" : "invalid_spec";
+                b.writeState(code, 0, problem);
+                return code;
+            }
+            List<NativeAdhanPlanner.Planned> planned = NativeAdhanPlanner.plan(spec, nowMs, tz, 30);
+            if (planned == null) { b.writeState("failed", 0, "plan"); return "failed"; }
+            int added = b.addMissing(planned);
+            b.writeState("ok", added, reason);
+            return "ok";
+        } catch (Throwable t) {
+            try { b.writeState("failed", 0, t.getClass().getSimpleName()); } catch (Throwable ignored) {}
+            return "failed";
+        }
+    }
+
+    private static final class AndroidBackend implements Backend {
+        private final Context c;
+        AndroidBackend(Context c) { this.c = c; }
+        @Override public String readSpec() { return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_SPEC, null); }
+        @Override public int addMissing(List<NativeAdhanPlanner.Planned> planned) { return NativeAdhanStore.addMissingAlarms(c, planned); }
+        @Override public void writeState(String result, int added, String detail) { NativeAdhanRecompute.writeState(c, result, added, detail); }
+    }
+
     public static void saveSpec(Context c, String specJson) {
-        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_SPEC, specJson).apply();
+        synchronized (NativeAdhanStore.class) {
+            c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_SPEC, specJson).commit();
+        }
     }
 
     public static void clearSpec(Context c) {
-        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SPEC).apply();
-        writeState(c, "no_spec", 0, null);
+        synchronized (NativeAdhanStore.class) {
+            c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SPEC).commit();
+            writeState(c, "no_spec", 0, null);
+        }
+    }
+
+    /** Cancel every native Adhan alarm and drop the spec atomically (no refresh can interleave). */
+    public static int cancelAllAndClearSpec(Context c) {
+        synchronized (NativeAdhanStore.class) {
+            int cancelled = NativeAdhanStore.cancelAll(c);
+            clearSpec(c);
+            return cancelled;
+        }
     }
 
     public static String stateJson(Context c) {
@@ -48,27 +106,13 @@ public final class NativeAdhanRecompute {
         } catch (JSONException ignored) {}
     }
 
-    /** Never throws; existing alarms are left intact on any failure. Returns the result code. */
-    public static synchronized String refresh(Context c, String reason) {
+    /** Whole read-spec/plan/add sequence is one critical section. Never throws. */
+    public static String refresh(Context c, String reason) {
         try {
-            SharedPreferences sp = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-            String raw = sp.getString(KEY_SPEC, null);
-            if (raw == null || raw.isEmpty()) { writeState(c, "no_spec", 0, reason); return "no_spec"; }
-            JSONObject spec;
-            try { spec = new JSONObject(raw); } catch (JSONException e) { writeState(c, "invalid_spec", 0, "parse"); return "invalid_spec"; }
-            String problem = NativeAdhanPlanner.validate(spec);
-            if (problem != null) {
-                String code = "unsupported_method".equals(problem) ? "unsupported" : "invalid_spec";
-                writeState(c, code, 0, problem);
-                return code;
+            synchronized (NativeAdhanStore.class) {
+                return refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
             }
-            List<NativeAdhanPlanner.Planned> planned = NativeAdhanPlanner.plan(spec, System.currentTimeMillis(), TimeZone.getDefault(), 30);
-            if (planned == null) { writeState(c, "failed", 0, "plan"); return "failed"; }
-            int added = NativeAdhanStore.addMissingAlarms(c, planned);
-            writeState(c, "ok", added, reason);
-            return "ok";
         } catch (Throwable t) {
-            writeState(c, "failed", 0, t.getClass().getSimpleName());
             return "failed";
         }
     }
