@@ -10,5 +10,7 @@ public class DailyRefreshReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (context == null) return;
         NativeAdhanRecompute.refresh(context, "daily_keepalive");
+        NativeReminderQueue.promote(context);
+        NativeReminderQueue.refreshKeepAlive(context);
     }
 }
