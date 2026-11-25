@@ -156,7 +156,7 @@ public class NativeReminderQueueTest {
         NativeReminderQueue.onFire(ctx, 90, "t", "b", "al-rabbani-general");
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification n = shadowOf(nm).getActiveNotifications()[0].getNotification();
-        assertEquals(Notification.PRIORITY_DEFAULT, n.priority);
+        assertEquals(Notification.PRIORITY_HIGH, n.priority);
         assertEquals(Notification.VISIBILITY_PRIVATE, n.visibility);
         assertEquals("al-rabbani-general", n.getChannelId());
         assertTrue((n.flags & Notification.FLAG_AUTO_CANCEL) != 0);
@@ -165,5 +165,24 @@ public class NativeReminderQueueTest {
         assertEquals(NotificationManager.IMPORTANCE_DEFAULT, nm.getNotificationChannel("al-rabbani-general").getImportance());
         assertTrue(nm.getNotificationChannel("al-rabbani-general").shouldVibrate());
         assertEquals(NotificationManager.IMPORTANCE_LOW, nm.getNotificationChannel(NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID).getImportance());
+    }
+
+    @Test public void suspendReleasesSlotsButKeepsTheQueueAndPromoteRestoresThem() {
+        long now = System.currentTimeMillis();
+        NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 1, now + 2 * DAY, 2));
+        assertEquals(2, queued().size());
+        NativeReminderQueue.suspend(ctx);
+        assertEquals(0, queued().size());
+        assertTrue(NativeReminderQueue.hasItems(ctx));
+        assertEquals(2, NativeReminderQueue.promote(ctx));
+        assertEquals(2, queued().size());
+    }
+
+    @Test public void adhanRefreshReleasesAndThenRestoresTheQueue() {
+        long now = System.currentTimeMillis();
+        NativeReminderQueue.setQueue(ctx, "review", items(now + DAY, 1));
+        assertEquals(1, queued().size());
+        NativeAdhanRecompute.refresh(ctx, "test"); // no spec: nothing to add, queue must still end up armed
+        assertEquals(1, queued().size());
     }
 }
