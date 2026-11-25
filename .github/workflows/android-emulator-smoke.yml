@@ -1,0 +1,78 @@
+name: Android Emulator Smoke
+
+# Runs the debug APK on Android emulators of several API levels and screen profiles.
+# These are emulators on GitHub-hosted runners, not physical phones.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/android-emulator-smoke.yml'
+      - 'scripts/emulator-smoke.sh'
+
+concurrency:
+  group: android-emulator-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            target: default
+            profile: Nexus 5
+          - api: 28
+            target: google_apis
+            profile: pixel
+          - api: 30
+            target: google_apis
+            profile: pixel_5
+          - api: 34
+            target: google_apis
+            profile: pixel_6
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke test on emulator (API ${{ matrix.api }}, ${{ matrix.profile }})
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disable-animations: true
+          script: bash scripts/emulator-smoke.sh
