@@ -23,7 +23,7 @@ const sel=(i,v)=>p.evaluate(([i,v])=>{const el=[...document.querySelectorAll('.h
 await openQuran();await clickT('حفظ','.hf-choice');await clickT('بالصفحات','.hf-seg button');await sel(0,'603');await sel(1,'604');
 await clickT('موافق','.hf-ok');await p.waitForTimeout(1200);await skip();
 console.log('title',await p.evaluate(()=>document.querySelector('.hf-title')?.innerText));await shot('1-header');
-await clickT('الاستماع','.hf-step');
+await clickT('الاستماع','.hf-step');await p.waitForTimeout(400);await clickT('تشغيل','.hf-sheet .hf-ok');
 const pages=new Set(),hl=[];
 for(let i=0;i<90;i++){await p.waitForTimeout(500);pages.add(await p.evaluate(()=>document.querySelector('.qm-page-bar')?.innerText.replace(/\n/g,' ')));const st=await p.evaluate(()=>document.querySelector('.hf-status')?.innerText);if(/اكتمل/.test(st||'')){console.log('status',st);break}}
 const uniq=[...new Set(seq)];
