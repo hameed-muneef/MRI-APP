@@ -49,6 +49,16 @@ function mergePrefs(stored: unknown, fallback: NotificationPreference): Notifica
   for (const prayer of Object.keys(fallback.prayer_settings) as (keyof NotificationPreference['prayer_settings'])[]) {
     merged.prayer_settings[prayer]={...fallback.prayer_settings[prayer],...value.prayer_settings?.[prayer]};
   }
+  // لا يوجد خيار «داخل التطبيق فقط»: أي قيمة محفوظة قديمة تُرحَّل إلى «النظام + التطبيق» دون المساس بالتعطيل أو الصمت.
+  for (const prayer of Object.keys(merged.prayer_settings) as (keyof NotificationPreference['prayer_settings'])[]) {
+    const s = merged.prayer_settings[prayer];
+    if (s && (s.channel as string) === 'in_app') merged.prayer_settings[prayer] = {...s, channel: 'both'};
+  }
+  const rs = merged.reminder_settings;
+  if (rs) {
+    if ((rs.default_channel as string) === 'in_app') rs.default_channel = 'both';
+    if (rs.task_notifications && (rs.task_notifications.channel as string) === 'in_app') rs.task_notifications = {...rs.task_notifications, channel: 'both'};
+  }
   merged.global_enabled = value.global_enabled !== false;
   merged.dnd_enabled = value.dnd_enabled === true;
   return merged;
