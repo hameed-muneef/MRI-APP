@@ -255,6 +255,37 @@ public final class NativeAdhanStore {
         return restored;
     }
 
+    /**
+     * Adds alarms whose ids are not already scheduled, without cancelling or replacing any existing alarm.
+     * Returns how many were added. Serialized with scheduleAll/cancelAll so JS and native refreshes cannot interleave.
+     */
+    public static synchronized int addMissingAlarms(Context context, List<NativeAdhanPlanner.Planned> planned) {
+        if (planned == null || planned.isEmpty()) return 0;
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return 0;
+        ensurePlaybackServiceChannel(context);
+        List<AlarmSpec> existing = loadStored(context);
+        long nowMs = System.currentTimeMillis();
+        JSONArray kept = new JSONArray();
+        Set<Integer> ids = new HashSet<>();
+        for (AlarmSpec spec : existing) {
+            if (spec.triggerAtMs <= nowMs + 1000L) continue;
+            ids.add(spec.id);
+            try { kept.put(spec.toJson()); } catch (JSONException ignored) {}
+        }
+        boolean exactAllowed = canScheduleExact(context);
+        int added = 0;
+        for (NativeAdhanPlanner.Planned p : NativeAdhanPlanner.missing(planned, ids)) {
+            if (p.triggerAtMs <= nowMs + 1000L) continue;
+            AlarmSpec spec = new AlarmSpec(p.id, p.triggerAtMs, p.title, p.body, p.rawSound, p.soundTitle, p.adhanType, p.prayerKey);
+            ensureAdhanNotificationChannel(context, spec.rawSound, spec.soundTitle);
+            armAlarm(context, am, spec, exactAllowed);
+            try { kept.put(spec.toJson()); added++; } catch (JSONException ignored) {}
+        }
+        prefs(context).edit().putString(KEY_ALARMS_JSON, kept.toString()).apply();
+        return added;
+    }
+
     public static synchronized int cancelAll(Context context) {
         List<AlarmSpec> existing = loadStored(context);
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
