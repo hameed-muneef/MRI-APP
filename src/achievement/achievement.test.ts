@@ -1,7 +1,7 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {appendEntry, makeEntry, mergeLogs, ACHIEVEMENT_LOG_LIMIT} from './log';
 import {periodRange} from './dates';
-import {goalStats, planWindow, prayerStats, readingIn, toneOf, verseCoverage} from './selectors';
+import {goalStats, insufficientRecords, planWindow, prayerStats, readingIn, toneOf, verseCoverage} from './selectors';
 import {createEmptyMasteryState} from '../quran-mastery/storage';
 import {parseStoredState} from '../state-schema';
 import {exportLocalBackup, importLocalBackup} from '../local-backup';
@@ -115,5 +115,16 @@ describe('persistence boundaries', () => {
     store.clear();
     const restored = importLocalBackup(JSON.stringify(payload));
     expect(restored?.achievementLog).toEqual([e]);
+  });
+
+  it('days with no record make the verdict "insufficient records", never failure, unless the target is met', () => {
+    // الأربعاء 25: الاثنين مسجل جزئيًا، الثلاثاء بلا سجل، واليوم قيد الانتظار
+    const w = planWindow(root([{day: '2026-11-23', from: 1, to: 5}]), plan(), 'week', NOW);
+    expect(w.noRecord).toBe(1);
+    expect(insufficientRecords(w)).toBe(true);
+    const met = planWindow(root([{day: '2026-11-23', from: 1, to: 5}, {day: '2026-11-24', from: 6, to: 10}]), plan(), 'week', NOW);
+    expect(met.noRecord).toBe(0);
+    expect(insufficientRecords(met)).toBe(false);
+    expect(met.full).toBe(met.assigned);
   });
 });
