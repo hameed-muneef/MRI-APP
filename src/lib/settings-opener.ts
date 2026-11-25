@@ -47,6 +47,7 @@ interface SettingsOpenerPlugin {
   clearNativeRecomputeSpec(): Promise<void>;
   setNativeReminderQueue(opts: { kind: string; items: string }): Promise<{ armed: number }>;
   rebalanceNativeReminderQueue(): Promise<{ armed: number }>;
+  setNativeReminderRules(opts: { rules: string }): Promise<void>;
   clearNativeReminderQueue(): Promise<void>;
   getNativeRecomputeState(): Promise<NativeRecomputeState>;
   runNativeRecomputeNow(): Promise<{ result: string }>;
@@ -146,6 +147,17 @@ export async function setNativeReminderQueue(
   if (!isNative()) return false;
   try {
     await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(items) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Daily and weekly custom reminders the device keeps expanding after the app's planning window (see NativeReminderRules). An empty list removes them. */
+export async function setNativeReminderRules(rules: ReadonlyArray<object>): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    await SettingsOpener.setNativeReminderRules({ rules: JSON.stringify(rules) });
     return true;
   } catch {
     return false;
