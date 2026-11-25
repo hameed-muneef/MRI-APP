@@ -42,6 +42,9 @@ export default defineConfig({plugins:[react(),VitePWA({
     ],
   },
 })],
+  // Older Android System WebViews (Chrome 64+) must be able to parse the bundle: Vite's default target
+  // emits syntax such as ?? and ?. that WebView below 80 cannot parse, which shows a blank screen.
+  build: {target: ['chrome64', 'es2017']},
   server: {
     host: '0.0.0.0',
     port: 3000,
