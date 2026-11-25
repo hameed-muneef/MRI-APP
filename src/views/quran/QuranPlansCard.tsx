@@ -5,7 +5,6 @@ import {loadMasteryState, saveMasteryState} from '../../quran-mastery/storage';
 import MasteryPlanning from './MasteryPlanning';
 import QuranJourney from './QuranJourney';
 import {dashboard} from '../../quran-mastery/planning';
-import QuranProgress from './QuranProgress';
 import {referenceLabel, toArabicNumber} from '../../quran/content';
 import {PENDING_RANGE_KEY} from './HifzMushafMode';
 import type {JourneySection} from '../../quran/journey';
@@ -19,8 +18,8 @@ import {
 
 type Props = {asset: QuranAsset; state: QuranLearningState; onState: (next: QuranLearningState) => void; notify: (text: string) => void; onOpen: (section: JourneySection) => void; onOpenHifz: () => void};
 
-// بطاقة مستقلة: خطط القرآن والإنجاز (الخطة المتفق عليها، التقدم، الموضع الحالي).
-export default function QuranPlansCard({asset, state, onState, notify, onOpen, onOpenHifz}: Props) {
+// خطتي ومواضعي: الخطة المتفق عليها وموضعي الحالي وجلسات اليوم. الإنجاز والتقدم صارا في شاشة الإنجاز بالرئيسية.
+export default function QuranPlansCard({asset, state, notify, onOpen, onOpenHifz}: Props) {
   const [root, setRoot] = useState(() => loadMasteryState());
   const [bilQuranPlan, setBilQuranPlan] = useState(() => loadActiveBilQuranPlan());
   const rootRef = useRef(root);
@@ -72,7 +71,7 @@ export default function QuranPlansCard({asset, state, onState, notify, onOpen, o
   try { const raw = localStorage.getItem('rabbani-hifz-mushaf-v1'); if (raw) last = JSON.parse(raw); } catch { /* ignore */ }
   const metrics = dashboard(root);
   const hasRootData = metrics.started > 0;
-  return <section className="qm-workspace quran-plans-card" dir="rtl" aria-label="خطط القرآن والإنجاز">
+  return <section className="qm-workspace quran-plans-card" dir="rtl" aria-label="خطتي ومواضعي في الحفظ">
     {bilQuranPlan && bilQuranSpec && bilQuranStep ? <div className="qm-card">
       <h3>خطتي في مصحف الحفظ والإتقان: {bilQuranSpec.title}</h3>
       <p>{bilQuranSpec.durationLabel} · {bilQuranPlan.direction === 'nas' ? 'من الناس ← البقرة' : 'من البقرة ← الناس'} · اليوم {toArabicNumber(bilQuranStep.dayNumber)} من {toArabicNumber(bilQuranSteps.length)} ({toArabicNumber(bilQuranPlan.completedIndices.length)} مكتمل)</p>
@@ -92,6 +91,5 @@ export default function QuranPlansCard({asset, state, onState, notify, onOpen, o
       <div><dt>جلسات مكتملة اليوم</dt><dd>{toArabicNumber(metrics.completedToday)}</dd></div>
     </dl><p className="qm-muted">«بدأت حفظه» لا يعني الإتقان. الراسخ لا يُمنح إلا بتقييم ذاتي متتابع على مراجعات متباعدة.</p></section> : <QuranJourney asset={asset} state={state} onOpen={onOpen}/>}
     <div className="qm-card"><h3>خططي ومراجعات اليوم والتقدم</h3><MasteryPlanning asset={asset} root={root} commit={commit} open={open as never}/></div>
-    <QuranProgress asset={asset} state={state} onState={onState} notify={notify} rootMemorization={{memorizedVerses: metrics.started, masteredVerses: metrics.mastered}}/>
   </section>;
 }
