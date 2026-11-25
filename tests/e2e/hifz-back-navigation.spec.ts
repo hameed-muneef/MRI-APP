@@ -79,7 +79,10 @@ test.describe('hifz hardware back navigation', () => {
     await page.locator('button', {hasText: 'ابدأ التسميع'}).first().click();
     await expect(page.locator('.hf-screen').first()).toBeVisible({timeout: 15_000});
     // أول رجوع يغلق جلسة التسميع المفتوحة (تُحفظ كمتوقفة)، والثاني يغادر مصحف الحفظ إلى المهام.
-    if (await page.locator('.hf-reading').count()) { await back(page); await expect(page.locator('.hf-entry')).toBeVisible(); }
+    // الانتظار هنا إلزامي: الفحص الفوري كان يتخطى الرجوع الأول إن لم تكن طبقة القراءة قد ظهرت بعد.
+    await expect(page.locator('.hf-reading')).toBeVisible();
+    await back(page);
+    await expect(page.locator('.hf-entry')).toBeVisible();
     await back(page);
     await expect(page.locator('.hf-screen')).toHaveCount(0);
     await expect(page.getByText('مركز المهام').first()).toBeVisible();
