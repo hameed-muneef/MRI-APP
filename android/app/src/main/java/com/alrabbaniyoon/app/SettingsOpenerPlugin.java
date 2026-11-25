@@ -246,7 +246,7 @@ public class SettingsOpenerPlugin extends Plugin {
 
     @PluginMethod
     public void cancelNativeAdhanAlarms(PluginCall call) {
-        int cancelled = NativeAdhanStore.cancelAll(getContext());
+        int cancelled = NativeAdhanRecompute.cancelAllAndClearSpec(getContext());
         JSObject ret = new JSObject();
         ret.put("cancelled", cancelled);
         call.resolve(ret);
