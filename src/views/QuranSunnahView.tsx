@@ -1,7 +1,7 @@
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {useBackHandler} from '../navigation/useBackHandler';
 import {
-  BookOpen, Brain, Library, ScrollText, CalendarClock, TrendingUp,
+  BookOpen, Brain, Library, ScrollText, CalendarClock, 
   Flower2, BookType, Languages, Volume2
 } from 'lucide-react';
 import '../quran.css';
@@ -16,14 +16,13 @@ import QuranMemorization from './quran/QuranMemorization';
 import QuranRevision from './quran/QuranRevision';
 import HadithLibrary from './quran/HadithLibrary';
 import QuranRoutine from './quran/QuranRoutine';
-import QuranProgress from './quran/QuranProgress';
 import QuranJourney from './quran/QuranJourney';
 import HifzHome from './quran/HifzHome';
 import QuranPlansCard from './quran/QuranPlansCard';
 import AzkarLibrary from './AzkarLibrary';
 import {EmptyNote} from './quran/ui';
 
-export type QuranSection = 'mushaf' | 'tafsir' | 'translations' | 'reciters' | 'hifz' | 'plans' | 'revision' | 'bukhari' | 'muslim' | 'sunnah' | 'routine' | 'progress' | 'azkar';
+export type QuranSection = 'mushaf' | 'tafsir' | 'translations' | 'reciters' | 'hifz' | 'revision' | 'bukhari' | 'muslim' | 'sunnah' | 'routine' | 'azkar';
 
 type Props = {
   /** يرجع إلى الشاشة السابقة في التطبيق عندما لا يوجد قسم سابق داخل القرآن. */
@@ -45,12 +44,10 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
   {id: 'translations', title: 'مكتبة الترجمات', description: 'ترجمات معتمدة قابلة للتنزيل والقراءة دون اتصال، مع حفظ المصدر.', icon: Languages},
   {id: 'reciters', title: 'مكتبة القراء والتلاوات', description: 'تصفح ٢٤٠+ قارئًا مشهورًا بجميع الروايات، واستمع مباشرة عند الفتح أو نزّل السور للموبايل.', icon: Volume2},
   {id: 'hifz', title: 'مصحف الحفظ والإتقان', description: 'الحفظ والمراجعة والاسترجاع في رحلة واحدة، مع خطط وأدلة إتقان محفوظة على جهازك.', icon: Brain},
-  {id: 'plans', title: 'خطط القرآن والإنجاز', description: 'خطتك المتفق عليها، تقدمك، وموضعك الحالي.', icon: TrendingUp},
   {id: 'bukhari', title: 'صحيح البخاري', description: '', icon: Library},
   {id: 'muslim', title: 'صحيح مسلم', description: '', icon: Library},
   {id: 'sunnah', title: 'حفظ السنة', description: '', icon: ScrollText},
   {id: 'routine', title: 'وردي اليومي', description: 'جدولة القرآن والسنة داخل مهام اليوم نفسها.', icon: CalendarClock},
-  {id: 'progress', title: 'سجل الإنجاز', description: 'قراءة وحفظ وإتقان وانتظام وتأملات خاصة.', icon: TrendingUp},
   {id: 'azkar', title: 'أذكار', description: 'حصن المسلم — أذكار الصباح والمساء وسائر الأوقات، مع عداد تكرار وصوت.', icon: Flower2}
 ];
 
@@ -149,13 +146,11 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, taskSch
             }}
           />
         )}
-        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} onExit={() => { if (!goBackSection()) onBackToPrevious?.(); }} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
-        {section === 'plans' && <QuranPlansCard asset={asset} state={state} onState={onState} notify={notify} onOpen={handleSectionChange} onOpenHifz={() => handleSectionChange('hifz')}/>}
+        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} onExit={() => { if (!goBackSection()) onBackToPrevious?.(); }} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><QuranPlansCard asset={asset} state={state} onState={onState} notify={notify} onOpen={handleSectionChange} onOpenHifz={() => handleSectionChange('hifz')}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'muslim' && <HadithLibrary collectionKey="muslim" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'sunnah' && <HadithLibrary collectionKey="bukhari" mode="memorization" state={state} onState={onState} notify={notify}/>}
         {section === 'routine' && <QuranRoutine asset={asset} state={state} onState={onState} tasks={tasks} onTasks={onTasks} notify={notify} onOpenTasks={onOpenTasks}/>}
-        {section === 'progress' && <QuranProgress asset={asset} state={state} onState={onState} notify={notify}/>}
         {section === 'azkar' && <AzkarLibrary/>}
       </>}
 
