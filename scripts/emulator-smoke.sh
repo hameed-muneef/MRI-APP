@@ -62,6 +62,23 @@ echo "resumed: $resumed"
 case "$resumed" in *"$PKG"*) echo "ok: main activity is in the foreground" ;; *) echo "FAIL: main activity is not in the foreground"; fail=1 ;; esac
 
 adb logcat -d > /tmp/logcat.txt
+if [ -z "$pid" ]; then
+  # Diagnostic only: record what killed the app process. This never turns the failure into a pass.
+  echo "-- diagnostic: Google Play services / provider death context (the FAIL above stays a FAIL) --"
+  grep -nE "gms.persistent.*(has died|Killing|died)|Killing .*$PKG|depends on provider|FontsProvider|Process com.google.android.gms.* has died|lowmemorykiller|lmkd|Out of memory|oom_adj" /tmp/logcat.txt | head -30 | cut -c1-300
+  first=$(grep -nE "Process com.google.android.gms.persistent .* has died" /tmp/logcat.txt | head -1 | cut -d: -f1)
+  if [ -n "$first" ]; then
+    echo "-- 25 lines before the first gms.persistent death --"
+    sed -n "$((first>25?first-25:1)),$((first+3))p" /tmp/logcat.txt | cut -c1-300
+  else
+    echo "no gms.persistent death line found in logcat"
+  fi
+  echo "-- exit info for com.google.android.gms --"
+  adb shell dumpsys activity exit-info com.google.android.gms 2>&1 | head -30 | cut -c1-250
+  echo "-- device memory --"
+  adb shell cat /proc/meminfo | head -4
+  adb shell getprop ro.build.fingerprint | tr -d '\r'
+fi
 if grep -A8 "FATAL EXCEPTION" /tmp/logcat.txt | grep -q "$PKG"; then
   echo "FAIL: fatal exception in $PKG"; grep -A12 "FATAL EXCEPTION" /tmp/logcat.txt | head -40; fail=1
 else
