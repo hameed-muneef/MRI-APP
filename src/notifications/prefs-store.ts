@@ -54,6 +54,39 @@ function mergePrefs(stored: unknown, fallback: NotificationPreference): Notifica
   return merged;
 }
 
+const PRAYER_DEFAULTS_V2_KEY = 'rabbani-prayer-defaults-v2';
+
+/** مرة واحدة: كان الظهر والعصر افتراضيًا «داخل التطبيق فقط» فلا يصل لهما أذان والتطبيق مغلق.
+ * يُرقّى فقط الإعداد المطابق تمامًا للافتراضي القديم؛ أي تعديل آخر يُترك كما هو. */
+export function upgradeLegacyPrayerDefaults(prefs: NotificationPreference): {prefs: NotificationPreference; changed: boolean} {
+  let changed = false;
+  const prayer_settings = {...prefs.prayer_settings};
+  for (const name of ['الظهر', 'العصر'] as const) {
+    const cur = prayer_settings[name];
+    if (cur && cur.channel === 'in_app' && cur.enabled === true && cur.adhan_type === 'short'
+      && !cur.sound_id && !cur.remind_before_minutes && !cur.remind_after_minutes && !cur.adjust_minutes) {
+      prayer_settings[name] = {...cur, channel: 'both'};
+      changed = true;
+    }
+  }
+  return {prefs: changed ? {...prefs, prayer_settings} : prefs, changed};
+}
+
+function applyPrayerDefaultsOnce(prefs: NotificationPreference): NotificationPreference {
+  const store = storage();
+  if (!store) return prefs;
+  try {
+    if (store.getItem(PRAYER_DEFAULTS_V2_KEY)) return prefs;
+    store.setItem(PRAYER_DEFAULTS_V2_KEY, '1');
+  } catch { return prefs; }
+  const {prefs: next, changed} = upgradeLegacyPrayerDefaults(prefs);
+  if (changed) {
+    try { store.setItem(PREFS_CACHE, JSON.stringify(next)); } catch {/* ignore */}
+    void savePrefs(next);
+  }
+  return next;
+}
+
 function loadLocalPrefs(): NotificationPreference {
   try {
     const raw = storage()?.getItem(PREFS_CACHE);
@@ -116,13 +149,13 @@ export async function loadPrefs(): Promise<{prefs: NotificationPreference; sourc
     try {
       const {data, error} = await authClient.rpc('get_notification_preferences');
       if (!error && data) {
-        const prefs = mergePrefs(typeof data === 'string' ? JSON.parse(data) : data, loadLocalPrefs());
+        const prefs = applyPrayerDefaultsOnce(mergePrefs(typeof data === 'string' ? JSON.parse(data) : data, loadLocalPrefs()));
         try {storage()?.setItem(PREFS_CACHE, JSON.stringify(prefs))} catch {}
         return {prefs, source: 'cloud'};
       }
     } catch {/* الوقوع في الاحتياطي */}
   }
-  return {prefs: loadLocalPrefs(), source: 'local'};
+  return {prefs: applyPrayerDefaultsOnce(loadLocalPrefs()), source: 'local'};
 }
 
 /** يحفظ التفضيلات: محليًا دائمًا، وفي السحابة إن توفّرت (نصيحة المستخدم تنتظر النتيجة فقط للحالة السحابية) */
