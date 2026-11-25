@@ -248,7 +248,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
               value={taskSettings.channel}
               onChange={event => updateTaskSettings({channel: event.target.value as NotificationChannel})}
             >
-              {(['both', 'system', 'in_app'] as NotificationChannel[]).map(key => (
+              {(['both', 'system'] as NotificationChannel[]).map(key => (
                 <option key={key} value={key}>{channelLabel(key)}</option>
               ))}
             </select>
