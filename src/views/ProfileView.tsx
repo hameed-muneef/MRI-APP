@@ -131,7 +131,6 @@ export default function ProfileView({user,notify,onProfileSaved}:Props){
 
     <section className="panel" aria-labelledby="account-title">
       <div className="panel-head"><ShieldCheck size={20}/><h2 id="account-title">الحساب والأمان</h2></div>
-      <p className="muted small">الحساب في المنصة مجاني ولا يشمل أي اشتراك مدفوع. بياناتك في الجداول ملكك وحدك، ويطّلع عليها الإداري عند مراجعة بلاغ متعلق بك فقط.</p>
       <div className="course-actions">
         <button className="soft-btn" onClick={()=>void signOut()}><LogOut size={17}/> تسجيل الخروج</button>
         <button className="soft-btn" onClick={()=>setConfirmDelete(!confirmDelete)}><Trash2 size={17}/> حذف الحساب</button>

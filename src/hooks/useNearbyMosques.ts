@@ -46,6 +46,8 @@ export interface ActiveCoords {
 }
 
 export const RADIUS_OPTIONS = [500, 1000, 3000, 5000] as const;
+export const MAX_RADIUS_METERS = 40000;
+export const MIN_RADIUS_METERS = 100;
 export const DEFAULT_RADIUS_METERS = 1000;
 export const DEFAULT_RESULTS_LIMIT = 30;
 /** Minimum movement in meters before re-running grid search for the same radius & country. */
@@ -67,7 +69,11 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [coords, setCoords] = useState<ActiveCoords | null>(null);
   const [countryOverride, setCountryOverride] = useState<string>('');
-  const [radiusMeters, setRadiusMeters] = useState<number>(DEFAULT_RADIUS_METERS);
+  const [radiusMeters, setRadiusRaw] = useState<number>(DEFAULT_RADIUS_METERS);
+  const setRadiusMeters = useCallback((value: number) => {
+    if (!Number.isFinite(value)) return;
+    setRadiusRaw(Math.round(Math.min(MAX_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, value))));
+  }, []);
   const [travelMode, setTravelMode] = useState<TravelMode>('walking');
 
   const [meta, setMeta] = useState<MosqueMeta | null>(null);
@@ -117,7 +123,8 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
     setGeoError(null);
     void (async () => {
       // طلب GPS صريح من المستخدم عبر المخزن المركزي (مُدمَج مع بقية الأجزاء).
-      const { refreshDeviceLocation } = await import('../lib/location-store');
+      const { refreshDeviceLocation, clearManualLocation } = await import('../lib/location-store');
+      clearManualLocation();
       const res = await refreshDeviceLocation({ timeout: 15000, maximumAge: 0 });
       if (!mountedRef.current) return;
       if (res.ok) {
@@ -162,7 +169,15 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { syncCentralLocationPermission } = await import('../lib/location-store');
+      const { syncCentralLocationPermission, getCentralLocationState } = await import('../lib/location-store');
+      // المدينة اليدوية المشتركة (من المواقيت أو القبلة) لها الأولوية على GPS.
+      const shared = getCentralLocationState().manual;
+      if (shared) {
+        lastQueryRef.current = null;
+        setCoords({ latitude: shared.latitude, longitude: shared.longitude, source: 'manual', label: shared.label });
+        setStage('ready');
+        return;
+      }
       const p = await syncCentralLocationPermission();
       if (cancelled) return;
       if (p === 'granted') {
@@ -239,6 +254,7 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
         label,
       });
       setStage('ready');
+      void import('../lib/location-store').then((m) => m.setManualLocation(lat, lng, label));
     },
     [],
   );
@@ -262,12 +278,7 @@ export function useNearbyMosques(options: UseNearbyMosquesOptions = {}) {
   }, [coords, countryOverride, radiusMeters, requestGps, runSearch]);
 
   const widenRadius = useCallback(() => {
-    const idx = RADIUS_OPTIONS.indexOf(radiusMeters as (typeof RADIUS_OPTIONS)[number]);
-    if (idx >= 0 && idx < RADIUS_OPTIONS.length - 1) {
-      setRadiusMeters(RADIUS_OPTIONS[idx + 1]);
-    } else if (radiusMeters < 5000) {
-      setRadiusMeters(5000);
-    }
+    setRadiusMeters(Math.min(MAX_RADIUS_METERS, Math.max(radiusMeters * 2, radiusMeters + 500)));
   }, [radiusMeters]);
 
   const countriesList = useMemo(

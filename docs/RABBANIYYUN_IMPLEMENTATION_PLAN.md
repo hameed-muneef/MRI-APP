@@ -95,3 +95,9 @@
 - Draft PR9 stacks on Phase4, with approved external-reference interim, offline pack management and native reminder reconciliation. No merge/release.
 - Fetched review code86c36c7:257 unit,173 Node,82 browser cases in bounded batches plus4 theme/viewport checks; TypeScript, production build, source checksum and unsigned Android compile pass. Real-source downloaded first-ayah playback passed after production cold offline reload.
 - Embedded authorized reviewed Tajweed lessons/exercises remain incomplete. Physical Android microphone/call/background/audio/notifications, actual screen reader and user content/release review remain open. Full matrix in QURAN_MASTERY_PHASE7.md.
+
+### BILQURAN-HIFZ-PLANS — خطط الحفظ والمراجعة (منهج بالقرآن نحيا) داخل مصحف الحفظ والإتقان (2026-11-24)
+- **الميزة**: إضافة مسارات وخطط منهج «بالقرآن نحيا» الثلاثة (`للمبتدئين`: ١٠/١٤/٢٦/٤٨ شهرًا، و`من البقرة`: ٥ إلى ٢٧ شهرًا، و`من الناس`: ٦/١٠/١٩ شهرًا) مباشرة داخل `مصحف الحفظ والإتقان` مع إمكانية اختيار أي خطة ومن أي اتجاه (`من البقرة ← الناس` أو `من الناس ← البقرة`)، ومعاينة الجدول اليومي الكامل، وتتبع التقدم التلقائي ومراجعة ربط الأسبوع.
+- **الملفات**: `src/quran-mastery/bilquran-plans.ts`, `src/views/quran/BilQuranPlansBrowser.tsx`, `src/views/quran/HifzMushafMode.tsx`, `src/views/quran/QuranPlansCard.tsx`, `src/home-cards.css`, `src/quran-mastery/bilquran-plans.test.tsx`.
+- **التحقق**: `npm run test:unit` (42 ملف / 313 اختبارًا ناجحًا)، `npm run quran:check` ناجح، `tsc --noEmit` ناجح، و`vite build` ناجح.
+

@@ -180,6 +180,116 @@ export function connectionWithPrevious(current: VerseRange, previous?: VerseRang
   return {surah: current.surah, ayahStart: previous.ayahStart, ayahEnd: current.ayahEnd};
 }
 
+export type CumulativePlayStep<T extends {s: number; a: number} = {s: number; a: number}> = {
+  verse: T;
+  /** 'solo' أثناء تكرار الآية الجديدة وحدها، و'link' أثناء ربطها بما قبلها من أول المقطع. */
+  phase: 'solo' | 'link';
+  /** فهرس الآية المستهدفة (0-based) التي يتم تثبيتها ثم ربطها بما قبلها. */
+  targetIndex: number;
+  /** رقم التكرار الحالي (1-based) داخل مرحلة التكرار أو جولة الربط. */
+  repeatIndex: number;
+  /** إجمالي مرات التكرار المحددة لهذه المرحلة. */
+  repeatTotal: number;
+  /** رقم بداية ونهاية آيات الربط التراكمي الحالية. */
+  linkFromAyah: number;
+  linkToAyah: number;
+};
+
+/**
+ * تسلسل الربط التراكمي في مصحف الحفظ والإتقان:
+ * - الآية ١ تُكرَّر بمفردها `ayahRepeat` مرة (لا آيات قبلها).
+ * - كل آية جديدة `i >= 2` تُكرَّر بمفردها `ayahRepeat` مرة، ثم يُربَط المقطع من الآية الأولى حتى الآية `i`
+ *   بعدد `linkRepeat` (افتراضيًا ١): (١..i).
+ * مثال مع ayahRepeat = 2 لآيات ١–٤:
+ * ١، ١ ← ٢، ٢ ← (١، ٢) ← ٣، ٣ ← (١، ٢، ٣) ← ٤، ٤ ← (١، ٢، ٣، ٤)
+ */
+export function buildCumulativeLinkSequence<T extends {s: number; a: number}>(
+  verses: readonly T[],
+  ayahRepeat: number,
+  linkRepeat = 1,
+): CumulativePlayStep<T>[] {
+  if (!verses.length) return [];
+  const soloCount = Math.max(1, Math.min(100, Math.round(ayahRepeat) || 1));
+  const linkCount = Math.max(1, Math.min(50, Math.round(linkRepeat) || 1));
+  const steps: CumulativePlayStep<T>[] = [];
+  for (let i = 0; i < verses.length; i += 1) {
+    const target = verses[i];
+    const fromAyah = verses[0].a;
+    const toAyah = target.a;
+    for (let r = 1; r <= soloCount; r += 1) {
+      steps.push({
+        verse: target,
+        phase: 'solo',
+        targetIndex: i,
+        repeatIndex: r,
+        repeatTotal: soloCount,
+        linkFromAyah: fromAyah,
+        linkToAyah: toAyah,
+      });
+    }
+    if (i > 0) {
+      for (let lr = 1; lr <= linkCount; lr += 1) {
+        for (let j = 0; j <= i; j += 1) {
+          steps.push({
+            verse: verses[j],
+            phase: 'link',
+            targetIndex: i,
+            repeatIndex: lr,
+            repeatTotal: linkCount,
+            linkFromAyah: fromAyah,
+            linkToAyah: toAyah,
+          });
+        }
+      }
+    }
+  }
+  return steps;
+}
+
+/** تجميع خطوات الربط التراكمي حسب كل آية مستهدفة (مجموعة لكل آية وما يلحقها من ربط). */
+export function groupCumulativeLinkSteps<T extends {s: number; a: number}>(
+  verses: readonly T[],
+  ayahRepeat: number,
+  linkRepeat = 1,
+): CumulativePlayStep<T>[][] {
+  const all = buildCumulativeLinkSequence(verses, ayahRepeat, linkRepeat);
+  if (!all.length) return [];
+  const groups: CumulativePlayStep<T>[][] = [];
+  for (const step of all) {
+    let bucket = groups[step.targetIndex];
+    if (!bucket) {
+      bucket = [];
+      groups[step.targetIndex] = bucket;
+    }
+    bucket.push(step);
+  }
+  return groups.filter(Boolean);
+}
+
+/** نص توضيحي مختصر لتسلسل الربط التراكمي لعرضه في إعدادات القارئ والتكرار. */
+export function formatCumulativePreview(
+  ayahNumbers: readonly number[],
+  ayahRepeat: number,
+  formatNum: (n: number) => string = String,
+): string {
+  if (!ayahNumbers.length) return '';
+  const soloCount = Math.max(1, Math.min(100, Math.round(ayahRepeat) || 1));
+  const shown = ayahNumbers.slice(0, 3);
+  const parts: string[] = [];
+  shown.forEach((ayah, idx) => {
+    const label = formatNum(ayah);
+    const soloRuns = Array.from({length: Math.min(soloCount, 3)}, () => label).join('، ');
+    const soloText = soloCount > 3 ? `${label} (×${formatNum(soloCount)})` : soloRuns;
+    parts.push(soloText);
+    if (idx > 0) {
+      const chain = ayahNumbers.slice(0, idx + 1).map(formatNum).join('–');
+      parts.push(`ربط (${chain})`);
+    }
+  });
+  if (ayahNumbers.length > 3) parts.push('…');
+  return `التسلسل: ${parts.join(' ← ')}`;
+}
+
 // ============ محاولات الاسترجاع ============
 
 export function createRecallAttempt(args: {

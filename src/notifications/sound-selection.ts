@@ -4,8 +4,20 @@ import type {AudioResource, NotificationPreference} from './types';
 import type {PrayerEvent} from './prayer-planner';
 
 let customAlarmUrl: string | undefined;
+const customSoundUrls = new Map<string, string>();
 export function setCustomAlarmUrl(url: string | undefined) { customAlarmUrl = url; }
 export function getCustomAlarmUrl() { return customAlarmUrl; }
+export function setCustomSoundUrl(id: string, url: string | undefined) {
+  if (!id) return;
+  if (url) customSoundUrls.set(id, url);
+  else customSoundUrls.delete(id);
+}
+export function getCustomSoundUrl(id: string): string | undefined {
+  return customSoundUrls.get(id);
+}
+export function clearCustomSoundUrls(): void {
+  customSoundUrls.clear();
+}
 
 export const SILENT_SOUND = 'builtin:silent';
 const DEFAULT_AT_SOUND = 'builtin:chime';
@@ -33,6 +45,12 @@ const BUNDLED_ADHAN_URLS: Record<string, string> = {
   'adhan_hamad': '/sounds/adhan/adhan_hamad.ogg',
 };
 
+const BUNDLED_TAKBEER_URLS: Record<string, string> = {
+  'eid': '/sounds/adhan/takbeerat_eid.ogg',
+  'takbeer:eid': '/sounds/adhan/takbeerat_eid.ogg',
+  'takbeerat_eid': '/sounds/adhan/takbeerat_eid.ogg',
+};
+
 export type SoundPlan =
   | {mode: 'none'}
   | {mode: 'tone'; id: string}
@@ -47,8 +65,15 @@ export function planSound(soundId: string | undefined, library: readonly Pick<Au
     if (url) return {mode: 'file', id, url};
     return {mode: 'tone', id: fallbackTone};
   }
+  const localCustomUrl = customSoundUrls.get(id);
+  if (localCustomUrl) {
+    return {mode: 'file', id, url: localCustomUrl};
+  }
   if (id in BUNDLED_ADHAN_URLS) {
     return {mode: 'file', id, url: BUNDLED_ADHAN_URLS[id]};
+  }
+  if (id in BUNDLED_TAKBEER_URLS) {
+    return {mode: 'file', id, url: BUNDLED_TAKBEER_URLS[id]};
   }
   if (id.startsWith('builtin:')) return {mode: 'tone', id};
   const found = library.find(item => item.id === id);

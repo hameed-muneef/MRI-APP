@@ -1,0 +1,24 @@
+import { chromium } from 'playwright';
+import { createServer } from 'node:http';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { join, extname } from 'node:path';
+const MIME = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2','.ttf':'font/ttf'};
+const srv = createServer((req,res)=>{ let f = join('dist', decodeURIComponent(new URL(req.url,'http://x').pathname)); if (!existsSync(f)||statSync(f).isDirectory()) f = join('dist','index.html'); try { res.writeHead(200,{'content-type':MIME[extname(f)]||'application/octet-stream'}); res.end(readFileSync(f)); } catch { res.writeHead(404); res.end(); } });
+await new Promise(r=>srv.listen(4184,r));
+const MODE=process.env.MODE||'grant';
+const b = await chromium.launch({ channel:'chrome', args:['--no-sandbox'] });
+const ctx = await b.newContext({ viewport:{width:390,height:844}, geolocation:{latitude:30.04,longitude:31.23}, permissions: MODE!=='deny'?['geolocation']:[] });
+if(MODE!=='live')await ctx.route(/aladhan|nominatim|overpass|openstreetmap|bigdatacloud|ipapi|ipwho|ip-api/, r=>r.fulfill({status:MODE==='offline'?500:200,contentType:'application/json',body:'{}'}));
+await ctx.addInitScript(()=>{window.__geo=0;const g=navigator.geolocation;if(g){const o=g.getCurrentPosition.bind(g);g.getCurrentPosition=(...a)=>{window.__geo++;(window.__stk=window.__stk||[]).push(Date.now()%100000+' '+(new Error().stack.split('\n').slice(2,6).map(x=>x.trim().replace(/https?:\/\/[^/]+/,'')).join(' <- ')));return o(...a)};const w=g.watchPosition.bind(g);g.watchPosition=(...a)=>{window.__geo++;return w(...a)};}});
+const p = await ctx.newPage();
+const errs=[];p.on('pageerror',e=>errs.push(e.message.slice(0,100)));
+await p.goto('http://127.0.0.1:4184/',{waitUntil:'networkidle'});await p.waitForTimeout(2500);
+const geo=async n=>console.log(MODE,n,'geoCalls',await p.evaluate(()=>window.__geo));
+await geo('startup');if(MODE==='offline')await ctx.setOffline(true);
+const nav=async i=>{await p.evaluate(i=>{[...document.querySelectorAll('.mobile-nav button,.mobile-nav a')][i]?.click()},i);await p.waitForTimeout(2000)};
+const txt=async()=>(await p.evaluate(()=>document.querySelector('main,#root')?.innerText||'')).replace(/\s+/g,' ').slice(0,260);
+for(const [i,n] of [[0,'home'],[3,'qibla'],[4,'mosques'],[5,'haramain']]){await nav(i);await geo(n);console.log('  text:',await txt());await p.screenshot({path:`/tmp/shots/loc-${MODE}-${n}.png`});}
+await nav(4);await nav(0);await p.waitForTimeout(2500);console.log('HOME after mosques:',(await p.evaluate(()=>[...document.querySelectorAll('.home-prayer, [class*=prayer]')].map(e=>e.innerText).join(' / '))).replace(/\s+/g,' ').slice(0,300));await geo('final');await p.screenshot({path:`/tmp/shots/loc-${MODE}-home2.png`});
+console.log('STACKS',JSON.stringify(await p.evaluate(()=>window.__stk)));
+console.log('pageerrors',errs.length,errs.join('|'));
+await b.close();srv.close();

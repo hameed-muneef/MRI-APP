@@ -99,7 +99,7 @@ export function InstallAppButton(): JSX.Element | null {
 }
 
 // لوحة الإعدادات: تشرح التثبيت على كل منصة
-export function InstallGuidePanel(): JSX.Element {
+export function InstallGuidePanel(): JSX.Element | null {
   const {promptEvent, ios, installed, setPromptEvent} = useInstallCapability();
   const [done, setDone] = useState(false);
   if (installed || done) {
@@ -109,6 +109,9 @@ export function InstallGuidePanel(): JSX.Element {
         <p className="muted">التطبيق مثبَّت على هذا الجهاز ويعمل بملء الشاشة مثل باقي التطبيقات.</p>
       </section>
     );
+  }
+  if (!ios && !promptEvent) {
+    return null;
   }
   const install = async () => {
     if (!promptEvent) return;
@@ -124,16 +127,11 @@ export function InstallGuidePanel(): JSX.Element {
           على الآيفون/الآيباد: افتح هذا الموقع في Safari ثم اضغط زر <strong>مشاركة</strong> (المربع والسهم) واختر
           <strong> «إضافة إلى الشاشة الرئيسية»</strong>.
         </p>
-      ) : promptEvent ? (
+      ) : (
         <>
           <p className="muted">ثبّت المنصة على جهازك لتفتح بملء الشاشة وتعمل حتى دون اتصال.</p>
           <button className="primary" onClick={install}><Download size={17}/> تثبيت التطبيق</button>
         </>
-      ) : (
-        <p className="muted">
-          من متصفح Chrome: افتح قائمة النقاط الثلاث (⋮) واختر <strong>«تثبيت التطبيق»</strong> أو
-          <strong> «إضافة إلى الشاشة الرئيسية»</strong>.
-        </p>
       )}
     </section>
   );

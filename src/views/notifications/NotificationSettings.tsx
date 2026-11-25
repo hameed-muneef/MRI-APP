@@ -1,32 +1,20 @@
 // بوابة أقسام التنبيهات: تصدير موجّهات التنقل الداخلي وعرض حالة الإذن وأقسام التنبيهات.
 
 import {useEffect, useRef, useState} from 'react';
-import {AlarmClock, Bell, BellRing, CheckCircle2, Clock3, MoonStar, Volume2} from 'lucide-react';
-import {ensureSystemNotificationPermission, getBrowserPermission, isBrowserNotificationSupported, requestBrowserPermission} from '../../notifications/delivery';
-import {checkPermissions as checkNativePermissions} from '../../notifications/native-prayer-scheduler';
+import {AlarmClock, Bell, BellRing, CheckCircle2, Clock3, MoonStar} from 'lucide-react';
+import {ensureSystemNotificationPermission} from '../../notifications/delivery';
+import {checkPermissions as checkNativePermissions, isNativePlatform} from '../../notifications/native-prayer-scheduler';
 import {openAppSettings} from '../../lib/settings-opener';
 import type {TaskScheduleContext} from '../../notifications/task-planner';
 import GeneralNotifications from './GeneralNotifications';
 import PrayerNotifications from './PrayerNotifications';
 import RemindersPanel from './RemindersPanel';
-import SoundPanel from './SoundPanel';
 import TaskNotificationsPanel from './TaskNotificationsPanel';
 import type {PrayerLocation} from '../../prayer-location';
-import {isNativePlatform} from '../../notifications/native-prayer-scheduler';
-
-const PERMISSION_TEXT: Record<string, string> = {
-  granted: 'مسموح: ستصلك تنبيهات الجهاز ما دام التطبيق أو المتصفح يعمل.',
-  denied: 'محظور من المتصفح: لتصلك الإشعارات خارج التطبيق، فعّل الإذن من إعدادات الموقع ثم أعد التحميل.',
-  default: 'لم يُمنح إذن الإشعارات بعد. اضغط الزر أدناه لتفعيل تنبيهات الجهاز.',
-};
 
 export function PermissionStatus() {
   const nativeApp = isNativePlatform();
-  const [permission, setPermission] = useState<NotificationPermission | null>(() => getBrowserPermission());
   const [nativeDisplay, setNativeDisplay] = useState<string>('prompt');
-  useEffect(() => {
-    setPermission(getBrowserPermission());
-  }, []);
   useEffect(() => {
     if (!nativeApp) return;
     let active = true;
@@ -38,65 +26,37 @@ export function PermissionStatus() {
     };
   }, [nativeApp]);
 
-  if (nativeApp) {
-    if (nativeDisplay === 'granted') {
-      return (
-        <div className="task-push-permission-bar perm-granted">
-          <div>
-            <strong>تنبيهات النظام:</strong>{' '}
-            <span>الإشعارات والمنبهات تعمل مباشرة عبر نظام الهاتف، حتى والتطبيق مغلق.</span>
-          </div>
-          <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
-        </div>
-      );
-    }
+  if (!nativeApp) {
+    return null;
+  }
+
+  if (nativeDisplay === 'granted') {
     return (
-      <div className="task-push-permission-bar perm-denied">
+      <div className="task-push-permission-bar perm-granted">
         <div>
           <strong>تنبيهات النظام:</strong>{' '}
-          <span role="status">إذن الإشعارات غير مفعّل على الهاتف؛ لن تصل المنبهات والتذكيرات والتطبيق مغلق حتى تفعيله.</span>
+          <span>الإشعارات والمنبهات تعمل مباشرة عبر نظام الهاتف، حتى والتطبيق مغلق.</span>
         </div>
-        <button
-          type="button"
-          className="primary"
-          onClick={() => void ensureSystemNotificationPermission().then((result) => {
-            setNativeDisplay(result);
-            if (result !== 'granted') void openAppSettings();
-          })}
-        >
-          <BellRing size={15}/> تفعيل إشعارات الهاتف
-        </button>
-      </div>
-    );
-  }
-  if (!isBrowserNotificationSupported()) {
-    return (
-      <div className="task-push-permission-bar">
-        <div>
-          <strong>حالة الإشعارات:</strong>{' '}
-          <span>هذا المتصفح لا يدعم إشعارات النظام؛ ستظهر التنبيهات داخل التطبيق أثناء فتحه.</span>
-        </div>
+        <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
       </div>
     );
   }
   return (
-    <div className={`task-push-permission-bar perm-${permission ?? 'default'}`}>
+    <div className="task-push-permission-bar perm-denied">
       <div>
-        <strong>إذن تنبيهات المتصفح:</strong>{' '}
-        <span role="status">{PERMISSION_TEXT[permission ?? 'default']}</span>
+        <strong>تنبيهات النظام:</strong>{' '}
+        <span role="status">إذن الإشعارات غير مفعّل على الهاتف؛ لن تصل المنبهات والتذكيرات والتطبيق مغلق حتى تفعيله.</span>
       </div>
-      {permission !== 'granted' && permission !== 'denied' && (
-        <button
-          type="button"
-          className="primary"
-          onClick={() => void requestBrowserPermission().then(setPermission)}
-        >
-          <BellRing size={15}/> تفعيل الإشعارات
-        </button>
-      )}
-      {permission === 'granted' && (
-        <span className="task-push-ok"><CheckCircle2 size={15}/> الإذن ممنوح</span>
-      )}
+      <button
+        type="button"
+        className="primary"
+        onClick={() => void ensureSystemNotificationPermission().then((result) => {
+          setNativeDisplay(result);
+          if (result !== 'granted') void openAppSettings();
+        })}
+      >
+        <BellRing size={15}/> تفعيل إشعارات الهاتف
+      </button>
     </div>
   );
 }
@@ -220,10 +180,6 @@ export default function NotificationSettings({
           <h3><MoonStar size={18}/> الإعدادات العامة وساعات الهدوء</h3>
           <PermissionStatus/>
           <GeneralNotifications notify={notify}/>
-        </section>
-        <section className="panel notif-settings" aria-label="مكتبة الأصوات والنغمات">
-          <h3><Volume2 size={18}/> مكتبة النغمات والأصوات</h3>
-          <SoundPanel notify={notify}/>
         </section>
       </div>
     );

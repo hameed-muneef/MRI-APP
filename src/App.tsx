@@ -31,6 +31,7 @@ import {mergeQuranState,logRoutineCompletion,syncRoutineTasks} from './quran/lea
 import {fetchQuranLearningState,saveQuranLearningState} from './quran/sync';
 import type {User} from '@supabase/supabase-js';
 import {changeWirdCount, normalizeWirds} from './wird-periods';
+import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
@@ -137,9 +138,24 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const pendingKey=`${storageKey}-pending`;
   const saveQueue=useRef<Promise<void>>(Promise.resolve());
   const saveRevision=useRef(0);
+  // المدينة المركزية اليدوية هي المرجع: إذا تغيّرت (من المساجد/القبلة) أو أُلغيت (العودة إلى GPS)
+  // لا يبقى prayerLocation قديمًا يعارضها. التغيير من منتقي المواقيت نفسه يطابق الإحداثيات فلا يُمسح.
+  useEffect(()=>{
+    let prev=getCentralLocationState().manual;
+    return subscribeCentralLocation(next=>{
+      const m=next.manual,old=prev;prev=m;
+      if(JSON.stringify(m)===JSON.stringify(old))return;
+      setState(cur=>{
+        const pl=cur.prayerLocation;
+        if(!pl)return cur;
+        const same=m&&Math.abs(pl.latitude-m.latitude)<0.005&&Math.abs(pl.longitude-m.longitude)<0.005;
+        return same?cur:{...cur,prayerLocation:undefined};
+      });
+    });
+  },[]);
   useEffect(()=>{try{localStorage.setItem(storageKey,JSON.stringify(state))}catch{setToast('تعذر حفظ البيانات على هذا الجهاز. صدّر بياناتك قبل إغلاق الصفحة.')}},[state,storageKey]);
-  // Preload custom alarm tone (if any) so notifications can use it.
-  useEffect(()=>{void (async()=>{try{const {loadCustomSound,customSoundUrl}=await import('./sounds/custom-store');const {setCustomAlarmUrl}=await import('./notifications/sound-selection');const rec=await loadCustomSound('alarm');if(rec)setCustomAlarmUrl(customSoundUrl(rec));}catch{/* ignore */}})()},[]);
+  // Preload custom alarm & library sounds (if any) so notifications can use them.
+  useEffect(()=>{void (async()=>{try{const {listAllCustomSounds,customSoundUrl}=await import('./sounds/custom-store');const {setCustomAlarmUrl,setCustomSoundUrl}=await import('./notifications/sound-selection');const all=await listAllCustomSounds();for(const rec of all){const url=customSoundUrl(rec);if(rec.slot==='alarm')setCustomAlarmUrl(url);setCustomSoundUrl(rec.slot,url);}}catch{/* ignore */}})()},[]);
   useEffect(()=>{
     if(!user)return;
     let active=true;
@@ -326,10 +342,10 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     };
   }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
 
-  // الأذونات المركزية عند الإقلاع (تطبيق الهاتف فقط): طلب واحد لإذن الإشعارات
-  // حتى تصل المنبهات والتطبيق مغلق، وطلب واحد للموقع تشترك فيه المواقيت والقبلة
-  // والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا يُعاد السؤال تلقائيًا.
-  // على الويب يبقى طلب الأذونات مرتبطًا بأزرار صريحة داخل الشاشات.
+  // الأذونات المركزية عند الإقلاع: على الهاتف طلب واحد لإذن الإشعارات حتى تصل
+  // المنبهات والتطبيق مغلق، وعلى الهاتف والويب معًا طلب واحد للموقع تشترك فيه
+  // المواقيت والقبلة والمساجد. كلاهما يُسأل مرة واحدة فقط؛ الرفض يُحترم ولا
+  // يُعاد السؤال تلقائيًا.
   useEffect(() => {
     if (!LOCAL_ONLY && !user) return;
     let cancelled = false;
@@ -339,14 +355,17 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
         import('./lib/location-store'),
         import('./notifications/delivery'),
       ]);
-      if (cancelled || !isNative()) return;
-      const display = await delivery.ensureSystemNotificationPermission();
       if (cancelled) return;
-      if (display === 'granted') {
-        // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
-        const scheduler = await import('./notifications/native-prayer-scheduler');
-        scheduler.notifyNativePrefsChanged();
+      if (isNative()) {
+        const display = await delivery.ensureSystemNotificationPermission();
+        if (cancelled) return;
+        if (display === 'granted') {
+          // أعد مزامنة الجدولة الأصلية فورًا بعد منح الإذن بدل انتظار نبضة الدقيقة.
+          const scheduler = await import('./notifications/native-prayer-scheduler');
+          scheduler.notifyNativePrefsChanged();
+        }
       }
+      // الموقع يُطلب مركزيًا عند الإقلاع على الهاتف والويب معًا.
       if (!locationStore.getCentralLocationState().manual) {
         await locationStore.ensureCentralLocation({ timeout: 15000 });
       }
@@ -370,13 +389,13 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {deniedFeature&&<section className="panel feature-access-required" dir="rtl"><h1>{featureAccess.title||'هذه الميزة مدفوعة'}</h1>{featureAccess.enabled===false?<p>هذه الميزة معطلة حاليًا من الإدارة. لا يمكن الاشتراك فيها حتى تُفعّل. تواصل مع إدارة المنصة.</p>:<><p>هذه الميزة غير مشمولة باستحقاق حسابك. {featureAccess.price_amount&&featureAccess.currency_code?`السعر: ${new Intl.NumberFormat('ar-EG',{style:'currency',currency:featureAccess.currency_code,maximumFractionDigits:3}).format(featureAccess.price_amount)} ${featureAccess.billing_interval==='monthly'?'شهريًا':featureAccess.billing_interval==='yearly'?'سنويًا':''}.`:''}</p><p>للوصول، اشترك عبر الدفع (الدفع (sandbox) حتى اعتماد المزود). تفعيل الوصول يتم بعد تحقق المزود (webhook)، وليس بمجرد إعادة التوجيه.</p></>}<div className="feature-access-actions"><button className="soft-btn" onClick={()=>navigate('home')}>العودة إلى الرئيسية</button>{featureAccess.enabled!==false&&requiredFeature&&<button className="primary" onClick={()=>{setPaymentFeature(requiredFeature);navigate('payment')}}>اشترك الآن</button>}{user&&<button className="soft-btn" onClick={()=>navigate('paymentHistory')}>سجل الدفع</button>}</div></section>}
     {featureCheckFailed&&<section className="panel feature-access-required" dir="rtl" role="alert"><h2>تعذّر التحقق من صلاحية الميزة</h2><p>لم نفتح القسم لأن خدمة الصلاحيات لم تُرجع نتيجة موثوقة. تحقق من الاتصال ثم أعد المحاولة.</p><button className="soft-btn" onClick={()=>setRetryFeatureAccess(value=>value+1)}>إعادة التحقق</button></section>}
     {canRenderView&&<ErrorBoundary key={`${view}:${viewRecovery}`} fallback={<section className="panel feature-access-required" dir="rtl" role="alert"><h2>{typeof navigator!=='undefined'&&!navigator.onLine?'هذا القسم غير متاح دون اتصال بالإنترنت':'تعذر فتح هذا القسم'}</h2><p>{typeof navigator!=='undefined'&&!navigator.onLine?'تحقق من اتصالك بالإنترنت ثم أعد المحاولة؛ بيانات حسابك محفوظة وبقية الأقسام المحلية تعمل بلا اتصال.':'حدث خلل أثناء عرض الصفحة. بيانات حسابك محفوظة؛ جرّب إعادة فتح القسم.'}</p><button className="soft-btn" onClick={()=>setViewRecovery(value=>value+1)}>إعادة المحاولة</button></section>}><Suspense fallback={loadingView}>
-    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} currentDate={currentDate}/>}
-    {view==='tasks'&&<TodayTasksView tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
+    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} currentDate={currentDate} tasks={state.tasks} taskSchedules={state.taskSchedules??{}}/>}
+    {view==='tasks'&&<TodayTasksView onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
     {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')}/>}
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
     {view==='goals'&&<StrongGoals goals={state.goals} onGoals={goals=>update(s=>({...s,goals}))}/>}
-    {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection}/>}
+    {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection}/>}
     {view==='haramain'&&<HaramainLive/>}
 {view==='qibla'&&<QiblaScreen notify={notify}/>}
     {view==='mosques'&&<MosquesScreen notify={notify}/>}

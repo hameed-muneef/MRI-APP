@@ -1,6 +1,6 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-import {advanceStage,applyAssessment,buildMasteryPassages,completePlayback,connectionChains,connectionWithPrevious,createRecallAttempt,createRepetitionEvent,createSession,interruptPlayback,interruptSession,resumeSession} from './engine';
-import {createEmptyMasteryState,loadMasteryState,saveMasteryState} from './storage';
+import {advanceStage,applyAssessment,buildCumulativeLinkSequence,buildMasteryPassages,completePlayback,connectionChains,connectionWithPrevious,createRecallAttempt,createRepetitionEvent,createSession,formatCumulativePreview,groupCumulativeLinkSteps,interruptPlayback,interruptSession,resumeSession} from './engine';
+import {createEmptyMasteryState,loadMasteryState,masteryRootSchema,saveMasteryState} from './storage';
 import {MASTERY_STORAGE_KEY,type AssessmentLabel,type MasteryStateRoot} from './types';
 import {hideVerse,initialHide,isHidden,revealAll,revealVerse} from './hide';
 import {SessionRecorder,type RecorderDeps} from './recorder';
@@ -16,6 +16,41 @@ describe('mastery session engine',()=>{
  it('counts only completed playbacks, tracks interrupted separately',()=>{let e=createRepetitionEvent({sessionId:'s',scope:'passage',configured:20,newId:id});e=interruptPlayback(e);expect(e.completed).toBe(0);expect(e.interrupted).toBe(1);e=completePlayback(e);expect(e.completed).toBe(1);});
  it('builds progressive chains and adjacent previous connection without text',()=>{expect(connectionChains(range).map(r=>r.ayahEnd)).toEqual([1,2,3]);expect(connectionWithPrevious({...range,ayahStart:4,ayahEnd:6},range)).toEqual({...range,ayahEnd:6});expect(connectionWithPrevious({...range,surah:2},range).surah).toBe(2);});
  it('partitions plans without losing references',()=>{const p={id:'plan',title:'test',range:{...range,ayahEnd:7},dailyTargetVerses:3,repeatPreset:5,status:'active' as const,schemaVersion:1,createdAt:'',updatedAt:''};expect(buildMasteryPassages(p,id).map(p=>[p.range.ayahStart,p.range.ayahEnd])).toEqual([[1,3],[4,6],[7,7]]);});
+});
+describe('cumulative linking playback sequence',()=>{
+ it('matches user example 1: ayahRepeat=1 plays 1, 2, 1-2, 3, 1-2-3',()=>{
+  const verses=[1,2,3].map(a=>({s:1,a}));
+  const seq=buildCumulativeLinkSequence(verses,1);
+  expect(seq.map(x=>x.verse.a)).toEqual([1,2,1,2,3,1,2,3]);
+  expect(seq.map(x=>x.phase)).toEqual(['solo','solo','link','link','solo','link','link','link']);
+ });
+ it('matches user example 2: ayahRepeat=2 plays 1,1 -> 2,2,1,2 -> 3,3,1,2,3 -> 4,4,1,2,3,4',()=>{
+  const verses=[1,2,3,4].map(a=>({s:1,a}));
+  const seq=buildCumulativeLinkSequence(verses,2);
+  expect(seq.map(x=>x.verse.a)).toEqual([1,1,2,2,1,2,3,3,1,2,3,4,4,1,2,3,4]);
+  expect(seq[0]).toMatchObject({phase:'solo',targetIndex:0,repeatIndex:1,repeatTotal:2});
+  expect(seq[1]).toMatchObject({phase:'solo',targetIndex:0,repeatIndex:2,repeatTotal:2});
+  expect(seq[4]).toMatchObject({phase:'link',targetIndex:1,linkFromAyah:1,linkToAyah:2});
+  expect(seq[13]).toMatchObject({phase:'link',targetIndex:3,linkFromAyah:1,linkToAyah:4});
+ });
+ it('handles empty, single-verse, non-1 starting ayah, and multi-surah segments',()=>{
+  expect(buildCumulativeLinkSequence([],3)).toEqual([]);
+  expect(buildCumulativeLinkSequence([{s:112,a:1}],3).map(x=>[x.verse.a,x.phase])).toEqual([[1,'solo'],[1,'solo'],[1,'solo']]);
+  const mid=buildCumulativeLinkSequence([{s:2,a:10},{s:2,a:11},{s:2,a:12}],2);
+  expect(mid.map(x=>x.verse.a)).toEqual([10,10,11,11,10,11,12,12,10,11,12]);
+  expect(mid[4]).toMatchObject({linkFromAyah:10,linkToAyah:11});
+  const multi=buildCumulativeLinkSequence([{s:109,a:6},{s:110,a:1}],2);
+  expect(multi.map(x=>`${x.verse.s}:${x.verse.a}`)).toEqual(['109:6','109:6','110:1','110:1','109:6','110:1']);
+ });
+ it('groups cumulative steps per target ayah and validates cumulative RepetitionEvent schema',()=>{
+  const verses=[1,2,3].map(a=>({s:1,a}));
+  const groups=groupCumulativeLinkSteps(verses,2);
+  expect(groups.map(g=>g.map(x=>x.verse.a))).toEqual([[1,1],[2,2,1,2],[3,3,1,2,3]]);
+  expect(formatCumulativePreview([1,2,3,4],2)).toContain('1، 1 ← 2، 2 ← ربط (1–2)');
+  const root=createEmptyMasteryState();
+  const ev=createRepetitionEvent({sessionId:'s1',scope:'cumulative',configured:2,newId:id,surah:1,ayah:2,groupRefs:['1:2','1:2','1:1','1:2']});
+  expect(masteryRootSchema.safeParse({...root,repetitionEvents:[ev]}).success).toBe(true);
+ });
 });
 describe('honest spaced evidence',()=>{
  it('first mastered self-rating does not grant mastery',()=>{const out=rate(createEmptyMasteryState(),'2026-11-23T12:00:00Z').outcome;expect(out.masteryGranted).toBe(false);expect(out.projection.state).toBe('in_progress');expect(out.projection.evidence).toHaveLength(1);});

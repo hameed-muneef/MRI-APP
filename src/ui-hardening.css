@@ -3605,6 +3605,69 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   display: none;
 }
 
+#root .app .notif-sound-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#root .app .notif-sound-filters button {
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid #D5CEC0;
+  background: #F7F4EC;
+  color: #364B44;
+  font-weight: 700;
+  font-size: 13px;
+  flex: 1 1 auto;
+}
+
+#root .app .notif-sound-filters button.active {
+  background: #1B5140;
+  border-color: #1B5140;
+  color: #FFFFFF;
+}
+
+#root .app .notif-sound-import-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+#root .app .notif-sound-cat-field {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 150px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #364B44;
+}
+
+#root .app .notif-sound-cat-field select,
+#root .app .notif-sound-cat-select {
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #D5CEC0;
+  background: #FFFFFF;
+  color: #1C2E28;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#root .app .notif-sound-import-box .notif-upload {
+  flex: 2 1 210px;
+}
+
+#root .app .notif-sound-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* Dark Theme Overrides for Settings, Reminders, Prayer Cards & Sound Library */
 [data-theme="dark"] #root .app .settings-tabs {
   background: #142534 !important;
@@ -3644,10 +3707,28 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
 }
 
 [data-theme="dark"] #root .app .notif-subtabs button.active,
-[data-theme="dark"] #root .app .notif-day.selected {
+[data-theme="dark"] #root .app .notif-day.selected,
+[data-theme="dark"] #root .app .notif-sound-filters button.active {
   background: #235D4B !important;
   border-color: #6CA58B !important;
   color: #FFFFFF !important;
+}
+
+[data-theme="dark"] #root .app .notif-sound-filters button {
+  background: #192C3D !important;
+  border-color: #34526A !important;
+  color: #F1F5F8 !important;
+}
+
+[data-theme="dark"] #root .app .notif-sound-cat-field {
+  color: #C3D4E0 !important;
+}
+
+[data-theme="dark"] #root .app .notif-sound-cat-field select,
+[data-theme="dark"] #root .app .notif-sound-cat-select {
+  background: #142534 !important;
+  border-color: #34526A !important;
+  color: #F1F5F8 !important;
 }
 
 [data-theme="dark"] #root .app .notif-reminder-card.paused {
@@ -3832,4 +3913,10 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
     order: 1;
     margin-inline-start: auto;
   }
+}
+
+/* خط Readex أعرض: يسمح للأزرار الطويلة بالالتفاف داخل عرض الشاشة بدل الخروج منه */
+#root .app main .soft-btn {
+  max-width: 100%;
+  white-space: normal;
 }

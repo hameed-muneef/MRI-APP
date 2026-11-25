@@ -55,9 +55,6 @@ export default function LocationPermissionPanel({ notify }: { notify?: (message:
         </div>
         {central.status === 'ready' && <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>}
       </div>
-      <p className="muted small">
-        طلب واحد للموقع يخدم كل التطبيق: مواقيت الصلاة، اتجاه القبلة، والمساجد القريبة. لا يُرسل موقعك إلى أي خادم.
-      </p>
       <div className="qibla-actions">
         <button type="button" className="soft-btn" onClick={() => void handleLocate()} disabled={busy || central.status === 'locating'}>
           <MapPin size={16}/> {central.status === 'locating' || busy ? 'جارٍ التحديد…' : 'تحديد موقعي الآن'}

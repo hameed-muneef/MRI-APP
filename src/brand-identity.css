@@ -36,7 +36,7 @@
   --grad-surface:linear-gradient(165deg,#FFFFFF 0%,#FBF8F1 100%);
   --pattern-geometry:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23B99A5D' stroke-width='1' opacity='.12'%3E%3Cpath d='M80 8 91 39 119 20 111 51 145 53 119 79 145 107 111 109 119 140 91 121 80 152 69 121 41 140 49 109 15 107 41 79 15 53 49 51 41 20 69 39z'/%3E%3Cpath d='M80 25 96 64 135 80 96 96 80 135 64 96 25 80 64 64zM0 0l28 28M160 0l-28 28M0 160l28-28m132 28-28-28'/%3E%3Ccircle cx='80' cy='80' r='8'/%3E%3C/g%3E%3C/svg%3E");
   --font-body:'IBM Plex Sans Arabic','Tajawal',Arial,sans-serif;
-  --font-heading:'Cairo','Tajawal',Arial,sans-serif;
+  --font-heading:'IBM Plex Sans Arabic','Tajawal',Arial,sans-serif;
   --font-heritage:'Amiri',serif;
   font-family:var(--font-body);
   color:var(--color-ink);

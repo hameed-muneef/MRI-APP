@@ -5,7 +5,8 @@
 // - الرواية: يُقبل فقط قراء حفص المعتمدون للنص المعروض؛ غيرهم مرفوض لا مستبدَل.
 import { backgroundAudio } from '../audio/background-player';
 import type { AudioPlayerState, AudioTrack } from '../audio/types';
-import { fetchAyahAudioUrl, QURAN_COM_RECITERS } from './ayah-audio';
+import { QURAN_COM_RECITERS } from './ayah-audio';
+import { isVerseReciter, resolveVerseAudioUrl } from './verse-reciters';
 
 export type AudioSourceKind = 'qurancom-ayah' | 'everyayah-folder' | 'qurancom-chapter' | 'live-stream';
 
@@ -86,11 +87,11 @@ export class SessionAudioAdapter {
    * لا يتجاوز الآية عند فقدان الصوت، ولا يستبدل القارئ، ويكشف الاستباق من مصدر آخر.
    */
   async playVerse({ reciterId, surah, ayah, title,playbackRate=1 }: PlayVerseArgs): Promise<VersePlayResult> {
-    if (!isHafsQuranComReciter(reciterId)) return 'rejected-narration';
+    if (!isVerseReciter(reciterId)) return 'rejected-narration';
     this.cancel();
     const my = ++this.token;
     this.controller = new AbortController();
-    const url = await fetchAyahAudioUrl(reciterId, surah, ayah, this.controller.signal);
+    const url = await resolveVerseAudioUrl(reciterId, surah, ayah, this.controller.signal);
     if (my !== this.token) return 'cancelled';
     if (!url) return 'missing';
     if(this.paused)await new Promise<void>(resolve=>{this.releasePause=resolve;});

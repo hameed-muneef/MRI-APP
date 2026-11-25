@@ -5,7 +5,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {CheckCircle2, Download, HardDrive, Pause, Trash2} from 'lucide-react';
 import type {QuranAsset} from '../../quran/types';
 import {
-  ASBAB_ATTRIBUTION, ASBAB_PROVIDER, TAFSIRS, TRANSLATIONS,
+  TAFSIRS, TRANSLATIONS,
   WORD_MEANINGS_ATTRIBUTION, WORD_MEANINGS_PROVIDER
 } from '../../quran/content-api';
 import {type OfflineKind, type PackMeta, listPacks, deletePack, getPack, storageEstimate} from '../../quran/offline-store';
@@ -184,10 +184,7 @@ export default function OfflineLibrary({kind, asset, notify}: Props) {
         المصدر: التفاسير (ومنها التفسير الميسر) والترجمات عبر Quran.com API v4 (Quran Foundation Content API)، إصدار النص غير محدد من المزود — النصوص تُنزَّل كما هي وتُحفظ على هذا الجهاز فقط للاستخدام الشخصي. راجع ترخيص كل طبعة قبل أي إعادة نشر.
       </p>
       {kind === 'tafsir' && (
-        <>
-          <p>المصدر: {ASBAB_ATTRIBUTION}، {ASBAB_PROVIDER}.</p>
-          <p>المصدر: {WORD_MEANINGS_ATTRIBUTION}، {WORD_MEANINGS_PROVIDER}. شروح عربية للكلمات قد تتضمن ملاحظات نحوية، وليست ترجمة آلية كلمة بكلمة.</p>
-        </>
+        <p>المصدر: {WORD_MEANINGS_ATTRIBUTION}، {WORD_MEANINGS_PROVIDER}. شروح عربية للكلمات قد تتضمن ملاحظات نحوية، وليست ترجمة آلية كلمة بكلمة.</p>
       )}
     </div>
   </section>;

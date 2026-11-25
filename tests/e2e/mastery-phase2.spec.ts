@@ -12,7 +12,7 @@ for(const width of [360,1280]){
   await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
   await expect(ui.locator('h2')).toHaveText('استمع');
   await ui.getByRole('button',{name:'التالي: افهم',exact:true}).click();
-  await expect(ui).toContainText('أسباب النزول ومعاني الكلمات تُعرض من بيانات مركز تفسير');
+  await expect(ui).toContainText('يمكنك فتح لوحة فهم الآية للاطلاع على التفسير والترجمة ومعاني الكلمات');
   await ui.getByRole('button',{name:'التالي: احفظ',exact:true}).click();
   for(const label of ['إخفاء الكل','إخفاء فردي','إخفاء تدريجي','اختبار استرجاع كامل']){
    await ui.getByRole('button',{name:label,exact:true}).click();

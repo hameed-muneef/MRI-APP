@@ -8,21 +8,20 @@ const source = readFileSync(new URL('../src/appearance.ts', import.meta.url), 'u
 const {outputText} = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}});
 const appearance = await import('data:text/javascript;base64,' + Buffer.from(outputText).toString('base64'));
 
-test('appearance: readAppearance يقبل القيم الصحيحة ويعود system افتراضيًا', () => {
+test('appearance: readAppearance يقبل القيم الصحيحة ويعود نهاريًا افتراضيًا', () => {
   const storage = value => ({getItem: () => value});
   assert.equal(appearance.readAppearance(storage('dark')), 'dark');
   assert.equal(appearance.readAppearance(storage('light')), 'light');
-  assert.equal(appearance.readAppearance(storage('system')), 'system');
-  assert.equal(appearance.readAppearance(storage(null)), 'system');
-  assert.equal(appearance.readAppearance(storage('purple')), 'system');
-  assert.equal(appearance.readAppearance(storage('{"x":1}')), 'system');
+  // «system» القديمة وأي قيمة غير صالحة تهاجر إلى النهاري الافتراضي.
+  assert.equal(appearance.readAppearance(storage('system')), 'light');
+  assert.equal(appearance.readAppearance(storage(null)), 'light');
+  assert.equal(appearance.readAppearance(storage('purple')), 'light');
+  assert.equal(appearance.readAppearance(storage('{"x":1}')), 'light');
 });
 
-test('appearance: resolvedTheme يحسم الفاتح/الداكن من التفضيل والمزج مع النظام', () => {
-  assert.equal(appearance.resolvedTheme('dark', false), 'dark');
-  assert.equal(appearance.resolvedTheme('light', true), 'light');
-  assert.equal(appearance.resolvedTheme('system', true), 'dark');
-  assert.equal(appearance.resolvedTheme('system', false), 'light');
+test('appearance: resolvedTheme يحسم الفاتح/الداكن من الاختيار نفسه', () => {
+  assert.equal(appearance.resolvedTheme('dark'), 'dark');
+  assert.equal(appearance.resolvedTheme('light'), 'light');
 });
 
 test('appearance: saveAppearance يكتب المفتاح ويتكلم بصدق مع الأخطاء', () => {

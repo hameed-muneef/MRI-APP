@@ -30,6 +30,7 @@ import NotificationSettings, {
   OPEN_SECTION_EVENT,
   type OpenSection,
 } from './notifications/NotificationSettings';
+import SoundPanel from './notifications/SoundPanel';
 import {AppearancePanel} from '../AppearanceToggle';
 import {InstallGuidePanel} from '../InstallApp';
 import {LOCAL_ONLY} from '../config';
@@ -353,6 +354,11 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
             <LocationPermissionPanel notify={notify}/>
           </section>
 
+          <section className="panel notif-settings" aria-label="مكتبة النغمات والتنبيهات والأذان">
+            <h3><Volume2 size={18}/> مكتبة النغمات والتنبيهات والأذان</h3>
+            <SoundPanel notify={notify}/>
+          </section>
+
           <section className="panel">
             <h3><HardDrive size={18}/> التخزين المحلي والنسخ الاحتياطي</h3>
             <p className="muted">جميع بياناتك — مهامك، خططك، أهدافك، أورادك، حفظ القرآن، الأذكار، والمنبهات — محفوظة محليًا على هذا الجهاز.</p>
@@ -403,7 +409,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
             <div className="settings-collapsible-body">
               <p className="muted">اسمك وبلدك ملكك وحدك ولا يظهران لغيرك. محاسبة نفسك («حاسب نفسك») لا تُعرض على أحد ولا تدخل في أي إجمالي.</p>
               <p className="muted">الموقع يُستخدم على جهازك فقط لحساب أوقات الصلاة والقبلة والمساجد القريبة، ولا يُرسل إلى أي خادم. سياسة الخصوصية الكاملة: <a href="https://alrabbaniyun.com/privacy.html" target="_blank" rel="noopener noreferrer">alrabbaniyun.com/privacy.html</a></p>
-              <p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. التفاسير (ومنها التفسير الميسر) والترجمات عبر Quran.com API v4 (إصدار النص غير محدد من المزود). أسباب النزول ومعاني الكلمات من مركز تفسير للدراسات القرآنية (tafsir.net) — بيانات مدمجة على الجهاز بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0) مع تكييف التنسيق؛ ومعاني الكلمات شروح عربية قد تتضمن ملاحظات نحوية وليست ترجمة آلية كلمة بكلمة. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p>
+              <p className="muted small">مصادر المحتوى: نص القرآن من مشروع Tanzil (CC BY 3.0)، والخط العثماني من مجمع الملك فهد لطباعة المصحف الشريف. التفاسير (ومنها التفسير الميسر) والترجمات عبر Quran.com API v4 (إصدار النص غير محدد من المزود). معاني الكلمات من مركز تفسير للدراسات القرآنية (tafsir.net) — بيانات مدمجة على الجهاز بترخيص CC BY 4.0 (creativecommons.org/licenses/by/4.0) مع تكييف التنسيق؛ وهي شروح عربية قد تتضمن ملاحظات نحوية وليست ترجمة آلية كلمة بكلمة. الأحاديث من مستودع fawazahmed0/hadith-api (The Unlicense / Public Domain).</p>
             </div>
           </details>
         </div>

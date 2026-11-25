@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin } from 'lucide-react';
+import { Car, ExternalLink, Footprints, MapPin } from 'lucide-react';
 import { formatArabicDistance, type TravelMode } from '../../lib/geo';
 import type { NearbyMosque } from './types';
 
@@ -12,6 +12,14 @@ interface MosqueCardProps {
 export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: MosqueCardProps) {
   const displayName = mosque.name.trim() || 'مسجد';
   const distanceLabel = formatArabicDistance(mosque.distanceMeters);
+  // تقدير تقريبي للزمن: مشي ٥ كم/س على طريق أطول ١.٣ من الخط المستقيم، وسيارة ٣٥ كم/س داخل المدن بعامل ١.٤.
+  const minutes = travelMode === 'walking'
+    ? (mosque.distanceMeters * 1.3) / (5000 / 60)
+    : (mosque.distanceMeters * 1.4) / (35000 / 60);
+  const rounded = Math.max(1, Math.round(minutes));
+  const timeLabel = rounded >= 60
+    ? `${Math.floor(rounded / 60)} س ${rounded % 60 ? `${rounded % 60} د` : ''}`.trim()
+    : `${rounded} د`;
 
   return (
     <article className="mosque-card" aria-label={displayName}>
@@ -30,6 +38,10 @@ export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: M
           <strong>{distanceLabel}</strong>
           <small>خط مستقيم</small>
         </div>
+      </div>
+      <div className="mosque-eta" aria-label="الزمن التقريبي">
+        {travelMode === 'walking' ? <Footprints size={15} aria-hidden="true" /> : <Car size={15} aria-hidden="true" />}
+        <span>≈ {timeLabel} {travelMode === 'walking' ? 'مشيًا' : 'بالسيارة'} <small>(تقدير)</small></span>
       </div>
 
       <div className="mosque-card-actions">

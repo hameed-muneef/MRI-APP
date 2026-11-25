@@ -34,7 +34,6 @@ export default function MonthlyPlanner({tasks,onTasks}:Props){
         <p className="week-range">{dateLabel(days[0])} — {dateLabel(days[days.length-1])}</p>
         {hijriDate(days[0])&&<p className="week-hijri">الموافق هجريًا: {hijriDate(days[0])} — {hijriDate(days[days.length-1])}</p>}
       </div>
-      <p className="muted small">الشهور بالتقويم الميلادي. يظهر التاريخ بجوار كل يوم، مع مراعاة عدد أيام الشهر والسنة الكبيسة.</p>
     </section>
     <section className="panel" aria-label="مهام الشهر المختار">
       <div className="panel-head"><h2>مهام الشهر {monthNames[month-1]}</h2></div>

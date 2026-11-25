@@ -1,9 +1,18 @@
-import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,Flower2,ShieldCheck,MonitorPlay,Compass,MapPin} from 'lucide-react';
-import {type View} from '../app-state';
+import {BookOpen,BookMarked,CalendarClock,CalendarDays,Heart,Target,ChevronLeft,ArrowRight,ArrowLeft,Flower2,ShieldCheck,MonitorPlay,Compass,MapPin} from 'lucide-react';
+import {type Task, type TaskSchedule, type View} from '../app-state';
 import {type PrayerLocation} from '../prayer-location';
 import {hijriDate} from '../hijri';
 import HomeDashboard from './HomeDashboard';
+import {nearestTasks} from '../home-tasks';
 import {type SectionId} from '../section-theme';
+
+const timeFmt = new Intl.DateTimeFormat('ar-EG', {hour: 'numeric', minute: '2-digit'});
+const dayFmt = new Intl.DateTimeFormat('ar-EG', {day: 'numeric', month: 'short'});
+
+function homeTaskWhen(date: string, overdue: boolean, todayKey: string, tomorrowKey: string): string {
+  const day = date === todayKey ? 'اليوم' : date === tomorrowKey ? 'غدًا' : dayFmt.format(new Date(`${date}T12:00:00`));
+  return `${overdue ? 'متأخرة · ' : ''}${day}`;
+}
 
 const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string;icon:typeof CalendarDays;desc:string;section:SectionId}>= [
   {id:'day',title:'يومي مع الله',icon:CalendarDays,desc:'خطوات اليوم ومواعيده',section:'daily'},
@@ -14,10 +23,14 @@ const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string
   {id:'mosques',title:'المساجد القريبة',icon:MapPin,desc:'أقرب المساجد إليك مع الاتجاهات',section:'daily'},
 ];
 
-export default function HomeView({navigate,admin=false,prayers={},prayerLocation,currentDate}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation;currentDate?:string}) {
+export default function HomeView({navigate,admin=false,prayers={},prayerLocation,currentDate,tasks=[],taskSchedules={}}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation;currentDate?:string;tasks?:Task[];taskSchedules?:Record<string,TaskSchedule>}) {
   const dateObj = currentDate ? new Date(`${currentDate}T12:00:00`) : new Date();
   const hijri = hijriDate(dateObj);
   const gregorian = new Intl.DateTimeFormat('ar-EG', {weekday:'long', day:'numeric', month:'long'}).format(dateObj);
+  const now = new Date();
+  const todayKey = now.toLocaleDateString('en-CA');
+  const tomorrowKey = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toLocaleDateString('en-CA');
+  const upcomingTasks = nearestTasks(tasks, taskSchedules, prayers, now, 3);
   return <>
     <div className="home-date-bar" aria-label="تاريخ اليوم">
       <CalendarDays size={16} aria-hidden="true"/>
@@ -28,7 +41,7 @@ export default function HomeView({navigate,admin=false,prayers={},prayerLocation
     </div>
     <section className="hero"><div className="hero-pattern"/><div className="hero-content"><span className="hero-tag"><Flower2 size={15}/> بسم الله الرحمن الرحيم</span><p className="hero-copy hero-ayah"><span className="hero-ayah-text">﴿يَٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُواْ ٱصۡبِرُواْ وَصَابِرُواْ وَرَابِطُواْ وَٱتَّقُواْ ٱللَّهَ لَعَلَّكُمۡ تُفۡلِحُونَ﴾</span><span className="hero-ayah-ref">آل عمران: ٢٠٠</span></p><button className="hero-btn" onClick={()=>navigate('day')}>ابدأ يومك <ArrowRight size={18}/></button></div><div className="hero-art"><div className="arch"><BookOpen size={64} strokeWidth={1.1}/><span>وَكُونُوا رَبَّانِيِّينَ</span></div></div></section>
     <HomeDashboard prayers={prayers} prayerLocation={prayerLocation} navigate={navigate}/>
-    <button className="home-today-entry" onClick={()=>navigate('tasks')}><span className="home-today-icon"><CalendarClock size={21} aria-hidden="true"/></span><span><strong>مهام اليوم</strong><small>اليوم · غدًا · المهام المتأخرة</small></span><ChevronLeft size={18} aria-hidden="true"/></button>
+    <button className="home-today-entry home-today-list" onClick={()=>navigate('tasks')}><span className="home-tasks-head"><span className="home-today-icon"><CalendarClock size={19} aria-hidden="true"/></span><strong>مهام اليوم</strong></span>{upcomingTasks.length===0?<small className="home-tasks-empty">اليوم · غدًا · المهام المتأخرة</small>:<ul className="home-tasks-rows">{upcomingTasks.map(task=><li key={task.id} className={task.overdue?'home-tasks-row home-tasks-row-overdue':'home-tasks-row'}><span className="home-task-dot" aria-hidden="true"/><span className="home-task-name">{task.title}</span><span className={task.overdue?'home-task-meta home-task-overdue':'home-task-meta'}>{homeTaskWhen(task.date, task.overdue, todayKey, tomorrowKey)}{task.time?` ${timeFmt.format(new Date(`${task.date}T${task.time}:00`))}`:''}</span></li>)}</ul>}<span className="home-tasks-all">عرض كل المهام <ArrowLeft size={15} aria-hidden="true"/></span></button>
     {admin&&<a className="home-admin-entry" href="/admin"><span className="home-admin-icon"><ShieldCheck size={22}/></span><span><strong>لوحة الإدارة</strong><small>إدارة المنهج والموارد</small></span><ChevronLeft size={18}/></a>}
     <div className="section-title"><div><span className="eyebrow">تنظيم الحياة</span><h2>حياتي مع الله</h2><p>اجعل العبادة والعمل والأسرة والتعلم في خطة متوازنة.</p></div></div>
     <div className="feature-grid">{menu.map(m=><button key={m.id} data-section={m.section} data-view={m.id} className="feature-card" onClick={()=>navigate(m.id)}><span className="feature-icon"><m.icon size={22} aria-hidden="true"/></span><span className="feature-copy"><strong>{m.title}</strong><span>{m.desc}</span></span><ChevronLeft className="feature-arrow" size={18} aria-hidden="true"/></button>)}</div>

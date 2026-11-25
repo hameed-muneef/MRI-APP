@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import {MapPin,Search,Settings2} from 'lucide-react';
 import {parseGeocodingResults,prayerMethods,sanitizePrayerLocation,type PrayerLocation} from './prayer-location';
 import {openAppSettings} from './lib/settings-opener';
+import {setManualLocation,clearManualLocation} from './lib/location-store';
 
 type Props={location?:PrayerLocation;onChange:(location?:PrayerLocation)=>void};
 
@@ -30,12 +31,15 @@ export default function PrayerLocationPicker({location,onChange}:Props){
   };
   const choose=(item:PrayerLocation)=>{
     const next=sanitizePrayerLocation({...item,method:location?.method,school:location?.school});
-    if(next){onChange(next);setQuery('')}
+    if(next){onChange(next);setQuery('');
+      // المدينة المختارة تُشارك مركزيًا: القبلة والمساجد تتبعها وتبقى بعد إعادة الفتح.
+      setManualLocation(next.latitude,next.longitude,next.country?`${next.name}، ${next.country}`:next.name)}
   };
   const detect=async()=>{
     setBusy(true);setMessage('جارٍ تحديد موقعك…');setDenied(false);
     // المخزن المركزي: نفس طلب الإذن الواحد المشترك بين كل أجزاء التطبيق.
     const {ensureCentralLocation}=await import('./lib/location-store');
+    clearManualLocation();
     const res=await ensureCentralLocation({timeout:10000,maximumAge:600000});
     setBusy(false);
     if(!res.ok){ setMessage(res.message); setDenied(res.reason==='denied'||res.reason==='permanently-denied'); return; }

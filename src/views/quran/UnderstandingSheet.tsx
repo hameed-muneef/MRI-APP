@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { X } from 'lucide-react';
-import { fetchTafsir, fetchTranslation, fetchAsbabNuzul, fetchWordMeanings, TAFSIRS, TRANSLATIONS, type WordMeaning } from '../../quran/content-api';
+import { fetchTafsir, fetchTranslation, fetchWordMeanings, TAFSIRS, TRANSLATIONS, type WordMeaning } from '../../quran/content-api';
 import { getVerseNote, saveVerseNote, deleteVerseNote } from '../../quran/verse-notes';
 import { toArabicNumber, verseBody, verseMarker } from '../../quran/content';
 
@@ -18,20 +18,22 @@ type Props = {
   ayahEnd: number;
   verseText: (surah: number, ayah: number) => string | null;
   onClose: () => void;
+  initialTopic?: 'tafsir'|'translation';
+  initialTafsirId?: number;
+  initialTranslationId?: number;
 };
 
 /**
- * لوحة فهم الآية داخل الجلسة: تفسير وترجمة وأسباب النزول ومعاني الكلمات،
+ * لوحة فهم الآية داخل الجلسة: تفسير وترجمة ومعاني الكلمات،
  * وملاحظات خاصة محلية قابلة للحذف. لا تلمس حالة الجلسة؛ الإغلاق يعيد للنطاق كما كان.
  */
-export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEnd, verseText, onClose }: Props) {
-  const [topic,setTopic]=useState<'tafsir'|'translation'|'context'|'words'>('tafsir');
+export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEnd, verseText, onClose, initialTopic, initialTafsirId, initialTranslationId }: Props) {
+  const [topic,setTopic]=useState<'tafsir'|'translation'|'words'>(initialTopic ?? 'tafsir');
   const [ayah, setAyah] = useState(ayahStart);
-  const [tafsirId, setTafsirId] = useState(TAFSIRS[0].id);
-  const [translationId, setTranslationId] = useState(TRANSLATIONS[0].id);
+  const [tafsirId, setTafsirId] = useState(initialTafsirId ?? TAFSIRS[0].id);
+  const [translationId, setTranslationId] = useState(initialTranslationId ?? TRANSLATIONS[0].id);
   const [tafsir, setTafsir] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
-  const [asbab, setAsbab] = useState<string | null>(null);
   const [words, setWords] = useState<WordMeaning[] | null>(null);
   const [contentError, setContentError] = useState(false);
   const [wordsError, setWordsError] = useState(false);
@@ -72,7 +74,6 @@ export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEn
     setContentError(false);
     const key = `${surah}:${ayah}`;
     const controller=new AbortController();
-    if(topic==='context'){setAsbab(null);void fetchAsbabNuzul(key, controller.signal).then(value=>{if(my!==seq.current)return;setAsbab(value);setLoading(false);}).catch(()=>{if(!controller.signal.aborted&&my===seq.current)setLoading(false);});return()=>controller.abort();}
     if(topic==='words'){setWords(null);setWordsError(false);void fetchWordMeanings(key).then(value=>{if(my!==seq.current)return;setWords(value);setLoading(false);}).catch(()=>{if(!controller.signal.aborted&&my===seq.current){setWordsError(true);setLoading(false);}});return()=>controller.abort();}
     void (topic==='tafsir'?fetchTafsir(key,tafsirId,controller.signal):fetchTranslation(key,translationId,controller.signal)).then(value=>{
       if(my!==seq.current)return;
@@ -101,7 +102,6 @@ export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEn
       <nav className="qm-chips" aria-label="نوع الفهم">
         <button aria-pressed={topic==='tafsir'} onClick={()=>setTopic('tafsir')}>تفسير</button>
         <button aria-pressed={topic==='translation'} onClick={()=>setTopic('translation')}>ترجمة</button>
-        <button aria-pressed={topic==='context'} onClick={()=>setTopic('context')}>أسباب النزول</button>
         <button aria-pressed={topic==='words'} onClick={()=>setTopic('words')}>معاني الكلمات</button>
       </nav>
       {topic==='tafsir'&&<><label className="qm-field">التفسير
@@ -112,8 +112,6 @@ export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEn
         <select aria-label="الترجمة" value={translationId} onChange={e=>setTranslationId(Number(e.target.value))}>{TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </label>
       {loading?<p role="status">جارٍ التحميل…</p>:contentError?<p className="qm-sheet-body">تعذر جلب الترجمة. تحقق من الاتصال.</p>:<p className="qm-sheet-body">{translation??'لا توجد ترجمة لهذه الآية في هذا المصدر.'}</p>}</>}
-      {topic==='context'&&<>
-      {loading?<p role="status">جارٍ التحميل…</p>:<p className="qm-sheet-body">{asbab??'لا يوجد سبب نزول لهذه الآية في هذا المصدر.'}</p>}</>}
       {topic==='words'&&<>
       {loading?<p role="status">جارٍ التحميل…</p>:wordsError?<p className="qm-sheet-body">تعذر تحميل معاني الكلمات. تحقق من الاتصال وأعد المحاولة.</p>:(words&&words.length?<dl className="qm-words">{words.map((w,i)=><div key={i}><dt>{w.word}</dt><dd>{w.meaning}</dd></div>)}</dl>:<p className="qm-sheet-body">لا توجد شروح كلمات لهذه الآية في هذا المصدر.</p>)}</>}
       {!loading&&(((topic==='tafsir'||topic==='translation')&&contentError)||(topic==='words'&&wordsError))&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}

@@ -31,7 +31,8 @@
 .haramain-shell:fullscreen .haramain-screen-actions{position:fixed;inset-block-end:18px;inset-inline-start:18px;z-index:10}
 .haramain-shell:fullscreen .haramain-screen-actions .soft-btn{background:rgba(0,0,0,.55);color:#fff;border-color:rgba(255,255,255,.35)}
 
-.haramain-screen-actions{display:flex;justify-content:flex-end;gap:8px}
+.haramain-screen-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.haramain-screen-actions .soft-btn{min-width:0;max-width:100%;white-space:normal;display:inline-flex;align-items:center;gap:7px}
 
 /* حالات التحميل */
 .haramain-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;background:rgba(0,0,0,.6);font-size:15px;font-weight:700}

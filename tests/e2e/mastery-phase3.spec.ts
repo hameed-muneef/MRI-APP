@@ -28,10 +28,6 @@ test('understanding sheet: attribution, gates, private notes, session preserved'
  await expect(sheet).toContainText('Sample translation text.');
  await expect(sheet).toContainText('المصدر: Saheeh International');
  await expect(sheet).not.toContainText('نص تفسير تجريبي للآية.');
- await sheet.getByRole('button',{name:'أسباب النزول',exact:true}).click();
- // البوابات الصادقة: لا محتوى بديل عند غياب سبب في المصدر
- await expect(sheet).toContainText('لا يوجد سبب نزول لهذه الآية في هذا المصدر');
- await expect(sheet).toContainText('المصدر: أسباب النزول — مركز تفسير للدراسات القرآنية');
  // معاني الكلمات من بيانات مركز تفسير المدمجة بنسبة المصدر
  await sheet.getByRole('button',{name:'معاني الكلمات',exact:true}).click();
  await expect(sheet).toContainText('المصدر: معاني الكلمات — مركز تفسير للدراسات القرآنية');

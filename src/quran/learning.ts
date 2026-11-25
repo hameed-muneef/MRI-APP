@@ -8,16 +8,13 @@ export const REVIEW_INTERVALS = [0, 1, 3, 7, 14, 30];
 
 /**
  * مظهر القراءة الأولي للقارئ: يتبع مظهر التطبيق الحالي (نفس مفتاح appearance.ts)
- * ويعود نهاريًا في node/SSR. مضمَّن هنا بدل الاستيراد لأن الاختبارات تُرجم هذا
- * الملف وحده عبر data:URL (أي استيراد وسيط يُسقط الوحدة في الاختبار).
+ * ويعود نهاريًا في node/SSR ومع أي قيمة مخزّنة قديمة. مضمَّن هنا بدل الاستيراد لأن
+ * الاختبارات تُرجم هذا الملف وحده عبر data:URL (أي استيراد وسيط يُسقط الوحدة في الاختبار).
  */
 function initialReadingTheme(): 'light' | 'dark' {
   try {
     if (typeof window === 'undefined') return 'light';
-    const stored = window.localStorage.getItem('rabbani-theme-v1');
-    const mode = stored === 'dark' || stored === 'light' ? stored : 'system';
-    const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
-    return mode === 'dark' || (mode === 'system' && systemDark) ? 'dark' : 'light';
+    return window.localStorage.getItem('rabbani-theme-v1') === 'dark' ? 'dark' : 'light';
   } catch {return 'light'}
 }
 export const PASSAGE_STATES: {value: PassageState; label: string}[] = [

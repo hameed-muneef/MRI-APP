@@ -32,7 +32,8 @@ function mergePrefs(stored: unknown, fallback: NotificationPreference): Notifica
     ...fallback,
     ...value,
     updated_at: typeof value.updated_at === 'string' ? value.updated_at : fallback.updated_at,
-    categories: {...fallback.categories, ...(value.categories ?? {})},
+    // فئات الإشعارات موحّدة تحت المفتاح العام الواحد؛ لا تُسترجع تعطيلات فئات محفوظة قديمة.
+    categories: {...fallback.categories},
     prayer_settings: {...fallback.prayer_settings, ...(value.prayer_settings ?? {})},
     reminder_settings: {
       ...fallback.reminder_settings,

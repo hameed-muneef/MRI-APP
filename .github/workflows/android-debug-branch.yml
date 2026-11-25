@@ -1,0 +1,124 @@
+# Device test build run 5: shared manual city (prayers, qibla, mosques, settings), reciters library layout fix, reviewed browser journeys.
+# Debug-only APK build for on-device testing of feat/daytime-blue-palette.
+# Isolated test variant: applicationId com.alrabbaniyoon.app.test5 (new, separate empty data) and the label الربانيون (تجريبي ٥),
+# set only inside the CI workspace (repo files are not changed), so it installs next to the real app.
+# No signing, no secrets, no release or publishing. Runs on push to this branch
+# only when this file changes, so it builds the exact branch head once.
+name: Android Debug (test branch)
+
+on:
+  push:
+    branches:
+      - feat/daytime-blue-palette
+    paths:
+      - '.github/workflows/android-debug-branch.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check and run unit tests
+        run: |
+          npm run lint
+          npm run test:unit
+
+      - name: Check optional bundled Adhan audio assets (bundled in public/sounds/adhan + res/raw)
+        run: |
+          missing=0
+          for f in adhan_almulla.ogg adhan_madinah.ogg adhan_madinah2.ogg adhan_mohammed.ogg adhan_ahmad.ogg adhan_hamad.ogg takbeerat_eid.ogg; do
+            if [ ! -s "public/sounds/adhan/$f" ] || [ ! -s "android/app/src/main/res/raw/$f" ]; then
+              echo "::warning::Optional Adhan audio '$f' is missing (expected both public/sounds/adhan and res/raw); app falls back to default notification sound or built-in chime."
+              missing=$((missing + 1))
+            fi
+          done
+          echo "Optional missing Adhan audio checks: $missing"
+
+      - name: Build web assets, generate icons/splash, and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+
+      - name: Verify required Android resources and Capacitor setup
+        run: |
+          test -s "android/app/src/main/res/drawable/splash.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+          test -s "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png"
+          test -s "android/app/src/main/assets/public/index.html"
+          npx cap doctor android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Android SDK components (platforms;android-36, build-tools 36.0.0)
+        run: |
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" 2>&1 | tail -20
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Make isolated test variant (CI workspace only)
+        run: |
+          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test5"/' android/app/build.gradle
+          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي ٥)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي ٥)</string>|' android/app/src/main/res/values/strings.xml
+          grep -n 'applicationId' android/app/build.gradle
+          grep -n 'app_name\|title_activity_main' android/app/src/main/res/values/strings.xml
+
+      - name: Build debug APK (isolated test variant)
+        run: ./android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Inspect APK (manifest, version, signing, assets)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "HEAD=$(git rev-parse HEAD)"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label|launchable-activity|uses-permission" | head -20
+          "$BT/apksigner" verify --print-certs "$APK" | head -6
+          unzip -l "$APK" | grep -E "assets/public/(index.html|quran/mushaf-lines.json)" || true
+          unzip -p "$APK" assets/public/index.html | head -c 600
+          echo
+          unzip -l "$APK" | grep -cE "assets/public/assets/.*\.css" || true
+          unzip -p "$APK" 'assets/public/assets/*.css' 2>/dev/null | grep -c "qm-lines" || true
+          unzip -p "$APK" 'assets/public/assets/*.css' 2>/dev/null | grep -c "page-intro h1" || true
+          sha256sum "$APK"
+
+      - name: Upload debug APK
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk-test5
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Report artifact
+        run: |
+          echo "artifact-id=${{ steps.upload.outputs.artifact-id }}"
+          echo "artifact-url=${{ steps.upload.outputs.artifact-url }}"
+          echo "artifact-digest=${{ steps.upload.outputs.artifact-digest }}"

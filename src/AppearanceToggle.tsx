@@ -1,13 +1,13 @@
-// مبدّل المظهر: زر أيقونة (تلقائي → فاتح → داكن) مع سبانكت إعدادات مفصّل في الإعدادات.
+// مبدّل المظهر: زر أيقونة (نهاري ⇄ ليلي) مع سبانكت إعدادات مفصّل في الإعدادات.
 import {useEffect, useState, type JSX} from 'react';
-import {Monitor, Moon, Sun} from 'lucide-react';
+import {Moon, Sun} from 'lucide-react';
 import {
   APPEARANCE_EVENT, setAppearance, currentAppearance,
   type Appearance,
 } from './appearance';
 
-const ORDER: Appearance[] = ['system', 'light', 'dark'];
-const LABEL: Record<Appearance, string> = {system: 'تلقائي (لون النظام)', light: 'نهاري', dark: 'ليلي'};
+const ORDER: Appearance[] = ['light', 'dark'];
+const LABEL: Record<Appearance, string> = {light: 'نهاري', dark: 'ليلي'};
 
 function subscribe(callback: () => void): () => void {
   window.addEventListener(APPEARANCE_EVENT, callback);
@@ -31,7 +31,7 @@ export function useAppearance(): [Appearance, (next: Appearance) => void] {
 export function AppearanceToggle(): JSX.Element {
   const [mode, change] = useAppearance();
   const cycle = () => change(ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length]);
-  const Icon = mode === 'dark' ? Moon : mode === 'light' ? Sun : Monitor;
+  const Icon = mode === 'dark' ? Moon : Sun;
   return (
     <button
       type="button"
@@ -51,7 +51,7 @@ export function AppearancePanel(): JSX.Element {
   return (
     <section className="panel" aria-label="مظهر المنصة">
       <h3>مظهر المنصة</h3>
-      <p className="muted small">«تلقائي» يتبع لون جهازك، ثم يمكنك اختيار النمط النهاري أو الليلي.</p>
+      <p className="muted small">اختر النمط النهاري أو الليلي. الافتراضي نهاري.</p>
       <div className="appearance-seg" role="radiogroup" aria-label="اختيار المظهر">
         {ORDER.map(option => (
           <button
@@ -62,8 +62,8 @@ export function AppearancePanel(): JSX.Element {
             className={mode === option ? 'selected' : ''}
             onClick={() => change(option)}
           >
-            {option === 'system' ? <Monitor size={16}/> : option === 'light' ? <Sun size={16}/> : <Moon size={16}/>}
-            {option === 'system' ? 'تلقائي' : option === 'light' ? 'نهاري' : 'ليلي'}
+            {option === 'light' ? <Sun size={16}/> : <Moon size={16}/>}
+            {option === 'light' ? 'نهاري' : 'ليلي'}
           </button>
         ))}
       </div>

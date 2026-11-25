@@ -62,7 +62,10 @@ export default function RecitersAudioLibrary({
   const [loadingList, setLoadingList] = useState(true);
   const [refreshingList, setRefreshingList] = useState(false);
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState<FilterTab>('famous');
+  const [tab, setTabRaw] = useState<FilterTab | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  // الضغط على التبويب المفتوح نفسه يغلق القائمة؛ البطاقات تبقى مغلقة حتى يفتحها المستخدم.
+  const setTab = (next: FilterTab) => { setTabRaw(current => (current === next ? null : next)); setExpandedId(null); };
   const [scope, setScope] = useState<ScopeKind>(() => (currentSurah ? 'current' : 'juz_amma'));
   const [singleSurah, setSingleSurah] = useState<number>(currentSurah ?? 1);
   const [chosenMoshafs, setChosenMoshafs] = useState<Record<number, number>>({});
@@ -177,7 +180,9 @@ export default function RecitersAudioLibrary({
 
   const filteredReciters = useMemo(() => {
     let base = reciters;
-    if (tab === 'famous') {
+    if (tab === null) {
+      base = query.trim() ? reciters : [];
+    } else if (tab === 'famous') {
       base = reciters.filter(r => r.famous);
     } else if (tab === 'downloaded') {
       base = reciters.filter(r => r.moshaf.some(m => (packs[m.id]?.chapters.length ?? 0) > 0));
@@ -262,12 +267,20 @@ export default function RecitersAudioLibrary({
     notify(`حُذفت تلاوات ${reciterName} المحفوظة.`);
   };
 
+  // «استماع» موحّد لكل القراء والروايات: يشغّل في مكانه دون الانتقال إلى المصحف.
+  const handleListen = (reciter: Reciter, moshaf: ReciterMoshaf) => {
+    const preferred = [currentSurah, singleSurah].find(ch => ch && moshaf.surahList.includes(ch));
+    const chapter = preferred ?? fullMushafChapters(moshaf)[0];
+    if (!chapter) { notify('لا توجد سور متاحة لهذه الرواية.'); return; }
+    const hafs = moshafCategory(moshaf.name) === 'hafs';
+    void backgroundAudio.playSingle({id: `listen:${moshaf.id}:${chapter}`, title: asset.surahs.find(x => x.n === chapter)?.name ?? String(chapter), subtitle: `${reciter.name}، ${moshaf.name}${hafs ? '' : '، للاستماع فقط'}`, url: audioUrl(moshaf, chapter), category: 'quran', meta: {mode: 'listen-only', moshafId: moshaf.id, surah: chapter}});
+  };
+
+  // «اعتماد للمصحف» يغيّر قارئ المصحف والحفظ (رواية حفص فقط).
   const handleSelect = (reciter: Reciter, moshaf: ReciterMoshaf, autoPlay: boolean) => {
-    if(moshafCategory(moshaf.name)!=='hafs'){
-      const chapter=targetChapters.find(ch=>moshaf.surahList.includes(ch));
-      if(!chapter){notify('السورة المختارة غير متاحة بهذه الرواية.');return;}
-      if(autoPlay)void backgroundAudio.playSingle({id:`listen-only:${moshaf.id}:${chapter}`,title:asset.surahs.find(s=>s.n===chapter)?.name??String(chapter),subtitle:`${reciter.name}، ${moshaf.name}، للاستماع فقط`,url:audioUrl(moshaf,chapter),category:'quran',meta:{mode:'listen-only',moshafId:moshaf.id,surah:chapter}});
-      notify('تشغيل مستقل للاستماع فقط؛ لم تتغير رواية النص أو إعدادات الحفظ.');return;
+    if (moshafCategory(moshaf.name) !== 'hafs') {
+      notify('هذه الرواية للاستماع فقط؛ لا تُعتمد لنص المصحف أو الحفظ.');
+      return;
     }
     saveSelectedReciterPref({
       reciterId: reciter.id,
@@ -393,6 +406,8 @@ export default function RecitersAudioLibrary({
 
       {loadingList ? (
         <p className="muted">جارٍ تجهيز قائمة القراء…</p>
+      ) : tab === null && !query.trim() ? (
+        <p className="muted small">اضغط «الأشهر» أو «الكل» لعرض القراء، أو ابحث بالاسم. الضغط على اسم القارئ يفتح خياراته.</p>
       ) : displayedReciters.length === 0 ? (
         <p className="muted">
           {tab === 'downloaded'
@@ -424,6 +439,12 @@ export default function RecitersAudioLibrary({
 
             return (
               <li key={reciter.id} className={`ol-row reciter-card ${isSelected ? 'reciter-selected' : ''}`}>
+                <button type="button" className="reciter-toggle" aria-expanded={expandedId === reciter.id} onClick={() => setExpandedId(id => (id === reciter.id ? null : reciter.id))}>
+                  <strong>{reciter.name}</strong>
+                  <span className="reciter-meta-text">{reciter.moshaf.length > 1 ? `${toArabicNumber(reciter.moshaf.length)} روايات` : moshaf.name}{downloadedCount > 0 ? ` · ${toArabicNumber(downloadedCount)} سورة منزّلة` : ''}</span>
+                  <span className="reciter-chevron" aria-hidden="true">{expandedId === reciter.id ? '▲' : '▼'}</span>
+                </button>
+                {expandedId === reciter.id && <>
                 <div className="reciter-card-top">
                   <div className="reciter-info">
                     <div className="reciter-title-row">
@@ -435,19 +456,17 @@ export default function RecitersAudioLibrary({
 
                     <div className="reciter-sub-row">
                       {reciter.moshaf.length > 1 ? (
-                        <select
-                          className="reciter-inline-moshaf"
-                          value={moshaf.id}
-                          onChange={e => setChosenMoshafs(prev => ({...prev, [reciter.id]: Number(e.target.value)}))}
-                          disabled={downloadingMoshafId !== null}
-                          aria-label={`رواية ${reciter.name}`}
-                        >
-                          {reciter.moshaf.map(m => (
-                            <option key={m.id} value={m.id}>
-                              {m.name} ({toArabicNumber(m.surahList.length)} سورة)
-                            </option>
-                          ))}
-                        </select>
+                        <div className="reciter-riwaya-groups" role="radiogroup" aria-label={`روايات ${reciter.name}`}>
+                          {([['hafs','حفص عن عاصم'],['warsh','ورش'],['qalun','قالون'],['other','روايات أخرى']] as const).map(([cat,label]) => {
+                            const items = reciter.moshaf.filter(m => moshafCategory(m.name) === cat);
+                            if (!items.length) return null;
+                            return <div key={cat} className="reciter-riwaya-group"><small>{label}</small>{items.map(m => (
+                              <button key={m.id} type="button" role="radio" aria-checked={m.id === moshaf.id} className={`reciters-scope-chip ${m.id === moshaf.id ? 'active' : ''}`} disabled={downloadingMoshafId !== null} onClick={() => setChosenMoshafs(prev => ({...prev, [reciter.id]: m.id}))}>
+                                {m.name} ({toArabicNumber(m.surahList.length)})
+                              </button>
+                            ))}</div>;
+                          })}
+                        </div>
                       ) : (
                         <span className="reciter-meta-text">
                           {moshaf.name} · {toArabicNumber(moshaf.surahList.length)} سورة
@@ -475,11 +494,16 @@ export default function RecitersAudioLibrary({
                   <button
                     type="button"
                     className={`reciter-btn-listen ${isSelected ? 'selected' : ''}`}
-                    onClick={() => handleSelect(reciter, moshaf, true)}
+                    onClick={() => handleListen(reciter, moshaf)}
                     disabled={!online && downloadedCount === 0}
                   >
-                    <Play size={15}/> {onSelectReciter ? (isSelected ? 'مُختار · تشغيل' : 'استماع الآن') : 'اختيار'}
+                    <Play size={15}/> استماع
                   </button>
+                  {moshafCategory(moshaf.name) === 'hafs' && (
+                    <button type="button" className="reciter-btn-dl" onClick={() => handleSelect(reciter, moshaf, false)}>
+                      {isSelected ? '✓ قارئ المصحف' : 'اعتماد للمصحف'}
+                    </button>
+                  )}
 
                   {isDownloading ? (
                     <button type="button" className="reciter-btn-dl downloading" onClick={stopDownload}>
@@ -550,6 +574,7 @@ export default function RecitersAudioLibrary({
                     )}
                   </div>
                 )}
+                </>}
               </li>
             );
           })}

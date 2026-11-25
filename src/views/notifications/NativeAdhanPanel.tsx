@@ -174,15 +174,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   };
 
   if (!supported) {
-    return (
-      <div className="notif-prayer-panel">
-        <h3>تنبيهات الأذان (نظام)</h3>
-        <p className="muted small">
-          تنبيهات الأذان على مستوى النظام (عند إغلاق التطبيق) متاحة في تطبيق Android (Capacitor) فقط.
-          في نسخة الويب، الأذان يعمل داخل التطبيق (إن كان مفتوحًا).
-        </p>
-      </div>
-    );
+    return null;
   }
 
   const activeSoundLabel = channelInfo.soundMode === 'adhan'

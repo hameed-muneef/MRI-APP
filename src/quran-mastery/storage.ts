@@ -41,6 +41,7 @@ const passageSchema = z.object({
   id: z.string().min(1),
   planId: z.string().optional(),
   range: verseRangeSchema,
+  group: z.array(verseRangeSchema).optional(),
   order: z.number().int(),
   schemaVersion: z.number().int(),
   createdAt: z.string(),
@@ -63,7 +64,7 @@ const sessionSchema = z.object({
 const repetitionEventSchema = z.object({
   id: z.string().min(1),
   sessionId: z.string().min(1),
-  scope: z.enum(['verse', 'group', 'passage']),
+  scope: z.enum(['verse', 'group', 'passage', 'cumulative']),
   surah: z.number().int().optional(),
   ayah: z.number().int().optional(),
   groupRefs: z.array(z.string()).optional(),
@@ -119,6 +120,8 @@ const scheduleSchema = z.object({
   intervalIndex: z.number().int().min(0).max(5),
   lapses: z.number().int().min(0),
   lastEvidenceDate: daySchema.optional(),
+  dueTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  scheduledSessionId: z.string().optional(),
   deferrals: z.array(z.object({date: daySchema, reason: z.string()})),
   updatedAt: z.string(),
 });

@@ -164,7 +164,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
 
   const nativeApp = isNativePlatform();
   const browserSupported = !nativeApp && isBrowserNotificationSupported();
-  const globalPaused = !prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false;
+  const globalPaused = !prefs.global_enabled || prefs.dnd_enabled;
 
   return (
     <div className="notif-task-panel">
@@ -203,20 +203,11 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
 
       {globalPaused && (
         <p className="notif-error" role="status">
-          تنبيه: تذكيرات المهام متوقفة حاليًا من الإعدادات العامة (الإيقاف العام أو عدم الإزعاج أو فئة المهام).
+          تنبيه: تذكيرات المهام متوقفة حاليًا من الإعدادات العامة (الإيقاف العام أو عدم الإزعاج).
         </p>
       )}
 
-      <label className="notif-switch">
-        <input
-          type="checkbox"
-          checked={taskSettings.enabled}
-          onChange={event => updateTaskSettings({enabled: event.target.checked})}
-        />
-        <span>تفعيل التذكير عند اقتراب وقت المهام اليومية المجدولة</span>
-      </label>
-
-      <fieldset disabled={!taskSettings.enabled}>
+      <fieldset>
         <div className="task-lead-presets" role="group" aria-label="اختيارات سريعة لوقت التذكير المسبق">
           <span className="muted small">التذكير قبل الموعد بـ:</span>
           <div className="task-preset-chips">

@@ -1,0 +1,48 @@
+import { chromium } from 'playwright';
+import { createServer } from 'node:http';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { join, extname } from 'node:path';
+const MIME = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2','.ttf':'font/ttf'};
+const srv = createServer((req,res)=>{ let f = join('dist', decodeURIComponent(new URL(req.url,'http://x').pathname)); if (!existsSync(f)||statSync(f).isDirectory()) f = join('dist','index.html'); try { res.writeHead(200,{'content-type':MIME[extname(f)]||'application/octet-stream'}); res.end(readFileSync(f)); } catch { res.writeHead(404); res.end(); } });
+await new Promise(r=>srv.listen(4184,r));
+const THEME=process.env.THEME||'light';
+const b = await chromium.launch({ channel:'chrome', args:['--no-sandbox','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required'] });
+const ctx = await b.newContext({ viewport:{width:390,height:844}, permissions:['microphone'] });
+const p = await ctx.newPage();
+p.on('pageerror',e=>console.log('PAGEERR',e.message.slice(0,150)));
+const go=async()=>{await p.goto('http://127.0.0.1:4184/',{waitUntil:'networkidle'});await p.waitForTimeout(1200);await p.evaluate(t=>document.documentElement.setAttribute('data-theme',t),THEME);};
+const clickT=async(t,sel='#root button')=>{const ok=await p.evaluate(([t,sel])=>{const e=[...document.querySelectorAll(sel)].find(e=>e.offsetParent&&e.innerText.trim().includes(t));if(e){e.click();return true}return false},[t,sel]);if(!ok)console.log('MISS',t);await p.waitForTimeout(600);};
+const shot=n=>p.screenshot({path:`/tmp/shots/pm-${THEME}-${n}.png`});
+const setNum=async(i,v)=>p.evaluate(([i,v])=>{const el=[...document.querySelectorAll('.hifz-entry input[type=number]')][i];const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;s.call(el,v);el.dispatchEvent(new Event('input',{bubbles:true}))},[i,v]);
+const openQuran=async()=>{await go();await p.evaluate(()=>{const x=[...document.querySelectorAll('.wide-card')].find(e=>e.dataset.section==='quran');x&&x.click()});await p.waitForTimeout(800);await clickT('مصحف الحفظ والإتقان');};
+const sel=(i,v)=>p.evaluate(([i,v])=>{const el=[...document.querySelectorAll('.hf-fields input[type=number]')][i];const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;s.call(el,v);el.dispatchEvent(new Event('input',{bubbles:true}))},[i,v]);
+const skip=()=>p.evaluate(()=>document.querySelector('.hf-scrim')?.click());
+await openQuran();await clickT('حفظ','.hf-choice');await clickT('بالصفحات','.hf-seg button');await sel(0,'603');await sel(1,'604');
+console.log('hint',await p.evaluate(()=>document.querySelector('.hf-hint')?.innerText));await shot('1-range');
+await clickT('موافق','.hf-ok');await p.waitForTimeout(1500);await skip();await shot('2-open');
+const st=()=>p.evaluate(()=>{const k=Object.keys(localStorage).find(k=>/rabbani-mastery-v1$/.test(k));const r=JSON.parse(localStorage.getItem(k));return JSON.stringify({passages:r.passages.map(x=>x.range.surah+':'+x.range.ayahStart+'-'+x.range.ayahEnd),sess:r.sessions.map(x=>x.stage+(x.endedAt?'*':''))})});
+console.log('title',await p.evaluate(()=>document.querySelector('.hf-title')?.innerText));console.log('s0',await st());
+await clickT('التالي','.hf-next');await skip();console.log('s1',await st());
+// play to check sequence across surahs
+await clickT('التالي','.hf-next');await clickT('التالي','.hf-next');await skip();console.log('s3',await st());
+await openQuran();console.log('entry',await p.evaluate(()=>document.querySelector('.hf-link')?.innerText));
+await clickT('تابع من حيث توقفت','.hf-link');await p.waitForTimeout(1200);await skip();console.log('resumed',await p.evaluate(()=>document.querySelector('.hf-strip')?.innerText.replace(/\n/g,' ')+' | pages '+document.querySelector('.qm-page-bar')?.innerText.replace(/\n/g,' ')));await shot('3-resumed');
+await clickT('التالي','.hf-next');await clickT('التالي','.hf-next');await skip();await clickT('التالي','.hf-next');await skip();
+await clickT('أحتاج','.hf-assess button');await p.waitForTimeout(800);
+const fin=await p.evaluate(()=>document.querySelector('.qm-notice')?.innerText);console.log('fin',fin);
+await p.evaluate(()=>{const k=Object.keys(localStorage).find(k=>/rabbani-mastery-v1$/.test(k));const r=JSON.parse(localStorage.getItem(k));const t=new Date();const ymd=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;r.schedules=r.schedules.map(x=>({...x,dueDate:ymd}));localStorage.setItem(k,JSON.stringify(r));localStorage.removeItem('rabbani-hifz-mushaf-v1')});
+for(const idx of [0,2]){
+await go();await p.evaluate(()=>{const x=[...document.querySelectorAll('.wide-card')].find(e=>e.dataset.section==='quran');x&&x.click()});await p.waitForTimeout(800);
+await p.evaluate(()=>document.querySelector('[data-quran-tab="plans"]')?.click());await p.waitForTimeout(1000);
+const n=await p.evaluate(i=>{const bs=[...document.querySelectorAll('#root button')].filter(b=>b.innerText.includes('ابدأ هذه المراجعة'));bs[i]?.click();return bs.length},idx);
+await p.waitForTimeout(1200);
+console.log('due-buttons',n,'idx',idx);
+await clickT('مراجعة','.hf-choice');
+console.log('hint',await p.evaluate(()=>document.querySelector('.hf-hint')?.innerText));
+await shot('PM'+idx+'-range');
+await clickT('موافق','.hf-ok');await p.waitForTimeout(1500);await skip();await shot('PM'+idx+'-reader');
+console.log('hdr',await p.evaluate(()=>document.querySelector('.hf-top,.hf-head,header')?.innerText?.replace(/\n/g,' ')),'|strip',await p.evaluate(()=>document.querySelector('.hf-strip')?.innerText?.replace(/\n/g,' ')));
+console.log('sessions',await p.evaluate(()=>{const k=Object.keys(localStorage).find(k=>/rabbani-mastery-v1$/.test(k));const r=JSON.parse(localStorage.getItem(k));return JSON.stringify({open:r.sessions.filter(x=>!x.endedAt).length,groups:r.passages.filter(x=>x.group).length,saved:JSON.parse(localStorage.getItem('rabbani-hifz-mushaf-v1')||'{}').tail?.length})}));
+await p.evaluate(()=>{const b=[...document.querySelectorAll('.hf-icon-btn')].find(e=>/إغلاق|رجوع/.test(e.getAttribute('aria-label')||''));b&&b.click()});
+}
+await b.close();srv.close();

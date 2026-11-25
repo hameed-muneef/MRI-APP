@@ -53,7 +53,7 @@ export default function QiblaScreen({ notify }: Props) {
   // Haptic feedback on alignment
   useEffect(() => {
     if (!aligned) return;
-    try { navigator.vibrate?.(40); } catch { /* ignore */ }
+    try { navigator.vibrate?.([90, 60, 160]); } catch { /* ignore */ }
   }, [aligned]);
 
   const statusText = (s: GeoStatus): string => {
@@ -82,6 +82,13 @@ export default function QiblaScreen({ notify }: Props) {
 
   return (
     <div className="qibla-page" dir="rtl">
+      {aligned && !digitalOnly && (
+        <div className="qibla-white-screen" role="status" aria-live="polite">
+          <span aria-hidden="true">✓</span>
+          <strong>أنت الآن باتجاه القبلة</strong>
+          <small>{Math.round(qibla)}° · {bearingToCardinal(qibla)}</small>
+        </div>
+      )}
       <div className="qibla-header">
         <h1><Compass size={22} /> اتجاه القبلة</h1>
         <p className="muted">وجّه هاتفك حتى يشير إلى الكعبة، ثم صلِّ.</p>

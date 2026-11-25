@@ -4,6 +4,7 @@
 import {useEffect, useRef} from 'react';
 import {filterMasteryReminders} from '../quran-mastery/reminders';
 import {loadMasteryState} from '../quran-mastery/storage';
+import {useCentralLocation} from '../hooks/useCentralLocation';
 import usePrayerTimes from '../usePrayerTimes';
 import {sanitizePrayerLocation, type PrayerLocation} from '../prayer-location';
 import {useDueWatcher, type DueItem} from './engine';
@@ -74,7 +75,9 @@ type Props = {
 };
 
 export default function LiveNotifications({prayers, prayerLocation, passages, tasks, goals, taskSchedules, dayPlan, onToast}: Props) {
-  const located = usePrayerTimes(Boolean(prayerLocation), sanitizePrayerLocation(prayerLocation));
+  // الموقع المركزي المشترك: إن وُجد موقع للجهاز أو موقع يدوي تُحسب المواقيت منه دون طلب إضافي.
+  const sharedLocation = useCentralLocation();
+  const located = usePrayerTimes(Boolean(prayerLocation) || Boolean(sharedLocation.coords), sanitizePrayerLocation(prayerLocation));
   const mergedPrayers = {...prayers, ...located.prayers};
   const taskContext: TaskScheduleContext | undefined = tasks && taskSchedules
     ? {tasks, goals: goals ?? [], taskSchedules, dayPlan, prayers: mergedPrayers}

@@ -32,7 +32,7 @@ export type MasterySession = {
 // ============ التكرار ============
 
 export const REPETITION_PRESETS = [1, 3, 5, 10, 15, 20] as const;
-export type RepetitionScope = 'verse' | 'group' | 'passage';
+export type RepetitionScope = 'verse' | 'group' | 'passage' | 'cumulative';
 
 export type RepetitionEvent = {
   id: string;
@@ -41,7 +41,7 @@ export type RepetitionEvent = {
   /** مرجع الآية لنطاق verse؛ فارغ لنطاقي group وpassage. */
   surah?: number;
   ayah?: number;
-  /** مراجع الآيات لنطاق group بصيغة s:a. */
+  /** مراجع الآيات لنطاق group أو cumulative بصيغة s:a. */
   groupRefs?: string[];
   configured: number;
   /** لا يُحسب إلا التشغيل المكتمل. */
@@ -145,6 +145,10 @@ export type RevisionSchedule = {
   lapses: number;
   /** محاولات في اليوم نفسه لا ترفع الدليل؛ يُسجَّل آخر يوم بنى دليلًا فعليًا. */
   lastEvidenceDate?: string;
+  /** وقت محلي HH:MM اختاره المتعلم لجلسة تسميع مجدولة (اختياري). */
+  dueTime?: string;
+  /** الجلسة التي أُجّل تسميعها، للعودة إليها. */
+  scheduledSessionId?: string;
   deferrals: {date: string; reason: string}[];
   updatedAt: string;
 };
@@ -178,6 +182,8 @@ export type MasteryPassage = {
   id: string;
   planId?: string;
   range: VerseRange;
+  /** مقاطع اختيار متعدد السور (صفحات)؛ تُعاد فتحها معًا. */
+  group?: VerseRange[];
   order: number;
   schemaVersion: number;
   createdAt: string;

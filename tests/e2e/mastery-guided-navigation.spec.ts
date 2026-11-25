@@ -72,7 +72,7 @@ for(const theme of ['light','dark'])test(`one understanding source and simple se
  await ui.getByRole('button',{name:'فهم الآيات',exact:true}).click();const sheet=page.getByRole('dialog',{name:'لوحة فهم الآية'});
  await expect(sheet.getByLabel('التفسير',{exact:true})).toBeVisible();await expect(sheet.getByLabel('الترجمة',{exact:true})).toHaveCount(0);
  await sheet.getByRole('button',{name:'ترجمة',exact:true}).click();await expect(sheet.getByLabel('الترجمة',{exact:true})).toBeVisible();await expect(sheet.getByLabel('التفسير',{exact:true})).toHaveCount(0);
- await sheet.getByRole('button',{name:'أسباب النزول',exact:true}).click();await expect(sheet).toContainText('لا يوجد سبب نزول لهذه الآية في هذا المصدر');await expect(sheet.locator('select')).toHaveCount(0);await page.screenshot({path:`/downloads/understanding-simple-${theme}.png`});
+ await sheet.getByRole('button',{name:'معاني الكلمات',exact:true}).click();await expect(sheet.locator('select')).toHaveCount(0);await page.screenshot({path:`/downloads/understanding-simple-${theme}.png`});
  await sheet.getByRole('button',{name:'إغلاق لوحة الفهم'}).click();await ui.getByRole('button',{name:'رجوع وحفظ الموضع'}).click();
  await page.goto('/');await page.getByRole('button',{name:/الإعدادات/}).first().click();
  await page.getByRole('tab',{name:'الهدوء والإشعارات',exact:true}).click();await expect(page.getByLabel('مكان ظهور التذكير')).toBeHidden();await page.getByText('خيارات إضافية للتنبيهات',{exact:true}).click();await expect(page.getByLabel('مكان ظهور التذكير')).toBeVisible();await page.screenshot({path:`/downloads/settings-simple-${theme}.png`});

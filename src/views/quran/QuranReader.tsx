@@ -14,7 +14,7 @@ import {
 import {dateKey} from '../../quran/learning';
 import {uid} from '../../id';
 import {EmptyNote, QuranVerseText, ReferenceBadge, copyText, shareText} from './ui';
-import {fetchTranslation, fetchTafsir, fetchAsbabNuzul, TRANSLATIONS, TAFSIRS, type FetchState} from '../../quran/content-api';
+import {fetchTranslation, fetchTafsir, TRANSLATIONS, TAFSIRS, type FetchState} from '../../quran/content-api';
 import {buildSequentialQueue} from '../../quran/audio-adapter';
 import {loadReciters, audioUrl, defaultMoshaf, moshafCategory, type Reciter} from '../../quran/audio';
 import {fetchAyahAudioUrl, fetchSurahAyahAudioUrls} from '../../quran/ayah-audio';
@@ -62,7 +62,7 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
   const [noteText, setNoteText] = useState('');
   const [noteAyah, setNoteAyah] = useState<number | null>(null);
   const [contentAyah, setContentAyah] = useState<number | null>(null);
-  const [contentTab, setContentTab] = useState<'translation' | 'tafsir' | 'asbab'>('tafsir');
+  const [contentTab, setContentTab] = useState<'translation' | 'tafsir'>('tafsir');
   const [translationId, setTranslationId] = useState<number>(TRANSLATIONS[0].id);
   const [tafsirId, setTafsirId] = useState<number>(TAFSIRS[0].id);
   const [contentState, setContentState] = useState<FetchState<string>>({ status: 'idle', data: null });
@@ -76,8 +76,7 @@ export default function QuranReader({asset, state, onState, notify}: Props) {
       try {
         let text: string | null = null;
         if (contentTab === 'translation') text = await fetchTranslation(key, translationId, controller.signal);
-        else if (contentTab === 'tafsir') text = await fetchTafsir(key, tafsirId, controller.signal);
-        else text = await fetchAsbabNuzul(key, controller.signal);
+        else text = await fetchTafsir(key, tafsirId, controller.signal);
         if (controller.signal.aborted) return;
         setContentState(text ? { status: 'success', data: text } : { status: 'empty', data: null });
       } catch (e) {
@@ -671,7 +670,6 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
               <div className="quran-content-tabs">
                 <button type="button" className={contentAyah === verse.a && contentTab === 'tafsir' ? 'active' : ''} onClick={() => { if (contentAyah === verse.a && contentTab === 'tafsir') setContentAyah(null); else { setContentAyah(verse.a); setContentTab('tafsir'); } }}>تفسير</button>
                 <button type="button" className={contentAyah === verse.a && contentTab === 'translation' ? 'active' : ''} onClick={() => { if (contentAyah === verse.a && contentTab === 'translation') setContentAyah(null); else { setContentAyah(verse.a); setContentTab('translation'); } }}>ترجمة</button>
-                <button type="button" className={contentAyah === verse.a && contentTab === 'asbab' ? 'active' : ''} onClick={() => { if (contentAyah === verse.a && contentTab === 'asbab') setContentAyah(null); else { setContentAyah(verse.a); setContentTab('asbab'); } }}>سبب النزول</button>
               </div>
               {contentAyah === verse.a && (
                 <div className="quran-content-panel">
@@ -692,7 +690,7 @@ useEffect(() => { try { localStorage.setItem('quran-autoscroll-speed', String(au
                   {!online && <p className="quran-online-note"><InternetBadge compact/> التفسير والترجمة يُجلبان عبر الإنترنت؛ ما فتحته سابقًا محفوظ على الجهاز.</p>}
                   {contentState.status === 'loading' && <p className="muted small">جارٍ التحميل…</p>}
                   {contentState.status === 'error' && <p className="muted small" role="alert">{online ? contentState.error : 'لا يوجد اتصال، ولم يُحفظ هذا المحتوى على الجهاز بعد.'}</p>}
-                  {contentState.status === 'empty' && <p className="muted small">{contentTab==='asbab'?'لا يوجد سبب نزول لهذه الآية في هذا المصدر.':online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
+                  {contentState.status === 'empty' && <p className="muted small">{online ? 'لا توجد بيانات متاحة.' : 'غير متاح دون اتصال.'}</p>}
                   {contentState.status === 'success' && <p className="quran-content-text">{contentState.data}</p>}
                 </div>
               )}
