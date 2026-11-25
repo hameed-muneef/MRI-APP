@@ -22,6 +22,7 @@ import org.robolectric.shadows.ShadowAlarmManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 /** Simulated Android runtime (Robolectric), not a physical device. */
 @RunWith(RobolectricTestRunner.class)
@@ -185,5 +186,85 @@ public class NativeReminderQueueTest {
         assertEquals(1, queued().size());
         NativeAdhanRecompute.refresh(ctx, "test"); // no spec: nothing to add, queue must still end up armed
         assertEquals(1, queued().size());
+    }
+
+    // ---- time zone / DST re-resolution (wall-clock kinds only) ----
+    private static NativeReminderQueue.Item wallItem(int id, int[] wall, String zone) {
+        TimeZone tz = TimeZone.getTimeZone(zone);
+        return new NativeReminderQueue.Item(id, NativeReminderQueue.instantOf(wall, tz), "t" + id, "b", "al-rabbani-general", wall, zone);
+    }
+
+    @Test public void zoneChangeKeepsTheLocalWallClockTime() {
+        int[] wall = {2026, 12, 3, 7, 30, 0};
+        NativeReminderQueue.Item cairo = wallItem(1, wall, "Africa/Cairo");
+        List<NativeReminderQueue.Item> out = NativeReminderQueue.reresolve(java.util.Collections.singletonList(cairo), TimeZone.getTimeZone("Asia/Riyadh"));
+        assertEquals(1, out.size());
+        assertEquals(NativeReminderQueue.instantOf(wall, TimeZone.getTimeZone("Asia/Riyadh")), out.get(0).atMs);
+        assertEquals("Asia/Riyadh", out.get(0).zone);
+        assertEquals(1, out.get(0).id);
+        assertEquals("t1", out.get(0).title);
+        // 07:30 local in both zones: the instants differ by exactly the offset difference, so quiet-hours outcome (a wall-clock rule) is unchanged.
+        assertEquals(7, NativeReminderQueue.wallOf(out.get(0).atMs, TimeZone.getTimeZone("Asia/Riyadh"))[3]);
+        assertEquals(30, NativeReminderQueue.wallOf(out.get(0).atMs, TimeZone.getTimeZone("Asia/Riyadh"))[4]);
+    }
+
+    @Test public void sameZoneAndAbsoluteItemsAreLeftAlone() {
+        NativeReminderQueue.Item a = wallItem(1, new int[] {2026, 12, 3, 7, 30, 0}, "Africa/Cairo");
+        NativeReminderQueue.Item abs = new NativeReminderQueue.Item(2, 123456789000L, "p", "b", "c");
+        List<NativeReminderQueue.Item> in = new ArrayList<>();
+        in.add(a); in.add(abs);
+        List<NativeReminderQueue.Item> out = NativeReminderQueue.reresolve(in, TimeZone.getTimeZone("Africa/Cairo"));
+        assertEquals(a.atMs, out.get(0).atMs);
+        assertEquals(123456789000L, out.get(1).atMs);
+        out = NativeReminderQueue.reresolve(in, TimeZone.getTimeZone("Asia/Riyadh"));
+        assertEquals(123456789000L, out.get(1).atMs); // prayer-style absolute instants never move
+    }
+
+    @Test public void dstGapMovesForwardAndOverlapTakesTheFirstOccurrence() {
+        TimeZone ny = TimeZone.getTimeZone("America/New_York");
+        // 2026-03-08 02:30 does not exist in New York (clocks jump 02:00 -> 03:00).
+        long gap = NativeReminderQueue.instantOf(new int[] {2026, 3, 8, 2, 30, 0}, ny);
+        int[] gw = NativeReminderQueue.wallOf(gap, ny);
+        assertEquals(3, gw[3]);
+        // 2026-11-01 01:30 happens twice; the first is EDT (UTC-4) = 05:30Z.
+        long overlap = NativeReminderQueue.instantOf(new int[] {2026, 11, 1, 1, 30, 0}, ny);
+        assertEquals(1793511000000L, overlap);
+    }
+
+    @Test public void setQueueStampsWallClockForTaskButNotPrayer() {
+        long now = System.currentTimeMillis();
+        NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 1));
+        NativeReminderQueue.setQueue(ctx, "prayer", items(now + DAY, 2));
+        List<NativeReminderQueue.Item> task = NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_task", null));
+        List<NativeReminderQueue.Item> prayer = NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_prayer", null));
+        assertTrue(task.get(0).wall != null && task.get(0).zone != null);
+        assertEquals(null, prayer.get(0).wall);
+    }
+
+    @Test public void zoneChangeMovesStoredItemsOnPromoteWithoutResurrectingOrAdding() {
+        TimeZone saved = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Africa/Cairo"));
+            long now = System.currentTimeMillis();
+            NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 1, now + 2 * DAY, 2));
+            NativeReminderQueue.setQueue(ctx, "prayer", items(now + DAY, 3));
+            // the app later replaced the task queue with only item 2 (item 1 was completed): it must stay gone
+            NativeReminderQueue.setQueue(ctx, "task", items(now + 2 * DAY, 2));
+            TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Kiritimati")); // +14:00, far from Cairo
+            assertEquals(2, NativeReminderQueue.promote(ctx));
+            long taskAt = -1, prayerAt = -1;
+            for (ShadowAlarmManager.ScheduledAlarm a : queued()) {
+                int id = shadowOf(a.operation).getSavedIntent().getIntExtra("id", -1);
+                if (id == 2) taskAt = a.triggerAtTime;
+                if (id == 3) prayerAt = a.triggerAtTime;
+                assertTrue(id != 1);
+            }
+            assertEquals(now + DAY, prayerAt);
+            int[] w = NativeReminderQueue.wallOf(taskAt, TimeZone.getTimeZone("Pacific/Kiritimati"));
+            int[] was = NativeReminderQueue.wallOf(now + 2 * DAY, TimeZone.getTimeZone("Africa/Cairo"));
+            assertEquals(java.util.Arrays.toString(was), java.util.Arrays.toString(w));
+        } finally {
+            TimeZone.setDefault(saved);
+        }
     }
 }
