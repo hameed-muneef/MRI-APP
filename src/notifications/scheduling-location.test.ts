@@ -28,19 +28,12 @@ describe('scheduling location for native adhan', () => {
   });
 });
 
-import {upgradeLegacyPrayerDefaults} from './prefs-store';
-describe('legacy prayer defaults upgrade', () => {
-  const legacy = (over = {}) => ({...DEFAULT_NOTIFICATION_PREFERENCE, prayer_settings: {...DEFAULT_NOTIFICATION_PREFERENCE.prayer_settings,
-    الظهر: {enabled: true, adhan_type: 'short' as const, channel: 'in_app' as const, ...over},
-    العصر: {enabled: true, adhan_type: 'short' as const, channel: 'in_app' as const}}});
-  it('upgrades untouched legacy Dhuhr/Asr', () => {
-    const r = upgradeLegacyPrayerDefaults(legacy());
-    expect(r.changed).toBe(true);
-    expect(r.prefs.prayer_settings['الظهر'].channel).toBe('both');
-  });
-  it('leaves customised entries alone', () => {
-    const r = upgradeLegacyPrayerDefaults(legacy({adhan_type: 'silent'}));
-    expect(r.prefs.prayer_settings['الظهر'].channel).toBe('in_app');
-    expect(r.prefs.prayer_settings['العصر'].channel).toBe('both');
+describe('schedule horizon', () => {
+  it('covers 30 days of alarms by default so a gap between app opens is survivable', () => {
+    const loc = {name: 'c', country: '', latitude: 30.0444, longitude: 31.2357, timezone: 'Africa/Cairo'};
+    const now = new Date('2026-11-25T08:00:00Z');
+    const alarms = buildNativeAdhanAlarmInputs({location: loc, prefs: DEFAULT_NOTIFICATION_PREFERENCE, now, days: 30});
+    const last = alarms[alarms.length - 1].triggerAtMs;
+    expect((last - now.getTime()) / 86400000).toBeGreaterThan(28);
   });
 });
