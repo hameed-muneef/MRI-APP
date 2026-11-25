@@ -2,6 +2,7 @@ import {parseStoredState} from './state-schema';
 import {type DayPlan} from './DayPlanner';
 import {type DayRecords} from './day-tracking';
 import {type Goal} from './goal-plan';
+import {type AchievementEntry} from './achievement/log';
 import {type PrayerLocation} from './prayer-location';
 import {createQuranState} from './quran/learning';
 import type {QuranLearningState} from './quran/types';
@@ -9,13 +10,13 @@ import {periodKey, normalizeWirds} from './wird-periods';
 export {periodKey} from './wird-periods';
 
 // أنواع الحالة المشتركة ومساعداتها، لاستخدامها في App والواجهات المستخرجة
-export type View='home'|'day'|'tasks'|'week'|'month'|'goals'|'quran'|'haramain'|'reflect'|'wird'|'profile'|'settings'|'payment'|'paymentHistory'|'qibla'|'mosques';
+export type View='home'|'day'|'tasks'|'week'|'month'|'goals'|'quran'|'haramain'|'reflect'|'wird'|'profile'|'settings'|'payment'|'paymentHistory'|'qibla'|'mosques'|'achievement';
 export type Period='daily'|'weekly'|'monthly';
 // doneKey: مفتاح الفترة التي تأشر فيها المهمة («يومي مع الله» جديد يوميًا، والأسبوعي والشهري مرتبطان بفترتهما)؛ راجع task-periods.ts
 export type Task={id:string;title:string;period:Period;done:boolean;optional:boolean;weekStart?:string;monthKey?:string;scheduledDate?:string;doneKey?:string;sourceLabel?:string;source?:{groupId:string;revision:number;position:number};hifz?:{passageId:string;sessionId:string;surah:number;from:number;to:number;tail?:{surah:number;from:number;to:number}[]}};
 export type TaskSchedule={initialDate?:string;initialSlot?:string;initialTime?:string;confirmedDate?:string;confirmedSlot?:string;confirmedTime?:string;title:string;sourceLabel:string;notifyEnabled?:boolean;remindBeforeMinutes?:number};
 export type Wird={id:string;title:string;target:number;count:number;period:Period;periodKey:string};
-export type State={dayPlan?:DayPlan;dayRecords?:DayRecords;taskSchedules?:Record<string,TaskSchedule>;tasks:Task[];goals:Goal[];wirds:Wird[];reflections:{id:string;date:string;text:string}[];lessonStep:number;prayers:Record<string,string>;prayerLocation?:PrayerLocation;quran:QuranLearningState};
+export type State={dayPlan?:DayPlan;dayRecords?:DayRecords;taskSchedules?:Record<string,TaskSchedule>;tasks:Task[];goals:Goal[];wirds:Wird[];reflections:{id:string;date:string;text:string}[];lessonStep:number;prayers:Record<string,string>;prayerLocation?:PrayerLocation;quran:QuranLearningState;achievementLog?:AchievementEntry[]};
 
 export const today=()=>new Date().toLocaleDateString('en-CA');
 
