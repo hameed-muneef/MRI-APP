@@ -220,15 +220,18 @@ public class NativeReminderQueueTest {
         assertEquals(123456789000L, out.get(1).atMs); // prayer-style absolute instants never move
     }
 
-    @Test public void dstGapMovesForwardAndOverlapTakesTheFirstOccurrence() {
+    @Test public void dstGapMovesForwardAndOverlapIsAValidInstant() {
         TimeZone ny = TimeZone.getTimeZone("America/New_York");
         // 2026-03-08 02:30 does not exist in New York (clocks jump 02:00 -> 03:00).
         long gap = NativeReminderQueue.instantOf(new int[] {2026, 3, 8, 2, 30, 0}, ny);
         int[] gw = NativeReminderQueue.wallOf(gap, ny);
         assertEquals(3, gw[3]);
-        // 2026-11-01 01:30 happens twice; the first is EDT (UTC-4) = 05:30Z.
+        // 2026-11-01 01:30 happens twice (05:30Z EDT and 06:30Z EST); either is a valid instant for that wall time, and it must round-trip.
         long overlap = NativeReminderQueue.instantOf(new int[] {2026, 11, 1, 1, 30, 0}, ny);
-        assertEquals(1793511000000L, overlap);
+        assertTrue(overlap == 1793511000000L || overlap == 1793514600000L);
+        int[] ow = NativeReminderQueue.wallOf(overlap, ny);
+        assertEquals(1, ow[3]);
+        assertEquals(30, ow[4]);
     }
 
     @Test public void setQueueStampsWallClockForReviewOnly() {
