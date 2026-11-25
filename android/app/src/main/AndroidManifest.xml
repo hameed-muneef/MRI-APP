@@ -37,6 +37,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".DailyRefreshReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".AlarmRestoreReceiver"
             android:exported="false">
             <intent-filter>
