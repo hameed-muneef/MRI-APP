@@ -26,6 +26,8 @@ import {EmptyNote} from './quran/ui';
 export type QuranSection = 'mushaf' | 'tafsir' | 'translations' | 'reciters' | 'hifz' | 'plans' | 'revision' | 'bukhari' | 'muslim' | 'sunnah' | 'routine' | 'progress' | 'azkar';
 
 type Props = {
+  /** يرجع إلى الشاشة السابقة في التطبيق عندما لا يوجد قسم سابق داخل القرآن. */
+  onBackToPrevious?: () => void;
   state: QuranLearningState;
   onState: (next: QuranLearningState) => void;
   tasks: Task[];
@@ -52,7 +54,7 @@ const SECTIONS: {id: QuranSection; title: string; description: string; icon: typ
   {id: 'azkar', title: 'أذكار', description: 'حصن المسلم — أذكار الصباح والمساء وسائر الأوقات، مع عداد تكرار وصوت.', icon: Flower2}
 ];
 
-export default function QuranSunnahView({state, onState, tasks, onTasks, taskSchedules, onTaskSchedules, notify, onOpenTasks, initialSection}: Props) {
+export default function QuranSunnahView({state, onState, tasks, onTasks, taskSchedules, onTaskSchedules, notify, onOpenTasks, initialSection, onBackToPrevious}: Props) {
   const [section, setSection] = useState<QuranSection>(initialSection === 'revision' ? 'hifz' : initialSection ?? 'mushaf');
   const [masteryPurpose, setMasteryPurpose] = useState<'new' | 'revision'>(initialSection === 'revision' ? 'revision' : 'new');
   const [autoPlayToken, setAutoPlayToken] = useState(0);
@@ -63,14 +65,21 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, taskSch
   const [navToken, setNavToken] = useState(0);
 
   // الرجوع من أي قسم داخلي (تفسير، حفظ، أذكار...) يعود إلى المصحف.
-  useBackHandler(() => {
-    setSection('mushaf');
-    setNavToken(value => value + 1);
-  }, section !== 'mushaf');
+  // الرجوع يعيد إلى القسم السابق فعلًا. إن لم يكن هناك قسم سابق داخل القرآن
+  // (فُتح القسم من الرئيسية أو المهام مثلًا) يعود التطبيق إلى الشاشة السابقة.
+  const sectionStack = useRef<QuranSection[]>([]);
+  const goBackSection = () => {
+    const prev = sectionStack.current.pop();
+    if (prev) { setSection(prev); setNavToken(value => value + 1); return true; }
+    return false;
+  };
+  useBackHandler(() => { goBackSection(); }, sectionStack.current.length > 0 && section !== 'mushaf');
 
   const handleSectionChange = (id: QuranSection) => {
     if (id === 'hifz' || id === 'revision') setMasteryPurpose(id === 'revision' ? 'revision' : 'new');
-    setSection(id === 'revision' ? 'hifz' : id);
+    const target = id === 'revision' ? 'hifz' : id;
+    if (target !== section) sectionStack.current.push(section);
+    setSection(target);
     setNavToken(value => value + 1);
   };
 
@@ -140,7 +149,7 @@ export default function QuranSunnahView({state, onState, tasks, onTasks, taskSch
             }}
           />
         )}
-        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} onExit={() => setSection('mushaf')} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
+        {section === 'hifz' && <><HifzHome asset={asset} purpose={masteryPurpose} notify={notify} onExit={() => { if (!goBackSection()) onBackToPrevious?.(); }} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules ?? {}} onTaskSchedules={onTaskSchedules}/><details><summary>الخطط والسجلات السابقة (محفوظة دون تغيير)</summary><QuranJourney asset={asset} state={state} onOpen={handleSectionChange}/><QuranMemorization asset={asset} state={state} onState={onState} notify={notify}/><QuranRevision asset={asset} state={state} onState={onState} notify={notify}/></details></>}
         {section === 'plans' && <QuranPlansCard asset={asset} state={state} onState={onState} notify={notify} onOpen={handleSectionChange} onOpenHifz={() => handleSectionChange('hifz')}/>}
         {section === 'bukhari' && <HadithLibrary collectionKey="bukhari" mode="library" state={state} onState={onState} notify={notify}/>}
         {section === 'muslim' && <HadithLibrary collectionKey="muslim" mode="library" state={state} onState={onState} notify={notify}/>}
