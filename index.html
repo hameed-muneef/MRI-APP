@@ -49,6 +49,15 @@
     "description": "منصة إسلامية للتعلم والعمل بالقرآن والسنة وتزكية النفس."
   }
   </script>
+  <script nomodule>
+    // Only runs where the system WebView is too old for ES modules (Chrome below 61), instead of a blank screen.
+    document.addEventListener('DOMContentLoaded', function () {
+      var d = document.createElement('div');
+      d.setAttribute('style', 'padding:24px;font:18px sans-serif;direction:rtl;text-align:center;color:#244638');
+      d.textContent = 'محرك العرض (WebView) في هاتفك قديم. حدّث «Android System WebView» و«Chrome» من متجر Google Play ثم افتح التطبيق من جديد.';
+      document.body.appendChild(d);
+    });
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
