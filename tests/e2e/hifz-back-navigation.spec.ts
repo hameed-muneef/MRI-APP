@@ -47,13 +47,42 @@ test.describe('hifz hardware back navigation', () => {
     await expect(page.locator('.quran-section-grid')).toHaveCount(0);
   });
 
-  test('opened from the home screen, back returns to home', async ({page}) => {
+  test('Quran page then hifz: back goes to the Quran page, then to the home screen', async ({page}) => {
     await page.goto('/');
     await page.locator('.mobile-nav button', {hasText: 'القرآن'}).click();
+    await expect(tab(page, 'mushaf')).toHaveAttribute('aria-current', 'page');
     await tab(page, 'hifz').click();
     await expect(page.locator('.hf-entry')).toBeVisible({timeout: 15_000});
     await back(page);
     await expect(page.locator('.hf-entry')).toHaveCount(0);
-    await expect(page.locator('.mobile-nav')).toBeVisible();
+    await expect(tab(page, 'mushaf')).toHaveAttribute('aria-current', 'page');
+    await back(page);
+    await expect(page.locator('.quran-section-grid')).toHaveCount(0);
+    await expect(page.locator('.mobile-nav button', {hasText: 'الرئيسية'})).toHaveAttribute('aria-current', 'page');
+  });
+
+  test('opened from a task (tasks -> hifz): back returns to the tasks screen, not the Quran page', async ({page}) => {
+    await page.goto('/');
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => {
+      const k = Object.keys(localStorage).find(x => /rabbani-v1$/.test(x))!;
+      const st = JSON.parse(localStorage.getItem(k)!);
+      const d = new Date();
+      const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      st.tasks = [...(st.tasks || []), {id: 't-hifz', title: 'تسميع الإخلاص', period: 'daily', done: false, optional: false, scheduledDate: day, hifz: {passageId: 'p1', sessionId: 's1', surah: 112, from: 1, to: 4}}];
+      localStorage.setItem(k, JSON.stringify(st));
+    });
+    await page.reload();
+    await page.locator('.mobile-nav button', {hasText: 'حياتي'}).click();
+    await page.locator('button', {hasText: 'مهام اليوم'}).first().click();
+    await expect(page.getByText('مركز المهام').first()).toBeVisible();
+    await page.locator('button', {hasText: 'ابدأ التسميع'}).first().click();
+    await expect(page.locator('.hf-screen').first()).toBeVisible({timeout: 15_000});
+    // أول رجوع يغلق جلسة التسميع المفتوحة (تُحفظ كمتوقفة)، والثاني يغادر مصحف الحفظ إلى المهام.
+    if (await page.locator('.hf-reading').count()) { await back(page); await expect(page.locator('.hf-entry')).toBeVisible(); }
+    await back(page);
+    await expect(page.locator('.hf-screen')).toHaveCount(0);
+    await expect(page.getByText('مركز المهام').first()).toBeVisible();
+    await expect(page.locator('.quran-section-grid')).toHaveCount(0);
   });
 });
