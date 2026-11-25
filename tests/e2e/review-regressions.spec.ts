@@ -15,7 +15,8 @@ async function seed(page: Page, mutate: string) {
 
 async function openRevision(page: Page) {
   await page.locator('.mobile-nav button').filter({hasText: 'القرآن'}).click();
-  await page.locator('.quran-section-grid button').filter({hasText: 'مراجعة القرآن'}).click();
+  // Legacy passage review lives in the "previous plans and records" tile (the hifz screen is a full-screen overlay).
+  await page.locator('[data-quran-tab="legacy"]').click();
 }
 
 test.describe('review and midnight regressions', () => {
