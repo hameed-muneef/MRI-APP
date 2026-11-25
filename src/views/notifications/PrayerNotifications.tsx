@@ -187,7 +187,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
                           value={setting.channel}
                           onChange={event => update(prayer, {channel: event.target.value as NotificationChannel})}
                         >
-                          {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => (
+                          {(['system', 'both'] as NotificationChannel[]).map(key => (
                             <option key={key} value={key}>{channelLabel(key)}</option>
                           ))}
                         </select>
