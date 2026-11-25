@@ -6,6 +6,7 @@ import {
   buildNativeReminderPayloads,
   channelIdForRawSound,
   GENERAL_CHANNEL_ID,
+  SILENT_REMINDER_CHANNEL_ID,
 } from './native-prayer-scheduler';
 import { DEFAULT_NOTIFICATION_PREFERENCE, type NotificationPreference, type Reminder } from './types';
 import type { PrayerLocation } from '../prayer-location';
@@ -111,6 +112,8 @@ describe('buildNativePrayerPayloads', () => {
       ...prefs.prayer_settings['الفجر'],
       enabled: true,
       adhan_type: 'silent',
+      remind_before_minutes: 10,
+      remind_after_minutes: 5,
     };
     prefs.prayer_settings['العصر'] = {
       ...prefs.prayer_settings['العصر'],
@@ -140,7 +143,13 @@ describe('buildNativePrayerPayloads', () => {
 
     const fajr = payloads.filter((p) => p.extra?.prayer === 'Fajr');
     expect(fajr.length).toBeGreaterThan(0);
-    expect(fajr.every((p) => p.extra?.eventType === 'at')).toBe(true); // before/after reminders are not generated for silent prayers (unchanged)
+    expect(fajr.some((p) => p.extra?.eventType === 'before' || p.extra?.eventType === 'after')).toBe(true); // before/after reminders ARE delivered for silent prayers
+    expect(fajr.filter((p) => p.extra?.eventType !== 'at').every((p) => p.channelId === SILENT_REMINDER_CHANNEL_ID)).toBe(true); // silent channel: no sound, no vibration
+    const fajrExtra = fajr.filter((p) => p.extra?.eventType !== 'at');
+    expect(fajrExtra.some((p) => p.extra?.eventType === 'before') && fajrExtra.some((p) => p.extra?.eventType === 'after')).toBe(true);
+    const disabledPrefs = JSON.parse(JSON.stringify(prefs));
+    disabledPrefs.prayer_settings['الفجر'].enabled = false;
+    expect(buildNativePrayerPayloads({ location: MAKKAH, prefs: disabledPrefs, days: 7, now, generalChannelId: GENERAL_CHANNEL_ID, exactAlarm: false, defaultAdhanId: 'almulla' }).filter((p) => p.extra?.prayer === 'Fajr')).toEqual([]); // fully off stays off
     const silentAlarms = buildNativeAdhanAlarmInputs({ location: MAKKAH, prefs, days: 7, now }).filter((a) => a.prayerKey.endsWith(':fajr') || a.prayerKey.toLowerCase().endsWith(':fajr'));
     expect(silentAlarms.length).toBeGreaterThan(0);
     expect(silentAlarms.every((a) => a.adhanType === 'silent' && !a.body.includes('·'))).toBe(true);
