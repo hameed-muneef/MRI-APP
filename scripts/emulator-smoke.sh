@@ -29,7 +29,11 @@ for i in 1 2 3; do
       echo "NOTE: a runtime permission prompt is shown over the app (prompt $i): $r"
       adb shell uiautomator dump /sdcard/perm.xml >/dev/null 2>&1 || true
       adb shell cat /sdcard/perm.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -8
-      adb shell input keyevent KEYCODE_BACK; sleep 8 ;;
+      adb shell input keyevent KEYCODE_BACK; sleep 8
+      after=$(adb shell dumpsys activity activities | tr -d '\r' | grep -m1 -E "mResumedActivity|ResumedActivity" || true)
+      case "$after" in *GrantPermissionsActivity*) echo "NOTE: the prompt is still shown after Back" ;; *) echo "NOTE: the prompt was dismissed by Back" ;; esac
+      echo "NOTE: recorded permission state after Back (not assumed):"
+      adb shell dumpsys package "$PKG" | tr -d '\r' | grep -E "android.permission.(ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|POST_NOTIFICATIONS): granted" ;;
     *) break ;;
   esac
 done
