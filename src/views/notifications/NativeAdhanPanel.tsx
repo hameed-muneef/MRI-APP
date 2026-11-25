@@ -6,6 +6,8 @@ import { type PrayerLocation } from '../../prayer-location';
 import {
   addAppResumeListener,
   getAndroidEnvironmentStatus,
+  getNativeRecomputeState,
+  type NativeRecomputeState,
   openAppSettings as openNativeAppSettings,
   openBatterySettings as openNativeBatterySettings,
   openExactAlarmSettings as openNativeExactAlarmSettings,
@@ -40,6 +42,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const [result, setResult] = useState<string>('');
   const [supported] = useState(isNativePlatform());
   const [explainerOpen, setExplainerOpen] = useState(false);
+  const [recompute, setRecompute] = useState<NativeRecomputeState | null>(null);
   const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[]; until: string; globalOff: boolean; dnd: boolean } | null>(null);
 
   const refresh = useCallback(async () => {
@@ -65,6 +68,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       setChannelInfo(ch);
       setEnvStatus(env);
     } catch { /* ignore */ }
+    try { setRecompute(await getNativeRecomputeState()); } catch { /* ignore */ }
   }, [prayerLocation]);
 
   useEffect(() => {
@@ -250,6 +254,16 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         <div><strong>المنبهات الدقيقة:</strong> {perm.exact==='granted'?'مفعّلة':perm.exact==='unsupported'?'غير مدعومة':'تحتاج إذنًا'}</div>
         <div><strong>قناة الأذان:</strong> {channelInfo.adhanChannelId || ADHAN_CHANNEL_ID} · {activeSoundLabel}</div>
         <div><strong>قناة عامة:</strong> {GENERAL_CHANNEL_ID} · <strong>البطارية:</strong> {batteryLabel}</div>
+        {recompute && (
+          <div data-native-recompute={recompute.result}><strong>تجديد الأذان تلقائيًا (بدون فتح التطبيق):</strong>{' '}
+            {recompute.result === 'ok' ? `يعمل · آخر تجديد ${recompute.lastRunMs ? new Date(recompute.lastRunMs).toLocaleString('ar') : '—'} · أُضيف ${recompute.added}`
+              : recompute.result === 'unsupported' ? 'غير مدعوم لطريقة الحساب الحالية، فيبقى الأذان المجدول عند فتح التطبيق فقط'
+              : recompute.result === 'invalid_spec' || recompute.result === 'failed' ? 'تعذّر التجديد؛ الأذان المجدول سابقًا باقٍ وسيُجدَّد عند فتح التطبيق'
+              : recompute.result === 'no_spec' ? 'لا توجد إعدادات محفوظة بعد (تُحفظ عند الجدولة)'
+              : 'لم يُشغَّل بعد'}
+            {' · '}تنبيهات ما قبل/بعد الصلاة والمهام والمراجعة والتذكيرات تتجدد عند فتح التطبيق فقط.
+          </div>
+        )}
       </div></details>
 
       {health && (health.globalOff || health.dnd) && (
