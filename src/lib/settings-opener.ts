@@ -17,6 +17,13 @@ export interface AndroidEnvironmentStatus {
   scheduledAdhanCount?: number;
 }
 
+export interface NativeRecomputeState {
+  result: 'never_run' | 'no_spec' | 'ok' | 'unsupported' | 'invalid_spec' | 'failed' | string;
+  lastRunMs: number;
+  added: number;
+  detail?: string;
+}
+
 export interface NativeAdhanAlarmInput {
   id: number;
   triggerAtMs: number;
@@ -36,6 +43,10 @@ interface SettingsOpenerPlugin {
   ensureNativeAdhanChannel(opts: { rawSound: string; soundTitle: string }): Promise<{ channelId: string }>;
   scheduleNativeAdhanAlarms(opts: { alarms: NativeAdhanAlarmInput[] }): Promise<{ scheduled: number; exact: boolean }>;
   cancelNativeAdhanAlarms(): Promise<{ cancelled: number }>;
+  setNativeRecomputeSpec(opts: { spec: string }): Promise<void>;
+  clearNativeRecomputeSpec(): Promise<void>;
+  getNativeRecomputeState(): Promise<NativeRecomputeState>;
+  runNativeRecomputeNow(): Promise<{ result: string }>;
   stopNativeAdhan(): Promise<{ stopped: boolean }>;
   addListener(eventName: 'appResumed', listenerFunc: () => void): Promise<PluginListenerHandle>;
 }
@@ -110,6 +121,26 @@ export async function cancelNativeAdhanAlarms(): Promise<number> {
     return res.cancelled ?? 0;
   } catch {
     return 0;
+  }
+}
+
+export async function setNativeRecomputeSpec(spec: object | null): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    if (spec) await SettingsOpener.setNativeRecomputeSpec({ spec: JSON.stringify(spec) });
+    else await SettingsOpener.clearNativeRecomputeSpec();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getNativeRecomputeState(): Promise<NativeRecomputeState | null> {
+  if (!isNative()) return null;
+  try {
+    return await SettingsOpener.getNativeRecomputeState();
+  } catch {
+    return null;
   }
 }
 
