@@ -16,9 +16,9 @@ export type Stat = {headline: string; detail: string; ratio?: number; tone: Tone
 export function toneOf(done: number, planned: number): Tone {
   if (planned <= 0) return 'none';
   const r = done / planned;
-  return r >= 0.8 ? 'good' : r >= 0.5 ? 'steady' : 'behind';
+  return r >= 1 ? 'good' : r >= 0.8 ? 'steady' : 'behind'; // الأخضر فقط عند بلوغ المقرر كاملًا
 }
-export const statusOf = (tone: Tone): string => tone === 'good' ? 'على الخطة' : tone === 'steady' ? 'قريب من الخطة' : tone === 'behind' ? 'متأخر عن الخطة' : 'لا مقرر أو لا سجل بعد';
+export const statusOf = (tone: Tone): string => tone === 'good' ? 'بلغ المقرر' : tone === 'steady' ? 'قريب من المقرر' : tone === 'behind' ? 'متأخر عن المقرر' : 'لا مقرر أو لا سجل بعد';
 export const ratioOf = (done: number, planned: number) => planned > 0 ? Math.min(1, done / planned) : undefined;
 
 // ============ القرآن: تغطية الآيات بلا عدّ مزدوج ============
