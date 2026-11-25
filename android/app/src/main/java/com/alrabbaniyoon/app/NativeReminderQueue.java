@@ -63,8 +63,13 @@ public final class NativeReminderQueue {
         }
     }
 
-    /** Kinds whose time is the device's local wall clock (task, review, custom reminder). Prayer items follow the prayer instant and stay absolute. */
-    static boolean followsWallClock(String kind) { return !"prayer".equals(kind); }
+    /**
+     * Kinds that the JS builders plan from the device's local wall clock, so an app open after a time zone change moves them
+     * with the clock. Verified against the real builders in src/notifications/tz-semantics.test.ts: review reminders are
+     * wall-clock. Custom reminders keep their instant of day instead, and prayer items follow the prayer instant, so both
+     * stay absolute. Task items mix local times with prayer-relative times and are not verified, so they stay absolute too.
+     */
+    static boolean followsWallClock(String kind) { return "review".equals(kind); }
 
     /** Pure: the local wall-clock fields of an instant in a zone. */
     static int[] wallOf(long atMs, TimeZone tz) {
@@ -194,7 +199,7 @@ public final class NativeReminderQueue {
         stored.put(o);
     }
 
-    /** Re-resolves every stored wall-clock item to the device's current zone (time zone change, boot, daily top-up). Never throws. */
+    /** Re-resolves every stored wall-clock item (review kind only) to the device's current zone (time zone change, boot, daily top-up). Never throws. */
     static synchronized void reresolveStored(Context c) {
         try {
             TimeZone tz = TimeZone.getDefault();
