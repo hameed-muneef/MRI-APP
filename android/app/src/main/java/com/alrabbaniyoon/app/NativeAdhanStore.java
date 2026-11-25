@@ -34,6 +34,7 @@ public final class NativeAdhanStore {
     private static final String PREFS_NAME = "RABBANI_NATIVE_ADHAN_STORE_V1";
     private static final String KEY_ALARMS_JSON = "scheduled_alarms_json";
     public static final String DEFAULT_ADHAN_RAW = "adhan_almulla";
+    public static final String SILENT_CHANNEL_ID = "al-rabbani-adhan-silent-v1";
     public static final String PLAYBACK_CHANNEL_ID = "al-rabbani-adhan-playback-v1";
 
     private static final Set<String> ALLOWED_ADHAN_RAW_NAMES = new HashSet<>(Arrays.asList(
@@ -71,12 +72,12 @@ public final class NativeAdhanStore {
             this.body = body;
             this.rawSound = sanitizeAdhanRawName(rawSound);
             this.soundTitle = soundTitle != null ? soundTitle : "";
-            this.adhanType = "short".equals(adhanType) ? "short" : "full";
+            this.adhanType = "short".equals(adhanType) ? "short" : "silent".equals(adhanType) ? "silent" : "full";
             this.prayerKey = prayerKey != null ? prayerKey : String.valueOf(id);
         }
 
         public String channelId() {
-            return channelIdForRaw(rawSound);
+            return "silent".equals(adhanType) ? SILENT_CHANNEL_ID : channelIdForRaw(rawSound);
         }
 
         public JSONObject toJson() throws JSONException {
@@ -120,6 +121,19 @@ public final class NativeAdhanStore {
 
     public static String channelIdForRaw(String rawName) {
         return "al-rabbani-adhan-" + sanitizeAdhanRawName(rawName) + "-v2";
+    }
+
+    /** Visible prayer-time notification with no sound and no vibration (user-approved "silent" semantics). */
+    public static void ensureSilentChannel(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager nm = context.getSystemService(NotificationManager.class);
+        if (nm == null || nm.getNotificationChannel(SILENT_CHANNEL_ID) != null) return;
+        NotificationChannel ch = new NotificationChannel(SILENT_CHANNEL_ID, "تنبيه الصلاة بدون صوت", NotificationManager.IMPORTANCE_DEFAULT);
+        ch.setDescription("إشعار وقت الصلاة بدون صوت أو اهتزاز");
+        ch.setSound(null, null);
+        ch.enableVibration(false);
+        ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+        nm.createNotificationChannel(ch);
     }
 
     public static void ensurePlaybackServiceChannel(Context context) {
