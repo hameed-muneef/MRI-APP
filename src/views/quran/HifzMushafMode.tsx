@@ -85,7 +85,7 @@ const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75];
 type Props = {asset: QuranAsset; notify: (text: string) => void; onDetailed?: () => void; onExit?: () => void; tasks?: Task[]; onTasks?: (t: Task[]) => void; taskSchedules?: Record<string, TaskSchedule>; onTaskSchedules?: (n: Record<string, TaskSchedule>) => void};
 const upsert = <T extends {id: string}>(list: T[], item: T) => [...list.filter(v => v.id !== item.id), item];
 
-export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, taskSchedules, onTaskSchedules}: Props) {
+export default function HifzMushafMode({asset, notify, onDetailed, onExit, tasks, onTasks, taskSchedules, onTaskSchedules}: Props) {
   const saved = useMemo(readSaved, []);
   const [started, setStarted] = useState(false);
   const [mode, setMode] = useState<Mode>(saved?.mode ?? 'new');
@@ -597,6 +597,7 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
         {saved?.started && <button type="button" className="hf-link" onClick={() => { setSurah(saved.surah); setFrom(saved.from); setTo(saved.to); setTail(saved.tail ?? []); setTailIds(saved.tailIds ?? []); setPageIdx(saved.page); begin(saved.mode, true, undefined); }}>
           تابع من حيث توقفت: {[{surah: saved.surah, from: saved.from, to: saved.to}, ...(saved.tail ?? [])].map(g => referenceLabel(asset, g.surah, g.from, g.to)).join(' + ')}
         </button>}
+        {onDetailed && <button type="button" className="hf-link" data-hifz-detailed onClick={onDetailed}>الجلسة المفصّلة: استماع وتكرار وتسميع خطوة بخطوة</button>}
       </div> : phase === 'plans' ? <div className="hf-entry-body">
         <BilQuranPlansBrowser asset={asset} activePlan={activePlan} onActivatePlan={handleActivatePlan}/>
       </div> : <div className="hf-entry-body">
