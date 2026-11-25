@@ -16,8 +16,6 @@ echo "density: $(adb shell wm density | tr -d '\r' | tail -1)"
 
 adb install -r "$APK" || { echo "FAIL: install"; exit 1; }
 adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS 2>/dev/null || true
-# Emulator-only: stop slow system apps (e.g. the launcher) from covering the app with an ANR dialog.
-adb shell settings put global hide_error_dialogs 1 || true
 adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r'
 sleep 100
@@ -58,6 +56,20 @@ adb shell dumpsys package com.android.webview 2>/dev/null | tr -d '\r' | grep -m
 echo "-- WebView console / JS errors --"
 grep -iE "chromium|Console|Uncaught|SyntaxError|ReferenceError|TypeError" /tmp/logcat.txt | head -25 || true
 echo "-- usable home screen check (accessibility tree via uiautomator) --"
+# A slow emulator can show an ANR dialog for a SYSTEM app (e.g. the launcher). Never hide dialogs globally.
+# Record it as an environment impairment, keep the evidence, then press "Wait" so the app can be inspected.
+# An ANR in the app itself is already a FAIL above and is not dismissed here.
+adb shell uiautomator dump /sdcard/uid.xml >/dev/null 2>&1 || true
+adb shell cat /sdcard/uid.xml 2>/dev/null | tr -d '\r' > /tmp/uid.xml || true
+if grep -q "isn't responding" /tmp/uid.xml; then
+  echo "ENV-IMPAIRMENT: system ANR dialog present (evidence below); the emulator is unhealthy, result is not a clean pass"
+  grep -o 'text="[^"]*responding[^"]*"' /tmp/uid.xml | head -3
+  if grep -q "ANR in $PKG" /tmp/logcat.txt; then echo "dialog belongs to the app: not dismissed"; else
+    grep -E "ANR in " /tmp/logcat.txt | head -5
+    adb shell input keyevent KEYCODE_DPAD_DOWN; adb shell input keyevent KEYCODE_ENTER; sleep 5
+    ENV_IMPAIRED=1
+  fi
+fi
 # The first dump turns accessibility on; WebView exposes its page only afterwards, so dump twice.
 adb shell uiautomator dump /sdcard/ui0.xml >/dev/null 2>&1 || true
 sleep 4
