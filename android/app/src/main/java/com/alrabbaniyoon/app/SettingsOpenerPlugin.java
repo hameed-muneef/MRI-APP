@@ -225,6 +225,22 @@ public class SettingsOpenerPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setNativeReminderQueue(PluginCall call) {
+        String kind = call.getString("kind");
+        String items = call.getString("items");
+        if (kind == null || items == null) { call.reject("kind and items required"); return; }
+        JSObject ret = new JSObject();
+        ret.put("armed", NativeReminderQueue.setQueue(getContext(), kind, items));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearNativeReminderQueue(PluginCall call) {
+        NativeReminderQueue.clearAll(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
     public void clearNativeRecomputeSpec(PluginCall call) {
         NativeAdhanRecompute.clearSpec(getContext());
         call.resolve();
