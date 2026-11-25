@@ -45,6 +45,8 @@ interface SettingsOpenerPlugin {
   cancelNativeAdhanAlarms(): Promise<{ cancelled: number }>;
   setNativeRecomputeSpec(opts: { spec: string }): Promise<void>;
   clearNativeRecomputeSpec(): Promise<void>;
+  setNativeReminderQueue(opts: { kind: string; items: string }): Promise<{ armed: number }>;
+  clearNativeReminderQueue(): Promise<void>;
   getNativeRecomputeState(): Promise<NativeRecomputeState>;
   runNativeRecomputeNow(): Promise<{ result: string }>;
   stopNativeAdhan(): Promise<{ stopped: boolean }>;
@@ -129,6 +131,30 @@ export async function setNativeRecomputeSpec(spec: object | null): Promise<boole
   try {
     if (spec) await SettingsOpener.setNativeRecomputeSpec({ spec: JSON.stringify(spec) });
     else await SettingsOpener.clearNativeRecomputeSpec();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Stores reminders beyond the LocalNotifications window; native arms them as they come due (see NativeReminderQueue). */
+export async function setNativeReminderQueue(
+  kind: 'reminder' | 'task' | 'review' | 'prayer',
+  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string }>,
+): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(items) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function clearNativeReminderQueue(): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    await SettingsOpener.clearNativeReminderQueue();
     return true;
   } catch {
     return false;
