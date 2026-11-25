@@ -31,6 +31,15 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        try {
+            handleAlarm(context, intent);
+        } finally {
+            // Keep the horizon topped up even if nobody opens the app (adds missing alarms only, never throws).
+            if (context != null) NativeAdhanRecompute.refresh(context, "alarm_fired");
+        }
+    }
+
+    private void handleAlarm(Context context, Intent intent) {
         if (context == null || intent == null) return;
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
             return;
