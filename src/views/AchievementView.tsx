@@ -10,7 +10,7 @@ import {useBackHandler} from '../navigation/useBackHandler';
 import QuranProgress from './quran/QuranProgress';
 import {periodRange, type PeriodId} from '../achievement/dates';
 import {
-  activeMasteryPlan, bilQuranSummary, firstLogDate, goalStats, logDays, planWindow, prayerStats, ratioOf, readingIn,
+  activeMasteryPlan, bilQuranSummary, insufficientRecords, firstLogDate, goalStats, logDays, planWindow, prayerStats, ratioOf, readingIn,
   statusOf, sunnahStats, taskStats, toneOf, verseCoverage, wirdStats, type DayKind, type Stat, type Tone
 } from '../achievement/selectors';
 
@@ -33,6 +33,7 @@ const fmtDate = (key: string) => new Intl.DateTimeFormat('ar-EG', {day: 'numeric
 const RANK: Record<Tone, number> = {behind: 0, steady: 1, good: 2, none: 3};
 const worse = (a: Tone, b: Tone): Tone => RANK[a] <= RANK[b] ? a : b;
 const TONE_WORD: Record<Tone, string> = {good: 'بلغ المقرر', steady: 'قريب', behind: 'متأخر', none: 'لا مقرر'};
+const UNSURE = 'سجلات غير كافية للحكم';
 const dayNum = (key: string) => ar(Number(key.slice(8)));
 
 function Bar({ratio, tone, label}: {ratio?: number; tone: Tone; label: string}) {
@@ -96,10 +97,11 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
   const adhkarDays = logDays(log, 'adhkar_category', range);
   const adhkarStart = firstLogDate(log, 'adhkar_category');
 
-  const dayTone = win ? toneOf(win.full, win.assigned) : 'none';
-  const verseTone = win ? toneOf(win.doneVerses, win.plannedVerses) : 'none';
+  const unsure = win ? insufficientRecords(win) : false;
+  const dayTone: Tone = win && !unsure ? toneOf(win.full, win.assigned) : 'none';
+  const verseTone: Tone = win && !unsure ? toneOf(win.doneVerses, win.plannedVerses) : 'none';
   const quranStat: Stat = win && win.assigned > 0
-    ? (() => { const tone = worse(dayTone, verseTone); return {headline: `${ar(win.doneVerses)} من ${ar(win.plannedVerses)} آية مقررة`, detail: `الأيام: ${ar(win.full)} من ${ar(win.assigned)} منجزة ${scope} · حسب سجلات هذا الجهاز`, ratio: ratioOf(win.doneVerses, win.plannedVerses), tone, status: `الآيات: ${TONE_WORD[verseTone]} · الأيام: ${TONE_WORD[dayTone]}`}; })()
+    ? (() => { const tone = unsure ? 'none' as Tone : worse(dayTone, verseTone); return {headline: `${ar(win.doneVerses)} من ${ar(win.plannedVerses)} آية مقررة`, detail: `الأيام: ${ar(win.full)} من ${ar(win.assigned)} منجزة ${scope}${unsure ? ` · ${ar(win.noRecord)} بلا سجل` : ''} · حسب سجلات هذا الجهاز`, ratio: ratioOf(win.doneVerses, win.plannedVerses), tone, status: unsure ? `${UNSURE} · المسجل ${ar(win.doneVerses)} من ${ar(win.plannedVerses)}` : `الآيات: ${TONE_WORD[verseTone]} · الأيام: ${TONE_WORD[dayTone]}`}; })()
     : win ? {headline: 'لا أيام مقررة بعد', detail: `خطة «${win.plan.title}» ${scope}`, tone: 'none', status: 'ليس تقصيرًا'}
     : bilSum && bilSum.total ? {headline: `${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`, detail: 'تقدم خطة بالقرآن نحيا (إجمالي، دون تقويم يومي)', ratio: bilSum.done / bilSum.total, tone: 'none', status: 'التقويم اليومي يبدأ من الآن'}
     : {headline: reading.verses ? `${ar(reading.verses)} آية مقروءة` : 'لا نشاط مسجل', detail: reading.verses ? `قراءة ${scope}` : 'ابدأ خطة حفظ لتظهر المقارنة', tone: 'none', status: 'لا خطة نشطة'};
@@ -138,16 +140,16 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
 
     {cat === 'quran' && <>
       {win ? <>
-        <Block title={`الانتظام: ${win.plan.title}`} tone={dayTone} chip={`الأيام: ${TONE_WORD[dayTone]}`}>
+        <Block title={`الانتظام: ${win.plan.title}`} tone={dayTone} chip={unsure ? UNSURE : `الأيام: ${TONE_WORD[dayTone]}`}>
           <div className="ach-strip" role="list">{win.days.map(d => <span key={d.date} role="listitem" className="ach-day" data-kind={d.kind} data-sched={d.sched ? '1' : '0'} title={`${d.date} · ${DAY_LABEL[d.kind]}`} aria-label={`${weekdayFmt.format(new Date(`${d.date}T12:00:00`))} ${dayNum(d.date)}: ${DAY_LABEL[d.kind]}`}>{period === 'week' ? weekdayFmt.format(new Date(`${d.date}T12:00:00`)) : dayNum(d.date)}</span>)}</div>
-          <p className="ach-legend"><i data-kind="done"/>أُنجز <i data-kind="partial"/>جزئي <i data-kind="missed"/>لا سجل <i data-kind="off"/>لا مقرر</p>
-          <p className="ach-note" role="note">«لا سجل» ليس تقصيرًا مؤكدًا: الحساب من سجلات هذا الجهاز وجدول الخطة الحالي. عمل أنجزته على جهاز آخر أو قبل تعديل الجدول قد لا يظهر هنا.</p>
+          <p className="ach-legend"><i data-kind="done"/>أُنجز <i data-kind="partial"/>جزئي {win.noRecord > 0 && <><i data-kind="missed"/>لا سجل </>}<i data-kind="off"/>لا مقرر</p>
+          {win.noRecord > 0 && <p className="ach-note" role="note">«لا سجل» ليس تقصيرًا مؤكدًا: الحساب من سجلات هذا الجهاز وجدول الخطة الحالي. عمل أنجزته على جهاز آخر أو قبل تعديل الجدول قد لا يظهر هنا.</p>}
           <Row k="أيام منجزة كاملة" v={`${ar(win.full)} من ${ar(win.assigned)} أيام مقررة`}/>
         </Block>
-        <Block title={`الفجوة (${scope})`} tone={verseTone} chip={`الآيات: ${TONE_WORD[verseTone]}`}>
+        <Block title={`الفجوة (${scope})`} tone={verseTone} chip={unsure ? `المسجل فقط: ${ar(win.doneVerses)} من ${ar(win.plannedVerses)}` : `الآيات: ${TONE_WORD[verseTone]}`}>
           <Row k="المقرر حتى اليوم" v={`${ar(win.plannedVerses)} آية`}/>
           <Row k="المنجز ضمن الخطة" v={`${ar(win.doneVerses)} آية`}/>
-          <Bar ratio={ratioOf(win.doneVerses, win.plannedVerses)} tone={toneOf(win.doneVerses, win.plannedVerses)} label="المنجز مقابل المقرر"/>
+          <Bar ratio={ratioOf(win.doneVerses, win.plannedVerses)} tone={verseTone} label="المنجز مقابل المقرر"/>
           <Row k="المتبقي للّحاق" v={`${ar(Math.max(0, win.plannedVerses - win.doneVerses))} آية`}/>
         </Block>
         <details className="ach-help"><summary>كيف تُحسب الأرقام؟</summary>
