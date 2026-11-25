@@ -9,7 +9,7 @@ async function startSession(page:import('@playwright/test').Page){
  await page.goto('/');
  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();
  await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
- const ui=page.locator('.qm-workspace').first();
+ const ui=page.getByRole('region',{name:/الحفظ والإتقان/});
  await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
  await expect(ui.locator('h2')).toHaveText('استمع');
  return ui;
@@ -65,6 +65,7 @@ test('non-Hafs reciters carry a listen-only badge in the library',async({page})=
  const tab=page.getByRole('tab',{name:'ورش وغيرها'});
  await expect(tab).toBeInViewport();
  await expect.poll(()=>tab.evaluate(el=>{const s=getComputedStyle(el);return {fg:s.color,bg:s.backgroundColor};})).toEqual({fg:'rgb(255, 255, 255)',bg:'rgb(23, 74, 60)'});
+ await page.locator('.reciters-library ul > li button').first().click(); // reciters are grouped: expand one to list its narrations
  const badge=page.locator('.narration-tag').first();
  await expect(badge).toBeVisible();
  await expect(badge).toContainText('للاستماع فقط');
