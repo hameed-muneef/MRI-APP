@@ -26,8 +26,8 @@ async function startListenStage(page:import('@playwright/test').Page){
  await page.setViewportSize({width:360,height:900});
  await page.goto('/');
  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();
- await page.locator('[data-quran-tab="hifz"]').click();
- const ui=page.locator('.qm-workspace');
+ await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
+ const ui=page.locator('.qm-workspace').first();
  await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
  await expect(ui.locator('h2')).toHaveText('استمع');
  return ui;
@@ -38,7 +38,7 @@ test('repetition sequencing: per-ayah scope, 3 repeats, auto-advance, completed 
  const state:MockState={failApi:false,failAudio:false,requests:[]};
  await mockAudio(page,state);
  const ui=await startListenStage(page);
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();
  await expect(ui).toContainText('اكتمل التكرار المحدد.',{timeout:20000});
  const events=await readEvents(page);
  expect(events).toHaveLength(3);
@@ -60,13 +60,13 @@ test('audio errors fail visibly, never skip the verse, and retry resumes the sam
  await mockAudio(page,state);
  const ui=await startListenStage(page);
  // 1) Resolution failure: no playback is counted.
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();
  await expect(ui).toContainText('الصوت غير متاح');
  let events=await readEvents(page);
  expect(events).toHaveLength(1);expect(events[0].completed).toBe(0);
  // 2) Playback error after successful resolution: visible failure, position unchanged.
  state.failApi=false;state.failAudio=true;
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();
  await expect(ui).toContainText('تعذر تشغيل التلاوة. لم نتجاوز الآية ولم يُحسب تشغيل.');
  events=await readEvents(page);
  expect(events).toHaveLength(2);
@@ -75,7 +75,7 @@ test('audio errors fail visibly, never skip the verse, and retry resumes the sam
  await expect(ui).toContainText('المكتمل في النطاق الحالي: ٠');
  // 3) Recovery: pressing play again restarts the SAME verse (no skip), then completes the range.
  state.failAudio=false;
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();
  await expect(ui).toContainText('اكتمل التكرار المحدد.',{timeout:20000});
  events=await readEvents(page);
  expect(events).toHaveLength(5);
@@ -108,7 +108,7 @@ test('reciter change cancels a stale resolution, preserves verse and completed r
  });
  await page.route('**/verses.quran.com/mock/**',route=>route.fulfill({status:200,contentType:'audio/wav',body:wavBytes()}));
  const ui=await startListenStage(page);
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).click();
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();
  await expect.poll(()=>requests.length).toBeGreaterThan(0);
  await ui.getByLabel('القارئ',{exact:true}).selectOption('6');
  await expect(ui).toContainText('اكتمل التكرار المحدد.',{timeout:20000});
