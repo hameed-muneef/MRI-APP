@@ -164,6 +164,7 @@ public class NativeReminderQueueTest {
         assertEquals(null, n.category);
         assertEquals(NotificationManager.IMPORTANCE_DEFAULT, nm.getNotificationChannel("al-rabbani-general").getImportance());
         assertTrue(nm.getNotificationChannel("al-rabbani-general").shouldVibrate());
+        NativeReminderQueue.onFire(ctx, 91, "t", "b", NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID); // creates the silent channel
         assertEquals(NotificationManager.IMPORTANCE_LOW, nm.getNotificationChannel(NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID).getImportance());
     }
 
