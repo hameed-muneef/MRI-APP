@@ -217,6 +217,34 @@ public class SettingsOpenerPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setNativeRecomputeSpec(PluginCall call) {
+        String spec = call.getString("spec");
+        if (spec == null) { call.reject("spec required"); return; }
+        NativeAdhanRecompute.saveSpec(getContext(), spec);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void clearNativeRecomputeSpec(PluginCall call) {
+        NativeAdhanRecompute.clearSpec(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getNativeRecomputeState(PluginCall call) {
+        JSObject ret = new JSObject();
+        try { ret = new JSObject(NativeAdhanRecompute.stateJson(getContext())); } catch (Exception ignored) {}
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void runNativeRecomputeNow(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("result", NativeAdhanRecompute.refresh(getContext(), "app_request"));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
     public void cancelNativeAdhanAlarms(PluginCall call) {
         int cancelled = NativeAdhanStore.cancelAll(getContext());
         JSObject ret = new JSObject();
