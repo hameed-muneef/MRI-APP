@@ -34,6 +34,7 @@ import {fetchQuranLearningState,saveQuranLearningState} from './quran/sync';
 import type {User} from '@supabase/supabase-js';
 import {changeWirdCount, normalizeWirds} from './wird-periods';
 import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
+import {resolveSchedulingLocation} from './notifications/scheduling-location';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
@@ -298,7 +299,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
       const d = new Date();
       const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-      const loc = latestPrayerLocationRef.current;
+      const loc = resolveSchedulingLocation(latestPrayerLocationRef.current);
       return `${dayKey}|${tz}|${loc ? `${loc.latitude.toFixed(3)},${loc.longitude.toFixed(3)},${loc.method},${loc.school}` : 'none'}`;
     };
 
@@ -324,7 +325,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
         if (disposed) return;
 
         await scheduler.syncAllNativeNotifications({
-          location: latestPrayerLocationRef.current,
+          location: resolveSchedulingLocation(latestPrayerLocationRef.current),
           prefs,
           reminders,
           taskContext: latestTaskContextRef.current,
@@ -338,6 +339,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
     const onChanged = () => { void runNativeSync(true); };
     window.addEventListener('rabbani:notifications-changed', onChanged);
+    // وصول موقع الجهاز لاحقًا (بعد منح الإذن) يجب أن يجدول الأذان فورًا.
+    const unsubscribeLocation = subscribeCentralLocation(() => { void runNativeSync(false); });
 
     void import('./lib/settings-opener').then(({ addAppResumeListener }) => {
       if (disposed) return;
@@ -351,6 +354,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return () => {
       disposed = true;
       window.removeEventListener('rabbani:notifications-changed', onChanged);
+      unsubscribeLocation();
       window.clearInterval(rolloverCheck);
       cleanupResume?.();
     };
