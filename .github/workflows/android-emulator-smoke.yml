@@ -8,6 +8,13 @@ on:
     paths:
       - '.github/workflows/android-emulator-smoke.yml'
       - 'scripts/emulator-smoke.sh'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'android/**'
+      - 'capacitor.config.*'
 
 concurrency:
   group: android-emulator-smoke-${{ github.ref }}
