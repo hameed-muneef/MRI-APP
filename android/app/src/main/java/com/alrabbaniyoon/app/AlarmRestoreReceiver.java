@@ -47,6 +47,7 @@ public class AlarmRestoreReceiver extends BroadcastReceiver {
 
         try {
             NativeAdhanStore.restoreFutureAlarms(context);
+            NativeAdhanRecompute.refresh(context, action);
         } catch (Exception ex) {
             Logger.error("AlarmRestoreReceiver", "Failed restoring native Adhan alarms on " + action, ex);
         }
