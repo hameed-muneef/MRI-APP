@@ -55,10 +55,23 @@ adb shell dumpsys package com.google.android.webview 2>/dev/null | tr -d '\r' | 
 adb shell dumpsys package com.android.webview 2>/dev/null | tr -d '\r' | grep -m1 versionName || true
 echo "-- WebView console / JS errors --"
 grep -iE "chromium|Console|Uncaught|SyntaxError|ReferenceError|TypeError" /tmp/logcat.txt | head -25 || true
-echo "-- visible UI text (uiautomator) --"
+echo "-- usable home screen check (accessibility tree via uiautomator) --"
+# The first dump turns accessibility on; WebView exposes its page only afterwards, so dump twice.
+adb shell uiautomator dump /sdcard/ui0.xml >/dev/null 2>&1 || true
+sleep 4
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
-adb shell cat /sdcard/ui.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -25 || true
+adb shell cat /sdcard/ui.xml 2>/dev/null | tr -d '\r' > /tmp/ui.xml || true
+echo "ui nodes: $(grep -o '<node ' /tmp/ui.xml | wc -l)"
+grep -o '\(text\|content-desc\)="[^"]\+"' /tmp/ui.xml | head -30 || true
+if grep -q "الرئيسية" /tmp/ui.xml && grep -q "القرآن" /tmp/ui.xml; then
+  echo "ok: home screen rendered (bottom navigation labels found in the accessibility tree)"
+else
+  echo "FAIL: home screen not rendered (navigation labels not found)"; fail=1
+fi
 adb exec-out screencap -p > /tmp/shot.png 2>/dev/null || true
+pid2=$(adb shell pidof "$PKG" | tr -d '\r')
+resumed2=$(adb shell dumpsys activity activities | tr -d '\r' | grep -m1 -E "mResumedActivity|ResumedActivity" || true)
+case "$resumed2" in *"$PKG"*) echo "ok: app still in the foreground at screenshot time (pid $pid2)" ;; *) echo "FAIL: app not in the foreground at screenshot time: $resumed2"; fail=1 ;; esac
 mkdir -p smoke-out && cp /tmp/shot.png "smoke-out/shot-api$(adb shell getprop ro.build.version.sdk | tr -d '\r').png" 2>/dev/null || true
 echo "SHOT_BEGIN"
 base64 -w0 /tmp/shot.png 2>/dev/null || true
