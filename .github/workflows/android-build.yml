@@ -90,6 +90,7 @@ jobs:
       - name: Native unit tests (Java prayer-time + alarm-plan parity against the JS scheduler)
         run: |
           node scripts/gen-native-plan-parity.cjs
+          node scripts/gen-recurrence-parity.cjs
           ./android/gradlew -p android testDebugUnitTest --no-daemon
 
       - name: Build debug APK (للتجربة الفورية)
