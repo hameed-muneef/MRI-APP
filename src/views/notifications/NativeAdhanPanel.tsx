@@ -1,7 +1,8 @@
 // src/views/notifications/NativeAdhanPanel.tsx
+import { resolveSchedulingLocation } from '../../notifications/scheduling-location';
 import { useCallback, useEffect, useState } from 'react';
 import { loadPrefs, loadReminders } from '../../notifications/prefs-store';
-import { sanitizePrayerLocation, type PrayerLocation } from '../../prayer-location';
+import { type PrayerLocation } from '../../prayer-location';
 import {
   addAppResumeListener,
   getAndroidEnvironmentStatus,
@@ -17,6 +18,7 @@ import {
   requestPermissions,
   schedulePrayerNotifications,
   scheduleNativePersonalReminders,
+  buildNativeAdhanAlarmInputs,
   cancelAllPrayerNotifications,
   getActiveAdhanChannelInfo,
   isNativePlatform,
@@ -36,6 +38,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const [result, setResult] = useState<string>('');
   const [supported] = useState(isNativePlatform());
   const [explainerOpen, setExplainerOpen] = useState(false);
+  const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[] } | null>(null);
 
   const refresh = useCallback(async () => {
     const [p, ch, env] = await Promise.all([
@@ -46,7 +49,15 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
     setPerm(p);
     setChannelInfo(ch);
     setEnvStatus(env);
-  }, []);
+    try {
+      const { prefs } = await loadPrefs();
+      const loc = resolveSchedulingLocation(prayerLocation);
+      const upcoming = loc ? buildNativeAdhanAlarmInputs({ location: loc, prefs }).length : 0;
+      const inAppOnly = (Object.keys(prefs.prayer_settings) as Array<keyof typeof prefs.prayer_settings>)
+        .filter((n) => prefs.prayer_settings[n].enabled && prefs.prayer_settings[n].channel === 'in_app');
+      setHealth({ hasLocation: !!loc, upcoming, inAppOnly });
+    } catch { /* ignore */ }
+  }, [prayerLocation]);
 
   useEffect(() => {
     void refresh();
@@ -75,7 +86,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         onNotify('لم يُمنح إذن الإشعارات. يمكنك تفعيله من إعدادات النظام.');
         return;
       }
-      const loc = sanitizePrayerLocation(prayerLocation);
+      const loc = resolveSchedulingLocation(prayerLocation);
       if (!loc) {
         onNotify('اختر موقعك (المدينة) أولاً.');
         return;
@@ -133,7 +144,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const handleReschedule = async () => {
     setBusy(true);
     try {
-      const loc = sanitizePrayerLocation(prayerLocation);
+      const loc = resolveSchedulingLocation(prayerLocation);
       if (!loc) { onNotify('اختر موقعك أولاً.'); return; }
       const [{ prefs }, { reminders }] = await Promise.all([loadPrefs(), loadReminders()]);
       const r = await schedulePrayerNotifications({ location: loc, prefs, days: 10 });
@@ -211,6 +222,19 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         <div><strong>قناة عامة:</strong> {GENERAL_CHANNEL_ID} · <strong>البطارية:</strong> {batteryLabel}</div>
       </div></details>
 
+      {health && !health.hasLocation && (
+        <div className="qibla-banner warn" role="alert">
+          لا يوجد موقع لحساب المواقيت، لذلك لا أذان مجدول. اختر مدينتك من شاشة المواقيت أو اسمح بالموقع ثم اضغط «إعادة جدولة».
+        </div>
+      )}
+      {health && health.hasLocation && health.inAppOnly.length > 0 && (
+        <div className="qibla-banner warn" role="alert">
+          صلوات مضبوطة «داخل التطبيق فقط» ولن يصلك أذانها والتطبيق مغلق: {health.inAppOnly.join('، ')}. غيّرها إلى «إشعار النظام» أو «الاثنان» من إعدادات الصلاة.
+        </div>
+      )}
+      {health && health.hasLocation && perm.display === 'granted' && (
+        <p className="muted small">منبهات الأذان القادمة المحسوبة على هذا الجهاز: {health.upcoming}</p>
+      )}
       {perm.display !== 'granted' && (
         <div className="qibla-banner warn" role="alert">
           لم يُمنح إذن الإشعارات. اضغط «تفعيل» لطلب الإذن، أو افتح إعدادات النظام.
