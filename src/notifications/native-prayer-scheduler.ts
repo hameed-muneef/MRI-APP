@@ -213,7 +213,6 @@ export function buildNativeAdhanAlarmInputs(opts: {
     const prayerName = prayerNameFromKey(item.prayer);
     const setting = prefs.prayer_settings?.[prayerName];
     if (!setting?.enabled) continue;
-    if (setting.channel === 'in_app') continue;
     const adhanType = setting.adhan_type ?? 'full';
     if (adhanType === 'silent') continue;
 
@@ -284,7 +283,6 @@ export function buildNativeBeforeAfterPayloads(opts: {
     const prayerName = prayerNameFromKey(item.prayer);
     const setting = prefs.prayer_settings?.[prayerName];
     if (!setting?.enabled) continue;
-    if (setting.channel === 'in_app') continue;
     const adhanType = setting.adhan_type ?? 'full';
     if (adhanType === 'silent') continue;
 
@@ -398,8 +396,6 @@ export function buildNativeReminderPayloads(
     if (!reminder.enabled) continue;
     // Quiet hours are checked at each future occurrence, not at scheduling time.
     if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
-    const channelPref = prefs.reminder_settings?.default_channel ?? 'both';
-    if (channelPref === 'in_app') continue;
 
     const snoozeAt = reminder.snooze_until ? new Date(reminder.snooze_until) : null;
     if (snoozeAt && !Number.isNaN(snoozeAt.getTime()) && snoozeAt.getTime() > nowMs + 1000 && !isQuietHoursActive(prefs, snoozeAt)) {
@@ -451,9 +447,6 @@ export function buildNativeTaskPayloads(
   if (!prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false || !settings.enabled) {
     return [];
   }
-  if (settings.channel === 'in_app') {
-    return [];
-  }
 
   const nowMs = now.getTime();
   const events = dailyTaskEvents(taskContext, prefs, now, 7);
@@ -499,10 +492,6 @@ export function buildNativeReviewPayloads(
     return [];
   }
   if (prefs.categories?.['reminder'] === false) {
-    return [];
-  }
-  const channelPref = prefs.reminder_settings?.default_channel ?? 'both';
-  if (channelPref === 'in_app') {
     return [];
   }
 
