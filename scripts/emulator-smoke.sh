@@ -53,6 +53,13 @@ echo "-- WebView in use --"
 adb shell dumpsys webviewupdate | tr -d '\r' | grep -E "Current WebView package|Fallback|versionName|Package" | head -6 || true
 adb shell dumpsys package com.google.android.webview 2>/dev/null | tr -d '\r' | grep -m1 versionName || true
 adb shell dumpsys package com.android.webview 2>/dev/null | tr -d '\r' | grep -m1 versionName || true
+# Page-level failures that do not crash the app but mean features are broken.
+if grep -q 'then()" is not implemented' /tmp/logcat.txt; then
+  echo "FAIL: a Capacitor plugin proxy was returned as a promise result (\"<plugin>.then() is not implemented\")"; fail=1
+fi
+if grep "Capacitor/Console" /tmp/logcat.txt | grep -q "Uncaught (in promise)"; then
+  echo "FAIL: unhandled promise rejection(s) in the page:"; grep "Capacitor/Console" /tmp/logcat.txt | grep "Uncaught (in promise)" | sed 's/^.*Msg: //' | sort | uniq -c | head -10; fail=1
+fi
 echo "-- WebView console / JS errors --"
 grep -iE "chromium|Console|Uncaught|SyntaxError|ReferenceError|TypeError" /tmp/logcat.txt | head -25 || true
 echo "-- usable home screen check (accessibility tree via uiautomator) --"
