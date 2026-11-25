@@ -44,6 +44,11 @@ test.describe('hifz plan integration', () => {
     expect(after.completedIndices).toEqual([0]);
     expect(after.currentIndex).toBe(1);
 
+    // الإتمام الحقيقي يسجّل يومًا واحدًا فقط في سجل الإنجاز (بلا تكرار)
+    const achievement = await page.evaluate(() => (JSON.parse(localStorage.getItem('rabbani-v1') || '{}').achievementLog || []).filter((e: {kind: string}) => e.kind === 'bilquran_step'));
+    expect(achievement).toHaveLength(1);
+    expect(achievement[0].refId).toBe(before.planId);
+
     // المصحف يعرض الخطة نفسها بعد إعادة التحميل، وبدون تقدّم مضاعف
     await page.reload();
     const reloaded = await planState(page);
@@ -56,7 +61,7 @@ test.describe('hifz plan integration', () => {
     await expect(card).toContainText('١ مكتمل');
 
     // فتح مقرر اليوم من البطاقة يبدأ المقرر رقم 2 في المصحف ولا يغيّر التقدم قبل الإتمام
-    await card.locator('button', {hasText: 'ابدأ مقرر اليوم'}).click();
+    await page.locator('.hf-active-plan button', {hasText: 'ابدأ مقرر اليوم'}).click();
     await expect(page.locator('.hf-reading')).toBeVisible({timeout: 15_000});
     const reopened = await planState(page);
     expect(reopened.currentIndex).toBe(1);
