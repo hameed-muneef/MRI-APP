@@ -90,7 +90,7 @@ export default function GeneralNotifications({notify}: {notify: (message: string
         <div className="form-grid">
           <label>مكان ظهور التذكير
             <select value={prefs.reminder_settings.default_channel} onChange={event => change({reminder_settings: {...prefs.reminder_settings, default_channel: event.target.value as NotificationChannel}})}>
-              {(['in_app', 'system', 'both'] as NotificationChannel[]).map(key => <option key={key} value={key}>{channelLabel(key)}</option>)}
+              {(['system', 'both'] as NotificationChannel[]).map(key => <option key={key} value={key}>{channelLabel(key)}</option>)}
             </select>
 
           </label>
