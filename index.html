@@ -49,6 +49,10 @@
     "description": "منصة إسلامية للتعلم والعمل بالقرآن والسنة وتزكية النفس."
   }
   </script>
+  <script>
+    // globalThis exists from Chrome 71; older system WebViews (e.g. 64-70) would stop the whole bundle on it.
+    if (typeof globalThis === 'undefined') { window.globalThis = window; }
+  </script>
   <script nomodule>
     // Only runs where the system WebView is too old for ES modules (Chrome below 61), instead of a blank screen.
     document.addEventListener('DOMContentLoaded', function () {
