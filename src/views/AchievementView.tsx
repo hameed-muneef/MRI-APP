@@ -27,7 +27,7 @@ const ar = (n: number) => n.toLocaleString('ar-EG');
 const PERIODS: {id: PeriodId; label: string; scope: string}[] = [
   {id: 'week', label: 'الأسبوع', scope: 'هذا الأسبوع'}, {id: 'month', label: 'الشهر', scope: 'هذا الشهر'}, {id: 'year', label: 'السنة', scope: 'هذه السنة'}
 ];
-const DAY_LABEL: Record<DayKind, string> = {done: 'أُنجز', partial: 'جزئي', missed: 'لم يُنجز', pending: 'لم يُسجَّل بعد اليوم', off: 'لا مقرر', unknown: 'غير معروف', future: 'قادم'};
+const DAY_LABEL: Record<DayKind, string> = {done: 'أُنجز', partial: 'جزئي', missed: 'لا سجل على هذا الجهاز', pending: 'لم يُسجَّل بعد اليوم', off: 'لا مقرر', unknown: 'غير معروف', future: 'قادم'};
 const weekdayFmt = new Intl.DateTimeFormat('ar-EG', {weekday: 'short'});
 const fmtDate = (key: string) => new Intl.DateTimeFormat('ar-EG', {day: 'numeric', month: 'long', year: 'numeric'}).format(new Date(`${key}T12:00:00`));
 const RANK: Record<Tone, number> = {behind: 0, steady: 1, good: 2, none: 3};
@@ -99,7 +99,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
   const dayTone = win ? toneOf(win.full, win.assigned) : 'none';
   const verseTone = win ? toneOf(win.doneVerses, win.plannedVerses) : 'none';
   const quranStat: Stat = win && win.assigned > 0
-    ? (() => { const tone = worse(dayTone, verseTone); return {headline: `${ar(win.doneVerses)} من ${ar(win.plannedVerses)} آية مقررة`, detail: `الأيام: ${ar(win.full)} من ${ar(win.assigned)} منجزة ${scope}`, ratio: ratioOf(win.doneVerses, win.plannedVerses), tone, status: `الآيات: ${TONE_WORD[verseTone]} · الأيام: ${TONE_WORD[dayTone]}`}; })()
+    ? (() => { const tone = worse(dayTone, verseTone); return {headline: `${ar(win.doneVerses)} من ${ar(win.plannedVerses)} آية مقررة`, detail: `الأيام: ${ar(win.full)} من ${ar(win.assigned)} منجزة ${scope} · حسب سجلات هذا الجهاز`, ratio: ratioOf(win.doneVerses, win.plannedVerses), tone, status: `الآيات: ${TONE_WORD[verseTone]} · الأيام: ${TONE_WORD[dayTone]}`}; })()
     : win ? {headline: 'لا أيام مقررة بعد', detail: `خطة «${win.plan.title}» ${scope}`, tone: 'none', status: 'ليس تقصيرًا'}
     : bilSum && bilSum.total ? {headline: `${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`, detail: 'تقدم خطة بالقرآن نحيا (إجمالي، دون تقويم يومي)', ratio: bilSum.done / bilSum.total, tone: 'none', status: 'التقويم اليومي يبدأ من الآن'}
     : {headline: reading.verses ? `${ar(reading.verses)} آية مقروءة` : 'لا نشاط مسجل', detail: reading.verses ? `قراءة ${scope}` : 'ابدأ خطة حفظ لتظهر المقارنة', tone: 'none', status: 'لا خطة نشطة'};
@@ -140,7 +140,8 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
       {win ? <>
         <Block title={`الانتظام: ${win.plan.title}`} tone={dayTone} chip={`الأيام: ${TONE_WORD[dayTone]}`}>
           <div className="ach-strip" role="list">{win.days.map(d => <span key={d.date} role="listitem" className="ach-day" data-kind={d.kind} data-sched={d.sched ? '1' : '0'} title={`${d.date} · ${DAY_LABEL[d.kind]}`} aria-label={`${weekdayFmt.format(new Date(`${d.date}T12:00:00`))} ${dayNum(d.date)}: ${DAY_LABEL[d.kind]}`}>{period === 'week' ? weekdayFmt.format(new Date(`${d.date}T12:00:00`)) : dayNum(d.date)}</span>)}</div>
-          <p className="ach-legend"><i data-kind="done"/>أُنجز <i data-kind="partial"/>جزئي <i data-kind="missed"/>لم يُنجز <i data-kind="off"/>لا مقرر</p>
+          <p className="ach-legend"><i data-kind="done"/>أُنجز <i data-kind="partial"/>جزئي <i data-kind="missed"/>لا سجل <i data-kind="off"/>لا مقرر</p>
+          <p className="ach-note" role="note">«لا سجل» ليس تقصيرًا مؤكدًا: الحساب من سجلات هذا الجهاز وجدول الخطة الحالي. عمل أنجزته على جهاز آخر أو قبل تعديل الجدول قد لا يظهر هنا.</p>
           <Row k="أيام منجزة كاملة" v={`${ar(win.full)} من ${ar(win.assigned)} أيام مقررة`}/>
         </Block>
         <Block title={`الفجوة (${scope})`} tone={verseTone} chip={`الآيات: ${TONE_WORD[verseTone]}`}>
@@ -157,6 +158,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
           <Row k="خطة بالقرآن نحيا" v={`${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`}/>
           <Bar ratio={bilSum.done / bilSum.total} tone="none" label="تقدم الخطة"/>
           <Row k={`أيام الإنجاز المسجلة ${scope}`} v={ar(bilSum.daysLogged)}/>
+          <Row k={`مقررات مسجلة بتاريخها ${scope}`} v={ar(bilSum.stepsLogged)}/>
           <p className="ach-note">هذه الخطة لا تحفظ تاريخ كل إتمام قبل الآن، فلا يظهر لها تقويم أو فجوة يومية. يبدأ تسجيل الأيام من تفعيل هذه الميزة.</p>
         </> : <p className="ach-note">لا خطة حفظ نشطة. ابدأ خطة من مصحف الحفظ ليظهر الانتظام والفجوة.</p>}
       </Block>}
