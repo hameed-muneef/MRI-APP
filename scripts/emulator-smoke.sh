@@ -20,6 +20,20 @@ adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r'
 sleep 100
 
+# The app may ask for a runtime permission (e.g. location) on first launch. That is a system dialog over the app:
+# record its text, dismiss it with Back (counts as not granted) and carry on, so the app UI behind it can be checked.
+for i in 1 2 3; do
+  r=$(adb shell dumpsys activity activities | tr -d '\r' | grep -m1 -E "mResumedActivity|ResumedActivity" || true)
+  case "$r" in
+    *GrantPermissionsActivity*)
+      echo "NOTE: a runtime permission prompt is shown over the app (prompt $i): $r"
+      adb shell uiautomator dump /sdcard/perm.xml >/dev/null 2>&1 || true
+      adb shell cat /sdcard/perm.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -8
+      adb shell input keyevent KEYCODE_BACK; sleep 8 ;;
+    *) break ;;
+  esac
+done
+
 pid=$(adb shell pidof "$PKG" | tr -d '\r')
 if [ -z "$pid" ]; then echo "FAIL: app process is not running"; echo "-- why the app process ended (Android exit info for $PKG) --"; adb shell dumpsys activity exit-info "$PKG" 2>&1 | head -40; fail=1; else echo "ok: app process $pid is running"; fi
 
