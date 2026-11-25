@@ -78,6 +78,7 @@ public final class NativeAdhanRecompute {
         synchronized (NativeAdhanStore.class) {
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SPEC).commit();
             writeState(c, "no_spec", 0, null);
+            NativeAdhanKeepAlive.cancel(c);
         }
     }
 
@@ -110,7 +111,10 @@ public final class NativeAdhanRecompute {
     public static String refresh(Context c, String reason) {
         try {
             synchronized (NativeAdhanStore.class) {
-                return refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
+                String result = refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
+                // Keep the once-a-day refresh armed while a spec exists; never arm it without one.
+                if ("no_spec".equals(result)) NativeAdhanKeepAlive.cancel(c); else NativeAdhanKeepAlive.schedule(c);
+                return result;
             }
         } catch (Throwable t) {
             return "failed";
