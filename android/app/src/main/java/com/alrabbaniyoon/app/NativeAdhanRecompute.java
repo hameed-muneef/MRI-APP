@@ -14,7 +14,7 @@ import java.util.TimeZone;
  * This refresh only ADDS alarms that are missing (same ids as JS). It never cancels or replaces alarms, and it
  * does nothing when the spec is absent, invalid, of another version or uses an unsupported method.
  * Runs after boot/time/timezone/package-replace and after each fired Adhan alarm.
- * Scope: main Adhan alarms only. Before/after reminders, tasks, review and custom reminders are not renewed here.
+ * Scope: main Adhan alarms. Reminders, tasks, review and far prayer before/after reminders are renewed by NativeReminderQueue.
  *
  * Concurrency: reading the spec, planning and adding alarms happen inside one critical section on
  * NativeAdhanStore.class, the same monitor used by scheduleAll/cancelAll/addMissingAlarms and by spec writes.
@@ -78,7 +78,7 @@ public final class NativeAdhanRecompute {
         synchronized (NativeAdhanStore.class) {
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SPEC).commit();
             writeState(c, "no_spec", 0, null);
-            NativeAdhanKeepAlive.cancel(c);
+            if (!NativeReminderQueue.hasItems(c)) NativeAdhanKeepAlive.cancel(c);
         }
     }
 
@@ -113,7 +113,7 @@ public final class NativeAdhanRecompute {
             synchronized (NativeAdhanStore.class) {
                 String result = refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
                 // Keep the once-a-day refresh armed while a spec exists; never arm it without one.
-                if ("no_spec".equals(result)) NativeAdhanKeepAlive.cancel(c); else NativeAdhanKeepAlive.schedule(c);
+                if ("no_spec".equals(result) && !NativeReminderQueue.hasItems(c)) NativeAdhanKeepAlive.cancel(c); else NativeAdhanKeepAlive.schedule(c);
                 return result;
             }
         } catch (Throwable t) {
