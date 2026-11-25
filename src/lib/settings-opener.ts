@@ -31,7 +31,7 @@ export interface NativeAdhanAlarmInput {
   body: string;
   rawSound: string;
   soundTitle: string;
-  adhanType: 'full' | 'short';
+  adhanType: 'full' | 'short' | 'silent';
   prayerKey: string;
 }
 
