@@ -37,7 +37,7 @@ public final class NativeReminderQueue {
     public static final String SILENT_REMINDER_CHANNEL_ID = "al-rabbani-reminder-silent-v1";
     public static final String GENERAL_CHANNEL_ID = "al-rabbani-general";
     static final long WINDOW_MS = 7L * 24 * 60 * 60 * 1000;
-    static final int MAX_ARMED = 150;
+    static final int MAX_ARMED = 100;
     static final int MAX_ITEMS_PER_KIND = 400;
     private static final String PREFS = "RABBANI_NATIVE_REMINDER_QUEUE_V1";
     private static final String KEY_ARMED = "armed";
@@ -147,32 +147,77 @@ public final class NativeReminderQueue {
         return false;
     }
 
-    /** Arms every queued item due in the window. Idempotent (same request code replaces). Never throws. */
+    /**
+     * Android allows 500 concurrent alarms per app (AOSP AlarmManagerService DEFAULT_MAX_ALARMS_PER_UID = 500; going over
+     * throws IllegalStateException). Adhan alarms, Capacitor-registered notifications and the daily keep-alive count against
+     * the same budget and always have priority. The queue may only use what is left under SHARED_BUDGET, which keeps
+     * a margin of 50 alarms free for them. When nothing is left the queue arms nothing and waits for the next app open.
+     */
+    static final int SHARED_BUDGET = 450;
+
+    /** Pure: how many queue alarms may be armed given the number of alarms other components already hold. */
+    public static int allowed(int others) {
+        if (others < 0) return 0;
+        return Math.max(0, Math.min(MAX_ARMED, SHARED_BUDGET - others));
+    }
+
+    /** Alarms held by the adhan path and by Capacitor LocalNotifications. On any failure assume the budget is used up. */
+    static int othersCount(Context c) {
+        try {
+            int n = NativeAdhanStore.loadStored(c).size();
+            n += new com.capacitorjs.plugins.localnotifications.NotificationStorage(c).getSavedNotificationIds().size();
+            return n + 2; // daily keep-alive and spare
+        } catch (Throwable t) {
+            return Integer.MAX_VALUE / 2;
+        }
+    }
+
+    /** Arms the earliest queued items due in the window across all kinds, within the shared budget. Never throws. */
     public static synchronized int promote(Context c) {
+        return promote(c, othersCount(c));
+    }
+
+    static synchronized int promote(Context c, int others) {
         int armed = 0;
         try {
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return 0;
             long now = System.currentTimeMillis();
             boolean exact = NativeAdhanStore.canScheduleExact(c);
-            JSONArray record = new JSONArray();
-            int budget = MAX_ARMED;
+            int budget = allowed(others);
+            List<Item> chosen = new ArrayList<>();
+            List<String> kinds = new ArrayList<>();
             for (String kind : KINDS) {
-                List<Item> all = prune(parse(prefs(c).getString(key(kind), null)), now);
-                for (Item it : due(all, now, WINDOW_MS, budget)) {
+                for (Item it : due(prune(parse(prefs(c).getString(key(kind), null)), now), now, WINDOW_MS, MAX_ITEMS_PER_KIND)) {
+                    chosen.add(it); kinds.add(kind);
+                }
+            }
+            // earliest first across kinds; stable pairing of item and kind
+            Integer[] order = new Integer[chosen.size()];
+            for (int i = 0; i < order.length; i++) order[i] = i;
+            java.util.Arrays.sort(order, (x, y) -> Long.compare(chosen.get(x).atMs, chosen.get(y).atMs));
+            // cancel every armed alarm first so a smaller budget really frees slots, then re-arm the chosen ones
+            for (String k : KINDS) cancelArmedOfKind(c, k);
+            JSONArray record = new JSONArray();
+            for (int idx : order) {
+                if (armed >= budget) break;
+                Item it = chosen.get(idx);
+                try {
+                    PendingIntent pi = pending(c, it, PendingIntent.FLAG_UPDATE_CURRENT);
                     try {
-                        PendingIntent pi = pending(c, it, PendingIntent.FLAG_UPDATE_CURRENT);
                         if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.atMs, pi);
                         else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.atMs, pi);
-                        JSONObject r = new JSONObject();
-                        r.put("kind", kind); r.put("id", it.id); r.put("at", it.atMs);
-                        r.put("title", it.title); r.put("body", it.body); r.put("channelId", it.channelId);
-                        record.put(r);
-                        armed++; budget--;
-                    } catch (Throwable ignored) {}
-                    if (budget <= 0) break;
-                }
-                if (budget <= 0) break;
+                    } catch (SecurityException se) {
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.atMs, pi);
+                    }
+                    JSONObject r = new JSONObject();
+                    r.put("kind", kinds.get(idx)); r.put("id", it.id); r.put("at", it.atMs);
+                    r.put("title", it.title); r.put("body", it.body); r.put("channelId", it.channelId);
+                    record.put(r);
+                    armed++;
+                } catch (IllegalStateException limit) {
+                    break; // the OS says the per-app alarm limit is reached: stop, keep the rest queued
+                } catch (Throwable ignored) {}
             }
             prefs(c).edit().putString(KEY_ARMED, record.toString()).commit();
         } catch (Throwable ignored) {}
@@ -221,16 +266,43 @@ public final class NativeReminderQueue {
         }
     }
 
-    /** Alarm fired: post the stored notification, then top up the window. A failure here never throws. */
+    /** Alarm fired: post the stored notification like LocalNotifications does, then top up the window. Never throws. */
     public static void onFire(Context c, int id, String title, String body, String channelId) {
         try {
             if (title == null || title.isEmpty()) return;
             String ch = channelId == null || channelId.isEmpty() ? GENERAL_CHANNEL_ID : channelId;
             ensureChannel(c, ch);
-            AdhanAlarmReceiver.postChannelNotification(c, id, ch, title, body == null ? "" : body, SILENT_REMINDER_CHANNEL_ID.equals(ch));
+            post(c, id, ch, title, body == null ? "" : body);
         } catch (Throwable ignored) {
             // A notification failure must never crash the receiver.
         }
         try { promote(c); } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Same look and behaviour as the Capacitor LocalNotifications notification this replaces: default priority,
+     * private lock-screen visibility, auto-cancel, alert once, the app's status icon and colour, and a tap that opens the app.
+     * Sound and vibration come from the channel (Android 8+); the silent channel has neither.
+     */
+    static void post(Context c, int id, String channelId, String title, String body) {
+        if (!androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
+        boolean silent = SILENT_REMINDER_CHANNEL_ID.equals(channelId);
+        Intent open = new Intent(c, MainActivity.class);
+        open.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent contentPi = PendingIntent.getActivity(c, id, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        androidx.core.app.NotificationCompat.Builder b = new androidx.core.app.NotificationCompat.Builder(c, channelId)
+            .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
+            .setColor(android.graphics.Color.parseColor("#D4B678"))
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PRIVATE)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(contentPi);
+        if (silent) b.setSilent(true); else b.setDefaults(android.app.Notification.DEFAULT_ALL);
+        try {
+            androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
+        } catch (SecurityException ignored) {}
     }
 }
