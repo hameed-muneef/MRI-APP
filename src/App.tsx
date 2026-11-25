@@ -203,7 +203,13 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
       return activity?{...current,quran:logRoutineCompletion(current.quran,activity,today())}:current;
     });
   };
-  const navigate=(v:View)=>{if(v!=='quran')setQuranSection(undefined);setView(retiredViews.has(v)?'home':v);window.scrollTo({top:0,behavior:'smooth'})};
+  // سجل الشاشات: زر الرجوع يعيد إلى الشاشة التي جاء منها المستخدم فعلًا، وليس إلى القرآن أو الرئيسية دائمًا.
+  const viewHistory=useRef<View[]>([]);
+  const viewNow=useRef<View>(view);
+  viewNow.current=view;
+  const goTo=(v:View,record:boolean)=>{const target=retiredViews.has(v)?'home':v;if(target==='home')viewHistory.current=[];else if(record&&target!==viewNow.current){viewHistory.current.push(viewNow.current);if(viewHistory.current.length>30)viewHistory.current.shift()}if(v!=='quran')setQuranSection(undefined);setView(target);window.scrollTo({top:0,behavior:'smooth'})};
+  const navigate=(v:View)=>goTo(v,true);
+  const navigateBack=()=>{const prev=viewHistory.current.pop();goTo(prev&&prev!==viewNow.current?prev:'home',false)};
   const openAudioCategory=(category:AudioCategory)=>{if(category==='haramain'){navigate('haramain');return}setQuranSection(category==='azkar'?'azkar':'mushaf');navigate('quran')};
   const onLeave=()=>{void authClient?.auth.signOut()};
   const requiredFeature=featureByView[view];
@@ -228,7 +234,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   // زر/إيماءة الرجوع: إغلاق الطبقات ثم العودة للرئيسية ثم تأكيد الخروج بضغطتين.
   useAppBackButton({
     view,
-    onNavigateHome:()=>navigate('home'),
+    onNavigateHome:()=>navigateBack(),
     onExitHint:()=>notify('اضغط زر الرجوع مرة أخرى للخروج'),
   });
   useEffect(()=>{
@@ -395,7 +401,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
     {view==='goals'&&<StrongGoals goals={state.goals} onGoals={goals=>update(s=>({...s,goals}))}/>}
-    {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection}/>}
+    {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection} onBackToPrevious={navigateBack}/>}
     {view==='haramain'&&<HaramainLive/>}
 {view==='qibla'&&<QiblaScreen notify={notify}/>}
     {view==='mosques'&&<MosquesScreen notify={notify}/>}
