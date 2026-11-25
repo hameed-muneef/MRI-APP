@@ -5,8 +5,8 @@ for(const width of [360,1280]){
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
   await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();
-  await page.locator('[data-quran-tab="hifz"]').click();
-  const ui=page.locator('.qm-workspace');await expect(ui).toBeVisible();
+  await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
+  const ui=page.locator('.qm-workspace').first();await expect(ui).toBeVisible();
   const contrast=await page.locator('.quran-journey-cta').first().evaluate(el=>{const style=getComputedStyle(el);const lum=(text:string)=>{const c=(text.match(/[\d.]+/g)??[]).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];};const a=lum(style.color),b=lum(style.backgroundColor);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
   expect(contrast).toBeGreaterThanOrEqual(4.5);
   await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
@@ -23,7 +23,7 @@ for(const width of [360,1280]){
   await expect(ui).toContainText('سلسلة الربط التدريجي');
   await ui.getByRole('button',{name:'رجوع وحفظ الموضع',exact:true}).click();
   await page.reload();
-  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
+  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
   await ui.getByRole('button',{name:/استئناف/}).first().click();await expect(ui.locator('h2')).toHaveText('اربط');
   await ui.getByRole('button',{name:'التالي: سمّع',exact:true}).click();
   await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();
@@ -49,8 +49,8 @@ for(const width of [360,1280]){
 }
 test('revision starts at recall, individual reveal works in full test',async({page})=>{
  await page.setViewportSize({width:360,height:900});await page.goto('/');
- await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
- const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
+ await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
+ const ui=page.locator('.qm-workspace').first();await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
  await expect(ui.locator('h2')).toHaveText('سمّع من ذاكرتك');
  await ui.getByRole('button',{name:'اختبار استرجاع كامل',exact:true}).click();
  await ui.getByRole('button',{name:'إظهار الآية 1',exact:true}).first().click();
@@ -64,8 +64,8 @@ test('recording explicit private save, playback list and delete',async({page})=>
   class RecorderMock{mimeType='audio/webm';ondataavailable:((e:{data:Blob})=>void)|null=null;onstop:(()=>void)|null=null;start(){}stop(){this.ondataavailable?.({data:new Blob(['local-audio'])});this.onstop?.();}}
   Object.defineProperty(window,'MediaRecorder',{value:RecorderMock,configurable:true});
  });
- await page.setViewportSize({width:360,height:900});await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
- const ui=page.locator('.qm-workspace');await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
+ await page.setViewportSize({width:360,height:900});await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
+ const ui=page.locator('.qm-workspace').first();await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();await ui.getByRole('button',{name:'ابدأ الاسترجاع',exact:true}).click();
  await ui.getByRole('button',{name:'ابدأ التسجيل بإذني',exact:true}).click();await expect(ui).toContainText('جارٍ التسجيل محليًا');
  await ui.getByRole('button',{name:'إيقاف التسجيل',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(1);
  await ui.getByRole('button',{name:'حفظ على الجهاز',exact:true}).click();await expect(ui.locator('audio')).toHaveCount(0);
