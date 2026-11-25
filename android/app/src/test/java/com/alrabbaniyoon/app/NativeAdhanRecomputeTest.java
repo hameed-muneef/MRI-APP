@@ -86,7 +86,8 @@ public class NativeAdhanRecomputeTest {
         assertEquals(0, m.armed.size());
         m.spec = spec("Egyptian", true, "silent");
         assertEquals("ok", NativeAdhanRecompute.refreshWith(m, NOW, TZ, "t"));
-        assertEquals(0, m.armed.size());
+        assertTrue(m.armed.size() > 100); // silent = no-audio notification, still armed (user-approved)
+        m.armed.clear(); m.armedTimes.clear();
         // cancel+clear fencing: once the spec is cleared (done atomically with cancelAll), no later refresh re-adds alarms
         m.spec = spec("Egyptian", true, "full");
         NativeAdhanRecompute.refreshWith(m, NOW, TZ, "t");
