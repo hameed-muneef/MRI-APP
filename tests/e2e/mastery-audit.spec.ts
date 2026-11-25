@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 async function enter(page:import('@playwright/test').Page,tab='hifz'){
- await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();const ui=page.locator('.qm-workspace');
+ await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();const ui=page.locator('.qm-workspace').first();
  if(tab==='revision')await ui.getByRole('button',{name:'مراجعة واسترجاع',exact:true}).click();
  return ui;
 }
@@ -13,7 +13,7 @@ test('progressive visible recall records self assessment without spaced evidence
 });
 test('corrupt learning data stays recoverable and cannot be overwritten by a fresh session',async({page})=>{
  const ui=await enter(page);await page.evaluate(()=>localStorage.setItem('rabbani-mastery-v1','broken-private-learning'));await page.reload();
- await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();
+ await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
  await expect(ui.getByRole('alert')).toContainText('غير قابلة للقراءة');await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();await expect(ui.locator('h2')).toHaveText('ابدأ حفظك خطوة بخطوة');
  expect(await page.evaluate(()=>localStorage.getItem('rabbani-mastery-v1'))).toBe('broken-private-learning');
  expect(await page.evaluate(()=>localStorage.getItem('rabbani-mastery-v1:quarantine'))).toBe('broken-private-learning');
