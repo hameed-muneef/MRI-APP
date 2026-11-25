@@ -61,7 +61,11 @@ export function verseCoverage(root: MasteryStateRoot | null | undefined, quran: 
 // ============ القرآن: الانتظام مع الخطة ============
 export type DayKind = 'done' | 'partial' | 'missed' | 'pending' | 'off' | 'unknown' | 'future';
 export type PlanDay = {date: string; kind: DayKind; verses: number; target: number; sched: boolean};
-export type PlanWindow = {plan: MasteryPlan; days: PlanDay[]; assigned: number; full: number; plannedVerses: number; doneVerses: number};
+export type PlanWindow = {plan: MasteryPlan; days: PlanDay[]; assigned: number; full: number; noRecord: number; plannedVerses: number; doneVerses: number};
+
+/** السجل غير كافٍ للحكم: توجد أيام مقررة بلا أي سجل على هذا الجهاز والمقرر لم يُبلغ بعد، فلا يُعدّ ذلك تقصيرًا مؤكدًا. */
+export const insufficientRecords = (w: Pick<PlanWindow, 'noRecord' | 'full' | 'assigned' | 'doneVerses' | 'plannedVerses'>) =>
+  w.noRecord > 0 && (w.full < w.assigned || w.doneVerses < w.plannedVerses);
 
 /** آيات الحفظ الجديد المكتملة لكل يوم محلي ضمن خطة بعينها. */
 export function versesByDay(root: MasteryStateRoot, plan: MasteryPlan): Map<string, Set<string>> {
@@ -107,6 +111,7 @@ export function planWindow(root: MasteryStateRoot, plan: MasteryPlan, period: Pe
     plan, days,
     assigned: counted.length,
     full: counted.filter(d => d.kind === 'done').length,
+    noRecord: counted.filter(d => d.kind === 'missed').length,
     plannedVerses: counted.length * target,
     doneVerses: counted.reduce((n, d) => n + d.verses, 0),
   };
