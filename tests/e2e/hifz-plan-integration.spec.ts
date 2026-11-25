@@ -47,7 +47,7 @@ test.describe('hifz plan integration', () => {
     // الإتمام الحقيقي يسجّل يومًا واحدًا فقط في سجل الإنجاز (بلا تكرار)
     const achievement = await page.evaluate(() => (JSON.parse(localStorage.getItem('rabbani-v1') || '{}').achievementLog || []).filter((e: {kind: string}) => e.kind === 'bilquran_step'));
     expect(achievement).toHaveLength(1);
-    expect(achievement[0].refId).toBe(before.planId);
+    expect(achievement[0].refId).toBe(`${before.planId}#0`);
 
     // المصحف يعرض الخطة نفسها بعد إعادة التحميل، وبدون تقدّم مضاعف
     await page.reload();
