@@ -249,9 +249,9 @@ export function getTaskNotificationSettings(prefs: NotificationPreference | null
     ? Math.max(0, Math.min(180, Math.round(rawMinutes)))
     : DEFAULT_TASK_NOTIFICATION_SETTINGS.remind_before_minutes;
   const channel: NotificationChannel =
-    raw?.channel === 'in_app' || raw?.channel === 'system' || raw?.channel === 'both'
+    raw?.channel === 'system' || raw?.channel === 'both'
       ? raw.channel
-      : prefs?.reminder_settings?.default_channel ?? DEFAULT_TASK_NOTIFICATION_SETTINGS.channel;
+      : prefs?.reminder_settings?.default_channel === 'system' ? 'system' : 'both';
   return {
     // التفعيل موحّد تحت مفتاح «تفعيل كل الإشعارات والمنبهات»؛ لا مفتاح مستقل للمهام.
     enabled: true,
