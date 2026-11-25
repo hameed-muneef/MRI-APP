@@ -99,7 +99,7 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
   };
 
   const restorePrayer = (prayer: PrayerName) => {
-    setPrefs(old => ({...old, prayer_settings: {...old.prayer_settings, [prayer]: structuredClone(DEFAULT_PRAYER_PREFERENCES[prayer])}}));
+    setPrefs(old => ({...old, prayer_settings: {...old.prayer_settings, [prayer]: {...DEFAULT_PRAYER_PREFERENCES[prayer]}}}));
     setDirtyPrayers(old => new Set(old).add(prayer));
   };
 
