@@ -31,7 +31,23 @@ for i in 1 2 3; do
       adb shell cat /sdcard/perm.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -8
       adb shell input keyevent KEYCODE_BACK; sleep 8
       after=$(adb shell dumpsys activity activities | tr -d '\r' | grep -m1 -E "mResumedActivity|ResumedActivity" || true)
-      case "$after" in *GrantPermissionsActivity*) echo "NOTE: the prompt is still shown after Back" ;; *) echo "NOTE: the prompt was dismissed by Back" ;; esac
+      case "$after" in
+        *GrantPermissionsActivity*)
+          echo "NOTE: the prompt is still shown after Back; pressing its Deny button explicitly"
+          adb shell uiautomator dump /sdcard/perm2.xml >/dev/null 2>&1 || true
+          adb shell cat /sdcard/perm2.xml 2>/dev/null | tr -d '\r' > /tmp/perm2.xml || true
+          xy=$(python3 - <<'PY'
+import re
+x=open('/tmp/perm2.xml',encoding='utf-8',errors='ignore').read()
+for n in re.findall(r'<node [^>]*>',x):
+    t=re.search(r'text="([^"]*)"',n); b=re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',n)
+    if t and b and t.group(1).strip().lower() in ('deny',"don't allow",'deny and don\'t ask again'):
+        a=[int(v) for v in b.groups()]; print((a[0]+a[2])//2,(a[1]+a[3])//2); break
+PY
+)
+          if [ -n "$xy" ]; then adb shell input tap $xy; echo "NOTE: tapped Deny at $xy"; sleep 6; else echo "NOTE: no Deny button found in the dialog"; fi ;;
+        *) echo "NOTE: the prompt was dismissed by Back" ;;
+      esac
       echo "NOTE: recorded permission state after Back (not assumed):"
       adb shell dumpsys package "$PKG" | tr -d '\r' | grep -E "android.permission.(ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|POST_NOTIFICATIONS): granted" ;;
     *) break ;;
