@@ -32,7 +32,7 @@ const weekdayFmt = new Intl.DateTimeFormat('ar-EG', {weekday: 'short'});
 const fmtDate = (key: string) => new Intl.DateTimeFormat('ar-EG', {day: 'numeric', month: 'long', year: 'numeric'}).format(new Date(`${key}T12:00:00`));
 const RANK: Record<Tone, number> = {behind: 0, steady: 1, good: 2, none: 3};
 const worse = (a: Tone, b: Tone): Tone => RANK[a] <= RANK[b] ? a : b;
-const TONE_WORD: Record<Tone, string> = {good: 'على الخطة', steady: 'قريب', behind: 'متأخر', none: 'لا مقرر'};
+const TONE_WORD: Record<Tone, string> = {good: 'بلغ المقرر', steady: 'قريب', behind: 'متأخر', none: 'لا مقرر'};
 const dayNum = (key: string) => ar(Number(key.slice(8)));
 
 function Bar({ratio, tone, label}: {ratio?: number; tone: Tone; label: string}) {
@@ -113,7 +113,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
   const adhkarStat: Stat = adhkarDays.size ? {headline: `${ar(adhkarDays.size)} يوم ${scope}`, detail: `التسجيل بدأ ${fmtDate(adhkarStart!)}`, tone: 'none', status: 'سجل من تاريخ البدء فقط'}
     : {headline: 'لا سجل بعد', detail: adhkarStart ? `التسجيل بدأ ${fmtDate(adhkarStart)}` : 'يبدأ التسجيل منذ تفعيل الميزة', tone: 'none', status: 'لا نسبة بلا سجل'};
   const prayerTone = prayer.recorded ? toneOf(prayer.ontime, prayer.recorded) : 'none';
-  const prayerStat: Stat = prayer.recorded ? {headline: `${ar(prayer.ontime)} من ${ar(prayer.recorded)} مسجلة في وقتها`, detail: prayer.unknown ? `غير مسجل: ${ar(prayer.unknown)}` : 'كلها مسجلة', ratio: ratioOf(prayer.ontime, prayer.recorded), tone: prayerTone, status: statusOf(prayerTone).replace('الخطة', 'المسجل')}
+  const prayerStat: Stat = prayer.recorded ? {headline: `${ar(prayer.ontime)} من ${ar(prayer.recorded)} مسجلة في وقتها`, detail: prayer.unknown ? `غير مسجل: ${ar(prayer.unknown)}` : 'كلها مسجلة', ratio: ratioOf(prayer.ontime, prayer.recorded), tone: prayerTone, status: statusOf(prayerTone).replace('المقرر', 'المسجل')}
     : {headline: 'لا تسجيل بعد', detail: 'سجّل صلواتك لتظهر هنا', tone: 'none', status: 'غير مسجل ليس تركًا'};
   const taskTone = toneOf(tasks.done, tasks.total);
   const taskStat: Stat = tasks.total ? {headline: `${ar(tasks.done)} من ${ar(tasks.total)} مهمة`, detail: `الفترة الحالية فقط${wirds.total ? ` · أوراد مكتملة ${ar(wirds.complete)} من ${ar(wirds.total)}` : ''}`, ratio: ratioOf(tasks.done, tasks.total), tone: taskTone, status: statusOf(taskTone)}
@@ -151,7 +151,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
         </Block>
         <details className="ach-help"><summary>كيف تُحسب الأرقام؟</summary>
           <p>الأيام: يوم مقرر يُعدّ منجزًا إذا بلغ حفظك الجديد الورد اليومي. الآيات: مجموع آيات الحفظ الجديد المكتمل مقابل مجموع الورد للأيام المقررة حتى اليوم. قد يتأخر أحدهما عن الآخر.</p>
-          <p>اليوم الحالي لا يُحسب تقصيرًا قبل أن ينتهي. أيام الراحة لا تُحسب. المخطط بخطوط: قبل بدء الخطة فلا بيانات. الجدول المعتمد هو جدول الخطة الحالي، وتعديلاتها السابقة لا تُحفظ نسخًا.</p>
+          <p>اليوم الحالي لا يُحسب تقصيرًا قبل أن ينتهي. اللون الأخضر لا يظهر إلا عند بلوغ المقرر كاملًا، و«قريب» يعني ٨٠٪ فأكثر. أيام الراحة لا تُحسب. المخطط بخطوط: قبل بدء الخطة فلا بيانات. الجدول المعتمد هو جدول الخطة الحالي، وتعديلاتها السابقة لا تُحفظ نسخًا.</p>
         </details></> : <Block title="الخطة">
         {bilSum && bilSum.total ? <>
           <Row k="خطة بالقرآن نحيا" v={`${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`}/>
