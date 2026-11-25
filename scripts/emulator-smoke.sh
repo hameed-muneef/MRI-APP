@@ -21,7 +21,7 @@ adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r'
 sleep 100
 
 pid=$(adb shell pidof "$PKG" | tr -d '\r')
-if [ -z "$pid" ]; then echo "FAIL: app process is not running"; fail=1; else echo "ok: app process $pid is running"; fi
+if [ -z "$pid" ]; then echo "FAIL: app process is not running"; echo "-- why the app process ended (Android exit info for $PKG) --"; adb shell dumpsys activity exit-info "$PKG" 2>&1 | head -40; fail=1; else echo "ok: app process $pid is running"; fi
 
 resumed=$(adb shell dumpsys activity activities | tr -d '\r' | grep -m1 -E "mResumedActivity|ResumedActivity" || true)
 echo "resumed: $resumed"
