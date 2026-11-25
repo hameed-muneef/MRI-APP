@@ -107,7 +107,7 @@ public final class NativeAdhanPlanner {
                 if (Double.isNaN(t[k])) continue;
                 JSONObject p = prayers.optJSONObject(KEYS[k]);
                 String type = p.optString("type", "full");
-                if (!p.optBoolean("enabled", false) || type.equals("silent")) continue;
+                if (!p.optBoolean("enabled", false)) continue;
                 long at = (long) t[k] + Math.round(adjust.optDouble(KEYS[k], 0)) * 60000L;
                 if (at <= nowMs + 1000) continue;
                 cur.setTimeInMillis(at);
@@ -117,8 +117,8 @@ public final class NativeAdhanPlanner {
                 String name = p.optString("nameAr");
                 String sound = p.optString("sound", "");
                 out.add(new Planned(prayerId(ymd, KEYS[k]), at, "حان وقت صلاة " + name,
-                    "وقت " + name + ": " + hhmm + " · " + sound, p.optString("raw", "adhan_almulla"), sound,
-                    type.equals("short") ? "short" : "full", ymd + ":" + KEYS[k]));
+                    type.equals("silent") ? "وقت " + name + ": " + hhmm : "وقت " + name + ": " + hhmm + " · " + sound, p.optString("raw", "adhan_almulla"), sound,
+                    type.equals("short") ? "short" : type.equals("silent") ? "silent" : "full", ymd + ":" + KEYS[k]));
             }
             // next local civil day (read fields only, like JS setDate)
             day.add(Calendar.DAY_OF_MONTH, 1);
