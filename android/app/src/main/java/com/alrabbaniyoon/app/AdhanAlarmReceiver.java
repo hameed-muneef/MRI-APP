@@ -55,6 +55,12 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
         String adhanType = intent.getStringExtra(EXTRA_ADHAN_TYPE);
         String prayerKey = intent.getStringExtra(EXTRA_PRAYER_KEY);
 
+        if ("silent".equals(adhanType)) {
+            NativeAdhanStore.ensureSilentChannel(context);
+            postChannelNotification(context, alarmId, NativeAdhanStore.SILENT_CHANNEL_ID, title, body, true);
+            return;
+        }
+
         String channelId = NativeAdhanStore.ensureAdhanNotificationChannel(context, rawSound, soundTitle);
 
         if ("short".equals(adhanType)) {
@@ -101,6 +107,17 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
         String title,
         String body
     ) {
+        postChannelNotification(context, notificationId, channelId, title, body, false);
+    }
+
+    public static void postChannelNotification(
+        Context context,
+        int notificationId,
+        String channelId,
+        String title,
+        String body,
+        boolean silent
+    ) {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return;
 
         Intent openIntent = new Intent(context, MainActivity.class);
@@ -120,7 +137,8 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setDefaults(silent ? 0 : NotificationCompat.DEFAULT_ALL)
+            .setSilent(silent)
             .setAutoCancel(true)
             .setContentIntent(contentPi);
 
