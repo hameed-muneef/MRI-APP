@@ -229,8 +229,17 @@ public final class NativeReminderRules {
         try { prefs(c).edit().remove(KEY).commit(); } catch (Throwable ignored) {}
     }
 
+    /**
+     * True while at least one stored rule still has an occurrence after now and its frontier (so the daily keep-alive has a reason to stay
+     * armed). A rule past its end date, or no rule at all, is false: the keep-alive then stops like it does when nothing is queued.
+     */
     public static boolean hasRules(Context c) {
-        try { return !parse(prefs(c).getString(KEY, null)).isEmpty(); } catch (Throwable t) { return false; }
+        try {
+            long now = System.currentTimeMillis();
+            TimeZone tz = TimeZone.getDefault();
+            for (Rule r : parse(prefs(c).getString(KEY, null))) if (nextDue(r, Math.max(now, r.frontierMs), tz) >= 0) return true;
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     /** Items due within windowMs of now across all rules, in the current zone. Never throws. */
