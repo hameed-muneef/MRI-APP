@@ -12,5 +12,5 @@ export default function HifzHome({asset, purpose, notify, onExit, tasks, onTasks
   const [detailed, setDetailed] = useState(false);
   return detailed
     ? <><button type="button" className="soft-btn" onClick={() => setDetailed(false)}>← الصفحة الكاملة</button><MasteryWorkspace asset={asset} purpose={purpose} notify={notify}/></>
-    : <HifzMushafMode asset={asset} notify={notify} onExit={onExit} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules} onTaskSchedules={onTaskSchedules}/>;
+    : <HifzMushafMode asset={asset} notify={notify} onDetailed={() => setDetailed(true)} onExit={onExit} tasks={tasks} onTasks={onTasks} taskSchedules={taskSchedules} onTaskSchedules={onTaskSchedules}/>;
 }
