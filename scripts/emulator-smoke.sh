@@ -34,6 +34,13 @@ else
   echo "ok: no fatal exception for $PKG"
 fi
 if grep -q "ANR in $PKG" /tmp/logcat.txt; then echo "FAIL: ANR in $PKG"; fail=1; else echo "ok: no ANR"; fi
+if grep -q "Uncaught SyntaxError" /tmp/logcat.txt; then
+  echo "FAIL: the page scripts did not parse (SyntaxError), so the app UI did not start; WebView is too old for this bundle"; fail=1
+fi
+if [ -z "$pid" ] || [ "$fail" -ne 0 ]; then
+  echo "-- process and crash lines (on failure) --"
+  grep -E "alrabbaniyoon|am_proc_died|am_crash|am_kill|lowmemorykiller|has died|AndroidRuntime|signal [0-9]+|Fatal signal" /tmp/logcat.txt | tail -60
+fi
 echo "-- app log lines (Capacitor) --"
 grep -i "capacitor" /tmp/logcat.txt | head -12
 
