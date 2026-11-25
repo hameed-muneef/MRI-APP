@@ -42,4 +42,14 @@ adb shell dumpsys notification --noredact | tr -d '\r' | grep -E "mId=al-rabbani
 echo "-- alarms registered by the app --"
 adb shell dumpsys alarm | tr -d '\r' | grep -c "$PKG" || true
 
+echo "-- visible UI text (uiautomator) --"
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+adb shell cat /sdcard/ui.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -25 || true
+adb exec-out screencap -p > /tmp/shot.png 2>/dev/null || true
+mkdir -p smoke-out && cp /tmp/shot.png "smoke-out/shot-api$(adb shell getprop ro.build.version.sdk | tr -d '\r').png" 2>/dev/null || true
+echo "SHOT_BEGIN"
+base64 -w0 /tmp/shot.png 2>/dev/null || true
+echo
+echo "SHOT_END"
+
 exit $fail
