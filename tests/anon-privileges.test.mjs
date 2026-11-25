@@ -31,6 +31,19 @@ test('anon has no table privileges in public; authenticated keeps notification t
       assert.equal(r.ok, true, `authenticated keeps access to ${t}`);
       assert.equal(r.svc, true, `service_role keeps access to ${t}`);
     }
+    const execRow = async (sig, role) => (await db.query(`select has_function_privilege('${role}', '${sig}', 'execute') as ok`)).rows[0].ok;
+    for (const sig of ['public.list_reminders()', 'public.create_reminder(text,timestamptz,text,text,jsonb,text,text,text,text,boolean)',
+      'public.get_notification_preferences()', 'public.register_device_token(text,text)', 'public.reveal_circle_meeting_url(uuid)']) {
+      assert.equal(await execRow(sig, 'anon'), false, `anon must not execute ${sig}`);
+      assert.equal(await execRow(sig, 'authenticated'), true, `authenticated keeps execute on ${sig}`);
+    }
+    const audit = 'public.record_payment_audit(uuid,text,text,text,jsonb)';
+    assert.equal(await execRow(audit, 'anon'), false);
+    // a non-admin signed-in user must not be able to forge audit rows
+    await db.exec(`insert into auth.users(id,email,email_confirmed_at) values ('00000000-0000-0000-0000-0000000000aa','u@example.test',now())`);
+    await db.exec(`set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000aa'; set role authenticated`);
+    await assert.rejects(db.query(`select public.record_payment_audit('00000000-0000-0000-0000-0000000000aa','x','y','z','{}')`), error => error.code === '42501');
+    await db.exec('reset role');
     await db.exec('set role anon');
     await assert.rejects(db.query('select * from public.reminders'), error => error.code === '42501');
     await db.exec('reset role');
