@@ -79,7 +79,7 @@ public final class NativeReminderQueue {
             c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), c.get(Calendar.SECOND) };
     }
 
-    /** Pure: the instant of wall-clock fields in a zone. A time skipped by DST moves forward; a repeated time takes its first occurrence. */
+    /** Pure: the instant of wall-clock fields in a zone. A time skipped by DST moves forward; a repeated time resolves to one of its two valid instants (java.util.Calendar picks the standard-time one). */
     static long instantOf(int[] w, TimeZone tz) {
         Calendar c = Calendar.getInstance(tz);
         c.clear();
