@@ -176,7 +176,12 @@ function isNative(): boolean {
 async function loadPlugin() {
   try {
     const mod = await import('@capacitor/local-notifications');
-    return mod.LocalNotifications;
+    // Returning the Capacitor plugin proxy from an async function makes the runtime look up `.then` on it, and
+    // Capacitor rejects that with '"LocalNotifications.then()" is not implemented on android'. Hide `then` so the
+    // plugin is handed back as a plain value.
+    return new Proxy(mod.LocalNotifications, {
+      get: (target, prop, receiver) => (prop === 'then' ? undefined : Reflect.get(target, prop, receiver)),
+    });
   } catch {
     return null;
   }
