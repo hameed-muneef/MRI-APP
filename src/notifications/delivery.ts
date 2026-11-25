@@ -235,12 +235,14 @@ export async function recordNotification(kind: string, title: string, body = '',
  * يرسل إشعارًا عبر القنوات المتاحة (داخل التطبيق + متصفح إن أمكن).
  * يُسجّل الحدث في جدول notification_events عبر RPC إن توفّر.
  */
-export async function deliverReminder(reminder: Reminder, channel: NotificationChannel = 'both'): Promise<void> {
+export async function deliverReminder(reminder: Reminder, requested: NotificationChannel = 'both'): Promise<void> {
+  // لا يوجد «داخل التطبيق فقط»: أي قيمة قديمة تُعامل كـ «النظام + التطبيق».
+  const channel: NotificationChannel = requested === 'system' ? 'system' : 'both';
   const title = reminder.title;
   const body = reminder.description || 'تذكير مخصص';
 
   // 1. إشعار داخل التطبيق (يظهر في مركز الإشعارات)
-  if (channel === 'in_app' || channel === 'both') await recordNotification('reminder', title, body, 'settings');
+  await recordNotification('reminder', title, body, 'settings');
 
   // 2. إشعار نظامي خارج التطبيق: الهاتف أولًا (يصل والتطبيق مغلق)، ثم المتصفح على الويب
   if (channel === 'system' || channel === 'both') {
