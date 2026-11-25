@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-async function enter(page:import('@playwright/test').Page){await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();return page.locator('.qm-workspace');}
+async function enter(page:import('@playwright/test').Page){await page.goto('/');await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();return page.locator('.qm-workspace').first();}
 test('plan configuration, edit, pause, consent catch-up and real session defaults',async({page},info)=>{
  const ui=await enter(page);
  await ui.locator('summary').filter({hasText:'خططي ومراجعات اليوم والتقدم'}).click();
