@@ -742,3 +742,24 @@ html[data-theme="dark"] #root .hf-track-tabs button.on{background:#2f6b3f;border
 html[data-theme="dark"] #root .hf-schedule-row.is-milestone{background:#16332c;border-color:#3f8a53}
 html[data-theme="dark"] #root .hf-schedule-meta span{color:#9fd3f6}
 
+
+/* Achievement entry: the icon sits beside the title and subtitle, vertically centred like the other home cards.
+   The generic `.home-today-entry span` grid rule used to stack the icon above the text, which left the title off-centre. */
+html #root .app main.main .home-achievement-entry .home-tasks-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+html #root .app main.main .home-achievement-entry .home-tasks-head > span:not(.home-today-icon) {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+html #root .app main.main .home-achievement-entry .home-tasks-head .home-today-icon {
+  flex: none;
+}
