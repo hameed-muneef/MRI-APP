@@ -1,3 +1,5 @@
+import {emitAchievement, makeEntry} from '../../achievement/log';
+import {dayKey as achievementDay} from '../../achievement/dates';
 import type {Task, TaskSchedule} from '../../app-state';
 import {localDay} from '../../quran-mastery/planning';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -328,6 +330,7 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
     if (completedPlanStep !== null && activePlan && activePlanSteps.length) {
       const updated = completeBilQuranStep(activePlan, completedPlanStep, activePlanSteps.length);
       setActivePlan(updated);
+      emitAchievement(makeEntry('bilquran_step', activePlan.planId, achievementDay(new Date()), String(completedPlanStep + 1)));
       message += ` · اكتمل مقرر اليوم ${toArabicNumber(completedPlanStep + 1)} من خطة الحفظ.`;
     }
     recorder.current?.discard('finished');
