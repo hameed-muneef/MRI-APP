@@ -63,6 +63,7 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     // 3. Switch scope chip to 'سورة محددة' (سورة الفاتحة) and download offline to browser Cache Storage
     await page.locator('.reciters-scope-chips button[role="radio"]', { hasText: 'سورة محددة' }).click();
     await expect(page.locator('.reciters-single-surah select')).toBeVisible();
+    await yasserCard.locator('.reciter-toggle').click(); // expand the collapsed card to reach its actions
     await yasserCard.getByRole('button', { name: 'تحميل', exact: true }).click();
 
     await expect(yasserCard).toContainText('١ سورة', { timeout: 10_000 });
@@ -72,8 +73,10 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     await page.locator('.reciters-tabs button', { hasText: 'المنزّلون' }).click();
     await expect(page.locator('.reciter-card', { hasText: 'ياسر الدوسري' })).toBeVisible();
 
-    // 5. Select the reciter ('استماع الآن') -> switches back to Mushaf with ياسر الدوسري active & offline badge shown
-    await page.locator('.reciter-card', { hasText: 'ياسر الدوسري' }).getByRole('button', { name: /استماع الآن/ }).click();
+    // 5. Select the reciter ('اعتماد للمصحف') -> switches back to Mushaf with ياسر الدوسري active & offline badge shown
+    const yCard = page.locator('.reciter-card', { hasText: 'ياسر الدوسري' });
+    if ((await yCard.locator('.reciter-toggle').getAttribute('aria-expanded')) !== 'true') await yCard.locator('.reciter-toggle').click();
+    await yCard.getByRole('button', { name: /اعتماد للمصحف/ }).click(); // 'استماع' now plays in place; 'اعتماد للمصحف' selects the reciter and opens the Mushaf
     await expect(page.locator('.mf-toolbar')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('.mf-offline-pill')).toContainText('السورة متاحة دون إنترنت');
 
@@ -87,6 +90,7 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     await expect(sheet.locator('.ol-head')).toHaveCount(0);
     await expect(sheet.locator('.mf-sheet-reciters-head')).toBeVisible();
 
+    await sheet.getByRole('tab', { name: /المنزّلون/ }).click(); // the list stays empty until a category tab (or a search) is chosen
     const firstCard = sheet.locator('.reciter-card').first();
     await expect(firstCard).toBeVisible();
 
@@ -102,6 +106,7 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     }
 
     // Verify 44px touch targets and dark-mode contrast inside the light-paper sheet
+    if ((await firstCard.locator('.reciter-toggle').getAttribute('aria-expanded')) !== 'true') await firstCard.locator('.reciter-toggle').click();
     const uiMetrics = await sheet.evaluate(el => {
       const listenBtn = el.querySelector('.reciter-btn-listen.selected') as HTMLElement | null;
       const dlBtn = el.querySelector('.reciter-btn-dl') as HTMLElement | null;
@@ -157,7 +162,9 @@ test.describe('Quran Reciters Library (244+) & Mobile Offline Download', () => {
     await expect(page.locator('.reciters-library')).toBeVisible({ timeout: 10_000 });
 
     // Every reciter card exposes a one-tap full-mushaf download with its surah count
+    await page.getByRole('tab', { name: 'الأشهر' }).click(); // the list stays empty until a category tab is chosen
     const firstCard = page.locator('.reciter-card').first();
+    await firstCard.locator('.reciter-toggle').click(); // cards are collapsed by default; expand to reach the download actions
     const fullBtn = firstCard.locator('.reciter-btn-full');
     await expect(fullBtn).toBeVisible();
     await expect(fullBtn).toContainText('تحميل المصحف كاملًا (١١٤ سورة)');
