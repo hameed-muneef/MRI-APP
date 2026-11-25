@@ -85,6 +85,23 @@ export function farQueueItems(
     .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID }));
 }
 
+/**
+ * Android 7.x (API 24-25) has no notification channels, and LocalNotifications then plays the configured sound and
+ * vibrates for every notification, including silent-prayer reminders. The user decided silent means a device
+ * notification without audio, so on those versions silent before/after reminders go through the native queue,
+ * which posts them without sound or vibration. Android 8+ keeps using the channel (no sound) as before.
+ */
+export function splitSilentForLegacyAndroid<T extends { channelId?: string }>(
+  payloads: readonly T[],
+  sdkInt: number | undefined,
+): { registered: T[]; queued: T[] } {
+  if (typeof sdkInt !== 'number' || sdkInt >= 26) return { registered: [...payloads], queued: [] };
+  return {
+    registered: payloads.filter((p) => p.channelId !== SILENT_REMINDER_CHANNEL_ID),
+    queued: payloads.filter((p) => p.channelId === SILENT_REMINDER_CHANNEL_ID),
+  };
+}
+
 export interface NativeScheduleOptions {
   location: PrayerLocation;
   prefs: NotificationPreference;
@@ -718,6 +735,7 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
 
     if (perms.display !== 'granted') {
       await setNativeRecomputeSpec(null);
+      await setNativeReminderQueue('prayer', []);
       return {
         scheduled: 0,
         cancelled,
@@ -745,7 +763,7 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
       madhab: opts.madhab,
       now: opts.now,
     });
-    const reminderPayloads = buildNativeBeforeAfterPayloads({
+    const allReminderPayloads = buildNativeBeforeAfterPayloads({
       location: opts.location,
       prefs: opts.prefs,
       days: opts.days,
@@ -755,8 +773,12 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
       generalChannelId: GENERAL_CHANNEL_ID,
       exactAlarm: exactGranted,
     });
+    const legacySplit = splitSilentForLegacyAndroid(allReminderPayloads, (await getAndroidEnvironmentStatus())?.sdkInt);
+    const reminderPayloads = legacySplit.registered;
+    const legacyQueueItems = farQueueItems(legacySplit.queued, []);
 
-    if (adhanInputs.length === 0 && reminderPayloads.length === 0) {
+    if (adhanInputs.length === 0 && reminderPayloads.length === 0 && legacyQueueItems.length === 0) {
+      await setNativeReminderQueue('prayer', []);
       return {
         scheduled: 0,
         cancelled,
@@ -803,6 +825,7 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
       warning = e instanceof Error ? e.message : 'فشل الجدولة';
     }
 
+    await setNativeReminderQueue('prayer', legacyQueueItems);
     await rebalanceNativeReminderQueue();
     const latestPerms = await checkPermissions();
     const result: NativeScheduleResult = {
@@ -932,6 +955,7 @@ export async function cancelAllPrayerNotifications(): Promise<void> {
     if (!isNative()) return;
     await cancelNativeAdhanAlarms();
     await setNativeRecomputeSpec(null);
+    await setNativeReminderQueue('prayer', []);
     const LN = await loadPlugin();
     if (LN) {
       await cancelScopedNotifications(LN, 'prayer', PRAYER_IDS_STORAGE_KEY);
