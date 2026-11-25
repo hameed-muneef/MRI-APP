@@ -41,11 +41,11 @@ test.describe('Full Mobile App Walkthrough (All Views & Scenarios)', () => {
 
     // 1. Home dashboard & cards
     await expect(page.locator('.hero')).toBeVisible();
-    await expect(page.locator('.home-today-entry')).toBeVisible();
+    await expect(page.locator('.home-today-entry.home-today-list')).toBeVisible();
     await expect(page.locator('.feature-card', { hasText: 'المساجد القريبة' })).toBeVisible();
 
     // 2. Today Tasks -> verify view & overflow
-    await page.locator('.home-today-entry').click();
+    await page.locator('.home-today-entry.home-today-list').click();
     await expect(page.locator('h1', { hasText: 'مركز المهام' })).toBeVisible();
     await assertNoPageOverflow(page, 'tasks');
 
@@ -54,17 +54,17 @@ test.describe('Full Mobile App Walkthrough (All Views & Scenarios)', () => {
     await expect(page.locator('.crumb strong')).toContainText('يومي مع الله');
     await assertNoPageOverflow(page, 'day');
 
-    await page.locator('.crumb-home').click();
+    await page.getByRole('button',{name:'العودة للرئيسية',exact:true}).click();
     await page.locator('.feature-card', { hasText: 'أسبوعي مع الله' }).click();
     await expect(page.locator('.crumb strong')).toContainText('أسبوعي مع الله');
     await assertNoPageOverflow(page, 'week');
 
-    await page.locator('.crumb-home').click();
+    await page.getByRole('button',{name:'العودة للرئيسية',exact:true}).click();
     await page.locator('.feature-card', { hasText: 'شهري مع الله' }).click();
     await expect(page.locator('.crumb strong')).toContainText('شهري مع الله');
     await assertNoPageOverflow(page, 'month');
 
-    await page.locator('.crumb-home').click();
+    await page.getByRole('button',{name:'العودة للرئيسية',exact:true}).click();
     await page.locator('.feature-card', { hasText: 'المؤمن القوي' }).click();
     await expect(page.locator('.crumb strong')).toContainText('المؤمن القوي');
     await assertNoPageOverflow(page, 'goals');
