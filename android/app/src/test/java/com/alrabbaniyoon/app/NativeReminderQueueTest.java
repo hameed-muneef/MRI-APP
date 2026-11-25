@@ -121,4 +121,49 @@ public class NativeReminderQueueTest {
         assertEquals(1, shadowOf(nm).getActiveNotifications().length);
         assertEquals(null, nm.getNotificationChannel(NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID).getSound());
     }
+
+    @Test public void sharedBudgetLeavesRoomForAdhanAndRegisteredAlarms() {
+        assertEquals(100, NativeReminderQueue.allowed(0));
+        assertEquals(100, NativeReminderQueue.allowed(350));
+        assertEquals(30, NativeReminderQueue.allowed(420));
+        assertEquals(0, NativeReminderQueue.allowed(450));
+        assertEquals(0, NativeReminderQueue.allowed(900));
+        assertEquals(0, NativeReminderQueue.allowed(-1));
+        // never more than 450 in total even in the worst case
+        for (int others = 0; others < 700; others++) assertTrue(others + NativeReminderQueue.allowed(others) <= Math.max(others, 450));
+    }
+
+    @Test public void promoteNeverExceedsTheBudgetAndKeepsTheEarliestFirst() {
+        long now = System.currentTimeMillis();
+        long[] a = new long[80];
+        for (int i = 0; i < 40; i++) { a[2 * i] = now + (i + 1) * 3600_000L; a[2 * i + 1] = 100 + i; }
+        NativeReminderQueue.setQueue(ctx, "reminder", items(a));
+        assertEquals(30, NativeReminderQueue.promote(ctx, 420));
+        assertEquals(30, queued().size());
+        long latest = 0;
+        for (ShadowAlarmManager.ScheduledAlarm al : queued()) latest = Math.max(latest, al.triggerAtTime);
+        assertTrue(latest <= now + 31 * 3600_000L);
+        // budget shrinks when other alarms grow: queue alarms are released, never the other way round
+        assertEquals(0, NativeReminderQueue.promote(ctx, 460));
+        assertEquals(0, queued().size());
+        assertTrue(NativeReminderQueue.hasItems(ctx));
+        // and they come back when room returns
+        assertEquals(40, NativeReminderQueue.promote(ctx, 10));
+        assertEquals(40, queued().size());
+    }
+
+    @Test public void firedNotificationMatchesLocalNotificationsLook() {
+        NativeReminderQueue.onFire(ctx, 90, "t", "b", "al-rabbani-general");
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification n = shadowOf(nm).getActiveNotifications()[0].getNotification();
+        assertEquals(Notification.PRIORITY_DEFAULT, n.priority);
+        assertEquals(Notification.VISIBILITY_PRIVATE, n.visibility);
+        assertEquals("al-rabbani-general", n.getChannelId());
+        assertTrue((n.flags & Notification.FLAG_AUTO_CANCEL) != 0);
+        assertTrue((n.flags & Notification.FLAG_ONLY_ALERT_ONCE) != 0);
+        assertEquals(null, n.category);
+        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, nm.getNotificationChannel("al-rabbani-general").getImportance());
+        assertTrue(nm.getNotificationChannel("al-rabbani-general").shouldVibrate());
+        assertEquals(NotificationManager.IMPORTANCE_LOW, nm.getNotificationChannel(NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID).getImportance());
+    }
 }
