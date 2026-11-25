@@ -1,12 +1,14 @@
 import {lazy,Suspense,useEffect,useRef,useState} from 'react';
 import HomeView from './views/HomeView';
+import AchievementView from './views/AchievementView';
+import {ACHIEVEMENT_LOG_EVENT,appendEntry,makeEntry,mergeLogs,type AchievementEntry} from './achievement/log';
 import {replacePeriodTasks,updateDayRecords} from './weekly-planning';
 import {slotClockTime} from './day-timing';
 import {load,today,type State,type View} from './app-state';
 import {sectionOfView} from './section-theme';
 import {displayName,fetchProfile,saveProfile,type Profile} from './user-profile';
 import {uid} from './id';
-import {CalendarDays,Heart,Settings2,Home,ChevronLeft,ArrowRight,Check,ShieldCheck,UserRound,CreditCard,BookMarked,MonitorPlay,Compass,MapPin,WifiOff} from 'lucide-react';
+import {CalendarDays,Heart,Settings2,Home,ChevronLeft,ArrowRight,Check,ShieldCheck,UserRound,CreditCard,BookMarked,MonitorPlay,Compass,MapPin,WifiOff,Trophy} from 'lucide-react';
 import AuthScreen from './AuthScreen';
 import {AppearanceToggle} from './AppearanceToggle';
 import {InstallAppButton} from './InstallApp';
@@ -56,7 +58,7 @@ const featureByView:Partial<Record<View,string>>={day:'daily_planning',tasks:'da
 const retiredViews=new Set<string>(['circles','courses','study','shares','teacher']);
 type FeatureAccess={view:View;status:'checking'|'allowed'|'denied'|'error';title?:string;enabled?:boolean;price_amount:number|null;currency_code:string|null;billing_interval:string|null};
 
-const crumbs:Record<View,string>={home:'الرئيسية',day:'يومي مع الله',tasks:'مركز المهام',week:'أسبوعي مع الله',month:'شهري مع الله',goals:'المؤمن القوي',quran:'القرآن والسنة',haramain:'من الحرمين الشريفين',reflect:'محاسبة النفس',wird:'زكِّ نفسك',profile:'حسابي',settings:'الإعدادات',payment:'دفع الاشتراك',paymentHistory:'سجل الدفع',qibla:'اتجاه القبلة',mosques:'المساجد القريبة'};
+const crumbs:Record<View,string>={achievement:'الإنجاز',home:'الرئيسية',day:'يومي مع الله',tasks:'مركز المهام',week:'أسبوعي مع الله',month:'شهري مع الله',goals:'المؤمن القوي',quran:'القرآن والسنة',haramain:'من الحرمين الشريفين',reflect:'محاسبة النفس',wird:'زكِّ نفسك',profile:'حسابي',settings:'الإعدادات',payment:'دفع الاشتراك',paymentHistory:'سجل الدفع',qibla:'اتجاه القبلة',mosques:'المساجد القريبة'};
 const dailySuiteViews:Array<{id:View;label:string}>=[
   {id:'tasks',label:'مهام اليوم'},
   {id:'day',label:'يومي'},
@@ -159,7 +161,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   useEffect(()=>{
     if(!user)return;
     let active=true;
-    fetchCloudState(user.id).then(remote=>{if(active){if(remote&&!localStorage.getItem(pendingKey))setState(remote);setCloudWritable(true)}}).catch(()=>{if(active){setCloudWritable(false);setSyncStatus('offline')}}).finally(()=>{if(active)setCloudReady(true)});
+    fetchCloudState(user.id).then(remote=>{if(active){if(remote&&!localStorage.getItem(pendingKey))setState(cur=>({...remote,achievementLog:mergeLogs(cur.achievementLog,remote.achievementLog)}));setCloudWritable(true)}}).catch(()=>{if(active){setCloudWritable(false);setSyncStatus('offline')}}).finally(()=>{if(active)setCloudReady(true)});
     return()=>{active=false};
   },[user,storageKey,pendingKey,retrySync]);
   useEffect(()=>{
@@ -175,6 +177,12 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>window.clearTimeout(timer);
   },[state,user,cloudReady,cloudWritable,pendingKey]);
   const update=(fn:(s:State)=>State)=>setState(fn);
+  // سجل الإنجاز المؤرّخ: الأحداث تأتي من الشاشات العميقة (مصحف الحفظ، الأذكار) وتُدمج هنا بالمعرّف دون تكرار.
+  useEffect(()=>{
+    const onEntry=(event:Event)=>{const entry=(event as CustomEvent<AchievementEntry>).detail;if(!entry||!entry.id||!entry.date)return;setState(cur=>{const next=appendEntry(cur.achievementLog,entry);return next===cur.achievementLog?cur:{...cur,achievementLog:next}})};
+    window.addEventListener(ACHIEVEMENT_LOG_EVENT,onEntry);
+    return()=>window.removeEventListener(ACHIEVEMENT_LOG_EVENT,onEntry);
+  },[]);
   // Quran learning sync: merge server rows on load, then save debounced. Local
   // storage remains the offline source of truth; failures never delete data.
   const [quranSynced,setQuranSynced]=useState(!user);
@@ -388,7 +396,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const deniedFeature=Boolean(user&&requiredFeature&&!admin&&accessMatchesView&&featureAccess.status==='denied');
   const featureCheckFailed=Boolean(user&&requiredFeature&&!admin&&accessMatchesView&&featureAccess.status==='error');
   if(!cloudReady)return <div className="auth-loading" dir="rtl">جارٍ تحميل بيانات حسابك…</div>;
-  return <div className="app"><aside className="sidebar"><button className="brand" onClick={()=>navigate('home')}><span className="brand-mark"><img src="/brand/book-mark.svg" alt=""/></span><span><strong>الرَّبَّانِيُّون</strong><small>على هدي الكتاب والسنة</small></span></button><div className="side-label">مسيرتك</div><nav><button className={view==='home'?'active':''} onClick={()=>navigate('home')}><Home size={19}/>الرئيسية</button><button data-section="daily" className={inDailySuite(view)?'active':''} onClick={()=>navigate('day')}><CalendarDays size={19}/>حياتي مع الله</button><button data-section="quran" className={view==='quran'?'active':''} onClick={()=>navigate('quran')}><BookMarked size={19}/>القرآن والسنة</button><button data-section="haramain" className={view==='haramain'?'active':''} onClick={()=>navigate('haramain')}><MonitorPlay size={19}/>من الحرمين الشريفين<InternetBadge compact/></button>
+  return <div className="app"><aside className="sidebar"><button className="brand" onClick={()=>navigate('home')}><span className="brand-mark"><img src="/brand/book-mark.svg" alt=""/></span><span><strong>الرَّبَّانِيُّون</strong><small>على هدي الكتاب والسنة</small></span></button><div className="side-label">مسيرتك</div><nav><button className={view==='home'?'active':''} onClick={()=>navigate('home')}><Home size={19}/>الرئيسية</button><button data-section="daily" className={inDailySuite(view)?'active':''} onClick={()=>navigate('day')}><CalendarDays size={19}/>حياتي مع الله</button><button data-section="quran" className={view==='quran'?'active':''} onClick={()=>navigate('quran')}><BookMarked size={19}/>القرآن والسنة</button><button data-section="journey" data-view="achievement" className={view==='achievement'?'active':''} onClick={()=>navigate('achievement')}><Trophy size={19}/>الإنجاز</button><button data-section="haramain" className={view==='haramain'?'active':''} onClick={()=>navigate('haramain')}><MonitorPlay size={19}/>من الحرمين الشريفين<InternetBadge compact/></button>
 <button data-section="qibla" className={view==='qibla'?'active':''} onClick={()=>navigate('qibla')}><Compass size={19}/>اتجاه القبلة</button><button data-section="daily" className={view==='mosques'?'active':''} onClick={()=>navigate('mosques')}><MapPin size={19}/>المساجد القريبة</button><button data-section="accountability" className={['reflect','wird'].includes(view)?'active':''} onClick={()=>navigate('reflect')}><Heart size={19}/>حاسب نفسك</button></nav><div className="side-bottom">{!LOCAL_ONLY&&<button onClick={()=>navigate('profile')}><UserRound size={18}/> {user?'حسابي':'الملف الشخصي'}</button>}
 {!LOCAL_ONLY&&<button onClick={()=>navigate('paymentHistory')}><CreditCard size={18}/> سجل الدفع</button>}<button onClick={()=>navigate('settings')}><Settings2 size={18}/> الإعدادات</button>{!LOCAL_ONLY&&<button className="session-button" onClick={async()=>{if(user)await authClient?.auth.signOut();else onLeave()}}>{user?'تسجيل الخروج':'العودة إلى صفحة الدخول'}</button>}<p>﴿وَلَٰكِنْ كُونُوا رَبَّانِيِّينَ﴾<br/><span>آل عمران: 79</span></p></div></aside><main data-section={sectionOfView(view)} className="main"><header className="topbar"><div className="crumb"><button type="button" className="crumb-home" onClick={()=>navigate('home')} aria-label="العودة إلى الرئيسية">الربانيون</button><ChevronLeft size={15}/><strong>{crumbs[view]}</strong></div><div className="top-actions">{admin&&<a className="admin-entry" href="/admin"><ShieldCheck size={15}/> لوحة الإدارة</a>}{(user||LOCAL_ONLY)&&<InstallAppButton/>}{(user||LOCAL_ONLY)&&<AppearanceToggle/>}{user&&<button className="user-chip" onClick={()=>navigate('profile')} aria-label={`حسابي: ${displayName(profile,user.email)}`}><span className="user-chip-avatar" aria-hidden="true">{displayName(profile,user.email).trim().charAt(0)}</span><span className="user-chip-name">{displayName(profile,user.email)}</span></button>}<LiveNotifications prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} passages={state.quran?.passages ?? []} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} onToast={notify}/>{user&&<div className="top-date">{syncStatus==='offline'?<button className="cloud-status offline" onClick={()=>setRetrySync(x=>x+1)}>تعذر الاتصال · إعادة المحاولة</button>:<span className={'cloud-status '+syncStatus}>{syncStatus==='saved'?'محفوظ في السحابة':'جارٍ الحفظ…'}</span>}</div>}<NotificationCenter user={user} profile={profile} onNavigate={navigate}/><button type="button" className={`icon-btn topbar-settings${view==='settings'?' active':''}`} aria-label="الإعدادات" title="الإعدادات" aria-current={view==='settings'?'page':undefined} onClick={()=>navigate('settings')}><Settings2 size={18} aria-hidden="true"/></button></div></header><div className="content">{view!=='home'&&<div className="page-top-nav"><button className="back" onClick={()=>navigate('home')}><ArrowRight size={16}/>العودة للرئيسية</button>{inDailySuite(view)&&<nav className="section-subnav" aria-label="أقسام حياتي مع الله">{dailySuiteViews.map(item=><button key={item.id} type="button" className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}>{item.label}</button>)}</nav>}</div>}
     {checkingFeature&&<div className="auth-loading" dir="rtl" role="status">جارٍ التحقق من استحقاق الميزة…</div>}
@@ -401,13 +409,14 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
     {view==='goals'&&<StrongGoals goals={state.goals} onGoals={goals=>update(s=>({...s,goals}))}/>}
+    {view==='achievement'&&<AchievementView state={state} onQuran={quran=>update(s=>({...s,quran}))} notify={notify} onOpenQuranSection={section=>{setQuranSection(section);navigate('quran')}} onOpenView={target=>navigate(target)}/>}
     {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection} onBackToPrevious={navigateBack}/>}
     {view==='haramain'&&<HaramainLive/>}
 {view==='qibla'&&<QiblaScreen notify={notify}/>}
     {view==='mosques'&&<MosquesScreen notify={notify}/>}
     {view==='reflect'&&<ReflectionView reflections={state.reflections} onAdd={text=>{update(s=>({...s,reflections:[newReflection(text),...s.reflections]}));notify('حُفظت المراجعة')}} onDelete={id=>update(s=>({...s,reflections:s.reflections.filter(x=>x.id!==id)}))} navigate={navigate}/>}
 
-    {view==='wird'&&<WirdsView wirds={state.wirds} onCountChange={(id,delta)=>update(s=>({...s,wirds:changeWirdCount(s.wirds,id,delta)}))} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate}/>}
+    {view==='wird'&&<WirdsView wirds={state.wirds} onCountChange={(id,delta)=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!before&&!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate}/>}
     {!LOCAL_ONLY&&view==='profile'&&<ProfileView user={user!} notify={notify} onProfileSaved={()=>{}}/>}
     {view==='settings'&&<SettingsView state={state} onReplace={setState} notify={notify} onOpenProfile={()=>navigate('profile')}/>}
     {!LOCAL_ONLY&&view==='payment'&&<PaymentCheckout user={user!} featureKey={paymentFeature} onBack={()=>navigate('home')}/>}
