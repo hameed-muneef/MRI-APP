@@ -141,7 +141,7 @@ describe('buildNativePrayerPayloads', () => {
     const fajr = payloads.filter((p) => p.extra?.prayer === 'Fajr');
     expect(fajr).toEqual([]);
     const asr = payloads.filter((p) => p.extra?.prayer === 'Asr');
-    expect(asr).toEqual([]);
+    expect(asr.length).toBeGreaterThan(0); // in_app القديمة لا تُسقط تنبيه الجهاز
 
     const dhuhrMain = payloads.filter((p) => p.extra?.prayer === 'Dhuhr' && p.extra?.eventType === 'at');
     const dhuhrBefore = payloads.filter((p) => p.extra?.prayer === 'Dhuhr' && p.extra?.eventType === 'before');
@@ -209,7 +209,7 @@ describe('buildNativeReminderPayloads', () => {
     expect(payloads[0].channelId).toBe(GENERAL_CHANNEL_ID);
   });
 
-  it('skips native scheduling when reminder default_channel is in_app only', () => {
+  it('still schedules a device notification when a legacy default_channel in_app reaches the builder', () => {
     const now = new Date(2026, 10, 20, 6, 0, 0);
     const prefs = makePrefs({
       reminder_settings: {
@@ -218,7 +218,7 @@ describe('buildNativeReminderPayloads', () => {
         snooze_minutes: 10,
       },
     });
-    expect(buildNativeReminderPayloads([baseReminder], prefs, now)).toEqual([]);
+    expect(buildNativeReminderPayloads([baseReminder], prefs, now).length).toBeGreaterThan(0);
   });
 });
 
@@ -243,6 +243,6 @@ it('mastery native payloads honor preferences and stable IDs without private lea
  const now=new Date(2026,10,23,7),root=createEmptyMasteryState(now);root.schedules=[{passageId:'x',dueDate:'2026-11-23',timezone:'UTC',intervalIndex:0,lapses:0,deferrals:[],updatedAt:''}];
  const source:Reminder={id:'quran-mastery-daily-review',user_id:'',title:'Review',scheduled_at:new Date(2026,10,23,9).toISOString(),recurrence:'daily',category:'worship',enabled:true,created_at:'',updated_at:''};
  const expanded=nativeMasteryReminders([source],root,now),prefs=makePrefs();const a=buildNativeReminderPayloads(expanded,prefs,now);expect(a.length).toBeGreaterThan(0);expect(a.map(x=>x.id)).toEqual(buildNativeReminderPayloads(expanded,prefs,now).map(x=>x.id));expect(new Set(a.map(x=>x.id)).size).toBe(a.length);
- expect(buildNativeReminderPayloads(expanded,makePrefs({global_enabled:false}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({dnd_enabled:true}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({categories:{...prefs.categories,worship:false}}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({reminder_settings:{...prefs.reminder_settings,default_channel:'in_app'}}),now)).toEqual([]);
+ expect(buildNativeReminderPayloads(expanded,makePrefs({global_enabled:false}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({dnd_enabled:true}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({categories:{...prefs.categories,worship:false}}),now)).toEqual([]);expect(buildNativeReminderPayloads(expanded,makePrefs({reminder_settings:{...prefs.reminder_settings,default_channel:'in_app'}}),now).length).toBeGreaterThan(0);
  const quiet=makePrefs({quiet_hours:{enabled:true,start:'00:00',end:'23:59'}});expect(buildNativeReminderPayloads(expanded,quiet,now)).toEqual([]);
 });
