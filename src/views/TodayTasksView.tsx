@@ -491,7 +491,7 @@ export default function TodayTasksView({
                   value={taskSettings.channel}
                   onChange={event => patchTaskSettings({channel: event.target.value as NotificationChannel})}
                 >
-                  {(['both', 'system', 'in_app'] as NotificationChannel[]).map(key => (
+                  {(['both', 'system'] as NotificationChannel[]).map(key => (
                     <option key={key} value={key}>{channelLabel(key)}</option>
                   ))}
                 </select>
