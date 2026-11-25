@@ -8,8 +8,8 @@ async function startSession(page:import('@playwright/test').Page){
  await page.setViewportSize({width:360,height:900});
  await page.goto('/');
  await page.locator('.mobile-nav button').filter({hasText:'القرآن'}).first().click();
- await page.locator('[data-quran-tab="hifz"]').click();
- const ui=page.locator('.qm-workspace');
+ await page.locator('[data-quran-tab="hifz"]').click();await page.locator('[data-hifz-detailed]').click();
+ const ui=page.locator('.qm-workspace').first();
  await ui.getByRole('button',{name:'ابدأ الحفظ',exact:true}).click();
  await expect(ui.locator('h2')).toHaveText('استمع');
  return ui;
