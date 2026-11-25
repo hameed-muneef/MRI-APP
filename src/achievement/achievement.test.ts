@@ -34,7 +34,7 @@ describe('periods and tones', () => {
     expect(periodRange('week', NOW)).toEqual({start: '2026-11-23', end: '2026-11-29', today: '2026-11-25'});
   });
   it('tone follows achievement vs plan; nothing planned is neutral, not failure', () => {
-    expect(toneOf(4, 5)).toBe('good'); expect(toneOf(3, 5)).toBe('steady'); expect(toneOf(1, 5)).toBe('behind'); expect(toneOf(0, 0)).toBe('none');
+    expect(toneOf(5, 5)).toBe('good'); expect(toneOf(8, 10)).toBe('steady'); expect(toneOf(7, 10)).toBe('behind'); expect(toneOf(1, 5)).toBe('behind'); expect(toneOf(12, 10)).toBe('good'); expect(toneOf(0, 0)).toBe('none');
   });
 });
 
