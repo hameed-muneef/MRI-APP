@@ -41,6 +41,8 @@ import {
 
 export const ADHAN_CHANNEL_ID = 'al-rabbani-adhan-adhan_almulla-v1';
 export const GENERAL_CHANNEL_ID = 'al-rabbani-general';
+/** قناة تذكيرات الصلوات الصامتة: إشعار على الجهاز بلا صوت ولا اهتزاز. */
+export const SILENT_REMINDER_CHANNEL_ID = 'al-rabbani-reminder-silent-v1';
 
 export const NOTIFICATIONS_CHANGED_EVENT = 'rabbani:notifications-changed';
 export const NATIVE_SCHEDULE_UPDATED_EVENT = 'rabbani:native-schedule-updated';
@@ -285,7 +287,8 @@ export function buildNativeBeforeAfterPayloads(opts: {
     const setting = prefs.prayer_settings?.[prayerName];
     if (!setting?.enabled) continue;
     const adhanType = setting.adhan_type ?? 'full';
-    if (adhanType === 'silent') continue;
+    // الصلاة الصامتة: تذكيرات قبل/بعد تصل إشعارًا على الجهاز عبر قناة بلا صوت ولا اهتزاز.
+    const reminderChannelId = adhanType === 'silent' ? SILENT_REMINDER_CHANNEL_ID : generalChannelId;
 
     const before = setting.remind_before_minutes ?? 0;
     if (before > 0) {
@@ -296,7 +299,7 @@ export function buildNativeBeforeAfterPayloads(opts: {
           title: `تذكير: ${prayerNameAr(item.prayer)} بعد ${before} دقيقة`,
           body: 'استعد للصلاة.',
           schedule: { at: beforeAt, allowWhileIdle: true },
-          channelId: generalChannelId,
+          channelId: reminderChannelId,
           foreground: true,
           isExactNotification: isExact,
           extra: { rabbaniKind: 'prayer', prayer: item.prayer, date: item.date, eventType: 'before' },
@@ -313,7 +316,7 @@ export function buildNativeBeforeAfterPayloads(opts: {
           title: `بعد أذان ${prayerNameAr(item.prayer)} · ${after} دقيقة`,
           body: 'اتبع الصلاة بالذكر والاستغفار.',
           schedule: { at: afterAt, allowWhileIdle: true },
-          channelId: generalChannelId,
+          channelId: reminderChannelId,
           foreground: true,
           isExactNotification: isExact,
           extra: { rabbaniKind: 'prayer', prayer: item.prayer, date: item.date, eventType: 'after' },
@@ -555,6 +558,16 @@ export async function ensureChannels(): Promise<ActiveChannelInfo> {
       const listed = await LN.listChannels();
       const existingChannels = (listed.channels ?? []) as Array<{ id: string }>;
       const hasGeneral = existingChannels.some((c) => c.id === GENERAL_CHANNEL_ID);
+      if (!existingChannels.some((c) => c.id === SILENT_REMINDER_CHANNEL_ID)) {
+        await LN.createChannel({
+          id: SILENT_REMINDER_CHANNEL_ID,
+          name: 'تذكيرات الصلاة بدون صوت',
+          description: 'تذكيرات قبل وبعد الصلاة الصامتة بدون صوت أو اهتزاز',
+          importance: 2,
+          visibility: 1,
+          vibration: false,
+        });
+      }
       if (!hasGeneral) {
         await LN.createChannel({
           id: GENERAL_CHANNEL_ID,
