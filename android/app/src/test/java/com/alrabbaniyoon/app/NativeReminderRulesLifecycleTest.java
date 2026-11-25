@@ -138,4 +138,95 @@ public class NativeReminderRulesLifecycleTest {
         assertFalse(NativeReminderRules.hasRules(ctx));
         assertEquals(0, NativeReminderQueue.promote(ctx));
     }
+
+    private boolean keepAliveArmed() {
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        for (ShadowAlarmManager.ScheduledAlarm a : shadowOf(am).getScheduledAlarms()) {
+            if (a.operation != null && NativeAdhanKeepAlive.ACTION.equals(shadowOf(a.operation).getSavedIntent().getAction())) return true;
+        }
+        return false;
+    }
+
+    private List<Long> times() {
+        List<Long> t = new ArrayList<>();
+        for (ShadowAlarmManager.ScheduledAlarm a : queued()) t.add(a.triggerAtTime);
+        java.util.Collections.sort(t);
+        return t;
+    }
+
+    @Test public void dailyKeepAliveStaysArmedWhileOnlyARuleRemainsAndStopsWhenNoValidRuleIsLeft() {
+        long now = System.currentTimeMillis();
+        // no queue items and no prayer spec: only the rule is left
+        NativeReminderRules.setRules(ctx, rule("k1", "daily", now - 5 * DAY, 0));
+        NativeReminderQueue.setQueue(ctx, "reminder", "[]");
+        assertTrue(NativeReminderQueue.hasItems(ctx));
+        assertTrue(keepAliveArmed());
+        new DailyRefreshReceiver().onReceive(ctx, new android.content.Intent(NativeAdhanKeepAlive.ACTION));
+        assertTrue("keep-alive re-armed by the refresh", keepAliveArmed());
+        assertTrue(queued().size() > 0);
+
+        // end date in the past: no valid future rule, the keep-alive is cancelled by the next refresh and not re-armed
+        String ended = "[{\"rid\":\"k2\",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\",\"kind\":\"daily\",\"baseMs\":" + (now - 40 * DAY)
+            + ",\"start\":null,\"end\":\"2020-01-01\",\"quietOn\":false,\"quietStart\":\"22:00\",\"quietEnd\":\"06:00\",\"snoozeMs\":0,\"frontierMs\":0}]";
+        NativeReminderRules.setRules(ctx, ended);
+        NativeReminderQueue.setQueue(ctx, "reminder", "[]");
+        assertFalse(NativeReminderRules.hasRules(ctx));
+        assertFalse(NativeReminderQueue.hasItems(ctx));
+        assertEquals(0, queued().size());
+        NativeAdhanKeepAlive.schedule(ctx);
+        new DailyRefreshReceiver().onReceive(ctx, new android.content.Intent(NativeAdhanKeepAlive.ACTION));
+        assertFalse("keep-alive stopped with no valid rule", keepAliveArmed());
+    }
+
+    @Test public void repeatedTopUpsFireAndRebootNeitherDuplicateNorResurrectOccurrences() {
+        long now = System.currentTimeMillis();
+        long frontier = now + 2 * DAY;
+        NativeReminderRules.setRules(ctx, rule("f1", "daily", now - 9 * DAY, frontier));
+        NativeReminderQueue.setQueue(ctx, "reminder", "[]");
+        List<Long> first = times();
+        assertTrue(first.size() >= 4);
+        for (long t : first) assertTrue("never at or before the frontier", t > frontier);
+
+        NativeReminderQueue.promote(ctx);
+        NativeReminderQueue.promote(ctx);
+        assertEquals("repeated top-ups", first, times());
+
+        // an alarm fires (posts, then tops up): same set, nothing earlier than the frontier comes back
+        NativeReminderQueue.onFire(ctx, 1, "t", "b", "al-rabbani-general");
+        assertEquals("after a fire", first, times());
+
+        // reboot / time change path: release the slots, then re-arm
+        NativeReminderQueue.suspend(ctx);
+        assertEquals(0, queued().size());
+        NativeReminderQueue.promote(ctx);
+        assertEquals("after reboot", first, times());
+        new DailyRefreshReceiver().onReceive(ctx, new android.content.Intent(NativeAdhanKeepAlive.ACTION));
+        assertEquals("after the daily keep-alive", first, times());
+    }
+
+    @Test public void ruleMetadataNeverTouchesTheStoredQueuesOfTheExistingKinds() {
+        long now = System.currentTimeMillis();
+        android.content.SharedPreferences q = ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE);
+        long taskAt = now + 2 * DAY, reviewAt = now + 3 * DAY, remAt = now + 4 * DAY + 12345;
+        NativeReminderQueue.setQueue(ctx, "task", "[{\"id\":71,\"at\":" + taskAt + ",\"title\":\"task\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
+        NativeReminderQueue.setQueue(ctx, "review", "[{\"id\":72,\"at\":" + reviewAt + ",\"title\":\"rev\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
+        NativeReminderQueue.setQueue(ctx, "reminder", "[{\"id\":73,\"at\":" + remAt + ",\"title\":\"one\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
+        String task = q.getString("q_task", null), review = q.getString("q_review", null), rem = q.getString("q_reminder", null);
+        int before = queued().size();
+
+        NativeReminderRules.setRules(ctx, rule("m1", "daily", now - 9 * DAY, 0));
+        NativeReminderQueue.promote(ctx);
+        assertEquals(task, q.getString("q_task", null));
+        assertEquals(review, q.getString("q_review", null));
+        assertEquals(rem, q.getString("q_reminder", null));
+        assertFalse(String.valueOf(q.getString("q_reminder", "")).contains("rid"));
+        assertTrue(queued().size() > before);
+
+        // replacing another kind keeps the rule alarms, and replacing the rules keeps the other kinds' alarms
+        NativeReminderQueue.setQueue(ctx, "task", "[]");
+        assertEquals(expectedInWindow(rule("m1", "daily", now - 9 * DAY, 0)) + 2, queued().size());
+        NativeReminderRules.setRules(ctx, "[]");
+        NativeReminderQueue.setQueue(ctx, "reminder", rem);
+        assertEquals(2, queued().size()); // the review and the one-off reminder
+    }
 }
