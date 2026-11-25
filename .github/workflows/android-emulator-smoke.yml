@@ -76,3 +76,12 @@ jobs:
           profile: ${{ matrix.profile }}
           disable-animations: true
           script: bash scripts/emulator-smoke.sh
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-api${{ matrix.api }}
+          path: smoke-out
+          if-no-files-found: ignore
+          retention-days: 2
