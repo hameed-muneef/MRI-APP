@@ -50,7 +50,7 @@ test.describe('hifz plan integration', () => {
     expect(reloaded.completedIndices).toEqual([0]);
     expect(reloaded.currentIndex).toBe(1);
     await page.locator('.mobile-nav button', {hasText: 'القرآن'}).click();
-    await page.locator('.quran-section-grid button[data-quran-tab="plans"]').click();
+    await page.locator('.quran-section-grid button[data-quran-tab="hifz"]').click();
     const card = page.locator('.quran-plans-card');
     await expect(card).toContainText('اليوم ٢');
     await expect(card).toContainText('١ مكتمل');
