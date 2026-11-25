@@ -45,15 +45,20 @@ public class AlarmRestoreReceiver extends BroadcastReceiver {
             return;
         }
 
+        // Higher-priority alarms first: release the queue's slots, restore adhan and Capacitor alarms, then re-arm the queue.
+        NativeReminderQueue.suspend(context);
         try {
             NativeAdhanStore.restoreFutureAlarms(context);
             NativeAdhanRecompute.refresh(context, action);
-            NativeReminderQueue.promote(context);
         } catch (Exception ex) {
             Logger.error("AlarmRestoreReceiver", "Failed restoring native Adhan alarms on " + action, ex);
         }
 
-        restoreCapacitorReminders(context, action);
+        try {
+            restoreCapacitorReminders(context, action);
+        } finally {
+            NativeReminderQueue.promote(context);
+        }
     }
 
     private static void restoreCapacitorReminders(Context context, String action) {
