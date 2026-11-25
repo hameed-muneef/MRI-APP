@@ -41,6 +41,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".QueuedReminderReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".AlarmRestoreReceiver"
             android:exported="false">
             <intent-filter>
