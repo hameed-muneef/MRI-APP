@@ -231,35 +231,43 @@ public class NativeReminderQueueTest {
         assertEquals(1793511000000L, overlap);
     }
 
-    @Test public void setQueueStampsWallClockForTaskButNotPrayer() {
+    @Test public void setQueueStampsWallClockForReviewOnly() {
         long now = System.currentTimeMillis();
-        NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 1));
+        NativeReminderQueue.setQueue(ctx, "review", items(now + DAY, 1));
         NativeReminderQueue.setQueue(ctx, "prayer", items(now + DAY, 2));
-        List<NativeReminderQueue.Item> task = NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_task", null));
+        NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 4));
+        NativeReminderQueue.setQueue(ctx, "reminder", items(now + DAY, 5));
+        List<NativeReminderQueue.Item> task = NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_review", null));
         List<NativeReminderQueue.Item> prayer = NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_prayer", null));
         assertTrue(task.get(0).wall != null && task.get(0).zone != null);
         assertEquals(null, prayer.get(0).wall);
+        for (String k : new String[] {"task", "reminder"}) {
+            assertEquals(null, NativeReminderQueue.parse(ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE).getString("q_" + k, null)).get(0).wall);
+        }
     }
 
-    @Test public void zoneChangeMovesStoredItemsOnPromoteWithoutResurrectingOrAdding() {
+    @Test public void zoneChangeMovesReviewItemsOnPromoteWithoutResurrectingOrAdding() {
         TimeZone saved = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("Africa/Cairo"));
             long now = System.currentTimeMillis();
-            NativeReminderQueue.setQueue(ctx, "task", items(now + DAY, 1, now + 2 * DAY, 2));
+            NativeReminderQueue.setQueue(ctx, "review", items(now + DAY, 1, now + 2 * DAY, 2));
             NativeReminderQueue.setQueue(ctx, "prayer", items(now + DAY, 3));
-            // the app later replaced the task queue with only item 2 (item 1 was completed): it must stay gone
-            NativeReminderQueue.setQueue(ctx, "task", items(now + 2 * DAY, 2));
+            // the app later replaced the review queue with only item 2 (item 1 was completed): it must stay gone
+            NativeReminderQueue.setQueue(ctx, "review", items(now + 2 * DAY, 2));
+            NativeReminderQueue.setQueue(ctx, "task", items(now + 3 * DAY, 4)); // task items stay absolute
             TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Kiritimati")); // +14:00, far from Cairo
-            assertEquals(2, NativeReminderQueue.promote(ctx));
-            long taskAt = -1, prayerAt = -1;
+            assertEquals(3, NativeReminderQueue.promote(ctx));
+            long taskAt = -1, prayerAt = -1, absTaskAt = -1;
             for (ShadowAlarmManager.ScheduledAlarm a : queued()) {
                 int id = shadowOf(a.operation).getSavedIntent().getIntExtra("id", -1);
                 if (id == 2) taskAt = a.triggerAtTime;
                 if (id == 3) prayerAt = a.triggerAtTime;
+                if (id == 4) absTaskAt = a.triggerAtTime;
                 assertTrue(id != 1);
             }
             assertEquals(now + DAY, prayerAt);
+            assertEquals(now + 3 * DAY, absTaskAt);
             int[] w = NativeReminderQueue.wallOf(taskAt, TimeZone.getTimeZone("Pacific/Kiritimati"));
             int[] was = NativeReminderQueue.wallOf(now + 2 * DAY, TimeZone.getTimeZone("Africa/Cairo"));
             assertEquals(java.util.Arrays.toString(was), java.util.Arrays.toString(w));
