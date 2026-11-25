@@ -40,7 +40,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const [result, setResult] = useState<string>('');
   const [supported] = useState(isNativePlatform());
   const [explainerOpen, setExplainerOpen] = useState(false);
-  const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[]; until: string } | null>(null);
+  const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[]; until: string; globalOff: boolean; dnd: boolean } | null>(null);
 
   const refresh = useCallback(async () => {
     // حالة الجدولة تُحسب محليًا ولا تتوقف على استجابة إضافات النظام.
@@ -53,7 +53,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       const until = last ? last.toLocaleDateString('ar', { day: 'numeric', month: 'long' }) : '';
       const inAppOnly = (Object.keys(prefs.prayer_settings) as Array<keyof typeof prefs.prayer_settings>)
         .filter((n) => prefs.prayer_settings[n].enabled && prefs.prayer_settings[n].channel === 'in_app');
-      setHealth({ hasLocation: !!loc, upcoming, inAppOnly, until });
+      setHealth({ hasLocation: !!loc, upcoming, inAppOnly, until, globalOff: prefs.global_enabled === false, dnd: prefs.dnd_enabled === true });
     } catch { /* ignore */ }
     try {
       const [p, ch, env] = await Promise.all([
@@ -243,7 +243,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       )}
       <div className="notif-prayer-panel">
       <h3>تنبيهات الأذان</h3>
-      <p className="muted small">فعّل التنبيهات ليصلك الأذان. قد تؤثر إعدادات البطارية في وصوله.</p>
+      <p className="muted small">فعّل التنبيهات ليصلك الأذان والتذكيرات والمهام والمراجعة على مستوى الجهاز. أذونات الإشعارات والمنبهات والبطارية أدناه تسري على كل هذه التنبيهات.</p>
       <details className="settings-inner-details"><summary>حالة الأذونات والتشخيص</summary>
       <div className="form-grid">
         <div><strong>الإشعارات:</strong> {perm.display==='granted'?'مفعّلة':'تحتاج إذنًا'}</div>
@@ -252,6 +252,11 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         <div><strong>قناة عامة:</strong> {GENERAL_CHANNEL_ID} · <strong>البطارية:</strong> {batteryLabel}</div>
       </div></details>
 
+      {health && (health.globalOff || health.dnd) && (
+        <div className="qibla-banner warn" role="alert" data-notif-blocker="global">
+          {health.globalOff ? 'مفتاح «تفعيل كل الإشعارات والمنبهات» مغلق، لذلك لا يُجدول أي تنبيه على الجهاز (الأذان والتذكيرات والمهام والمراجعة).' : 'وضع عدم الإزعاج داخل التطبيق مفعّل، لذلك لا يُجدول أي تنبيه على الجهاز (الأذان والتذكيرات والمهام والمراجعة).'}
+        </div>
+      )}
       {health && !health.hasLocation && (
         <div className="qibla-banner warn" role="alert">
           لا يوجد موقع لحساب المواقيت، لذلك لا أذان مجدول. اختر مدينتك من شاشة المواقيت أو اسمح بالموقع ثم اضغط «إعادة جدولة».
