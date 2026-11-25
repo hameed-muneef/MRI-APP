@@ -193,7 +193,7 @@ describe('task-planner and engine integration', () => {
     ).toEqual([]);
   });
 
-  it('builds native Capacitor payloads for future scheduled tasks and skips in_app channel', () => {
+  it('builds native Capacitor payloads for future scheduled tasks and migrates a legacy in_app channel to device notifications', () => {
     const now = new Date(2026, 10, 20, 10, 0, 0);
     const payloads = buildNativeTaskPayloads({tasks, taskSchedules: schedules}, makePrefs(), now, GENERAL_CHANNEL_ID, true);
     expect(payloads.length).toBeGreaterThan(0);
@@ -214,7 +214,7 @@ describe('task-planner and engine integration', () => {
         },
       },
     });
-    expect(buildNativeTaskPayloads({tasks, taskSchedules: schedules}, inAppOnly, now)).toEqual([]);
+    expect(buildNativeTaskPayloads({tasks, taskSchedules: schedules}, inAppOnly, now).length).toBeGreaterThan(0);
 
     const preview = upcomingTaskAlerts({tasks, taskSchedules: schedules}, makePrefs(), now, 5);
     expect(preview.length).toBe(4);
