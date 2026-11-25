@@ -13,6 +13,7 @@ import {buildPageLines, loadPageLines, type LineStart} from './MasteryWorkspace'
 import UnderstandingSheet from './UnderstandingSheet';
 import {uid} from '../../id';
 import {loadMasteryState, saveMasteryState} from '../../quran-mastery/storage';
+import {useBackHandler} from '../../navigation/useBackHandler';
 import {advanceStage, applyAssessment, buildCumulativeLinkSequence, createRecallAttempt, createSession, formatCumulativePreview, interruptSession} from '../../quran-mastery/engine';
 import {deleteRecording, readRecording, saveRecording} from '../../quran-mastery/recording-store';
 import {ASSESSMENT_LABELS, MASTERY_SCHEMA_VERSION, MASTERY_STATES} from '../../quran-mastery/types';
@@ -289,6 +290,14 @@ export default function HifzMushafMode({asset, notify, onExit, tasks, onTasks, t
     setIds(null); setTailIds([]);
     setStarted(false);
   };
+  // زر الرجوع في الهاتف: يغلق أعلى طبقة داخل مصحف الحفظ (الإعدادات، الجدولة، الجلسة، ثم الشاشات الفرعية).
+  // من الشاشة الأولى لا يوجد معالج هنا، فيرجع التطبيق إلى الشاشة التي فُتح منها فعلًا.
+  useBackHandler(() => {
+    if (sheet) { setSheet(false); return; }
+    if (sched) { setSched(false); return; }
+    if (started) { leave(); return; }
+    setPhase('entry'); setValidation('');
+  }, sheet || sched || started || phase !== 'entry');
   const finish = (label: typeof ASSESSMENT_LABELS[number]['value']) => {
     const session = sessionOf();
     if (!session || !ids) return;
