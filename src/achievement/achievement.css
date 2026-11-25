@@ -30,7 +30,7 @@
 .ach-day{flex:1 0 30px;text-align:center;font-size:11px;padding:6px 2px;border-radius:8px;border:1px solid transparent;background:var(--ach-track);color:var(--ach-ink)}
 .ach-day[data-kind="done"]{background:var(--ach-good);color:#fff}
 .ach-day[data-kind="partial"]{background:var(--ach-steady-bg);color:var(--ach-steady);border-color:var(--ach-steady)}
-.ach-day[data-kind="missed"]{background:var(--ach-track);color:var(--ach-muted);text-decoration:line-through}
+.ach-day[data-kind="missed"]{background:var(--ach-track);color:var(--ach-muted)}
 .ach-day[data-kind="pending"]{background:transparent;border:1.5px solid var(--ach-none);color:var(--ach-ink)}
 .ach-day[data-kind="off"]{background:transparent;border:1.5px dotted var(--ach-muted);color:var(--ach-muted)}
 .ach-day[data-kind="future"]{background:transparent;border:1.5px solid var(--ach-line);color:var(--ach-muted)}
