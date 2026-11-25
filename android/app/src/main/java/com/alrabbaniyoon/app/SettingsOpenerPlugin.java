@@ -236,6 +236,14 @@ public class SettingsOpenerPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setNativeReminderRules(PluginCall call) {
+        String rules = call.getString("rules");
+        if (rules == null) { call.reject("rules required"); return; }
+        NativeReminderRules.setRules(getContext(), rules);
+        call.resolve();
+    }
+
+    @PluginMethod
     public void rebalanceNativeReminderQueue(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("armed", NativeReminderQueue.promote(getContext()));
