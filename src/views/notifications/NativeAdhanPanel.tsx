@@ -1,7 +1,7 @@
 // src/views/notifications/NativeAdhanPanel.tsx
 import { resolveSchedulingLocation } from '../../notifications/scheduling-location';
 import { useCallback, useEffect, useState } from 'react';
-import { loadPrefs, loadReminders } from '../../notifications/prefs-store';
+import { loadPrefs, loadReminders, savePrefs } from '../../notifications/prefs-store';
 import { type PrayerLocation } from '../../prayer-location';
 import {
   addAppResumeListener,
@@ -19,6 +19,8 @@ import {
   schedulePrayerNotifications,
   scheduleNativePersonalReminders,
   buildNativeAdhanAlarmInputs,
+  DEFAULT_SCHEDULE_DAYS,
+  notifyNativePrefsChanged,
   cancelAllPrayerNotifications,
   getActiveAdhanChannelInfo,
   isNativePlatform,
@@ -38,7 +40,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
   const [result, setResult] = useState<string>('');
   const [supported] = useState(isNativePlatform());
   const [explainerOpen, setExplainerOpen] = useState(false);
-  const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[] } | null>(null);
+  const [health, setHealth] = useState<{ hasLocation: boolean; upcoming: number; inAppOnly: string[]; until: string } | null>(null);
 
   const refresh = useCallback(async () => {
     const [p, ch, env] = await Promise.all([
@@ -52,10 +54,13 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
     try {
       const { prefs } = await loadPrefs();
       const loc = resolveSchedulingLocation(prayerLocation);
-      const upcoming = loc ? buildNativeAdhanAlarmInputs({ location: loc, prefs }).length : 0;
+      const alarms = loc ? buildNativeAdhanAlarmInputs({ location: loc, prefs, days: DEFAULT_SCHEDULE_DAYS }) : [];
+      const upcoming = alarms.length;
+      const last = alarms.length ? new Date(alarms[alarms.length - 1].triggerAtMs) : null;
+      const until = last ? last.toLocaleDateString('ar', { day: 'numeric', month: 'long' }) : '';
       const inAppOnly = (Object.keys(prefs.prayer_settings) as Array<keyof typeof prefs.prayer_settings>)
         .filter((n) => prefs.prayer_settings[n].enabled && prefs.prayer_settings[n].channel === 'in_app');
-      setHealth({ hasLocation: !!loc, upcoming, inAppOnly });
+      setHealth({ hasLocation: !!loc, upcoming, inAppOnly, until });
     } catch { /* ignore */ }
   }, [prayerLocation]);
 
@@ -92,7 +97,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         return;
       }
       const [{ prefs }, { reminders }] = await Promise.all([loadPrefs(), loadReminders()]);
-      const r = await schedulePrayerNotifications({ location: loc, prefs, days: 10 });
+      const r = await schedulePrayerNotifications({ location: loc, prefs, days: DEFAULT_SCHEDULE_DAYS });
       await scheduleNativePersonalReminders(reminders, prefs);
       await refresh();
       if (r.scheduled > 0) {
@@ -147,7 +152,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       const loc = resolveSchedulingLocation(prayerLocation);
       if (!loc) { onNotify('اختر موقعك أولاً.'); return; }
       const [{ prefs }, { reminders }] = await Promise.all([loadPrefs(), loadReminders()]);
-      const r = await schedulePrayerNotifications({ location: loc, prefs, days: 10 });
+      const r = await schedulePrayerNotifications({ location: loc, prefs, days: DEFAULT_SCHEDULE_DAYS });
       await scheduleNativePersonalReminders(reminders, prefs);
       await refresh();
       if (r.scheduled > 0) {
@@ -173,6 +178,28 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       await refresh();
       setResult('تم إلغاء جميع منبهات الأذان.');
       onNotify('تم إلغاء المنبهات.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // خيار صريح من المستخدم فقط: لا يُغيَّر أي إعداد محفوظ تلقائيًا.
+  const enableInAppOnlyPrayers = async () => {
+    if (!health || health.inAppOnly.length === 0) return;
+    setBusy(true);
+    try {
+      const { prefs } = await loadPrefs();
+      const next = { ...prefs, prayer_settings: { ...prefs.prayer_settings } };
+      for (const name of health.inAppOnly) {
+        const key = name as keyof typeof next.prayer_settings;
+        if (next.prayer_settings[key]?.channel === 'in_app') {
+          next.prayer_settings[key] = { ...next.prayer_settings[key], channel: 'both' };
+        }
+      }
+      await savePrefs(next);
+      notifyNativePrefsChanged();
+      await refresh();
+      onNotify(`تم تفعيل الأذان في الخلفية: ${health.inAppOnly.join('، ')}`);
     } finally {
       setBusy(false);
     }
@@ -229,11 +256,16 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       )}
       {health && health.hasLocation && health.inAppOnly.length > 0 && (
         <div className="qibla-banner warn" role="alert">
-          صلوات مضبوطة «داخل التطبيق فقط» ولن يصلك أذانها والتطبيق مغلق: {health.inAppOnly.join('، ')}. غيّرها إلى «إشعار النظام» أو «الاثنان» من إعدادات الصلاة.
+          صلوات مضبوطة «داخل التطبيق فقط» ولن يصلك أذانها والتطبيق مغلق: {health.inAppOnly.join('، ')}. غيّرها من إعدادات الصلاة، أو فعّلها هنا بضغطة واحدة.
+          <div style={{ marginTop: 8 }}>
+            <button className="soft-btn" disabled={busy} onClick={() => void enableInAppOnlyPrayers()}>
+              تفعيل الأذان في الخلفية لـ: {health.inAppOnly.join('، ')}
+            </button>
+          </div>
         </div>
       )}
       {health && health.hasLocation && perm.display === 'granted' && (
-        <p className="muted small">منبهات الأذان القادمة المحسوبة على هذا الجهاز: {health.upcoming}</p>
+        <p className="muted small">منبهات الأذان القادمة المحسوبة على هذا الجهاز: {health.upcoming}{health.until ? ` · تغطي حتى ${health.until}، وتتجدد كلما فتحت التطبيق` : ''}</p>
       )}
       {perm.display !== 'granted' && (
         <div className="qibla-banner warn" role="alert">
