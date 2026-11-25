@@ -196,6 +196,7 @@ public class SettingsOpenerPlugin extends Plugin {
 
     @PluginMethod
     public void scheduleNativeAdhanAlarms(PluginCall call) {
+        NativeReminderQueue.suspend(getContext()); // JS re-balances the queue after all prayer alarms are registered
         Context context = getContext();
         JSArray arr = call.getArray("alarms");
         List<NativeAdhanStore.AlarmSpec> specs = new ArrayList<>();
