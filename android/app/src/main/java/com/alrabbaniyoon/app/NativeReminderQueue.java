@@ -172,6 +172,14 @@ public final class NativeReminderQueue {
         }
     }
 
+    /**
+     * Releases every armed queue alarm (the queue itself stays stored). Called BEFORE adhan alarms are added or restored,
+     * so the queue can never hold slots that higher-priority alarms need during the transition; promote() re-arms afterwards.
+     */
+    public static synchronized void suspend(Context c) {
+        try { for (String k : KINDS) cancelArmedOfKind(c, k); } catch (Throwable ignored) {}
+    }
+
     /** Arms the earliest queued items due in the window across all kinds, within the shared budget. Never throws. */
     public static synchronized int promote(Context c) {
         return promote(c, othersCount(c));
@@ -288,6 +296,8 @@ public final class NativeReminderQueue {
         if (!androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
         boolean silent = SILENT_REMINDER_CHANNEL_ID.equals(channelId);
         Intent open = new Intent(c, MainActivity.class);
+        open.setAction(Intent.ACTION_MAIN);
+        open.addCategory(Intent.CATEGORY_LAUNCHER);
         open.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent contentPi = PendingIntent.getActivity(c, id, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         androidx.core.app.NotificationCompat.Builder b = new androidx.core.app.NotificationCompat.Builder(c, channelId)
@@ -296,11 +306,29 @@ public final class NativeReminderQueue {
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
-            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH) // LocalNotifications 8.3.1: HIGH when foreground=true, which every payload sets
             .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PRIVATE)
             .setOnlyAlertOnce(true)
             .setContentIntent(contentPi);
-        if (silent) b.setSilent(true); else b.setDefaults(android.app.Notification.DEFAULT_ALL);
+        if (silent) {
+            b.setSilent(true);
+        } else {
+            android.net.Uri sound = null;
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+                // API 24-25 have no channels: LocalNotifications plays the configured sound (capacitor.config: adhan_almulla).
+                try {
+                    if (c.getResources().getIdentifier(NativeAdhanStore.DEFAULT_ADHAN_RAW, "raw", c.getPackageName()) != 0) {
+                        sound = android.net.Uri.parse("android.resource://" + c.getPackageName() + "/raw/" + NativeAdhanStore.DEFAULT_ADHAN_RAW);
+                    }
+                } catch (Throwable ignored) {}
+            }
+            if (sound != null) {
+                b.setSound(sound);
+                b.setDefaults(android.app.Notification.DEFAULT_VIBRATE | android.app.Notification.DEFAULT_LIGHTS);
+            } else {
+                b.setDefaults(android.app.Notification.DEFAULT_ALL);
+            }
+        }
         try {
             androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
         } catch (SecurityException ignored) {}
