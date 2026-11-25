@@ -111,7 +111,13 @@ public final class NativeAdhanRecompute {
     public static String refresh(Context c, String reason) {
         try {
             synchronized (NativeAdhanStore.class) {
-                String result = refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
+                NativeReminderQueue.suspend(c);
+                String result;
+                try {
+                    result = refreshWith(new AndroidBackend(c), System.currentTimeMillis(), TimeZone.getDefault(), reason);
+                } finally {
+                    NativeReminderQueue.promote(c);
+                }
                 // Keep the once-a-day refresh armed while a spec exists; never arm it without one.
                 if ("no_spec".equals(result) && !NativeReminderQueue.hasItems(c)) NativeAdhanKeepAlive.cancel(c); else NativeAdhanKeepAlive.schedule(c);
                 return result;
