@@ -104,7 +104,7 @@ describe('buildNativePrayerPayloads', () => {
     ).toEqual([]);
   });
 
-  it('skips prayers marked silent or disabled and keeps before/after reminders properly routed', () => {
+  it('silent prayers still arm a no-audio device alarm; disabled are skipped and keeps before/after reminders properly routed', () => {
     const now = new Date(2026, 10, 20, 0, 10, 0);
     const prefs = makePrefs();
     prefs.prayer_settings['الفجر'] = {
@@ -139,7 +139,11 @@ describe('buildNativePrayerPayloads', () => {
     });
 
     const fajr = payloads.filter((p) => p.extra?.prayer === 'Fajr');
-    expect(fajr).toEqual([]);
+    expect(fajr.length).toBeGreaterThan(0);
+    expect(fajr.every((p) => p.extra?.eventType === 'at')).toBe(true); // before/after reminders are not generated for silent prayers (unchanged)
+    const silentAlarms = buildNativeAdhanAlarmInputs({ location: MAKKAH, prefs, days: 7, now }).filter((a) => a.prayerKey.endsWith(':fajr') || a.prayerKey.toLowerCase().endsWith(':fajr'));
+    expect(silentAlarms.length).toBeGreaterThan(0);
+    expect(silentAlarms.every((a) => a.adhanType === 'silent' && !a.body.includes('·'))).toBe(true);
     const asr = payloads.filter((p) => p.extra?.prayer === 'Asr');
     expect(asr.length).toBeGreaterThan(0); // in_app القديمة لا تُسقط تنبيه الجهاز
 
