@@ -1,5 +1,5 @@
 # بناء تطبيق الأندرويد (Capacitor) — APK للتجربة و AAB/APK للنشر على متجر Play
-# يعمل: يدويًا (workflow_dispatch) أو عند الدفع إلى main / hameed/mobile-app أو وسم app-v*
+# يعمل: يدويًا (workflow_dispatch) أو عند الدفع إلى main / pally / hameed/mobile-app أو وسم app-v*
 # التوقيع: ضع هذه الأسرار في إعدادات المستودع (Settings → Secrets → Actions):
 #   KEYSTORE_BASE64  — ملف المفاتيح بترميز base64 (base64 -w0 release.keystore)
 #   KEYSTORE_PASSWORD، KEY_ALIAS، KEY_PASSWORD
@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - pally
       - main
       - hameed/mobile-app
     tags:
