@@ -18,7 +18,7 @@ adb install -r "$APK" || { echo "FAIL: install"; exit 1; }
 adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS 2>/dev/null || true
 adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r'
-sleep 30
+sleep 100
 
 pid=$(adb shell pidof "$PKG" | tr -d '\r')
 if [ -z "$pid" ]; then echo "FAIL: app process is not running"; fail=1; else echo "ok: app process $pid is running"; fi
@@ -42,6 +42,12 @@ adb shell dumpsys notification --noredact | tr -d '\r' | grep -E "mId=al-rabbani
 echo "-- alarms registered by the app --"
 adb shell dumpsys alarm | tr -d '\r' | grep -c "$PKG" || true
 
+echo "-- WebView in use --"
+adb shell dumpsys webviewupdate | tr -d '\r' | grep -E "Current WebView package|Fallback|versionName|Package" | head -6 || true
+adb shell dumpsys package com.google.android.webview 2>/dev/null | tr -d '\r' | grep -m1 versionName || true
+adb shell dumpsys package com.android.webview 2>/dev/null | tr -d '\r' | grep -m1 versionName || true
+echo "-- WebView console / JS errors --"
+grep -iE "chromium|Console|Uncaught|SyntaxError|ReferenceError|TypeError" /tmp/logcat.txt | head -25 || true
 echo "-- visible UI text (uiautomator) --"
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
 adb shell cat /sdcard/ui.xml 2>/dev/null | tr -d '\r' | grep -o 'text="[^"]\+"' | head -25 || true
