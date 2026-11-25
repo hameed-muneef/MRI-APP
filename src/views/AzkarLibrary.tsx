@@ -4,6 +4,8 @@ import {backgroundAudio} from '../audio/background-player';
 import {useBackgroundAudio} from '../audio/useBackgroundAudio';
 import type {AudioTrack} from '../audio/types';
 import type {AzkarAsset, AzkarCategory} from '../azkar/types';
+import {emitAchievement, makeEntry} from '../achievement/log';
+import {dayKey} from '../achievement/dates';
 import {loadAzkar, azkarAudioUrl, azkarAudioFallbackUrls, resetAzkarCache} from '../azkar/content';
 
 type Lang = 'ar' | 'en' | 'tr';
@@ -64,12 +66,18 @@ export default function AzkarLibrary() {
     const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next;
   });
 
-  const bump = (catId: number, itemId: number, count: number) => {
+  const bump = (cat: AzkarCategory, itemId: number, count: number) => {
+    const catId = cat.id;
     const key = `${lang}:${catId}:${itemId}`;
+    const current = counts[key] ?? 0;
+    const next = current + 1 > count ? 0 : current + 1;
+    // سجل مؤرّخ لإتمام الفئة: يُكتب فقط عندما تكتمل كل أذكارها بعد هذه الضغطة، ولا يُنشأ لماضٍ.
+    if (next === count && cat.array.every(item => item.id === itemId || (counts[`${lang}:${catId}:${item.id}`] ?? 0) >= item.count)) {
+      emitAchievement(makeEntry('adhkar_category', String(catId), dayKey(new Date()), cat.category));
+    }
     setCounts(prev => {
-      const current = prev[key] ?? 0;
-      const next = current + 1 > count ? 0 : current + 1;
-      return {...prev, [key]: next};
+      const base = prev[key] ?? 0;
+      return {...prev, [key]: base + 1 > count ? 0 : base + 1};
     });
   };
 
@@ -153,7 +161,7 @@ export default function AzkarLibrary() {
                   </div>
                   <span className="azkar-done">{done}/{item.count}</span>
                   {item.audio && <button className="icon-btn" title={playingKey === key ? 'إيقاف' : 'استماع'} aria-label={playingKey === key ? 'إيقاف' : 'استماع'} onClick={() => playingKey === key ? stopAudio() : play(cat, item.id)}>{playingKey === key ? <Square size={15}/> : <Volume2 size={15}/>}</button>}
-                  <button className="soft-btn" onClick={() => bump(cat.id, item.id, item.count)}>+1</button>
+                  <button className="soft-btn" onClick={() => bump(cat, item.id, item.count)}>+1</button>
                   <button className="icon-btn" title="إعادة" onClick={() => reset(cat.id, item.id)}><RotateCcw size={14} /></button>
                   {complete && <CheckCircle2 size={16} className="azkar-complete" />}
                 </div>
