@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { X } from 'lucide-react';
-import { fetchTafsir, fetchTranslation, fetchWordMeanings, TAFSIRS, TRANSLATIONS, type WordMeaning } from '../../quran/content-api';
+import { fetchTafsir, fetchTranslation, fetchWordMeanings, WORD_MEANINGS_ATTRIBUTION, WORD_MEANINGS_PROVIDER, TAFSIRS, TRANSLATIONS, type WordMeaning } from '../../quran/content-api';
 import { getVerseNote, saveVerseNote, deleteVerseNote } from '../../quran/verse-notes';
 import { toArabicNumber, verseBody, verseMarker } from '../../quran/content';
 
@@ -107,13 +107,16 @@ export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEn
       {topic==='tafsir'&&<><label className="qm-field">التفسير
         <select aria-label="التفسير" value={tafsirId} onChange={e=>setTafsirId(Number(e.target.value))}>{TAFSIRS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </label>
-      {loading?<p role="status">جارٍ التحميل…</p>:contentError?<p className="qm-sheet-body">تعذر جلب التفسير. تحقق من الاتصال.</p>:<p className="qm-sheet-body">{tafsir??'لا يوجد تفسير لهذه الآية في هذا المصدر.'}</p>}</>}
+      {loading?<p role="status">جارٍ التحميل…</p>:contentError?<p className="qm-sheet-body">تعذر جلب التفسير. تحقق من الاتصال.</p>:<p className="qm-sheet-body">{tafsir??'لا يوجد تفسير لهذه الآية في هذا المصدر.'}</p>}
+      {!loading&&!contentError&&<p className="qm-muted qm-attribution">{attributionLabel(TAFSIRS.find(t=>t.id===tafsirId)?.name??'التفسير')}</p>}</>}
       {topic==='translation'&&<><label className="qm-field">الترجمة
         <select aria-label="الترجمة" value={translationId} onChange={e=>setTranslationId(Number(e.target.value))}>{TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </label>
-      {loading?<p role="status">جارٍ التحميل…</p>:contentError?<p className="qm-sheet-body">تعذر جلب الترجمة. تحقق من الاتصال.</p>:<p className="qm-sheet-body">{translation??'لا توجد ترجمة لهذه الآية في هذا المصدر.'}</p>}</>}
+      {loading?<p role="status">جارٍ التحميل…</p>:contentError?<p className="qm-sheet-body">تعذر جلب الترجمة. تحقق من الاتصال.</p>:<p className="qm-sheet-body">{translation??'لا توجد ترجمة لهذه الآية في هذا المصدر.'}</p>}
+      {!loading&&!contentError&&<p className="qm-muted qm-attribution">{attributionLabel(TRANSLATIONS.find(t=>t.id===translationId)?.name??'الترجمة')}</p>}</>}
       {topic==='words'&&<>
-      {loading?<p role="status">جارٍ التحميل…</p>:wordsError?<p className="qm-sheet-body">تعذر تحميل معاني الكلمات. تحقق من الاتصال وأعد المحاولة.</p>:(words&&words.length?<dl className="qm-words">{words.map((w,i)=><div key={i}><dt>{w.word}</dt><dd>{w.meaning}</dd></div>)}</dl>:<p className="qm-sheet-body">لا توجد شروح كلمات لهذه الآية في هذا المصدر.</p>)}</>}
+      {loading?<p role="status">جارٍ التحميل…</p>:wordsError?<p className="qm-sheet-body">تعذر تحميل معاني الكلمات. تحقق من الاتصال وأعد المحاولة.</p>:(words&&words.length?<dl className="qm-words">{words.map((w,i)=><div key={i}><dt>{w.word}</dt><dd>{w.meaning}</dd></div>)}</dl>:<p className="qm-sheet-body">لا توجد شروح كلمات لهذه الآية في هذا المصدر.</p>)}
+      {!loading&&!wordsError&&<p className="qm-muted qm-attribution">{attributionLabel(WORD_MEANINGS_ATTRIBUTION,WORD_MEANINGS_PROVIDER)}</p>}</>}
       {!loading&&(((topic==='tafsir'||topic==='translation')&&contentError)||(topic==='words'&&wordsError))&&<button onClick={()=>setRetry(v=>v+1)}>إعادة تحميل المصدر</button>}
       <details><summary>ملاحظاتي الخاصة</summary>
       <h4>ملاحظاتي الخاصة</h4>
