@@ -1,7 +1,7 @@
 import {lazy,Suspense,useEffect,useRef,useState} from 'react';
 import HomeView from './views/HomeView';
 import AchievementView from './views/AchievementView';
-import {ACHIEVEMENT_LOG_EVENT,appendEntry,makeEntry,mergeLogs,type AchievementEntry} from './achievement/log';
+import {ACHIEVEMENT_LOG_EVENT,appendEntry,applyRemoteState,makeEntry,type AchievementEntry} from './achievement/log';
 import {replacePeriodTasks,updateDayRecords} from './weekly-planning';
 import {slotClockTime} from './day-timing';
 import {load,today,type State,type View} from './app-state';
@@ -161,7 +161,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   useEffect(()=>{
     if(!user)return;
     let active=true;
-    fetchCloudState(user.id).then(remote=>{if(active){if(remote&&!localStorage.getItem(pendingKey))setState(cur=>({...remote,achievementLog:mergeLogs(cur.achievementLog,remote.achievementLog)}));setCloudWritable(true)}}).catch(()=>{if(active){setCloudWritable(false);setSyncStatus('offline')}}).finally(()=>{if(active)setCloudReady(true)});
+    fetchCloudState(user.id).then(remote=>{if(active){if(remote&&!localStorage.getItem(pendingKey))setState(cur=>applyRemoteState(cur,remote));setCloudWritable(true)}}).catch(()=>{if(active){setCloudWritable(false);setSyncStatus('offline')}}).finally(()=>{if(active)setCloudReady(true)});
     return()=>{active=false};
   },[user,storageKey,pendingKey,retrySync]);
   useEffect(()=>{
