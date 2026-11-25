@@ -18,6 +18,7 @@ import {
   ensureNativeAdhanChannel,
   getAndroidEnvironmentStatus,
   scheduleNativeAdhanAlarms,
+  setNativeRecomputeSpec,
   type NativeAdhanAlarmInput,
 } from '../lib/settings-opener';
 import type { PrayerLocation } from '../prayer-location';
@@ -26,6 +27,7 @@ import {
   getSelectedDefaultAdhanId,
   resolvePrayerAdhan,
 } from '../sounds/adhan-catalog';
+import { buildNativeRecomputeSpec } from './native-recompute-spec';
 import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
 import { dailyTaskEvents, type TaskScheduleContext } from './task-planner';
@@ -678,6 +680,7 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
     const cancelled = cancelledNative + cancelledReminders;
 
     if (perms.display !== 'granted') {
+      await setNativeRecomputeSpec(null);
       return {
         scheduled: 0,
         cancelled,
@@ -690,6 +693,13 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
     }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
+    // Persist the recompute spec (or clear it when nothing should be scheduled) so native can top up the horizon.
+    await setNativeRecomputeSpec(buildNativeRecomputeSpec({
+      location: opts.location,
+      prefs: opts.prefs,
+      method: opts.method,
+      madhab: opts.madhab,
+    }));
     const adhanInputs = buildNativeAdhanAlarmInputs({
       location: opts.location,
       prefs: opts.prefs,
@@ -865,6 +875,7 @@ export async function cancelAllPrayerNotifications(): Promise<void> {
   await enqueueSync(async () => {
     if (!isNative()) return;
     await cancelNativeAdhanAlarms();
+    await setNativeRecomputeSpec(null);
     const LN = await loadPlugin();
     if (LN) {
       await cancelScopedNotifications(LN, 'prayer', PRAYER_IDS_STORAGE_KEY);
