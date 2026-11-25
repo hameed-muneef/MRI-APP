@@ -36,6 +36,11 @@ function trim(list: AchievementEntry[]): AchievementEntry[] {
   return [...list].sort((x, y) => y.date.localeCompare(x.date)).slice(0, ACHIEVEMENT_LOG_LIMIT);
 }
 
+/** تحميل الحالة السحابية: تُعتمد الحالة البعيدة وتُدمج سجلات الإنجاز المحلية والبعيدة بالمعرّف فلا يضيع شيء من أي جهاز. */
+export function applyRemoteState<T extends {achievementLog?: AchievementEntry[]}>(current: T, remote: T): T {
+  return {...remote, achievementLog: mergeLogs(current.achievementLog, remote.achievementLog)};
+}
+
 export function emitAchievement(entry: AchievementEntry): void {
   try { window.dispatchEvent(new CustomEvent<AchievementEntry>(ACHIEVEMENT_LOG_EVENT, {detail: entry})); } catch { /* ignore */ }
 }
