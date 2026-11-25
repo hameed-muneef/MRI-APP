@@ -14,7 +14,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * Device-level renewal for reminders that the app computes beyond its normal scheduling window
@@ -49,9 +51,50 @@ public final class NativeReminderQueue {
         public final String title;
         public final String body;
         public final String channelId;
+        /** Wall-clock fields {year, month(1-12), day, hour, minute, second} in {@link #zone}; null for absolute-instant items. */
+        public final int[] wall;
+        public final String zone;
         Item(int id, long atMs, String title, String body, String channelId) {
-            this.id = id; this.atMs = atMs; this.title = title; this.body = body; this.channelId = channelId;
+            this(id, atMs, title, body, channelId, null, null);
         }
+        Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone) {
+            this.id = id; this.atMs = atMs; this.title = title; this.body = body; this.channelId = channelId;
+            this.wall = wall; this.zone = zone;
+        }
+    }
+
+    /** Kinds whose time is the device's local wall clock (task, review, custom reminder). Prayer items follow the prayer instant and stay absolute. */
+    static boolean followsWallClock(String kind) { return !"prayer".equals(kind); }
+
+    /** Pure: the local wall-clock fields of an instant in a zone. */
+    static int[] wallOf(long atMs, TimeZone tz) {
+        Calendar c = Calendar.getInstance(tz);
+        c.setTimeInMillis(atMs);
+        return new int[] { c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH),
+            c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), c.get(Calendar.SECOND) };
+    }
+
+    /** Pure: the instant of wall-clock fields in a zone. A time skipped by DST moves forward; a repeated time takes its first occurrence. */
+    static long instantOf(int[] w, TimeZone tz) {
+        Calendar c = Calendar.getInstance(tz);
+        c.clear();
+        c.setLenient(true);
+        c.set(w[0], w[1] - 1, w[2], w[3], w[4], w[5]);
+        return c.getTimeInMillis();
+    }
+
+    /**
+     * Pure: re-resolves wall-clock items to the zone the device is in now. Items without wall fields (older queues, prayer) keep their instant.
+     * Adds, removes and reorders nothing: only the instants and the stored zone change, so cancelled or completed reminders cannot come back.
+     */
+    public static List<Item> reresolve(List<Item> items, TimeZone now) {
+        List<Item> out = new ArrayList<>();
+        String id = now.getID();
+        for (Item it : items) {
+            if (it.wall == null || it.zone == null || it.zone.equals(id)) { out.add(it); continue; }
+            out.add(new Item(it.id, instantOf(it.wall, now), it.title, it.body, it.channelId, it.wall, id));
+        }
+        return out;
     }
 
     /** Pure: parse a JSON array of items, dropping malformed rows. Never throws. */
@@ -68,7 +111,15 @@ public final class NativeReminderQueue {
                 if (at <= 0 || title.isEmpty() || !o.has("id")) continue;
                 String ch = o.optString("channelId", GENERAL_CHANNEL_ID);
                 if (ch.isEmpty()) ch = GENERAL_CHANNEL_ID;
-                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch));
+                int[] wall = null;
+                JSONArray wa = o.optJSONArray("wall");
+                if (wa != null && wa.length() == 6) {
+                    wall = new int[6];
+                    for (int k = 0; k < 6; k++) wall[k] = wa.optInt(k);
+                }
+                String zone = o.optString("zone", "");
+                if (wall == null || zone.isEmpty()) { wall = null; zone = null; }
+                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch, wall, zone));
             }
         } catch (JSONException ignored) {}
         return out;
@@ -110,11 +161,10 @@ public final class NativeReminderQueue {
         try {
             cancelArmedOfKind(c, kind);
             List<Item> items = prune(parse(itemsJson), System.currentTimeMillis());
+            TimeZone tz = TimeZone.getDefault();
             JSONArray stored = new JSONArray();
             for (Item it : items) {
-                JSONObject o = new JSONObject();
-                o.put("id", it.id); o.put("at", it.atMs); o.put("title", it.title); o.put("body", it.body); o.put("channelId", it.channelId);
-                stored.put(o);
+                putStored(stored, withWall(it, kind, tz));
             }
             SharedPreferences.Editor e = prefs(c).edit();
             if (stored.length() == 0) e.remove(key(kind)); else e.putString(key(kind), stored.toString());
@@ -125,6 +175,46 @@ public final class NativeReminderQueue {
         } catch (Throwable t) {
             return 0;
         }
+    }
+
+    /** Pure: stamps a wall-clock item with the local fields of its instant in the zone the app planned it in (the device zone). */
+    static Item withWall(Item it, String kind, TimeZone tz) {
+        if (!followsWallClock(kind) || it.wall != null) return it;
+        return new Item(it.id, it.atMs, it.title, it.body, it.channelId, wallOf(it.atMs, tz), tz.getID());
+    }
+
+    private static void putStored(JSONArray stored, Item it) throws JSONException {
+        JSONObject o = new JSONObject();
+        o.put("id", it.id); o.put("at", it.atMs); o.put("title", it.title); o.put("body", it.body); o.put("channelId", it.channelId);
+        if (it.wall != null && it.zone != null) {
+            JSONArray w = new JSONArray();
+            for (int v : it.wall) w.put(v);
+            o.put("wall", w); o.put("zone", it.zone);
+        }
+        stored.put(o);
+    }
+
+    /** Re-resolves every stored wall-clock item to the device's current zone (time zone change, boot, daily top-up). Never throws. */
+    static synchronized void reresolveStored(Context c) {
+        try {
+            TimeZone tz = TimeZone.getDefault();
+            long now = System.currentTimeMillis();
+            SharedPreferences.Editor e = prefs(c).edit();
+            boolean changed = false;
+            for (String kind : KINDS) {
+                if (!followsWallClock(kind)) continue;
+                List<Item> before = parse(prefs(c).getString(key(kind), null));
+                List<Item> after = prune(reresolve(before, tz), now);
+                boolean same = before.size() == after.size();
+                for (int i = 0; same && i < before.size(); i++) same = before.get(i).atMs == after.get(i).atMs && java.util.Objects.equals(before.get(i).zone, after.get(i).zone);
+                if (same) continue;
+                JSONArray stored = new JSONArray();
+                for (Item it : after) putStored(stored, it);
+                if (stored.length() == 0) e.remove(key(kind)); else e.putString(key(kind), stored.toString());
+                changed = true;
+            }
+            if (changed) e.commit();
+        } catch (Throwable ignored) {}
     }
 
     public static synchronized void clearAll(Context c) {
@@ -187,6 +277,7 @@ public final class NativeReminderQueue {
 
     static synchronized int promote(Context c, int others) {
         int armed = 0;
+        reresolveStored(c);
         try {
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return 0;
