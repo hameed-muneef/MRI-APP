@@ -52,6 +52,38 @@
   <script>
     // globalThis exists from Chrome 71; older system WebViews (e.g. 64-70) would stop the whole bundle on it.
     if (typeof globalThis === 'undefined') { window.globalThis = window; }
+    // Fill-only polyfills for APIs missing in older system WebViews. Each runs only when the API is absent,
+    // so current WebViews are unaffected. All data passed through these in the app is plain JSON.
+    (function () {
+      try {
+        if (!Object.fromEntries) {
+          Object.fromEntries = function (it) { var o = {}; for (var e of it) { o[e[0]] = e[1]; } return o; };
+        }
+        if (!Promise.allSettled) {
+          Promise.allSettled = function (ps) {
+            return Promise.all(Array.prototype.map.call(ps, function (p) {
+              return Promise.resolve(p).then(
+                function (value) { return { status: 'fulfilled', value: value }; },
+                function (reason) { return { status: 'rejected', reason: reason }; });
+            }));
+          };
+        }
+        if (typeof structuredClone !== 'function') {
+          window.structuredClone = function (v) { return v === undefined ? v : JSON.parse(JSON.stringify(v)); };
+        }
+        if (window.crypto && !window.crypto.randomUUID && window.crypto.getRandomValues) {
+          window.crypto.randomUUID = function () {
+            var b = new Uint8Array(16); window.crypto.getRandomValues(b);
+            b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+            var h = Array.prototype.map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join('');
+            return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+          };
+        }
+        if (!(window.Intl && Intl.DisplayNames)) {
+          Intl.DisplayNames = function () { this.of = function (c) { return c; }; };
+        }
+      } catch (e) { /* never block startup */ }
+    })();
   </script>
   <script nomodule>
     // Only runs where the system WebView is too old for ES modules (Chrome below 61), instead of a blank screen.
