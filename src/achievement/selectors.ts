@@ -135,7 +135,9 @@ export const firstLogDate = (log: AchievementEntry[] | undefined, kind: Achievem
 
 export function bilQuranSummary(plan: ActiveBilQuranPlanState | null, totalSteps: number, log: AchievementEntry[] | undefined, range: {start: string; end: string}) {
   if (!plan) return null;
-  return {planId: plan.planId, done: new Set(plan.completedIndices).size, total: totalSteps, daysLogged: logDays(log, 'bilquran_step', range, plan.planId).size};
+  const mine = (log ?? []).filter(e => e.kind === 'bilquran_step' && inRange(e.date, range) && (e.refId === plan.planId || e.refId.startsWith(`${plan.planId}#`)));
+  // حدث لكل مقرر فعلي مع تاريخه؛ الأيام المسجلة تُعدّ مرة واحدة لكل يوم، والمقررات المنجزة تأتي من حالة الخطة لا من السجل فلا يتضاعف الائتمان.
+  return {planId: plan.planId, done: new Set(plan.completedIndices).size, total: totalSteps, daysLogged: new Set(mine.map(e => e.date)).size, stepsLogged: new Set(mine.map(e => e.refId)).size};
 }
 
 // ============ السنة ============
