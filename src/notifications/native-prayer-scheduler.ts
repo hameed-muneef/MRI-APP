@@ -30,7 +30,7 @@ import {
 import { buildNativeRecomputeSpec } from './native-recompute-spec';
 import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
-import { setNativeReminderQueue } from '../lib/settings-opener';
+import { rebalanceNativeReminderQueue, setNativeReminderQueue } from '../lib/settings-opener';
 import { dailyTaskEvents, type TaskScheduleContext } from './task-planner';
 import {
   getTaskNotificationSettings,
@@ -803,6 +803,7 @@ export async function schedulePrayerNotifications(opts: NativeScheduleOptions): 
       warning = e instanceof Error ? e.message : 'فشل الجدولة';
     }
 
+    await rebalanceNativeReminderQueue();
     const latestPerms = await checkPermissions();
     const result: NativeScheduleResult = {
       scheduled: scheduledCount,
@@ -838,15 +839,19 @@ export async function scheduleNativePersonalReminders(
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
-    const farItems = farQueueItems(buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
-    await setNativeReminderQueue('reminder', farItems);
-    if (payloads.length === 0) return 0;
+    const extended = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
+    const farItems = farQueueItems(extended, payloads);
+    if (payloads.length === 0) { await setNativeReminderQueue('reminder', farItems); return 0; }
 
     try {
       const res = await LN.schedule({ notifications: payloads as never });
       saveTrackedIds(REMINDER_IDS_STORAGE_KEY, payloads.map((p) => p.id));
+      // Queue only after the registered ones exist, so the shared alarm budget sees them.
+      await setNativeReminderQueue('reminder', farItems);
       return res.notifications?.length ?? payloads.length;
     } catch {
+      // Registering failed (for example the OS alarm limit): hand everything to the native queue instead of losing it.
+      await setNativeReminderQueue('reminder', farQueueItems(extended, []));
       return 0;
     }
   });
@@ -869,15 +874,19 @@ export async function scheduleNativeTaskNotifications(
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
-    const farItems = farQueueItems(buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
-    await setNativeReminderQueue('task', farItems);
-    if (payloads.length === 0) return 0;
+    const extended = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
+    const farItems = farQueueItems(extended, payloads);
+    if (payloads.length === 0) { await setNativeReminderQueue('task', farItems); return 0; }
 
     try {
       const res = await LN.schedule({ notifications: payloads as never });
       saveTrackedIds(TASK_IDS_STORAGE_KEY, payloads.map((p) => p.id));
+      // Queue only after the registered ones exist, so the shared alarm budget sees them.
+      await setNativeReminderQueue('task', farItems);
       return res.notifications?.length ?? payloads.length;
     } catch {
+      // Registering failed (for example the OS alarm limit): hand everything to the native queue instead of losing it.
+      await setNativeReminderQueue('task', farQueueItems(extended, []));
       return 0;
     }
   });
@@ -900,15 +909,19 @@ export async function scheduleNativeReviewNotifications(
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
     const payloads = buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
-    const farItems = farQueueItems(buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE), payloads);
-    await setNativeReminderQueue('review', farItems);
-    if (payloads.length === 0) return 0;
+    const extended = buildNativeReviewPayloads(passages, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
+    const farItems = farQueueItems(extended, payloads);
+    if (payloads.length === 0) { await setNativeReminderQueue('review', farItems); return 0; }
 
     try {
       const res = await LN.schedule({ notifications: payloads as never });
       saveTrackedIds(REVIEW_IDS_STORAGE_KEY, payloads.map((p) => p.id));
+      // Queue only after the registered ones exist, so the shared alarm budget sees them.
+      await setNativeReminderQueue('review', farItems);
       return res.notifications?.length ?? payloads.length;
     } catch {
+      // Registering failed (for example the OS alarm limit): hand everything to the native queue instead of losing it.
+      await setNativeReminderQueue('review', farQueueItems(extended, []));
       return 0;
     }
   });
