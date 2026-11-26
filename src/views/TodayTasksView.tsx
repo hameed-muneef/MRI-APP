@@ -1,29 +1,20 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3, SlidersHorizontal} from 'lucide-react';
+import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {goalStepCompletionKey, goalStepDueDate, goalStepOccurrence, goalSteps, isGoalDateInRange} from '../goal-plan';
 import {TaskTimeSelect, timeOfDayClock12} from '../TaskTimeSelect';
 import '../weekly-planning.css';
 import {isTaskDone, markTaskDone} from '../task-periods';
-import {
-  getBrowserPermission,
-  isBrowserNotificationSupported,
-  requestBrowserPermission,
-} from '../notifications/delivery';
-import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
-import {loadPrefs, savePrefs} from '../notifications/prefs-store';
+import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
+import {loadPrefs} from '../notifications/prefs-store';
 import {
   DEFAULT_NOTIFICATION_PREFERENCE,
   getTaskNotificationSettings,
-  type NotificationChannel,
   type NotificationPreference,
-  type TaskNotificationSettings,
 } from '../notifications/types';
-import {channelDescription, channelLabel} from './notifications/SoundPanel';
 import CoachToday from '../coach/CoachToday';
 import type {CourseCoach} from '../coach/course';
-import {useBackHandler} from '../navigation/useBackHandler';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
 
@@ -71,7 +62,6 @@ export default function TodayTasksView({
   onOpenHifzTask,
   onOpenPlanTask,
   onBack,
-  notify,
   onOpenNotificationSettings,
   courseCoach,
   onCourseCoach,
@@ -85,16 +75,10 @@ export default function TodayTasksView({
   const [notice, setNotice] = useState('');
 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
-  const [configOpen, setConfigOpen] = useState(false);
-  useBackHandler(() => setConfigOpen(false), configOpen);
-  const [savingPrefs, setSavingPrefs] = useState(false);
-  const [prefsDirty, setPrefsDirty] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | null>(() => getBrowserPermission());
 
   useEffect(() => {
     let active = true;
     const sync = () => {
-      setPermission(getBrowserPermission());
       void loadPrefs().then(({prefs: loaded}) => {
         if (active) setPrefs(loaded);
       });
@@ -108,61 +92,6 @@ export default function TodayTasksView({
   }, []);
 
   const taskSettings = getTaskNotificationSettings(prefs);
-
-  const patchTaskSettings = (patch: Partial<TaskNotificationSettings>) => {
-    setPrefs(old => ({
-      ...old,
-      reminder_settings: {
-        ...old.reminder_settings,
-        task_notifications: {
-          ...getTaskNotificationSettings(old),
-          ...patch,
-        },
-      },
-    }));
-    setPrefsDirty(true);
-  };
-
-  const saveTaskNotificationConfig = async () => {
-    setSavingPrefs(true);
-    try {
-      const {prefs: fresh} = await loadPrefs();
-      const merged: NotificationPreference = {
-        ...fresh,
-        categories: {
-          ...fresh.categories,
-          task: true,
-        },
-        reminder_settings: {
-          ...fresh.reminder_settings,
-          task_notifications: getTaskNotificationSettings(prefs),
-        },
-      };
-      await savePrefs(merged);
-      setPrefs(merged);
-      setPrefsDirty(false);
-      notifyNativePrefsChanged();
-      const msg = 'حُفظت إعدادات تذكير المهام المجدولة';
-      setNotice(msg);
-      notify?.(msg);
-    } finally {
-      setSavingPrefs(false);
-    }
-  };
-
-  const handleEnablePush = async () => {
-    const next = await requestBrowserPermission();
-    setPermission(next);
-    if (next === 'granted') {
-      const msg = 'تم تفعيل إشعارات المتصفح للمهام المجدولة';
-      setNotice(msg);
-      notify?.(msg);
-    } else if (next === 'denied') {
-      const msg = 'المتصفح يحظر الإشعارات حاليًا؛ يمكنك السماح بها من إعدادات الموقع.';
-      setNotice(msg);
-      notify?.(msg);
-    }
-  };
 
   const now = today();
   const tomorrow = dateAfter(now, 1);
@@ -392,8 +321,6 @@ export default function TodayTasksView({
     }
   };
 
-  const nativeApp = isNativePlatform();
-  const browserSupported = !nativeApp && isBrowserNotificationSupported();
   const globalPaused = !prefs.global_enabled || prefs.dnd_enabled || prefs.categories?.task === false;
   const activeSummary =
     globalPaused || !taskSettings.enabled
@@ -413,136 +340,9 @@ export default function TodayTasksView({
 
       {onCourseCoach&&<CoachToday goals={goals} tasks={tasks} wirds={wirds} coach={courseCoach} onCoach={onCourseCoach}/>}
 
-      <section className="panel task-notif-banner" aria-label="إعدادات تذكير المهام المجدولة">
-        <div className="task-notif-banner-head">
-          <div className="task-notif-banner-status">
-            <BellRing size={19}/>
-            <div>
-              <strong>تذكير المهام المجدولة</strong>
-              <p className="muted small">
-                {activeSummary}
-                {browserSupported && permission !== 'granted' && ' · إشعارات المتصفح غير مفعّلة'}
-              </p>
-            </div>
-          </div>
-          <div className="task-notif-banner-actions">
-            {browserSupported && permission === 'default' && (
-              <button type="button" className="primary" onClick={() => void handleEnablePush()}>
-                <Bell size={15}/> تفعيل إشعارات المتصفح
-              </button>
-            )}
-            <button
-              type="button"
-              className="soft-btn"
-              aria-expanded={configOpen}
-              onClick={() => setConfigOpen(open => !open)}
-            >
-              <SlidersHorizontal size={15}/> {configOpen ? 'إخفاء الإعدادات' : 'تخصيص التنبيهات'}
-            </button>
-            {onOpenNotificationSettings && (
-              <button type="button" className="soft-btn" onClick={onOpenNotificationSettings}>
-                الإعدادات الكاملة
-              </button>
-            )}
-          </div>
-        </div>
-
-        {configOpen && (
-          <div className="task-notif-quick-config">
-            {browserSupported && permission === 'denied' && (
-              <div className="task-perm-callout is-denied" role="note">
-                <strong>إشعارات المتصفح محظورة حاليًا</strong>
-                <p>
-                  ستظل التنبيهات تظهر لك داخل التطبيق أثناء استخدامه. لتصلك خارج التطبيق أيضًا، فعّل إذن الإشعارات من إعدادات الموقع (رمز القفل بجانب عنوان الصفحة) ثم أعد التحميل.
-                </p>
-              </div>
-            )}
-            <label className="notif-switch">
-              <input
-                type="checkbox"
-                checked={taskSettings.enabled}
-                onChange={event => patchTaskSettings({enabled: event.target.checked})}
-              />
-              <span>تفعيل تذكير المهام المجدولة</span>
-            </label>
-            <fieldset disabled={!taskSettings.enabled} className="task-notif-quick-grid">
-              <div className="task-quick-field">
-                <span className="task-quick-label">متى يصلك التذكير قبل المهمة؟</span>
-                <div className="task-preset-chips" role="group" aria-label="اختيارات سريعة لوقت التذكير">
-                  {LEAD_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={taskSettings.remind_before_minutes === opt.value ? 'primary' : 'soft-btn'}
-                      aria-pressed={taskSettings.remind_before_minutes === opt.value}
-                      onClick={() => patchTaskSettings({remind_before_minutes: opt.value})}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-                <label className="task-custom-minutes">
-                  <span>أو أدخل الدقائق يدويًا (0–180):</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={180}
-                    aria-label="دقائق التذكير قبل المهمة (0 إلى 180)"
-                    value={taskSettings.remind_before_minutes}
-                    onChange={event => {
-                      const parsed = Math.round(Number(event.target.value));
-                      patchTaskSettings({
-                        remind_before_minutes: Number.isFinite(parsed) ? Math.max(0, Math.min(180, parsed)) : 0,
-                      });
-                    }}
-                  />
-                </label>
-              </div>
-              <label className="task-quick-field">
-                <span className="task-quick-label">طريقة وصول التنبيه</span>
-                <select
-                  value={taskSettings.channel}
-                  onChange={event => patchTaskSettings({channel: event.target.value as NotificationChannel})}
-                >
-                  {(['both', 'system'] as NotificationChannel[]).map(key => (
-                    <option key={key} value={key}>{channelLabel(key)}</option>
-                  ))}
-                </select>
-                <small className="task-channel-hint">{channelDescription(taskSettings.channel)}</small>
-              </label>
-            </fieldset>
-            <label className="notif-switch">
-              <input
-                type="checkbox"
-                disabled={!taskSettings.enabled}
-                checked={taskSettings.notify_at_time}
-                onChange={event => patchTaskSettings({notify_at_time: event.target.checked})}
-              />
-              <span>إرسال تذكير إضافي عند حلول وقت المهمة بالضبط</span>
-            </label>
-            <label className="notif-switch">
-              <input
-                type="checkbox"
-                disabled={!taskSettings.enabled}
-                checked={taskSettings.include_initial}
-                onChange={event => patchTaskSettings({include_initial: event.target.checked})}
-              />
-              <span>تذكير المهام ذات الموعد المبدئي أيضًا (قبل تأكيدها)</span>
-            </label>
-            <div className="task-notif-quick-save">
-              <button
-                type="button"
-                className="primary"
-                disabled={savingPrefs || !prefsDirty}
-                onClick={() => void saveTaskNotificationConfig()}
-              >
-                {savingPrefs ? 'جارٍ الحفظ…' : prefsDirty ? 'حفظ التغييرات' : 'تم الحفظ'}
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+      <button type="button" className="soft-btn task-notif-link" onClick={() => onOpenNotificationSettings?.()} aria-label="ضبط تذكيرات المهام من التنبيهات">
+        <BellRing size={16}/> {activeSummary} · ضبط التذكيرات من التنبيهات
+      </button>
 
       <section className="panel">
         <div className="today-task-filters" role="tablist" aria-label="تصفية المهام">

@@ -59,3 +59,14 @@ describe('nearestTasks', () => {
     expect(result.some(r => r.id === 'u')).toBe(false);
   });
 });
+
+import {planStepsToday} from './home-tasks';
+describe('planStepsToday', () => {
+  const now = new Date(2026, 10, 27, 12, 0, 0);
+  const plan = {activities: {'time-12-02': [{id: 'a1', title: 'خطوة قريبة'}], 'time-06-00': [{id: 'a2', title: 'فاتت'}], 'time-12-30': [{id: 'a3', title: 'منجزة'}]}, completed: {a3: '2026-11-27'}};
+  it('includes the upcoming undone step and skips old and done ones', () => {
+    const out = planStepsToday(plan, {}, now);
+    expect(out.map(i => i.title)).toEqual(['خطوة قريبة']);
+    expect(out[0].time).toBe('12:02');
+  });
+});

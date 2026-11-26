@@ -3,7 +3,9 @@ import {type Task, type TaskSchedule, type View} from '../app-state';
 import {type PrayerLocation} from '../prayer-location';
 import {hijriDate} from '../hijri';
 import HomeDashboard from './HomeDashboard';
-import {nearestTasks} from '../home-tasks';
+import {nearestTasks,planStepsToday} from '../home-tasks';
+import type {DayPlan} from '../DayPlanner';
+import {localDateKey,type DayRecords} from '../day-tracking';
 import {type SectionId} from '../section-theme';
 
 const timeFmt = new Intl.DateTimeFormat('ar-EG', {hour: 'numeric', minute: '2-digit'});
@@ -23,14 +25,15 @@ const menu:Array<{id:'day'|'week'|'month'|'goals'|'qibla'|'mosques';title:string
   {id:'mosques',title:'المساجد القريبة',icon:MapPin,desc:'أقرب المساجد إليك مع الاتجاهات',section:'daily'},
 ];
 
-export default function HomeView({navigate,admin=false,prayers={},prayerLocation,currentDate,tasks=[],taskSchedules={}}:{navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation;currentDate?:string;tasks?:Task[];taskSchedules?:Record<string,TaskSchedule>}) {
+export default function HomeView({navigate,admin=false,prayers={},prayerLocation,currentDate,tasks=[],taskSchedules={},dayPlan,dayRecords}:{dayPlan?:DayPlan;dayRecords?:DayRecords;navigate:(view:View)=>void;admin?:boolean;prayers?:Record<string,string>;prayerLocation?:PrayerLocation;currentDate?:string;tasks?:Task[];taskSchedules?:Record<string,TaskSchedule>}) {
   const dateObj = currentDate ? new Date(`${currentDate}T12:00:00`) : new Date();
   const hijri = hijriDate(dateObj);
   const gregorian = new Intl.DateTimeFormat('ar-EG', {weekday:'long', day:'numeric', month:'long'}).format(dateObj);
   const now = new Date();
   const todayKey = now.toLocaleDateString('en-CA');
   const tomorrowKey = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toLocaleDateString('en-CA');
-  const upcomingTasks = nearestTasks(tasks, taskSchedules, prayers, now, 3);
+  const doneStepIds=new Set((dayRecords?.[localDateKey(now)]?.items??[]).filter(item=>item.status==='done').map(item=>item.id));
+  const upcomingTasks = nearestTasks(tasks, taskSchedules, prayers, now, 3, planStepsToday(dayPlan, prayers, now, doneStepIds));
   return <>
     <div className="home-date-bar" aria-label="تاريخ اليوم">
       <CalendarDays size={16} aria-hidden="true"/>
