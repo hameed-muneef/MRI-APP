@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Car, Footprints, LocateFixed, MapPin, RefreshCw, ShieldCheck, SlidersHorizontal, WifiOff } from 'lucide-react';
 import { formatArabicDistance } from '../../lib/geo';
 import { openAppSettings } from '../../lib/settings-opener';
-import { MAX_RADIUS_METERS, MIN_RADIUS_METERS, RADIUS_OPTIONS, useNearbyMosques } from '../../hooks/useNearbyMosques';
+import { MAX_RADIUS_METERS, MIN_RADIUS_METERS, RADIUS_OPTIONS, radiusFromSlider, sliderFromRadius, useNearbyMosques } from '../../hooks/useNearbyMosques';
 import { useOnline } from '../../online';
 import { useBackHandler } from '../../navigation/useBackHandler';
 import type { QiblaCity } from '../../lib/qibla-cities';
@@ -24,6 +24,7 @@ interface MosquesScreenProps {
 
 export default function MosquesScreen({ notify }: MosquesScreenProps) {
   const online = useOnline();
+  const [visibleCount, setVisibleCount] = useState(20);
   const {
     stage,
     geoError,
@@ -168,11 +169,12 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                 <input
                   id="mosque-radius-km"
                   type="range"
-                  min={MIN_RADIUS_METERS / 1000}
-                  max={MAX_RADIUS_METERS / 1000}
-                  step={0.1}
-                  value={radiusMeters / 1000}
-                  onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={sliderFromRadius(radiusMeters)}
+                  aria-valuetext={formatArabicDistance(radiusMeters)}
+                  onChange={(e) => setRadiusMeters(radiusFromSlider(Number(e.target.value)))}
                 />
                 <input
                   type="number"
@@ -250,11 +252,14 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
               {!loadingData && !outsideRegion && !dataError && (
                 <span>
                   {mosques.length > 0
-                    ? `عُثر على ${mosques.length} مسجدًا ضمن ${formatArabicDistance(radiusMeters)} (مسافة تقريبية في خط مستقيم)`
+                    ? `عُثر على ${mosques.length} مسجدًا ضمن ${formatArabicDistance(radiusMeters)} · الأبعد ${formatArabicDistance(Math.max(...mosques.map((m) => m.distanceMeters)))} (مسافة تقريبية في خط مستقيم)`
                     : `لا توجد نتائج ضمن ${formatArabicDistance(radiusMeters)}`}
                 </span>
               )}
             </div>
+            {!loadingData && mosques.length >= 1500 && (
+              <p className="muted small" role="status">منطقتك مزدحمة بالمساجد: نعرض أقرب {mosques.length} مسجد فقط، وأبعدها على بُعد {formatArabicDistance(Math.max(...mosques.map((m) => m.distanceMeters)))}. قلّل المسافة لتركّز على الأقرب.</p>
+            )}
           </section>
 
           {loadingData && <MosquesSkeleton />}
@@ -298,7 +303,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
 
           {!loadingData && !dataError && !outsideRegion && mosques.length > 0 && (
             <section className="mosques-list" aria-label="قائمة المساجد الأقرب">
-              {mosques.map((mosque) => (
+              {mosques.slice(0, visibleCount).map((mosque) => (
                 <MosqueCard
                   key={mosque.id}
                   mosque={mosque}
@@ -307,6 +312,11 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                   onOpenMaps={handleOpenMaps}
                 />
               ))}
+              {mosques.length > visibleCount && (
+                <button type="button" className="soft-btn" onClick={() => setVisibleCount((n) => n + 20)}>
+                  عرض المزيد ({mosques.length - visibleCount} مسجدًا متبقيًا)
+                </button>
+              )}
             </section>
           )}
         </>

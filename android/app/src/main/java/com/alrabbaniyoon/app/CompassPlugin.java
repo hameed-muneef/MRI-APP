@@ -22,6 +22,8 @@ public class CompassPlugin extends Plugin implements SensorEventListener {
     private double declination = 0.0;
     private final float[] rotationMatrix = new float[9];
     private final float[] orientation = new float[3];
+    private final float[] remapped = new float[9];
+    private volatile int sensorAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH;
 
     @Override
     public void load() {
@@ -98,6 +100,13 @@ public class CompassPlugin extends Plugin implements SensorEventListener {
         }
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
         SensorManager.getOrientation(rotationMatrix, orientation);
+        // The azimuth above assumes the phone lies flat. Held upright (the usual way people hold it to find the qibla),
+        // it is wrong by tens of degrees, so remap the axes so the heading follows where the back of the phone points.
+        double rawPitch = Math.toDegrees(orientation[1]);
+        if (Math.abs(rawPitch) > 50.0) {
+            SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Z, remapped);
+            SensorManager.getOrientation(remapped, orientation);
+        }
         double azimuthDeg = Math.toDegrees(orientation[0]);
         if (azimuthDeg < 0) azimuthDeg += 360.0;
         double trueHeading = azimuthDeg + declination;
@@ -111,11 +120,12 @@ public class CompassPlugin extends Plugin implements SensorEventListener {
         data.put("magneticHeading", azimuthDeg);
         data.put("pitch", pitch);
         data.put("roll", roll);
+        data.put("accuracy", sensorAccuracy);
         notifyListeners("heading", data);
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // no-op
+        sensorAccuracy = accuracy;
     }
 }

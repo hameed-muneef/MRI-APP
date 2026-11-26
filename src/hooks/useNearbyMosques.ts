@@ -49,7 +49,19 @@ export const RADIUS_OPTIONS = [500, 1000, 3000, 5000] as const;
 export const MAX_RADIUS_METERS = 40000;
 export const MIN_RADIUS_METERS = 100;
 export const DEFAULT_RADIUS_METERS = 1000;
-export const DEFAULT_RESULTS_LIMIT = 30;
+export const DEFAULT_RESULTS_LIMIT = 1500;
+
+/** شريط المسافة: تدرّج لوغاريتمي (دقيق في الأمتار القليلة وسريع في العشرات من الكيلومترات). */
+export function radiusFromSlider(position: number): number {
+  const t = Math.min(1, Math.max(0, position / 100));
+  const raw = MIN_RADIUS_METERS * Math.pow(MAX_RADIUS_METERS / MIN_RADIUS_METERS, t);
+  const step = raw < 1000 ? 50 : raw < 5000 ? 100 : 500;
+  return Math.min(MAX_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.round(raw / step) * step));
+}
+export function sliderFromRadius(meters: number): number {
+  const m = Math.min(MAX_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, meters));
+  return Math.round((Math.log(m / MIN_RADIUS_METERS) / Math.log(MAX_RADIUS_METERS / MIN_RADIUS_METERS)) * 100);
+}
 /** Minimum movement in meters before re-running grid search for the same radius & country. */
 export const RECOMPUTE_THRESHOLD_METERS = 150;
 

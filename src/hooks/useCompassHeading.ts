@@ -47,7 +47,7 @@ function magneticDeclination(lat: number, lon: number): number {
 
 interface CompassProvider {
   isSupported(): boolean;
-  start(cb: (h: number, beta: number, gamma: number, source: string) => void): void;
+  start(cb: (h: number, beta: number, gamma: number, source: string, accuracy?: number) => void): void;
   stop(): void;
 }
 
@@ -118,7 +118,7 @@ class NativeCompassProvider implements CompassProvider {
     return true;
   }
 
-  start(cb: (h: number, beta: number, gamma: number, source: string) => void): void {
+  start(cb: (h: number, beta: number, gamma: number, source: string, accuracy?: number) => void): void {
     this.running = true;
     void (async () => {
       try {
@@ -130,7 +130,7 @@ class NativeCompassProvider implements CompassProvider {
         await NativeCompass.start();
         this.listener = await NativeCompass.addListener('heading', (data) => {
           if (!this.running) return;
-          cb(normalizeAngle(data.heading), data.pitch, data.roll, 'native');
+          cb(normalizeAngle(data.heading), data.pitch, data.roll, 'native', data.accuracy);
         });
       } catch {
         this.running = false;
@@ -224,12 +224,12 @@ export function useCompassHeading(enabled: boolean, coords: { latitude: number; 
       }, 2500);
       noSensorTimerRef.current = t;
 
-      provider.start((h, beta, gamma, source) => {
+      provider.start((h, beta, gamma, source, accuracy) => {
         eventCountRef.current += 1;
         if (!mountedRef.current) return;
 
         const flat = (Math.abs(beta) < 30) || (Math.abs(beta) > 150);
-        const tooTilted = !flat || Math.abs(gamma) > 45;
+        const tooTilted = source === 'native' ? false : (!flat || Math.abs(gamma) > 45); // الأصلي يعالج الإمالة داخليًا
         setTooTilted(tooTilted);
         setTilt({ beta, gamma });
 
@@ -251,7 +251,7 @@ export function useCompassHeading(enabled: boolean, coords: { latitude: number; 
         if (now - lastUpdateRef.current > 120) {
           lastUpdateRef.current = now;
           setHeading(smoothed);
-          setStatus('ready');
+          setStatus(source === 'native' && typeof accuracy === 'number' && accuracy <= 1 ? 'needs-calibration' : 'ready');
         }
       });
     };

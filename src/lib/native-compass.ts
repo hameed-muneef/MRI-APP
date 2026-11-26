@@ -7,6 +7,8 @@ export interface NativeCompassHeading {
   magneticHeading: number;
   pitch: number;
   roll: number;
+  /** SensorManager.SENSOR_STATUS_*: 0 unreliable, 1 low, 2 medium, 3 high */
+  accuracy?: number;
 }
 
 interface NativeCompassPlugin {
