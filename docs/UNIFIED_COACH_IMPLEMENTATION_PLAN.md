@@ -41,8 +41,8 @@ New template without an end date. Learns from regularity.
 - Backups and imports of old state still pass.
 
 ## Status
-- [ ] P1.1 engine
-- [ ] P1.2 data and schema
-- [ ] P1.3 UI
-- [ ] P1.4 tests
-- [ ] P1.5 CI
+- [x] P1.1 engine
+- [x] P1.2 data and schema
+- [x] P1.3 UI
+- [x] P1.4 tests (vitest 12 + playwright 4, mobile-light)
+- [ ] P1.5 CI (local lint, unit 393, build:android pass; PR CI pending)
