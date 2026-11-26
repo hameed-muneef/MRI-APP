@@ -123,7 +123,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
   const [moshafId, setMoshafId] = useState<number>(() => getSelectedReciterPref()?.moshafId ?? 0);
   const [recitersModalOpen, setRecitersModalOpen] = useState(false);
   const [playScope, setPlayScope] = useState<'surah' | 'fromHere' | 'all'>(() => {
-    try { const v = localStorage.getItem('quran-play-scope'); return (v === 'surah' || v === 'fromHere' || v === 'all') ? v : 'surah'; } catch { return 'surah'; }
+    try { const v = localStorage.getItem('quran-play-scope-v2'); return (v === 'surah' || v === 'fromHere' || v === 'all') ? v : 'fromHere'; } catch { return 'fromHere'; }
   });
 
   const handledAutoPlayRef = useRef(0);
@@ -532,7 +532,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
   }, [currentReciter, currentMoshaf]);
 
   useEffect(() => {
-    try { localStorage.setItem('quran-play-scope', playScope); } catch { /* تجاهل */ }
+    try { localStorage.setItem('quran-play-scope-v2', playScope); } catch { /* تجاهل */ }
   }, [playScope]);
 
   // أثناء فتح لوحة: منع تمرير الصفحة (لتوسيط صحيح وتجنب شريط التمرير).
@@ -761,7 +761,7 @@ export default function MushafPages({asset, state, onState, notify, autoPlayToke
               <label className="mf-field-label">النطاق</label>
               <div className="mf-select-wrap">
                 <select value={playScope} onChange={event => setPlayScope(event.target.value as 'surah' | 'fromHere' | 'all')} aria-label="نطاق التشغيل">
-                  <option value="surah">هذه السورة</option><option value="fromHere">من هنا</option><option value="all">المصحف كاملًا</option>
+                  <option value="surah">هذه السورة فقط</option><option value="fromHere">من هنا إلى آخر المصحف</option><option value="all">المصحف كاملًا</option>
                 </select>
               </div>
             </div>

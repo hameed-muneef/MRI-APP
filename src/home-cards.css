@@ -763,3 +763,15 @@ html #root .app main.main .home-achievement-entry .home-tasks-head > span:not(.h
 html #root .app main.main .home-achievement-entry .home-tasks-head .home-today-icon {
   flex: none;
 }
+
+/* مفاتيح الاختيار في مصحف الحفظ: الضغط أو التحويم لا يمسح لون المفتاح المختار (كان الأبيض يطغى على النص الأبيض). */
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button.on,
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button.on:hover:not(:disabled),
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button.on:active:not(:disabled),
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button.on:focus,
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button[aria-pressed="true"]:not(:disabled),
+html #root .app :is(.hf-seg,.hf-speeds,.hf-track-tabs) button[aria-checked="true"]:not(:disabled){background:#2f6b3f;border-color:#2f6b3f;color:#fff}
+html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
+html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#EAF3FC;color:#20537A}
+html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
+html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#16293A;color:#EAF3FC}
