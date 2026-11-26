@@ -28,9 +28,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - api: 24
-            target: default
-            profile: Nexus 5
           - api: 28
             target: google_apis
             profile: pixel
