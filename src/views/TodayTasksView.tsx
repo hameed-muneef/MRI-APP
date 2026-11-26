@@ -192,7 +192,9 @@ export default function TodayTasksView({
         .map(task => ({
           ...task,
           sourceLabel:
-            task.period === 'daily'
+            task.plan && task.sourceLabel
+              ? task.sourceLabel
+              : task.period === 'daily'
               ? 'يومي مع الله'
               : task.period === 'weekly'
                 ? 'المؤمن القوي · خطة أسبوعية'
