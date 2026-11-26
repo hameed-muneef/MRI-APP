@@ -26,6 +26,11 @@ import {authClient} from './auth';
 import {LOCAL_ONLY} from './config';
 import {InternetBadge,useOnline} from './online';
 import {requestPersistentStorage} from './local-backup';
+import {BILQURAN_PLAN_CHANGED_EVENT,buildBilQuranDailySteps,findBilQuranPlan,formatStepSummary,loadActiveBilQuranPlan} from './quran-mastery/bilquran-plans';
+import {clearPlanTasks,planTaskLaunch,reconcilePlanTasks} from './quran-mastery/plan-tasks';
+import {loadMasteryState} from './quran-mastery/storage';
+import {revisionQueue} from './quran-mastery/planning';
+import {loadQuran} from './quran/content';
 import {checkAdminAccess,type AdminAccess} from './admin-access';
 import {useAppBackButton} from './navigation/useAppBackButton';
 import {fetchCloudState,saveCloudState} from './cloud-state';
@@ -178,6 +183,40 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>window.clearTimeout(timer);
   },[state,user,cloudReady,cloudWritable,pendingKey]);
   const update=(fn:(s:State)=>State)=>setState(fn);
+  // خطة الحفظ الثابتة ← المهام: مقرر اليوم (يومي)، مراجعة الربط (أسبوعي)، مراجعة الشهر (شهري). معرّفات حتمية، وبلا تنبيهات جديدة.
+  useEffect(()=>{
+    if(!cloudReady)return;
+    let on=true;
+    const sync=async()=>{
+      try{
+        const plan=loadActiveBilQuranPlan();
+        const spec=plan?findBilQuranPlan(plan.planId):undefined;
+        if(!plan||!spec){setState(s=>{const tasks=clearPlanTasks(s.tasks);return tasks===s.tasks?s:{...s,tasks}});return}
+        const asset=await loadQuran();
+        if(!on)return;
+        const steps=buildBilQuranDailySteps(asset,spec,plan.direction);
+        let dueReviews=0;try{dueReviews=revisionQueue(loadMasteryState()).length}catch{/* ignore */}
+        setState(s=>{const tasks=reconcilePlanTasks({tasks:s.tasks,plan,spec,steps,summarize:step=>formatStepSummary(asset,step),dueReviews});return tasks===s.tasks?s:{...s,tasks}});
+      }catch{/* ignore */}
+    };
+    void sync();
+    const onVisible=()=>{if(document.visibilityState==='visible')void sync()};
+    window.addEventListener(BILQURAN_PLAN_CHANGED_EVENT,sync);
+    window.addEventListener('rabbani-mastery-changed',sync);
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>{on=false;window.removeEventListener(BILQURAN_PLAN_CHANGED_EVENT,sync);window.removeEventListener('rabbani-mastery-changed',sync);document.removeEventListener('visibilitychange',onVisible)};
+  },[cloudReady]);
+  const openPlanTask=async(task:import('./app-state').Task)=>{
+    try{
+      const plan=loadActiveBilQuranPlan();const spec=plan?findBilQuranPlan(plan.planId):undefined;
+      if(!plan||!spec)return;
+      const asset=await loadQuran();
+      const launch=planTaskLaunch(task,plan,spec,buildBilQuranDailySteps(asset,spec,plan.direction));
+      if(!launch)return;
+      localStorage.setItem('rabbani-hifz-pending-range-v1',JSON.stringify(launch));
+      setQuranSection('hifz');navigate('quran');setQuranSection('hifz');
+    }catch{notify('تعذر فتح مهمة الخطة. افتح مصحف الحفظ من القرآن.')}
+  };
   // سجل الإنجاز المؤرّخ: الأحداث تأتي من الشاشات العميقة (مصحف الحفظ، الأذكار) وتُدمج هنا بالمعرّف دون تكرار.
   useEffect(()=>{
     const onEntry=(event:Event)=>{const entry=(event as CustomEvent<AchievementEntry>).detail;if(!entry||!entry.id||!entry.date)return;setState(cur=>{const next=appendEntry(cur.achievementLog,entry);return next===cur.achievementLog?cur:{...cur,achievementLog:next}})};
@@ -408,7 +447,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {featureCheckFailed&&<section className="panel feature-access-required" dir="rtl" role="alert"><h2>تعذّر التحقق من صلاحية الميزة</h2><p>لم نفتح القسم لأن خدمة الصلاحيات لم تُرجع نتيجة موثوقة. تحقق من الاتصال ثم أعد المحاولة.</p><button className="soft-btn" onClick={()=>setRetryFeatureAccess(value=>value+1)}>إعادة التحقق</button></section>}
     {canRenderView&&<ErrorBoundary key={`${view}:${viewRecovery}`} fallback={<section className="panel feature-access-required" dir="rtl" role="alert"><h2>{typeof navigator!=='undefined'&&!navigator.onLine?'هذا القسم غير متاح دون اتصال بالإنترنت':'تعذر فتح هذا القسم'}</h2><p>{typeof navigator!=='undefined'&&!navigator.onLine?'تحقق من اتصالك بالإنترنت ثم أعد المحاولة؛ بيانات حسابك محفوظة وبقية الأقسام المحلية تعمل بلا اتصال.':'حدث خلل أثناء عرض الصفحة. بيانات حسابك محفوظة؛ جرّب إعادة فتح القسم.'}</p><button className="soft-btn" onClick={()=>setViewRecovery(value=>value+1)}>إعادة المحاولة</button></section>}><Suspense fallback={loadingView}>
     {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} currentDate={currentDate} tasks={state.tasks} taskSchedules={state.taskSchedules??{}}/>}
-    {view==='tasks'&&<TodayTasksView onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
+    {view==='tasks'&&<TodayTasksView onOpenPlanTask={t=>{void openPlanTask(t)}} onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
     {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')}/>}
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
