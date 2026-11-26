@@ -1,19 +1,19 @@
 import {Sparkles} from 'lucide-react';
-import type {Task} from '../app-state';
+import type {Task,Wird} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {coachEntitled,coachOn} from './engine';
 import {courseCoachOn,courseDaysDone,courseSuggestions,dismissCourse,setCourseCoach,todayList,type CourseCoach} from './course';
 
-type Props={goals:Goal[];tasks:Task[];coach?:CourseCoach;onCoach:(coach:CourseCoach)=>void};
+type Props={goals:Goal[];tasks:Task[];wirds?:Wird[];coach?:CourseCoach;onCoach:(coach:CourseCoach)=>void};
 const reason={behind:'تأخّرت عنها',deadline:'موعدها قريب',due:'مستحقة'} as const;
 const period={daily:'يومي',weekly:'أسبوعي',monthly:'شهري'} as const;
 
-export default function CoachToday({goals,tasks,coach,onCoach}:Props){
+export default function CoachToday({goals,tasks,wirds=[],coach,onCoach}:Props){
   if(!coachEntitled())return null;
   const on=courseCoachOn(coach);
-  const list=todayList(goals,tasks,coach).slice(0,6);
+  const list=todayList(goals,tasks,coach,new Date(),wirds).slice(0,6);
   const warnings=courseSuggestions(coach);
-  const anyGoal=goals.some(coachOn);
+  const anyGoal=goals.some(coachOn)||wirds.some(w=>w.coach?.enabled);
   return <section className="panel coach-today" aria-label="المدرّب اليوم">
     <label className="goal-coach-switch"><input type="checkbox" role="switch" aria-label="تفعيل المدرّب لمهام المقرر" checked={on} onChange={e=>onCoach(setCourseCoach(coach,e.target.checked))}/><Sparkles size={15}/><span>المدرّب لمهام المقرر</span></label>
     {!on&&!anyGoal&&<p className="muted small">يرتّب لك ما تبدأ به اليوم وينبّهك مبكرًا إن انقطعت. لا يغيّر خطتك. فعّله هنا لمهام المقرر، أو من بطاقة أي هدف.</p>}

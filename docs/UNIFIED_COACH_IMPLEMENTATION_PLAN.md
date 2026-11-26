@@ -33,8 +33,11 @@ These were unanswered by the user. The recommended default from the concept is u
 - `CoachToday` card at the top of the task center: switch, early warnings, and one "start here" list across coach-enabled goals and open course tasks (behind first, then deadline, then due).
 - Standalone one-off tasks stay out (decision default).
 
-### Phase 3: habits and wirds
-New template without an end date. Learns from regularity.
+### Phase 3: habits and wirds (done on this branch)
+- Per-wird coach switch (off by default) on the wird card. Wirds reset count each period, so the coach keeps its own log of period keys where the target was reached (`Wird.coach.log`), only after it is switched on. A stored count from an earlier period is never logged, and a corrected count undoes the day.
+- Same regularity engine, no end date. Suggestions: early warning, lighter target (rate under 40%), higher target (steady stretch). Accept changes only the wird's target, the count and history stay.
+- Targets are the user's organizational choice. Wording never presents a number as better in itself.
+- Open coached wirds join the "start here" list in the task center.
 
 ## Acceptance for phase 1
 - Coach off: goal screens behave exactly as before.
@@ -51,3 +54,4 @@ New template without an end date. Learns from regularity.
 - [ ] P1.5 CI (local lint, unit 393, build:android pass; PR CI pending)
 
 - [x] Phase 2 course tasks: unit 8 + e2e 2 (real plan activation flow). Local lint, unit 401, build:android pass.
+- [x] Phase 3 habits and wirds: unit 11 + e2e 2. Local lint, unit 412, build:android pass.

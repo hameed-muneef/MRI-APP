@@ -37,7 +37,7 @@ const quran=obj({
 });
 export const storedStateSchema=obj({
  tasks:z.array(task).optional(),goals:z.array(goal).optional(),
- wirds:z.array(obj({id:str,title:str,target:num,count:num,period,periodKey:str})).optional(),
+ wirds:z.array(obj({id:str,title:str,target:num,count:num,period,periodKey:str,coach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:z.array(str).optional()}).optional()})).optional(),
  reflections:z.array(obj({id:str,date:str,text:str})).optional(),lessonStep:num.optional(),prayers:rec(str).optional(),
  courseCoach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:obj({day:z.array(str).optional(),week:z.array(str).optional(),month:z.array(str).optional()}).optional()}).optional(),
  taskSchedules:rec(schedule).optional(),dayPlan:dayPlan.optional(),dayRecords:rec(dayRecord).optional(),

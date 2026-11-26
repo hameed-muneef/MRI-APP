@@ -1,4 +1,6 @@
-import type {Task} from '../app-state';
+import type {Task,Wird} from '../app-state';
+import {habitBehind,habitOn,type WirdWithCoach} from './habit';
+import {normalizeWird} from '../wird-periods';
 import {isPlanTask} from '../quran-mastery/plan-tasks';
 import {isTaskDone} from '../task-periods';
 import {finishedKeys,startHere,suggestionsFor,coachOn,type StartHere,type Suggestion} from './engine';
@@ -49,9 +51,9 @@ export function courseDaysDone(coach:CourseCoach|undefined,now=new Date()):numbe
   return (coach.log?.day??[]).filter(k=>keys.has(k)).length;
 }
 
-export type TodayItem=StartHere&{source:'goal'|'course'};
+export type TodayItem=StartHere&{source:'goal'|'course'|'habit'};
 /** One ordered list for the day across coach-enabled goals and open plan tasks. */
-export function todayList(goals:Goal[],tasks:Task[],coach:CourseCoach|undefined,now=new Date()):TodayItem[]{
+export function todayList(goals:Goal[],tasks:Task[],coach:CourseCoach|undefined,now=new Date(),wirds:Wird[]=[]):TodayItem[]{
   const items:TodayItem[]=startHere(goals,now).map(i=>({...i,source:'goal'}));
   if(coach?.enabled){
     const behind=new Set(courseSuggestions(coach,now).map(s=>s.stepId));
@@ -61,6 +63,10 @@ export function todayList(goals:Goal[],tasks:Task[],coach:CourseCoach|undefined,
       const isBehind=(task.plan.kind==='week'&&behind.has('course-week'))||(task.plan.kind==='month'&&behind.has('course-month'));
       items.push({goalId:'course',goalTitle:'مقرر الخطة',stepId:task.id,title:task.title,period:task.period,reason:isBehind?'behind':'due',source:'course'});
     }
+  }
+  for(const w of wirds as WirdWithCoach[]){
+    if(!habitOn(w)||w.target<1||normalizeWird(w,now).count>=w.target)continue;
+    items.push({goalId:w.id,goalTitle:'ورد',stepId:w.id,title:w.title,period:w.period as 'daily'|'weekly'|'monthly',reason:habitBehind(w,now)?'behind':'due',source:'habit'});
   }
   const rank={behind:0,deadline:1,due:2} as const;
   const order={daily:0,weekly:1,monthly:2} as const;

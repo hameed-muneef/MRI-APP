@@ -15,7 +15,7 @@ export type Period='daily'|'weekly'|'monthly';
 // doneKey: مفتاح الفترة التي تأشر فيها المهمة («يومي مع الله» جديد يوميًا، والأسبوعي والشهري مرتبطان بفترتهما)؛ راجع task-periods.ts
 export type Task={id:string;title:string;period:Period;done:boolean;optional:boolean;weekStart?:string;monthKey?:string;scheduledDate?:string;doneKey?:string;sourceLabel?:string;source?:{groupId:string;revision:number;position:number};hifz?:{passageId:string;sessionId:string;surah:number;from:number;to:number;tail?:{surah:number;from:number;to:number}[]};plan?:{planId:string;kind:'day'|'week'|'month';step?:number}};
 export type TaskSchedule={initialDate?:string;initialSlot?:string;initialTime?:string;confirmedDate?:string;confirmedSlot?:string;confirmedTime?:string;title:string;sourceLabel:string;notifyEnabled?:boolean;remindBeforeMinutes?:number};
-export type Wird={id:string;title:string;target:number;count:number;period:Period;periodKey:string};
+export type Wird={id:string;title:string;target:number;count:number;period:Period;periodKey:string;coach?:{enabled:boolean;enabledAt:string;dismissed?:string[];log?:string[]}};
 import type {CourseCoach} from './coach/course';
 export type State={courseCoach?:CourseCoach;dayPlan?:DayPlan;dayRecords?:DayRecords;taskSchedules?:Record<string,TaskSchedule>;tasks:Task[];goals:Goal[];wirds:Wird[];reflections:{id:string;date:string;text:string}[];lessonStep:number;prayers:Record<string,string>;prayerLocation?:PrayerLocation;quran:QuranLearningState;achievementLog?:AchievementEntry[]};
 
