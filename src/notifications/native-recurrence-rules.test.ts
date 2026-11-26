@@ -3,7 +3,7 @@ import {buildNativeRecurrenceRules} from './native-recurrence-rules';
 import {buildNativeReminderPayloads, FAR_QUEUE} from './native-prayer-scheduler';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationPreference, type Reminder} from './types';
 
-const CH = 'al-rabbani-general';
+const CH = 'al-rabbani-general-v2';
 const now = new Date('2026-11-25T09:00:00.000Z');
 const rem = (over: Partial<Reminder>): Reminder => ({
   id: 'r1', user_id: '', title: 'تذكير', description: 'نص', scheduled_at: '2026-11-01T10:00:00.000Z', recurrence: 'daily', category: 'worship',

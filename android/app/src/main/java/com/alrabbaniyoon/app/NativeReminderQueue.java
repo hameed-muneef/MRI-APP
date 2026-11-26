@@ -37,7 +37,7 @@ public final class NativeReminderQueue {
 
     public static final String ACTION = "com.alrabbaniyoon.app.ACTION_QUEUED_REMINDER";
     public static final String SILENT_REMINDER_CHANNEL_ID = "al-rabbani-reminder-silent-v1";
-    public static final String GENERAL_CHANNEL_ID = "al-rabbani-general";
+    public static final String GENERAL_CHANNEL_ID = "al-rabbani-general-v2";
     static final long WINDOW_MS = 7L * 24 * 60 * 60 * 1000;
     static final int MAX_ARMED = 100;
     static final int MAX_ITEMS_PER_KIND = 400;
@@ -369,9 +369,16 @@ public final class NativeReminderQueue {
             ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             nm.createNotificationChannel(ch);
         } else if (GENERAL_CHANNEL_ID.equals(channelId)) {
-            NotificationChannel ch = new NotificationChannel(channelId, "تنبيهات عامة", NotificationManager.IMPORTANCE_DEFAULT);
-            ch.setDescription("تذكيرات وتنبيهات عامة");
+            NotificationChannel ch = new NotificationChannel(channelId, "تنبيهات عامة", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("تذكيرات وتنبيهات عامة بصوت");
             ch.enableVibration(true);
+            int toneRes = c.getResources().getIdentifier("reminder_tone", "raw", c.getPackageName());
+            if (toneRes != 0) {
+                ch.setSound(android.net.Uri.parse("android.resource://" + c.getPackageName() + "/raw/reminder_tone"),
+                    new android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            }
             ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             nm.createNotificationChannel(ch);
         }
@@ -381,7 +388,7 @@ public final class NativeReminderQueue {
     public static void onFire(Context c, int id, String title, String body, String channelId) {
         try {
             if (title == null || title.isEmpty()) return;
-            String ch = channelId == null || channelId.isEmpty() ? GENERAL_CHANNEL_ID : channelId;
+            String ch = channelId == null || channelId.isEmpty() || "al-rabbani-general".equals(channelId) ? GENERAL_CHANNEL_ID : channelId; // old queued items used the retired silent-prone channel
             ensureChannel(c, ch);
             post(c, id, ch, title, body == null ? "" : body);
         } catch (Throwable ignored) {

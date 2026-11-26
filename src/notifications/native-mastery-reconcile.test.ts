@@ -1,6 +1,6 @@
 import {it,expect,vi} from 'vitest';
 const mock=vi.hoisted(()=>({pending:[] as {id:number;extra?:{rabbaniKind:string}}[],display:'granted',cancel:vi.fn(async(_x:unknown)=>{}),schedule:vi.fn(async(x:{notifications:unknown[]})=>({notifications:x.notifications}))}));
-vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{checkPermissions:async()=>({display:mock.display}),checkExactNotificationSetting:async()=>({exact_alarm:'granted'}),listChannels:async()=>({channels:[{id:'al-rabbani-general'}]}),getPending:async()=>({notifications:mock.pending}),cancel:mock.cancel,schedule:mock.schedule}}));
+vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{checkPermissions:async()=>({display:mock.display}),checkExactNotificationSetting:async()=>({exact_alarm:'granted'}),listChannels:async()=>({channels:[{id:'al-rabbani-general-v2'}]}),getPending:async()=>({notifications:mock.pending}),cancel:mock.cancel,schedule:mock.schedule}}));
 vi.mock('../lib/settings-opener',()=>({getAndroidEnvironmentStatus:async()=>({hasAdhanRawSound:true}),ensureNativeAdhanChannel:async()=>null,setNativeReminderQueue:async()=>true,setNativeReminderRules:async()=>true,rebalanceNativeReminderQueue:async()=>true}));
 import {scheduleNativePersonalReminders} from './native-prayer-scheduler';
 import {createEmptyMasteryState,saveMasteryState} from '../quran-mastery/storage';

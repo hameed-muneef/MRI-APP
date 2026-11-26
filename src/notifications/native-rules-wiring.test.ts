@@ -1,6 +1,6 @@
 import {expect,it,vi} from 'vitest';
 const mock=vi.hoisted(()=>({display:'granted',calls:[] as string[],rules:[] as unknown[][],schedule:vi.fn(async(x:{notifications:unknown[]})=>({notifications:x.notifications}))}));
-vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{checkPermissions:async()=>({display:mock.display}),checkExactNotificationSetting:async()=>({exact_alarm:'granted'}),listChannels:async()=>({channels:[{id:'al-rabbani-general'}]}),getPending:async()=>({notifications:[]}),cancel:async()=>{},schedule:mock.schedule}}));
+vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{checkPermissions:async()=>({display:mock.display}),checkExactNotificationSetting:async()=>({exact_alarm:'granted'}),listChannels:async()=>({channels:[{id:'al-rabbani-general-v2'}]}),getPending:async()=>({notifications:[]}),cancel:async()=>{},schedule:mock.schedule}}));
 vi.mock('../lib/settings-opener',()=>({getAndroidEnvironmentStatus:async()=>({hasAdhanRawSound:true}),ensureNativeAdhanChannel:async()=>null,
   setNativeReminderQueue:async(kind:string)=>{mock.calls.push('queue:'+kind);return true},
   setNativeReminderRules:async(r:unknown[])=>{mock.calls.push('rules:'+r.length);mock.rules.push(r);return true},

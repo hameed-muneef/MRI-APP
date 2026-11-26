@@ -42,7 +42,9 @@ import {
 } from './types';
 
 export const ADHAN_CHANNEL_ID = 'al-rabbani-adhan-adhan_almulla-v1';
-export const GENERAL_CHANNEL_ID = 'al-rabbani-general';
+/** القناة العامة القديمة: كانت تعتمد على نغمة النظام الافتراضية فقد تصل صامتة. */
+const LEGACY_GENERAL_CHANNEL_ID = 'al-rabbani-general';
+export const GENERAL_CHANNEL_ID = 'al-rabbani-general-v2';
 /** قناة تذكيرات الصلوات الصامتة: إشعار على الجهاز بلا صوت ولا اهتزاز. */
 export const SILENT_REMINDER_CHANNEL_ID = 'al-rabbani-reminder-silent-v1';
 
@@ -620,11 +622,16 @@ export async function ensureChannels(): Promise<ActiveChannelInfo> {
         await LN.createChannel({
           id: GENERAL_CHANNEL_ID,
           name: 'تنبيهات عامة',
-          description: 'تذكيرات وتنبيهات عامة',
-          importance: 3,
+          description: 'تذكيرات وتنبيهات عامة بصوت',
+          importance: 4,
           visibility: 1,
           vibration: true,
+          sound: 'reminder_tone.ogg',
         });
+      }
+      // القناة القديمة بلا صوت صريح: تُحذف حتى لا تبقى في إعدادات الهاتف.
+      if (existingChannels.some((c) => c.id === LEGACY_GENERAL_CHANNEL_ID)) {
+        try { await LN.deleteChannel({ id: LEGACY_GENERAL_CHANNEL_ID }); } catch { /* ignore */ }
       }
     } catch { /* ignore */ }
   }

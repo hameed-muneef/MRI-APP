@@ -36,7 +36,7 @@ public class NativeReminderQueueTest {
         for (int i = 0; i < atAndId.length; i += 2) {
             if (i > 0) sb.append(',');
             sb.append("{\"id\":").append(atAndId[i + 1]).append(",\"at\":").append(atAndId[i])
-              .append(",\"title\":\"t").append(atAndId[i + 1]).append("\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}");
+              .append(",\"title\":\"t").append(atAndId[i + 1]).append("\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\"}");
         }
         return sb.append(']').toString();
     }
@@ -106,7 +106,7 @@ public class NativeReminderQueueTest {
     }
 
     @Test public void firingPostsTheStoredNotificationWithOpenIntent() {
-        NativeReminderQueue.onFire(ctx, 77, "عنوان", "نص", "al-rabbani-general");
+        NativeReminderQueue.onFire(ctx, 77, "عنوان", "نص", "al-rabbani-general-v2");
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         android.service.notification.StatusBarNotification[] a = shadowOf(nm).getActiveNotifications();
         assertEquals(1, a.length);
@@ -154,17 +154,17 @@ public class NativeReminderQueueTest {
     }
 
     @Test public void firedNotificationMatchesLocalNotificationsLook() {
-        NativeReminderQueue.onFire(ctx, 90, "t", "b", "al-rabbani-general");
+        NativeReminderQueue.onFire(ctx, 90, "t", "b", "al-rabbani-general-v2");
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification n = shadowOf(nm).getActiveNotifications()[0].getNotification();
         assertEquals(Notification.PRIORITY_HIGH, n.priority);
         assertEquals(Notification.VISIBILITY_PRIVATE, n.visibility);
-        assertEquals("al-rabbani-general", n.getChannelId());
+        assertEquals("al-rabbani-general-v2", n.getChannelId());
         assertTrue((n.flags & Notification.FLAG_AUTO_CANCEL) != 0);
         assertTrue((n.flags & Notification.FLAG_ONLY_ALERT_ONCE) != 0);
         assertEquals(null, n.category);
-        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, nm.getNotificationChannel("al-rabbani-general").getImportance());
-        assertTrue(nm.getNotificationChannel("al-rabbani-general").shouldVibrate());
+        assertEquals(NotificationManager.IMPORTANCE_HIGH, nm.getNotificationChannel("al-rabbani-general-v2").getImportance());
+        assertTrue(nm.getNotificationChannel("al-rabbani-general-v2").shouldVibrate());
         NativeReminderQueue.onFire(ctx, 91, "t", "b", NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID); // creates the silent channel
         assertEquals(NotificationManager.IMPORTANCE_LOW, nm.getNotificationChannel(NativeReminderQueue.SILENT_REMINDER_CHANNEL_ID).getImportance());
     }
@@ -191,7 +191,7 @@ public class NativeReminderQueueTest {
     // ---- time zone / DST re-resolution (wall-clock kinds only) ----
     private static NativeReminderQueue.Item wallItem(int id, int[] wall, String zone) {
         TimeZone tz = TimeZone.getTimeZone(zone);
-        return new NativeReminderQueue.Item(id, NativeReminderQueue.instantOf(wall, tz), "t" + id, "b", "al-rabbani-general", wall, zone);
+        return new NativeReminderQueue.Item(id, NativeReminderQueue.instantOf(wall, tz), "t" + id, "b", "al-rabbani-general-v2", wall, zone);
     }
 
     @Test public void zoneChangeKeepsTheLocalWallClockTime() {

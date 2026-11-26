@@ -43,7 +43,7 @@ public class NativeReminderRulesLifecycleTest {
     }
 
     private static String rule(String rid, String kind, long baseMs, long frontierMs) {
-        return "[{\"rid\":\"" + rid + "\",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\",\"kind\":\"" + kind + "\",\"baseMs\":" + baseMs
+        return "[{\"rid\":\"" + rid + "\",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\",\"kind\":\"" + kind + "\",\"baseMs\":" + baseMs
             + ",\"start\":null,\"end\":null,\"quietOn\":false,\"quietStart\":\"22:00\",\"quietEnd\":\"06:00\",\"snoozeMs\":0,\"frontierMs\":" + frontierMs + "}]";
     }
 
@@ -127,7 +127,7 @@ public class NativeReminderRulesLifecycleTest {
         NativeReminderRules.setRules(ctx, rules);
         NativeReminderRules.Rule r = NativeReminderRules.parse(rules).get(0);
         NativeReminderQueue.Item first = NativeReminderRules.items(r, now, now + NativeReminderQueue.WINDOW_MS, 400, TimeZone.getDefault()).get(0);
-        NativeReminderQueue.setQueue(ctx, "reminder", "[{\"id\":" + first.id + ",\"at\":" + first.atMs + ",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
+        NativeReminderQueue.setQueue(ctx, "reminder", "[{\"id\":" + first.id + ",\"at\":" + first.atMs + ",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\"}]");
         assertEquals(expectedInWindow(rules), queued().size());
     }
 
@@ -166,7 +166,7 @@ public class NativeReminderRulesLifecycleTest {
         assertTrue(queued().size() > 0);
 
         // end date in the past: no valid future rule, the keep-alive is cancelled by the next refresh and not re-armed
-        String ended = "[{\"rid\":\"k2\",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\",\"kind\":\"daily\",\"baseMs\":" + (now - 40 * DAY)
+        String ended = "[{\"rid\":\"k2\",\"title\":\"t\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\",\"kind\":\"daily\",\"baseMs\":" + (now - 40 * DAY)
             + ",\"start\":null,\"end\":\"2020-01-01\",\"quietOn\":false,\"quietStart\":\"22:00\",\"quietEnd\":\"06:00\",\"snoozeMs\":0,\"frontierMs\":0}]";
         NativeReminderRules.setRules(ctx, ended);
         NativeReminderQueue.setQueue(ctx, "reminder", "[]");
@@ -192,7 +192,7 @@ public class NativeReminderRulesLifecycleTest {
         assertEquals("repeated top-ups", first, times());
 
         // an alarm fires (posts, then tops up): same set, nothing earlier than the frontier comes back
-        NativeReminderQueue.onFire(ctx, 1, "t", "b", "al-rabbani-general");
+        NativeReminderQueue.onFire(ctx, 1, "t", "b", "al-rabbani-general-v2");
         assertEquals("after a fire", first, times());
 
         // reboot / time change path: release the slots, then re-arm
@@ -208,9 +208,9 @@ public class NativeReminderRulesLifecycleTest {
         long now = System.currentTimeMillis();
         android.content.SharedPreferences q = ctx.getSharedPreferences("RABBANI_NATIVE_REMINDER_QUEUE_V1", Context.MODE_PRIVATE);
         long taskAt = now + 2 * DAY, reviewAt = now + 3 * DAY, remAt = now + 4 * DAY + 12345;
-        NativeReminderQueue.setQueue(ctx, "task", "[{\"id\":71,\"at\":" + taskAt + ",\"title\":\"task\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
-        NativeReminderQueue.setQueue(ctx, "review", "[{\"id\":72,\"at\":" + reviewAt + ",\"title\":\"rev\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
-        NativeReminderQueue.setQueue(ctx, "reminder", "[{\"id\":73,\"at\":" + remAt + ",\"title\":\"one\",\"body\":\"b\",\"channelId\":\"al-rabbani-general\"}]");
+        NativeReminderQueue.setQueue(ctx, "task", "[{\"id\":71,\"at\":" + taskAt + ",\"title\":\"task\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\"}]");
+        NativeReminderQueue.setQueue(ctx, "review", "[{\"id\":72,\"at\":" + reviewAt + ",\"title\":\"rev\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\"}]");
+        NativeReminderQueue.setQueue(ctx, "reminder", "[{\"id\":73,\"at\":" + remAt + ",\"title\":\"one\",\"body\":\"b\",\"channelId\":\"al-rabbani-general-v2\"}]");
         String task = q.getString("q_task", null), review = q.getString("q_review", null), rem = q.getString("q_reminder", null);
         int before = queued().size();
 

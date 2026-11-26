@@ -15,7 +15,7 @@ vi.mock('@capacitor/local-notifications', () => ({
 }));
 vi.mock('./native-prayer-scheduler', () => ({
   ensureChannels: async () => ({adhanChannelId: 'adhan', soundFile: 'x.ogg', soundTitle: 'x', soundMode: 'adhan'}),
-  GENERAL_CHANNEL_ID: 'al-rabbani-general',
+  GENERAL_CHANNEL_ID: 'al-rabbani-general-v2',
 }));
 vi.mock('../lib/prayer-schedule', () => ({
   prayerId: () => 424242,
@@ -115,7 +115,7 @@ describe('deliverReminder routing', () => {
     expect(nativeSchedule).toHaveBeenCalledTimes(1);
     const payload = (nativeSchedule.mock.calls[0][0] as {notifications: {title: string; channelId: string}[]}).notifications[0];
     expect(payload.title).toBe('أذكار الصباح');
-    expect(payload.channelId).toBe('al-rabbani-general');
+    expect(payload.channelId).toBe('al-rabbani-general-v2');
   });
 
   it('does not touch the phone when the native permission is denied', async () => {
