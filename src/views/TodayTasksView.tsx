@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from 'react';
 import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3, SlidersHorizontal} from 'lucide-react';
-import {type Task, type TaskSchedule, today} from '../app-state';
+import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {goalStepCompletionKey, goalStepDueDate, goalStepOccurrence, goalSteps, isGoalDateInRange} from '../goal-plan';
 import {TaskTimeSelect, timeOfDayClock12} from '../TaskTimeSelect';
@@ -21,6 +21,8 @@ import {
   type TaskNotificationSettings,
 } from '../notifications/types';
 import {channelDescription, channelLabel} from './notifications/SoundPanel';
+import CoachToday from '../coach/CoachToday';
+import type {CourseCoach} from '../coach/course';
 import {useBackHandler} from '../navigation/useBackHandler';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
@@ -53,6 +55,9 @@ type Props = {
   onBack: () => void;
   notify?: (message: string) => void;
   onOpenNotificationSettings?: () => void;
+  courseCoach?: CourseCoach;
+  wirds?: Wird[];
+  onCourseCoach?: (coach: CourseCoach) => void;
 };
 
 export default function TodayTasksView({
@@ -68,6 +73,9 @@ export default function TodayTasksView({
   onBack,
   notify,
   onOpenNotificationSettings,
+  courseCoach,
+  onCourseCoach,
+  wirds,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
@@ -402,6 +410,8 @@ export default function TodayTasksView({
         <p>تجتمع هنا الاستحقاقات من خططك الشخصية وأهدافك.</p>
         <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
       </div>
+
+      {onCourseCoach&&<CoachToday goals={goals} tasks={tasks} wirds={wirds} coach={courseCoach} onCoach={onCourseCoach}/>}
 
       <section className="panel task-notif-banner" aria-label="إعدادات تذكير المهام المجدولة">
         <div className="task-notif-banner-head">

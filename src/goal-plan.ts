@@ -1,7 +1,8 @@
 export type GoalPeriod='daily'|'weekly'|'monthly'|'yearly'|'custom';
 export const goalPeriods:GoalPeriod[]=['daily','weekly','monthly','yearly','custom'];
 export type GoalStep={id:string;title:string;period:GoalPeriod;done:Record<string,boolean>;customDate?:string};
-export type Goal={id:string;title:string;benefit:string;targetDate?:string;createdAt?:string;steps?:GoalStep[];action?:string;period?:GoalPeriod};
+export type GoalCoach={enabled:boolean;enabledAt:string;dismissed?:string[]};
+export type Goal={id:string;title:string;benefit:string;targetDate?:string;createdAt?:string;steps?:GoalStep[];action?:string;period?:GoalPeriod;coach?:GoalCoach};
 export function localGoalDate(now=new Date()){return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`}
 export function goalPeriodKey(period:GoalPeriod,now=new Date(),customDate?:string){
   if(period==='custom')return customDate??'';

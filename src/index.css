@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+/* Unified coach: goal panel */
+.goal-coach{margin:12px 0;padding:12px;border:1px solid var(--line,#d9d4c7);border-radius:12px;display:flex;flex-direction:column;gap:8px}
+.goal-coach-switch{display:flex;align-items:center;gap:8px;font-weight:600}
+.goal-coach-card{padding:10px;border-radius:10px;background:var(--surface-2,rgba(0,0,0,.04))}
+.goal-coach-card p{margin:0 0 8px;line-height:1.7}
+.goal-coach-actions{display:flex;flex-wrap:wrap;gap:8px}
+.coach-today{display:flex;flex-direction:column;gap:8px}
+.coach-today-title{font-size:1rem;margin:4px 0 0}
+.coach-today-list{margin:0;padding-inline-start:1.2rem;display:flex;flex-direction:column;gap:6px}
