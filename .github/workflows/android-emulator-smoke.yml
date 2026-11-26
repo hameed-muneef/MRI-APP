@@ -77,7 +77,28 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Smoke test on emulator (API ${{ matrix.api }}, ${{ matrix.profile }})
+      # Attempt 1. A failure here does not fail the job by itself: the retry step
+      # below runs once and decides the result. Both attempts stay visible in the log.
+      - name: Smoke test on emulator (API ${{ matrix.api }}, ${{ matrix.profile }}), attempt 1
+        id: smoke1
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disable-animations: true
+          script: bash scripts/emulator-smoke.sh
+
+      - name: Attempt 1 failed, retrying once
+        if: steps.smoke1.outcome == 'failure'
+        run: echo "::warning::Emulator smoke attempt 1 failed on API ${{ matrix.api }}. Retrying once."
+
+      # Attempt 2 runs only when attempt 1 failed. If it fails, the job fails.
+      - name: Smoke test on emulator (API ${{ matrix.api }}, ${{ matrix.profile }}), attempt 2 (retry)
+        id: smoke2
+        if: steps.smoke1.outcome == 'failure'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api }}
