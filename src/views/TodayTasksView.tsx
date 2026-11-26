@@ -73,6 +73,7 @@ export default function TodayTasksView({
   const [notifyDraftByTask, setNotifyDraftByTask] = useState<Record<string, boolean>>({});
   const [leadDraftByTask, setLeadDraftByTask] = useState<Record<string, number | undefined>>({});
   const [notice, setNotice] = useState('');
+  const [undo, setUndo] = useState<{label: string; before: Task[]} | null>(null);
 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
 
@@ -215,6 +216,7 @@ export default function TodayTasksView({
         : 'المؤمن القوي · الخطة الشهرية');
 
   const complete = (task: Task) => {
+    setUndo({label: task.title, before: tasks});
     onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
     if (task.id.startsWith('quran:')) onQuranTaskComplete?.(task.id);
     notifyNativePrefsChanged();
@@ -352,6 +354,13 @@ export default function TodayTasksView({
           <button role="tab" aria-selected={filter === 'overdue'} className={filter === 'overdue' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('overdue'); setNotice('')}}>متأخرة</button>
           <button role="tab" aria-selected={filter === 'unscheduled'} className={filter === 'unscheduled' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('unscheduled'); setNotice('')}}>بلا موعد</button>
         </div>
+        {undo && (
+          <p className="hint" role="status">
+            أُنجزت «{undo.label}».{' '}
+            <button type="button" className="soft-btn" onClick={() => {onTasks(undo.before); setUndo(null); notifyNativePrefsChanged();}}>تراجع</button>{' '}
+            <button type="button" className="soft-btn" aria-label="إغلاق" onClick={() => setUndo(null)}>✕</button>
+          </p>
+        )}
         {notice && <p className="hint" role="status">{notice}</p>}
         {allItems.length === 0 ? (
           <p className="muted">لا توجد مهام غير منجزة في هذا القسم.</p>

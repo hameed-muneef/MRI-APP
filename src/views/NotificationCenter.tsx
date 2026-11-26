@@ -11,6 +11,7 @@ import {
   markLocalNotificationRead,
   unreadLocalNotificationCount,
 } from '../notifications/local-inbox';
+import {syncDeliveredNativeNotifications} from '../notifications/native-history';
 import '../notifications.css';
 import {useBackHandler} from '../navigation/useBackHandler';
 
@@ -90,6 +91,16 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     setHasMore(false);
     setLegacy(true);
   },[]);
+
+  // سجل ما أظهره الهاتف فعلًا: يُحدَّث عند فتح التطبيق وعند فتح لوحة الإشعارات.
+  useEffect(()=>{
+    const sync=()=>{void syncDeliveredNativeNotifications().then(added=>{if(added>0)loadLocal()})};
+    sync();
+    const onVisible=()=>{if(document.visibilityState==='visible')sync()};
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>document.removeEventListener('visibilitychange',onVisible);
+  },[loadLocal]);
+  useEffect(()=>{if(open)void syncDeliveredNativeNotifications().then(added=>{if(added>0)loadLocal()})},[open,loadLocal]);
 
   const legacyFallback=useCallback(async()=>{
     if(!authClient)return;
@@ -297,7 +308,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       <header className="notif-head">
         <div><h3>الإشعارات</h3><p className="muted small">{unread>0?`${unread} غير مقروءة`:'كل الإشعارات مقروءة'}</p></div>
         <button type="button" className="soft-btn notif-mark-all" disabled={busy||unread===0} onClick={()=>void markAll()}><CheckCheck size={15}/> تعليم الكل كمقروء</button>
-        <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> حذف الكل</button>
+        <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> مسح التنبيهات</button>
       </header>
       {confirmClear&&(
         <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف جميع الإشعارات">

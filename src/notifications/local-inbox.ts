@@ -136,3 +136,24 @@ export function clearAllLocalNotifications(): void {
   writeRaw([]);
   dispatchUpdate();
 }
+
+/** يضيف إشعارًا وصل من نظام الهاتف إلى السجل مرة واحدة فقط (المفتاح ثابت لكل إشعار). */
+export function addNativeDeliveredNotification(nativeId: number | string, title: string, body: string, postedAtMs?: number): boolean {
+  const id = `native-${nativeId}-${title}`.slice(0, 160);
+  const rows = readRaw();
+  if (rows.some(row => row.notification_id === id)) return false;
+  const created = new Date(postedAtMs && Number.isFinite(postedAtMs) ? postedAtMs : Date.now()).toISOString();
+  const row: LocalNotificationRow = {
+    notification_id: id,
+    notification_kind: 'reminder',
+    notification_title: title.slice(0, 200),
+    notification_body: body.slice(0, 2000),
+    notification_link: '',
+    notification_category: 'reminder',
+    // وصلت للمستخدم على الهاتف بالفعل، فتدخل السجل مقروءة ولا تُظهر عدّادًا.
+    read_at: created,
+    created_at: created,
+  };
+  writeRaw([row, ...rows].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)));
+  return true;
+}
