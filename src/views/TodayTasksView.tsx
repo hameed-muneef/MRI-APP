@@ -49,6 +49,7 @@ type Props = {
   onGoals: (goals: Goal[]) => void;
   onQuranTaskComplete?: (taskId: string) => void;
   onOpenHifzTask?: (hifz: NonNullable<Task['hifz']>) => void;
+  onOpenPlanTask?: (task: Task) => void;
   onBack: () => void;
   notify?: (message: string) => void;
   onOpenNotificationSettings?: () => void;
@@ -63,6 +64,7 @@ export default function TodayTasksView({
   onGoals,
   onQuranTaskComplete,
   onOpenHifzTask,
+  onOpenPlanTask,
   onBack,
   notify,
   onOpenNotificationSettings,
@@ -568,6 +570,7 @@ export default function TodayTasksView({
                         <span>{itemSource}</span>
                       </span>
                     </div>
+                    {(item as Task).plan && onOpenPlanTask && <button type="button" className="soft-btn" onClick={() => onOpenPlanTask(item as Task)}>{(item as Task).plan!.kind === 'day' ? 'ابدأ مقرر اليوم' : 'ابدأ المراجعة'}</button>}
                     {(item as Task).hifz && onOpenHifzTask && <button type="button" className="soft-btn" onClick={() => onOpenHifzTask((item as Task).hifz!)}>ابدأ التسميع</button>}
                     <button
                       type="button"
