@@ -39,6 +39,7 @@ export const storedStateSchema=obj({
  tasks:z.array(task).optional(),goals:z.array(goal).optional(),
  wirds:z.array(obj({id:str,title:str,target:num,count:num,period,periodKey:str})).optional(),
  reflections:z.array(obj({id:str,date:str,text:str})).optional(),lessonStep:num.optional(),prayers:rec(str).optional(),
+ courseCoach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:obj({day:z.array(str).optional(),week:z.array(str).optional(),month:z.array(str).optional()}).optional()}).optional(),
  taskSchedules:rec(schedule).optional(),dayPlan:dayPlan.optional(),dayRecords:rec(dayRecord).optional(),
  prayerLocation:obj({name:str,country:str,latitude:num.min(-90).max(90),longitude:num.min(-180).max(180),timezone:str.refine(zone=>{try{new Intl.DateTimeFormat('en',{timeZone:zone});return true}catch{return false}}),method:num.optional(),school:z.union([z.literal(0),z.literal(1)]).optional()}).optional(),quran:quran.optional(),achievementLog:z.array(obj({id:str,kind:z.enum(['bilquran_step','adhkar_category','wird_complete']),date:str,refId:str,label:str.optional(),at:str})).optional(),
 });

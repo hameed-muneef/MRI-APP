@@ -27,8 +27,11 @@ These were unanswered by the user. The recommended default from the concept is u
 - P1.4 Tests: vitest for the engine and schema (back-compat), Playwright e2e for toggle, suggestion accept and keep, persistence across reload.
 - P1.5 CI: `npm run lint`, `npm run test:unit`, `npm run build:android` run locally, then CI on the PR.
 
-### Phase 2: course tasks
-Same engine on daily, weekly and monthly plan tasks. One ordered list for the day across goals and tasks.
+### Phase 2: course tasks (done on this branch)
+- Course (plan) tasks join the engine through `src/coach/course.ts`. One switch for the course, off by default. Plan tasks are replaced every period and keep no history, so the coach keeps its own log of finished period keys (`State.courseCoach.log`), only after the switch is on.
+- Weekly and monthly review tasks are judged like goal steps (early warning only). Daily plan tasks are step-driven, not calendar-driven, so they only feed the day order and a count, never a missed-day judgment. A fixed plan has no pace to lighten or raise, so no lighten/increase for the course.
+- `CoachToday` card at the top of the task center: switch, early warnings, and one "start here" list across coach-enabled goals and open course tasks (behind first, then deadline, then due).
+- Standalone one-off tasks stay out (decision default).
 
 ### Phase 3: habits and wirds
 New template without an end date. Learns from regularity.
@@ -46,3 +49,5 @@ New template without an end date. Learns from regularity.
 - [x] P1.3 UI
 - [x] P1.4 tests (vitest 12 + playwright 4, mobile-light)
 - [ ] P1.5 CI (local lint, unit 393, build:android pass; PR CI pending)
+
+- [x] Phase 2 course tasks: unit 8 + e2e 2 (real plan activation flow). Local lint, unit 401, build:android pass.

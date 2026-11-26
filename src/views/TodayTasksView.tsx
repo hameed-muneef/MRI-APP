@@ -21,6 +21,8 @@ import {
   type TaskNotificationSettings,
 } from '../notifications/types';
 import {channelDescription, channelLabel} from './notifications/SoundPanel';
+import CoachToday from '../coach/CoachToday';
+import type {CourseCoach} from '../coach/course';
 import {useBackHandler} from '../navigation/useBackHandler';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
@@ -53,6 +55,8 @@ type Props = {
   onBack: () => void;
   notify?: (message: string) => void;
   onOpenNotificationSettings?: () => void;
+  courseCoach?: CourseCoach;
+  onCourseCoach?: (coach: CourseCoach) => void;
 };
 
 export default function TodayTasksView({
@@ -68,6 +72,8 @@ export default function TodayTasksView({
   onBack,
   notify,
   onOpenNotificationSettings,
+  courseCoach,
+  onCourseCoach,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
@@ -402,6 +408,8 @@ export default function TodayTasksView({
         <p>تجتمع هنا الاستحقاقات من خططك الشخصية وأهدافك.</p>
         <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
       </div>
+
+      {onCourseCoach&&<CoachToday goals={goals} tasks={tasks} coach={courseCoach} onCoach={onCourseCoach}/>}
 
       <section className="panel task-notif-banner" aria-label="إعدادات تذكير المهام المجدولة">
         <div className="task-notif-banner-head">

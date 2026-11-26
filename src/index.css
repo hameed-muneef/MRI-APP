@@ -6,3 +6,6 @@
 .goal-coach-card{padding:10px;border-radius:10px;background:var(--surface-2,rgba(0,0,0,.04))}
 .goal-coach-card p{margin:0 0 8px;line-height:1.7}
 .goal-coach-actions{display:flex;flex-wrap:wrap;gap:8px}
+.coach-today{display:flex;flex-direction:column;gap:8px}
+.coach-today-title{font-size:1rem;margin:4px 0 0}
+.coach-today-list{margin:0;padding-inline-start:1.2rem;display:flex;flex-direction:column;gap:6px}
