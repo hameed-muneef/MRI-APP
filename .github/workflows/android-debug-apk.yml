@@ -3,7 +3,7 @@ name: Android debug APK
 # DEBUG apk for phone testing. Isolated variant: applicationId com.alrabbaniyoon.app.test6 and label الربانيون (تجريبي ٦),
 # set only inside the CI workspace (repo files are not changed), so it installs next to the real app with separate empty data.
 # No release keys, no secrets, no Google Play.
-# Final test build: palette roll-out, Amiri bundled, audit fixes.
+# Test build 7: per-card accent colors, Amiri bundled, audit fixes.
 on:
   workflow_dispatch:
   push:
