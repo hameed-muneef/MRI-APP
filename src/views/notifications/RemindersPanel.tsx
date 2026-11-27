@@ -22,6 +22,7 @@ import {effectiveNextDueDate, formatTimeHM, WEEK_DAYS} from '../../notifications
 import {createReminder, deleteReminder, snoozeReminder, toggleReminder, updateReminder} from '../../notifications/service';
 import {loadPrefs, loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
 import {testAlertMessage} from '../../notifications/test-alert-copy';
+import {parseSpecificDates} from '../../notifications/reminder-date-input';
 import {formatRemaining} from '../../notifications/upcoming';
 import {SoundSelectField} from './SoundPanel';
 import {RECURRENCE_LABELS, type Reminder, type ReminderRecurrence} from '../../notifications/types';
@@ -136,7 +137,7 @@ function buildReminder(draft: Draft): Omit<Reminder, 'id' | 'user_id' | 'created
       start_date: draft.date,
       end_date: draft.endDate || undefined,
       specific_dates: draft.recurrence === 'specific_dates'
-        ? draft.specificDates.split(/[،,]/).map(part => part.trim()).filter(Boolean)
+        ? parseSpecificDates(draft.specificDates).dates
         : undefined,
       interval_days: draft.recurrence === 'custom' ? Math.max(1, Math.round(draft.intervalDays)) : undefined,
     },
@@ -153,7 +154,11 @@ function draftError(draft: Draft): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) return 'اختر تاريخًا صحيحًا.';
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(draft.time)) return 'اختر وقتًا صحيحًا.';
   if (draft.recurrence === 'weekdays' && !draft.days.length) return 'اختر يومًا واحدًا على الأقل للتكرار.';
-  if (draft.recurrence === 'specific_dates' && !draft.specificDates.trim()) return 'اكتب تاريخًا واحدًا على الأقل (بفواصل بينها).';
+  if (draft.recurrence === 'specific_dates') {
+    const {dates, invalid} = parseSpecificDates(draft.specificDates);
+    if (!dates.length && !invalid.length) return 'اكتب تاريخًا واحدًا على الأقل (بفواصل بينها).';
+    if (invalid.length) return 'اكتب التواريخ بصيغة YYYY-MM-DD، مثل 2026-12-01.';
+  }
   return '';
 }
 
