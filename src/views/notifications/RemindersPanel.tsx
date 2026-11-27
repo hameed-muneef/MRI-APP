@@ -48,6 +48,7 @@ import {
   importedToReminder,
   parseReminderImport,
   resolveModes,
+  roomFor,
   type ImportDefaultMode,
   type ImportMode,
   type ImportedItem,
@@ -518,6 +519,13 @@ export default function RemindersPanel({
     const rows = importableItems(importPreview);
     if (!rows.length) {
       setError('لا يوجد ما يُضاف: كل الصفوف مكرّرة أو غير صالحة.');
+      return;
+    }
+    const room = roomFor(reminders.length);
+    if (rows.length > room) {
+      setError(room === 0
+        ? 'بلغت الحدّ الأقصى ٢٠٠ تذكير. احذف بعض التذكيرات ثم أعد الاستيراد.'
+        : `لا توجد مساحة إلا لـ ${room} تذكير من ${rows.length}. احذف بعض التذكيرات أو قسّم الملف.`);
       return;
     }
     const stamp = new Date().toISOString();

@@ -33,6 +33,8 @@ export type ImportResult = {
 };
 
 export const MAX_IMPORT_BYTES = 512 * 1024;
+/** نفس حدّ التخزين المحلي: ما زاد عليه لا يُحفظ ويُفقد عند إعادة التحميل. */
+export const MAX_STORED_REMINDERS = 200;
 export const MAX_IMPORT_ITEMS = 200;
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 1000;
@@ -191,6 +193,12 @@ export function resolveModes(
       ?? (options.defaultMode === 'file' ? (item.fileMode ?? 'reminder') : options.defaultMode);
     return {...item, alarmMode: mode === 'alarm'};
   });
+}
+
+/** كم تذكيرًا يمكن أن يستوعبه التخزين الآن (الحدّ ٢٠٠ ويُحفظ الأقدم). */
+export function roomFor(existingCount: number): number {
+  const count = Number.isFinite(existingCount) ? Math.max(0, Math.floor(existingCount)) : 0;
+  return Math.max(0, MAX_STORED_REMINDERS - count);
 }
 
 /** الصفوف التي ستُضاف فعلًا: صالحة وغير مكرّرة. */

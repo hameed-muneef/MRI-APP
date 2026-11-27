@@ -6,6 +6,7 @@ import {
   importedToReminder,
   parseReminderImport,
   resolveModes,
+  roomFor,
 } from './reminder-import';
 import type {Reminder} from './types';
 
@@ -109,6 +110,14 @@ describe('reminder import: choosing the mode', () => {
     expect(resolveModes(parsed.items, {defaultMode: 'alarm'}).map(item => item.alarmMode)).toEqual([true, true, true]);
     expect(resolveModes(parsed.items, {defaultMode: 'file', overrides: {'import-0': 'reminder'}}).map(item => item.alarmMode))
       .toEqual([false, false, false]);
+  });
+
+  it('never promises more room than the storage keeps', () => {
+    expect(roomFor(0)).toBe(200);
+    expect(roomFor(150)).toBe(50);
+    expect(roomFor(200)).toBe(0);
+    expect(roomFor(260)).toBe(0);
+    expect(roomFor(Number.NaN)).toBe(200);
   });
 
   it('gives an imported recurring row the days it needs to fire', () => {
