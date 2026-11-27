@@ -282,7 +282,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
     <div className="settings-section-stack">
       <section className="panel adhan-player" dir="rtl" aria-labelledby="offline-adhan-select-title">
         <h3 id="offline-adhan-select-title"><Volume2 size={18}/> أصوات الأذان والمؤذنين ({BUNDLED_ADHAN_SOUNDS.length} مؤذنًا بدون إنترنت)</h3>
-        <p className="muted">اختر المؤذن الافتراضي للصلوات من {BUNDLED_ADHAN_SOUNDS.length} تسجيلات مدمجة محليًا. لتخصيص صوت صلاة بعينها، افتح «تخصيص» على بطاقتها في قائمة الصلوات بالأعلى.</p>
+        <p className="muted">اختر المؤذن الافتراضي للصلوات من {BUNDLED_ADHAN_SOUNDS.length} تسجيلات مدمجة.</p>
         <div className="adhan-row adhan-default-row">
           <select
             className="adhan-select"
@@ -316,8 +316,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         <h1>الإعدادات والمنبهات</h1>
         <p>
           {LOCAL_ONLY
-            ? 'إدارة المنبهات، أوقات الصلاة والأذان، المظهر، والنسخ الاحتياطي محليًا بالكامل على جهازك.'
-            : 'إدارة المنبهات، أوقات الصلاة والأذان، والمظهر والنسخ الاحتياطي، مع مزامنة حسابك عند الاتصال.'}
+            ? 'المنبهات، الأذان، المظهر، والنسخ الاحتياطي على جهازك.'
+            : 'المنبهات، الأذان، المظهر، والنسخ الاحتياطي، مع مزامنة الحساب عند الاتصال.'}
         </p>
       </div>
 

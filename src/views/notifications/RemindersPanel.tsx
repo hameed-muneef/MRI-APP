@@ -678,7 +678,7 @@ export default function RemindersPanel({
           <Bell size={20} aria-hidden="true"/>
           <div>
             <strong>لا توجد منبهات شخصية بعد</strong>
-            <p className="muted small">اضغط «منبه جديد» لإعداد منبه مخصص، أو ابدأ فورًا من القوالب اليومية أدناه.</p>
+            <p className="muted small">ابدأ من قالب جاهز أو أضف منبهًا جديدًا.</p>
           </div>
         </div>
       )}
@@ -781,7 +781,6 @@ export default function RemindersPanel({
         <div className="notif-templates">
           <div className="notif-templates-head">
             <h4><Sparkles size={15}/> قوالب يومية جاهزة</h4>
-            <small className="muted">اضغط على أي قالب لتعبئة المنبه وتعديله قبل الحفظ</small>
           </div>
           <div className="notif-template-grid">
             {TEMPLATES.map(template => (
