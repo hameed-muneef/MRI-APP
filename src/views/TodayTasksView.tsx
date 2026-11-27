@@ -1,5 +1,5 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3, Sparkles} from 'lucide-react';
+import {Fragment, useEffect, useMemo, useRef, useState} from 'react';
+import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {goalStepCompletionKey, goalStepDueDate, goalStepOccurrence, goalSteps, isGoalDateInRange} from '../goal-plan';
@@ -13,10 +13,8 @@ import {
   getTaskNotificationSettings,
   type NotificationPreference,
 } from '../notifications/types';
-import {courseCoachOn, type CourseCoach} from '../coach/course';
-import {buildSmartTodayPlan} from '../coach/smart';
-import {coachEntitled} from '../coach/engine';
-import {loadMasteryState} from '../quran-mastery/storage';
+import type {CourseCoach} from '../coach/course';
+import {buildNextUp} from '../next-up';
 import type {CoachSettings} from '../coach/types';
 import type {WirdWithCoach} from '../coach/habit';
 import type {AchievementEntry} from '../achievement/log';
@@ -84,14 +82,6 @@ export default function TodayTasksView({
   onBack,
   onOpenNotificationSettings,
   onCompletePlanDay,
-  courseCoach,
-  coachSettings,
-  wirds,
-  prayers,
-  dayPlan,
-  dayRecords,
-  achievementLog,
-  quranPassages,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
@@ -235,26 +225,28 @@ export default function TodayTasksView({
 
   const baseItems = [...items, ...goalTasks].filter(matchesConfirmedDate);
 
-  // «النظام الذكي»: ترتيب فقط. أهم المهام (حتى ٣) تظهر أولًا في اليوم بعلامة هادئة؛ لا يغيّر جدولًا ولا هدفًا.
-  const priorityInfo = useMemo(() => {
-    const map = new Map<string, string>();
-    if (filter !== 'today') return map;
-    try {
-      if (!coachEntitled() || !(coachSettings?.globalEnabled || courseCoachOn(courseCoach, coachSettings))) return map;
-      let masteryRoot = null;
-      try { masteryRoot = loadMasteryState(); } catch { masteryRoot = null; }
-      const plan = buildSmartTodayPlan({
-        goals, tasks, wirds: wirds ?? [], courseCoach, coachSettings, prayers: prayers ?? {}, dayPlan, dayRecords,
-        taskSchedules, achievementLog, quranPassages: quranPassages ?? [], masteryRoot, now: new Date(),
-      });
-      for (const item of plan.recommended) if (!map.has(item.taskId)) map.set(item.taskId, item.priorityNote);
-    } catch { /* الترتيب الذكي اختياري */ }
-    return map;
-  }, [filter, goals, tasks, wirds, courseCoach, coachSettings, prayers, dayPlan, dayRecords, taskSchedules, achievementLog, quranPassages]);
-  const priorityIds = baseItems.filter(item => priorityInfo.has(item.id)).sort((a, b) => 0 + [...priorityInfo.keys()].indexOf(a.id) - [...priorityInfo.keys()].indexOf(b.id)).slice(0, 3).map(item => item.id);
+  // «الأقرب الآن» (النظام الذكي): أقرب ٣ مهام من الوقت الحالي، حية تتحدّث كل ٢٠ ثانية. ترتيب وعرض فقط.
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(Date.now()), 20000);
+    return () => window.clearInterval(id);
+  }, []);
+  const nextUpRows = useMemo(() => {
+    if (filter !== 'today') return [];
+    return buildNextUp(
+      baseItems.map(item => {
+        const sch = taskSchedules[item.id];
+        return {id: item.id, time: sch?.confirmedTime ?? sch?.initialTime ?? ''};
+      }),
+      new Date(clock),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, baseItems.map(i => i.id).join('|'), taskSchedules, clock]);
+  const nextUpById = new Map(nextUpRows.map(row => [row.id, row]));
+  const nextUpIds = nextUpRows.map(row => row.id);
   const allItems = [
-    ...priorityIds.map(id => baseItems.find(item => item.id === id)!),
-    ...baseItems.filter(item => !priorityIds.includes(item.id)),
+    ...nextUpIds.map(id => baseItems.find(item => item.id === id)!).filter(Boolean),
+    ...baseItems.filter(item => !nextUpById.has(item.id)),
   ];
 
   const source = (task: Task & {sourceLabel?: string}) =>
@@ -498,7 +490,7 @@ export default function TodayTasksView({
           <p className="muted">لا توجد مهام غير منجزة في هذا القسم.</p>
         ) : (
           <ul className="today-task-list">
-            {allItems.map(item => {
+            {allItems.map((item, index) => {
               const isGoal = 'goalId' in item;
               const itemSource = source(item as Task & {sourceLabel?: string});
               const schedule = taskSchedules[item.id];
@@ -514,7 +506,10 @@ export default function TodayTasksView({
                   hasSchedule,
               );
               return (
-                <li key={item.id} className="today-task-card">
+                <Fragment key={item.id}>
+                {nextUpIds.length > 0 && index === 0 && <li className="today-task-heading" aria-hidden="true">الأقرب الآن</li>}
+                {nextUpIds.length > 0 && index === nextUpIds.length && <li className="today-task-heading" aria-hidden="true">باقي مهام اليوم</li>}
+                <li className="today-task-card">
                   <div className="today-task-head">
                     <div className="today-task-info">
                       <strong className="today-task-title">{item.title}</strong>
@@ -523,9 +518,9 @@ export default function TodayTasksView({
                         <span aria-hidden="true">·</span>
                         <span>{itemSource}</span>
                       </span>
-                      {priorityIds.includes(item.id) && (
-                        <span className="today-task-priority" data-priority="true" title={priorityInfo.get(item.id) || 'أولوية اليوم'}>
-                          <Sparkles size={12} aria-hidden="true"/> أولوية اليوم
+                      {nextUpById.has(item.id) && (
+                        <span className={`today-task-nextup is-${nextUpById.get(item.id)!.state}`} data-nextup={nextUpById.get(item.id)!.state}>
+                          <Clock3 size={12} aria-hidden="true"/> {nextUpById.get(item.id)!.label}
                         </span>
                       )}
                     </div>
@@ -655,6 +650,7 @@ export default function TodayTasksView({
                     </div>
                   </div>
                 </li>
+                </Fragment>
               );
             })}
           </ul>

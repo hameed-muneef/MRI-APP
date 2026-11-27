@@ -46,11 +46,7 @@ test.describe('unified coach: course tasks',()=>{
     await page.reload();
     await expect.poll(async()=>(await read(page)).courseCoach?.log?.week).toEqual(['2026-11-30']);
     await openTasks(page);
-    // الترتيب الذكي داخل القائمة: لا كتلة اقتراحات منفصلة، وأولوية اليوم أولًا (حتى ٣) بنفس البطاقات
     await expect(page.locator('.coach-today')).toHaveCount(0);
-    const marked=page.locator('.today-task-card:has([data-priority="true"])');
-    expect(await marked.count()).toBeLessThanOrEqual(3);
-    await expect(page.locator('.today-task-card').first().locator('[data-priority="true"]')).toHaveCount(1);
     const box=await page.locator('.today-task-list').boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(400);
     await page.screenshot({path:'/tmp/coach-course.png'});
