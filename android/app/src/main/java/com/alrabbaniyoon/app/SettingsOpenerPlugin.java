@@ -75,6 +75,68 @@ public class SettingsOpenerPlugin extends Plugin {
         return intent;
     }
 
+
+    // ---------- أصوات التذكير المخصصة: تُنسخ إلى مساحة التطبيق، ولا تغادر الجهاز ----------
+
+    /** saveNativeCustomSound({key, base64, ext}) → {saved, soundKey} أو {saved:false, error}. */
+    @PluginMethod
+    public void saveNativeCustomSound(PluginCall call) {
+        JSObject ret = new JSObject();
+        String key = call.getString("key", "");
+        String ext = call.getString("ext", "");
+        String base64 = call.getString("base64", "");
+        if (!CustomSounds.isValidKey(key)) {
+            ret.put("saved", false);
+            ret.put("error", "invalid-key");
+            call.resolve(ret);
+            return;
+        }
+        if (!CustomSounds.isValidExt(ext)) {
+            ret.put("saved", false);
+            ret.put("error", "invalid-ext");
+            call.resolve(ret);
+            return;
+        }
+        byte[] bytes;
+        try {
+            bytes = android.util.Base64.decode(base64 == null ? "" : base64, android.util.Base64.DEFAULT);
+        } catch (Throwable t) {
+            ret.put("saved", false);
+            ret.put("error", "bad-base64");
+            call.resolve(ret);
+            return;
+        }
+        if (!CustomSounds.isValidSize(bytes.length)) {
+            ret.put("saved", false);
+            ret.put("error", "too-large");
+            call.resolve(ret);
+            return;
+        }
+        String soundKey = CustomSounds.write(getContext(), key, ext, bytes);
+        ret.put("saved", soundKey != null);
+        if (soundKey != null) ret.put("soundKey", soundKey);
+        else ret.put("error", "write-failed");
+        call.resolve(ret);
+    }
+
+    /** pruneNativeCustomSounds({keep: string[]}) → {removed}. لا يمسّ «حذف البيانات المحلية». */
+    @PluginMethod
+    public void pruneNativeCustomSounds(PluginCall call) {
+        JSObject ret = new JSObject();
+        List<String> keep = new ArrayList<>();
+        try {
+            JSArray array = call.getArray("keep");
+            if (array != null) {
+                for (int i = 0; i < array.length(); i++) {
+                    String name = array.optString(i, "");
+                    if (name != null && !name.isEmpty()) keep.add(name);
+                }
+            }
+        } catch (Throwable ignored) {}
+        ret.put("removed", CustomSounds.prune(getContext(), keep));
+        call.resolve(ret);
+    }
+
     @PluginMethod
     public void openAppSettings(PluginCall call) {
         JSObject ret = new JSObject();

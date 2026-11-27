@@ -53,21 +53,35 @@ public final class NativeReminderQueue {
         public final String channelId;
         /** وضع المنبه: الصوت يرنّ متكررًا حتى الإيقاف أو ستين ثانية (انظر {@link ReminderAlarmPolicy}). */
         public final boolean alarmMode;
+        /** صوت مخصص نُسخ إلى مساحة التطبيق: "<key>.<ext>"، أو null للصوت الافتراضي. */
+        public final String soundKey;
+        /** اسم ملف في res/raw بلا امتداد، أو null. */
+        public final String rawSound;
         /** Wall-clock fields {year, month(1-12), day, hour, minute, second} in {@link #zone}; null for absolute-instant items. */
         public final int[] wall;
         public final String zone;
         Item(int id, long atMs, String title, String body, String channelId) {
-            this(id, atMs, title, body, channelId, null, null, false);
+            this(id, atMs, title, body, channelId, null, null, false, null, null);
         }
         Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone) {
-            this(id, atMs, title, body, channelId, wall, zone, false);
+            this(id, atMs, title, body, channelId, wall, zone, false, null, null);
         }
         Item(int id, long atMs, String title, String body, String channelId, boolean alarmMode) {
-            this(id, atMs, title, body, channelId, null, null, alarmMode);
+            this(id, atMs, title, body, channelId, null, null, alarmMode, null, null);
         }
         Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone, boolean alarmMode) {
+            this(id, atMs, title, body, channelId, wall, zone, alarmMode, null, null);
+        }
+        Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone,
+             boolean alarmMode, String soundKey, String rawSound) {
             this.id = id; this.atMs = atMs; this.title = title; this.body = body; this.channelId = channelId;
             this.wall = wall; this.zone = zone; this.alarmMode = alarmMode;
+            this.soundKey = soundKey; this.rawSound = rawSound;
+        }
+
+        /** هل يحتاج هذا الصفّ خدمة تشغيل (منبه، أو صوت مخصص) بدل إشعار بصوت القناة؟ */
+        boolean needsPlayback() {
+            return alarmMode || (soundKey != null && !soundKey.isEmpty()) || (rawSound != null && !rawSound.isEmpty());
         }
     }
 
@@ -105,7 +119,8 @@ public final class NativeReminderQueue {
         String id = now.getID();
         for (Item it : items) {
             if (it.wall == null || it.zone == null || it.zone.equals(id)) { out.add(it); continue; }
-            out.add(new Item(it.id, instantOf(it.wall, now), it.title, it.body, it.channelId, it.wall, id, it.alarmMode));
+            out.add(new Item(it.id, instantOf(it.wall, now), it.title, it.body, it.channelId, it.wall, id, it.alarmMode,
+                it.soundKey, it.rawSound));
         }
         return out;
     }
@@ -134,7 +149,10 @@ public final class NativeReminderQueue {
                 if (wall == null || zone.isEmpty()) { wall = null; zone = null; }
                 // وضع المنبه اختياري: أي صفّ لا يذكره يبقى تنبيهًا عاديًا بصوت واحد.
                 boolean alarmMode = o.optBoolean("alarmMode", false);
-                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch, wall, zone, alarmMode));
+                String soundKey = o.optString("soundKey", "");
+                String rawSound = o.optString("rawSound", "");
+                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch, wall, zone, alarmMode,
+                    soundKey.isEmpty() ? null : soundKey, rawSound.isEmpty() ? null : rawSound));
             }
         } catch (JSONException ignored) {}
         return out;
@@ -166,6 +184,8 @@ public final class NativeReminderQueue {
         i.putExtra("body", it.body);
         i.putExtra("channelId", it.channelId);
         i.putExtra("alarmMode", it.alarmMode);
+        i.putExtra("soundKey", it.soundKey == null ? "" : it.soundKey);
+        i.putExtra("rawSound", it.rawSound == null ? "" : it.rawSound);
         return PendingIntent.getBroadcast(c, requestCode(it.id), i, flags | PendingIntent.FLAG_IMMUTABLE);
     }
 
@@ -244,13 +264,16 @@ public final class NativeReminderQueue {
     /** Pure: stamps a wall-clock item with the local fields of its instant in the zone the app planned it in (the device zone). */
     static Item withWall(Item it, String kind, TimeZone tz) {
         if (!followsWallClock(kind) || it.wall != null) return it;
-        return new Item(it.id, it.atMs, it.title, it.body, it.channelId, wallOf(it.atMs, tz), tz.getID(), it.alarmMode);
+        return new Item(it.id, it.atMs, it.title, it.body, it.channelId, wallOf(it.atMs, tz), tz.getID(), it.alarmMode,
+            it.soundKey, it.rawSound);
     }
 
     private static void putStored(JSONArray stored, Item it) throws JSONException {
         JSONObject o = new JSONObject();
         o.put("id", it.id); o.put("at", it.atMs); o.put("title", it.title); o.put("body", it.body); o.put("channelId", it.channelId);
         if (it.alarmMode) o.put("alarmMode", true);
+        if (it.soundKey != null && !it.soundKey.isEmpty()) o.put("soundKey", it.soundKey);
+        if (it.rawSound != null && !it.rawSound.isEmpty()) o.put("rawSound", it.rawSound);
         if (it.wall != null && it.zone != null) {
             JSONArray w = new JSONArray();
             for (int v : it.wall) w.put(v);
@@ -385,6 +408,8 @@ public final class NativeReminderQueue {
                     r.put("kind", kinds.get(idx)); r.put("id", it.id); r.put("at", it.atMs);
                     r.put("title", it.title); r.put("body", it.body); r.put("channelId", it.channelId);
                     if (it.alarmMode) r.put("alarmMode", true);
+                    if (it.soundKey != null && !it.soundKey.isEmpty()) r.put("soundKey", it.soundKey);
+                    if (it.rawSound != null && !it.rawSound.isEmpty()) r.put("rawSound", it.rawSound);
                     record.put(r);
                     armed++;
                 } catch (IllegalStateException limit) {
@@ -404,7 +429,8 @@ public final class NativeReminderQueue {
             for (int i = 0; i < rec.length(); i++) {
                 JSONObject r = rec.getJSONObject(i);
                 if (kind.equals(r.optString("kind"))) {
-                    Item it = new Item(r.optInt("id"), r.optLong("at"), r.optString("title"), r.optString("body"), r.optString("channelId", GENERAL_CHANNEL_ID), r.optBoolean("alarmMode", false));
+                    Item it = new Item(r.optInt("id"), r.optLong("at"), r.optString("title"), r.optString("body"), r.optString("channelId", GENERAL_CHANNEL_ID), null, null, r.optBoolean("alarmMode", false),
+                        r.optString("soundKey", null), r.optString("rawSound", null));
                     PendingIntent pi = pending(c, it, PendingIntent.FLAG_NO_CREATE);
                     if (am != null && pi != null) { am.cancel(pi); pi.cancel(); }
                 } else keep.put(r);
@@ -460,11 +486,19 @@ public final class NativeReminderQueue {
 
     /** Same, with the row's alarm mode: a marked row rings through {@link ReminderAlarmService} instead. */
     public static void onFire(Context c, int id, String title, String body, String channelId, boolean alarmMode) {
+        onFire(c, id, title, body, channelId, alarmMode, null, null);
+    }
+
+    /** Same, with the row's custom sound: a soundKey copied into app storage and/or a bundled raw name. */
+    public static void onFire(Context c, int id, String title, String body, String channelId, boolean alarmMode,
+                              String soundKey, String rawSound) {
         try {
             if (title == null || title.isEmpty()) return;
             String ch = channelId == null || channelId.isEmpty() || "al-rabbani-general".equals(channelId) ? GENERAL_CHANNEL_ID : channelId; // old queued items used the retired silent-prone channel
-            if (ReminderAlarmPolicy.isAlarmMode(alarmMode)) {
-                postAlarm(c, id, title, body == null ? "" : body);
+            boolean hasSound = (soundKey != null && !soundKey.isEmpty()) || (rawSound != null && !rawSound.isEmpty());
+            if (ReminderAlarmPolicy.isAlarmMode(alarmMode) || hasSound) {
+                // منبه، أو تذكير بصوت اختاره المستخدم: الصوت يشغّله التطبيق (حلقة للمنبه، مرة واحدة لغيره).
+                postWithSound(c, id, title, body == null ? "" : body, alarmMode, soundKey, rawSound);
             } else {
                 ensureChannel(c, ch);
                 post(c, id, ch, title, body == null ? "" : body);
@@ -479,12 +513,15 @@ public final class NativeReminderQueue {
      * وضع المنبه: الإشعار نفسه تنشئه الخدمة الأمامية بنفس معرّف الصف، فيبقى زرّا الإيقاف والتأجيل وقائمة
      * «ما يرنّ الآن» تعمل كما هي. إن رفض النظام تشغيل الخدمة رجعنا إلى تنبيه عادي بصوت واحد بدل تنبيه صامت.
      */
-    static void postAlarm(Context c, int id, String title, String body) {
+    static void postWithSound(Context c, int id, String title, String body, boolean alarmMode,
+                              String soundKey, String rawSound) {
         try {
             if (!androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
-            ensureChannel(c, ReminderAlarmPolicy.CHANNEL_ID);
+            if (alarmMode) ensureChannel(c, ReminderAlarmPolicy.CHANNEL_ID);
+            else CustomSounds.ensureCustomChannel(c);
             int snooze = snoozeMinutes(c);
-            if (!ReminderAlarmService.start(c, id, title, body, snooze)) {
+            if (!ReminderAlarmService.start(c, id, title, body, snooze, alarmMode, soundKey, rawSound)) {
+                // الخدمة لم تبدأ: إشعار عادي بصوت القناة، فلا يصمت التذكير.
                 post(c, id, GENERAL_CHANNEL_ID, title, body);
                 return;
             }
@@ -563,6 +600,12 @@ public final class NativeReminderQueue {
 
     /** Same, remembering the row's alarm mode so a snoozed alarm rings like an alarm again. */
     public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes, boolean alarmMode) {
+        armSnoozed(c, id, title, body, channelId, minutes, alarmMode, null, null);
+    }
+
+    /** Same, keeping the row's custom sound so a snoozed reminder rings with the same file. */
+    public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes,
+                                  boolean alarmMode, String soundKey, String rawSound) {
         long at = System.currentTimeMillis() + Math.max(1, minutes) * 60_000L;
         Intent i = new Intent(c, QueuedReminderReceiver.class).setAction(ACTION);
         i.putExtra("id", id);
@@ -570,6 +613,8 @@ public final class NativeReminderQueue {
         i.putExtra("body", body == null ? "" : body);
         i.putExtra("channelId", channelId == null || channelId.isEmpty() ? GENERAL_CHANNEL_ID : channelId);
         i.putExtra("alarmMode", alarmMode);
+        i.putExtra("soundKey", soundKey == null ? "" : soundKey);
+        i.putExtra("rawSound", rawSound == null ? "" : rawSound);
         PendingIntent pi = PendingIntent.getBroadcast(
             c,
             snoozeRequestCode(id),

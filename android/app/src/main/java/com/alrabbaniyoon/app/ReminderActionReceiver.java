@@ -30,6 +30,8 @@ public class ReminderActionReceiver extends BroadcastReceiver {
     public static final String EXTRA_BODY = "body";
     public static final String EXTRA_CHANNEL_ID = "channelId";
     public static final String EXTRA_SNOOZE_MINUTES = "snoozeMinutes";
+    public static final String EXTRA_SOUND_KEY = "soundKey";
+    public static final String EXTRA_RAW_SOUND = "rawSound";
 
     /** Matches the app's own "تأجيل ١٠ د" button on a personal reminder. */
     public static final int DEFAULT_SNOOZE_MINUTES = 10;
@@ -80,6 +82,21 @@ public class ReminderActionReceiver extends BroadcastReceiver {
         String channelId,
         int snoozeMinutes
     ) {
+        return actionIntent(context, action, notificationId, title, body, channelId, snoozeMinutes, null, null);
+    }
+
+    /** نفس الزرّ، مع صوت الصفّ المخصص حتى يبقى التأجيل بصوت المستخدم. */
+    static PendingIntent actionIntent(
+        Context context,
+        String action,
+        int notificationId,
+        String title,
+        String body,
+        String channelId,
+        int snoozeMinutes,
+        String soundKey,
+        String rawSound
+    ) {
         Intent intent = new Intent(context, ReminderActionReceiver.class);
         intent.setAction(action);
         intent.putExtra(EXTRA_ID, notificationId);
@@ -87,6 +104,8 @@ public class ReminderActionReceiver extends BroadcastReceiver {
         intent.putExtra(EXTRA_BODY, body == null ? "" : body);
         intent.putExtra(EXTRA_CHANNEL_ID, channelId == null ? "" : channelId);
         intent.putExtra(EXTRA_SNOOZE_MINUTES, snoozeMinutes);
+        intent.putExtra(EXTRA_SOUND_KEY, soundKey == null ? "" : soundKey);
+        intent.putExtra(EXTRA_RAW_SOUND, rawSound == null ? "" : rawSound);
         int slot = Math.abs(notificationId % 1_000_000);
         int requestCode = slot * 10 + (ACTION_SNOOZE.equals(action) ? 2 : 1);
         return PendingIntent.getBroadcast(

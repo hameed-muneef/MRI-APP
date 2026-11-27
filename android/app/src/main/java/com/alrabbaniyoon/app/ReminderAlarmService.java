@@ -40,6 +40,9 @@ public class ReminderAlarmService extends Service {
 
     public static final String ACTION_START = "com.alrabbaniyoon.app.action.START_REMINDER_ALARM";
     public static final String ACTION_STOP = "com.alrabbaniyoon.app.action.STOP_REMINDER_ALARM";
+    public static final String EXTRA_ALARM_MODE = "alarmMode";
+    public static final String EXTRA_SOUND_KEY = "soundKey";
+    public static final String EXTRA_RAW_SOUND = "rawSound";
 
     private static volatile boolean ringing = false;
 
@@ -81,7 +84,8 @@ public class ReminderAlarmService extends Service {
     }
 
     /** Starts the alarm for one reminder row. Returns false when the platform refuses, so the caller can fall back. */
-    public static boolean start(Context context, int notificationId, String title, String body, int snoozeMinutes) {
+    public static boolean start(Context context, int notificationId, String title, String body, int snoozeMinutes,
+                                boolean alarmMode, String soundKey, String rawSound) {
         try {
             Intent intent = new Intent(context, ReminderAlarmService.class);
             intent.setAction(ACTION_START);
@@ -89,6 +93,9 @@ public class ReminderAlarmService extends Service {
             intent.putExtra(ReminderActionReceiver.EXTRA_TITLE, title == null ? "" : title);
             intent.putExtra(ReminderActionReceiver.EXTRA_BODY, body == null ? "" : body);
             intent.putExtra(ReminderActionReceiver.EXTRA_SNOOZE_MINUTES, snoozeMinutes);
+            intent.putExtra(EXTRA_ALARM_MODE, alarmMode);
+            intent.putExtra(EXTRA_SOUND_KEY, soundKey == null ? "" : soundKey);
+            intent.putExtra(EXTRA_RAW_SOUND, rawSound == null ? "" : rawSound);
             ContextCompat.startForegroundService(context, intent);
             return true;
         } catch (Throwable t) {
@@ -127,9 +134,15 @@ public class ReminderAlarmService extends Service {
         if (body == null) body = "";
         int snoozeMinutes = intent.getIntExtra(ReminderActionReceiver.EXTRA_SNOOZE_MINUTES, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES);
 
+        boolean alarmMode = intent.getBooleanExtra(EXTRA_ALARM_MODE, false);
+        String soundKey = intent.getStringExtra(EXTRA_SOUND_KEY);
+        String rawSound = intent.getStringExtra(EXTRA_RAW_SOUND);
+        String channelId = alarmMode ? ReminderAlarmPolicy.CHANNEL_ID : CustomSounds.CUSTOM_CHANNEL_ID;
+
         // Must enter foreground before anything else on API 26+/34+, exactly like the adhan service.
-        NativeReminderQueue.ensureChannel(this, ReminderAlarmPolicy.CHANNEL_ID);
-        Notification notification = buildAlarmNotification(id, title, body, snoozeMinutes);
+        if (alarmMode) NativeReminderQueue.ensureChannel(this, ReminderAlarmPolicy.CHANNEL_ID);
+        else CustomSounds.ensureCustomChannel(this);
+        Notification notification = buildAlarmNotification(id, title, body, snoozeMinutes, channelId, soundKey, rawSound);
         int fgsType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
             ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
             : 0;
@@ -141,11 +154,12 @@ public class ReminderAlarmService extends Service {
             return START_NOT_STICKY;
         }
 
-        startRinging();
+        startRinging(alarmMode, soundKey, rawSound);
         return START_NOT_STICKY;
     }
 
-    private Notification buildAlarmNotification(int id, String title, String body, int snoozeMinutes) {
+    private Notification buildAlarmNotification(int id, String title, String body, int snoozeMinutes, String channelId,
+                                                String soundKey, String rawSound) {
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent contentPi = PendingIntent.getActivity(
@@ -156,7 +170,7 @@ public class ReminderAlarmService extends Service {
         PendingIntent deletePi = PendingIntent.getService(
             this, id, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, ReminderAlarmPolicy.CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
             .setColor(Color.parseColor("#D4B678"))
             .setContentTitle(title)
@@ -169,17 +183,28 @@ public class ReminderAlarmService extends Service {
             .setContentIntent(contentPi)
             .setDeleteIntent(deletePi);
         builder.addAction(0, "إيقاف", ReminderActionReceiver.actionIntent(
-            this, ReminderActionReceiver.ACTION_STOP, id, title, body, ReminderAlarmPolicy.CHANNEL_ID, 0));
+            this, ReminderActionReceiver.ACTION_STOP, id, title, body, channelId, 0, soundKey, rawSound));
         builder.addAction(0, "تأجيل " + NativeReminderQueue.arabicDigits(snoozeMinutes) + " د", ReminderActionReceiver.actionIntent(
-            this, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, ReminderAlarmPolicy.CHANNEL_ID, snoozeMinutes));
+            this, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, snoozeMinutes, soundKey, rawSound));
         return builder.build();
     }
 
-    private void startRinging() {
+    /**
+     * صوت الصفّ: ملف المستخدم إن وُجد، ثم ملف res/raw المذكور، ثم الصوت المدمج.
+     * وضع المنبه يكرّر الصوت حتى الإيقاف أو ستين ثانية؛ تذكير بصوت مخصص يشغّله مرة واحدة.
+     */
+    private void startRinging(boolean loops, String soundKey, String rawSound) {
         releasePlayerAndLocks();
-        int resId = getResources().getIdentifier(ReminderAlarmPolicy.RAW_SOUND, "raw", getPackageName());
-        if (resId == 0) {
-            Logger.warn("ReminderAlarmService", "No bundled alarm tone; the channel notification is all that rings.");
+        String userPath = CustomSounds.pathFor(this, soundKey);
+        String raw = CustomSounds.sanitizeRawSound(rawSound);
+        int resId = userPath != null
+            ? 1
+            : getResources().getIdentifier(raw.isEmpty() ? ReminderAlarmPolicy.RAW_SOUND : raw, "raw", getPackageName());
+        if (userPath == null && resId == 0) {
+            resId = getResources().getIdentifier(ReminderAlarmPolicy.RAW_SOUND, "raw", getPackageName());
+        }
+        if (userPath == null && resId == 0) {
+            Logger.warn("ReminderAlarmService", "No playable sound; the notification is all that rings.");
             handler.postDelayed(watchdogStop, ReminderAlarmPolicy.ringDurationMs());
             return;
         }
@@ -190,7 +215,10 @@ public class ReminderAlarmService extends Service {
         handler.removeCallbacks(watchdogStop);
         handler.postDelayed(watchdogStop, ReminderAlarmPolicy.ringDurationMs());
 
-        Uri uri = Uri.parse("android.resource://" + getPackageName() + "/raw/" + ReminderAlarmPolicy.RAW_SOUND);
+        // ملف المستخدم من مساحته الخاصة، وإلا الصوت من res/raw
+        Uri uri = userPath != null
+            ? Uri.fromFile(new java.io.File(userPath))
+            : Uri.parse("android.resource://" + getPackageName() + "/raw/" + (raw.isEmpty() ? ReminderAlarmPolicy.RAW_SOUND : raw));
         MediaPlayer player = new MediaPlayer();
         mediaPlayer = player;
         ringing = true;
@@ -202,7 +230,8 @@ public class ReminderAlarmService extends Service {
             player.setAudioAttributes(attrs);
             player.setVolume(1.0f, 1.0f);
             player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-            player.setLooping(ReminderAlarmPolicy.loopsSound(true));
+            player.setLooping(ReminderAlarmPolicy.loopsSound(loops));
+            if (!loops) player.setOnCompletionListener(mp -> stopAlarm());
             player.setDataSource(getApplicationContext(), uri);
             player.setOnErrorListener((mp, what, extra) -> {
                 Logger.error("ReminderAlarmService", "MediaPlayer error what=" + what + " extra=" + extra, null);

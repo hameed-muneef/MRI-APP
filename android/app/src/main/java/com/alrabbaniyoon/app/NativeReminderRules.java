@@ -41,6 +41,8 @@ public final class NativeReminderRules {
         boolean quietOn;
         /** وضع المنبه لهذا التذكير: الأحداث المولَّدة ترنّ كمنبه. غائب = تنبيه عادي. */
         boolean alarmMode;
+        /** صوت المستخدم المخصص ("<key>.<ext>") وملف res/raw، إن اختارهما. غائب = الصوت الافتراضي. */
+        String soundKey, rawSound;
         long baseMs, snoozeMs, frontierMs;
     }
 
@@ -68,6 +70,8 @@ public final class NativeReminderRules {
                 if (r.start != null && parseYmd(r.start) == null) continue;
                 if (r.end != null && parseYmd(r.end) == null) r.end = null;
                 r.alarmMode = o.optBoolean("alarmMode", false);
+                r.soundKey = o.optString("soundKey", "");
+                r.rawSound = o.optString("rawSound", "");
                 r.quietOn = o.optBoolean("quietOn", false);
                 r.quietStart = o.optString("quietStart", "");
                 r.quietEnd = o.optString("quietEnd", "");
@@ -211,7 +215,10 @@ public final class NativeReminderRules {
             if (at <= nowMs + 1000) continue;
             if (r.snoozeMs > 0 && at <= r.snoozeMs && r.snoozeMs - at <= 60L * 60 * 1000) continue;
             if (quiet(r, at, tz)) continue;
-            out.add(new NativeReminderQueue.Item(idOf(r.rid, at), at, r.title, r.body, r.channelId, r.alarmMode));
+            out.add(new NativeReminderQueue.Item(idOf(r.rid, at), at, r.title, r.body, r.channelId, null, null,
+                r.alarmMode,
+                r.soundKey == null || r.soundKey.isEmpty() ? null : r.soundKey,
+                r.rawSound == null || r.rawSound.isEmpty() ? null : r.rawSound));
         }
         return out;
     }
