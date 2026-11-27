@@ -209,7 +209,7 @@ public class ReminderAlarmService extends Service {
             return;
         }
         acquireWakeLock();
-        requestAudioFocus();
+        requestAudioFocus(loops);
         registerScreenReceiver();
 
         handler.removeCallbacks(watchdogStop);
@@ -225,7 +225,7 @@ public class ReminderAlarmService extends Service {
         try {
             AudioAttributes attrs = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(loops ? AudioAttributes.USAGE_ALARM : AudioAttributes.USAGE_NOTIFICATION)
                 .build();
             player.setAudioAttributes(attrs);
             player.setVolume(1.0f, 1.0f);
@@ -254,13 +254,13 @@ public class ReminderAlarmService extends Service {
         wakeLock.acquire(ReminderAlarmPolicy.ringDurationMs() + 5_000L);
     }
 
-    private void requestAudioFocus() {
+    private void requestAudioFocus(boolean alarmStream) {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AudioAttributes attrs = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(alarmStream ? AudioAttributes.USAGE_ALARM : AudioAttributes.USAGE_NOTIFICATION)
                 .build();
             focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(attrs)
@@ -270,7 +270,9 @@ public class ReminderAlarmService extends Service {
         } else {
             @SuppressWarnings("deprecation")
             int res = audioManager.requestAudioFocus(
-                focusChangeListener, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                focusChangeListener,
+                alarmStream ? AudioManager.STREAM_ALARM : AudioManager.STREAM_NOTIFICATION,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
             hasAudioFocus = res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
         }
     }
