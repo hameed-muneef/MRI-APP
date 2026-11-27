@@ -610,9 +610,10 @@ html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
 #root .app .notif-panel {
   position: fixed !important;
   top: 64px;
+  /* توسيط فيزيائي صريح: `inset-inline: auto` كان يصفّر `left` في RTL فيخرج
+     لوح الإشعارات خارج الشاشة تمامًا (نفس علة شريط الصوت المصغّر أدناه). */
   left: 50%;
   right: auto;
-  inset-inline: auto;
   transform: translateX(-50%);
   width: min(456px, calc(100vw - 20px));
   max-height: calc(100dvh - 144px);
