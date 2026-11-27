@@ -94,6 +94,7 @@ function sanitizeReminder(value: unknown): Reminder | null {
     linked_goal_id: item.linked_goal_id,
     linked_task_id: item.linked_task_id,
     enabled: item.enabled !== false,
+    ...(item.alarm_mode === true ? {alarm_mode: true} : {}),
     snooze_until: typeof item.snooze_until === 'string' ? item.snooze_until : null,
     created_at: typeof item.created_at === 'string' ? item.created_at : new Date().toISOString(),
     updated_at: typeof item.updated_at === 'string' ? item.updated_at : new Date().toISOString(),

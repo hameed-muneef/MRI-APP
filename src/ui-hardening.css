@@ -3921,3 +3921,21 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   max-width: 100%;
   white-space: normal;
 }
+
+/* نمط منبه: مربع اختيار وعنوانه في صف واحد */
+#root .app .notif-reminder-form label.notif-alarm-mode,
+#root .app .today-task-alarm-mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+}
+#root .app .notif-reminder-form label.notif-alarm-mode input,
+#root .app .today-task-alarm-mode input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 0;
+}
