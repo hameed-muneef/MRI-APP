@@ -44,3 +44,25 @@ for (const theme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `/tmp/shots/nextup-${theme}-1935.png` });
   });
 }
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`home: live nearest-now rows, order and completion (${theme})`, async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-11-27T19:00:00+02:00') });
+    await page.addInitScript(t => localStorage.setItem('rabbani-theme-v1', t), theme);
+    await page.goto('/');
+    await expect.poll(() => page.evaluate(() => Boolean(localStorage.getItem('rabbani-v1')))).toBe(true);
+    await page.evaluate(seed);
+    await page.reload();
+    const card = page.locator('.home-today-list');
+    await expect(card.locator('.home-tasks-row')).toHaveCount(3);
+    await expect(card.locator('.home-tasks-row').nth(0)).toContainText('مهمة أ');
+    await expect(card.locator('.home-tasks-row').nth(0)).toContainText('بعد ٣٠ د');
+    await expect(card.locator('.home-tasks-row').nth(2)).toContainText('مهمة ج');
+    await card.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `/tmp/shots/home-nextup-${theme}.png` });
+    await page.clock.runFor('35:00');
+    await expect(card.locator('.home-tasks-row').nth(0)).toContainText('متأخرة ٥ د');
+    await card.click();
+    await expect(page.locator('.today-task-card').first()).toBeVisible();
+  });
+}

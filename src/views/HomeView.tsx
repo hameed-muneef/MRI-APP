@@ -6,7 +6,9 @@ import type {CoachSettings} from '../coach/types';
 import {type PrayerLocation} from '../prayer-location';
 import {hijriDate} from '../hijri';
 import HomeDashboard from './HomeDashboard';
-import {nearestTasks,planStepsToday} from '../home-tasks';
+import {nearestTasks,planStepsToday,type HomeTask} from '../home-tasks';
+import {buildNextUp} from '../next-up';
+import {useEffect,useState} from 'react';
 import type {DayPlan} from '../DayPlanner';
 import {localDateKey,type DayRecords} from '../day-tracking';
 import {type SectionId} from '../section-theme';
@@ -32,11 +34,21 @@ export default function HomeView({navigate,admin=false,prayers={},prayerLocation
   const dateObj = currentDate ? new Date(`${currentDate}T12:00:00`) : new Date();
   const hijri = hijriDate(dateObj);
   const gregorian = new Intl.DateTimeFormat('ar-EG', {weekday:'long', day:'numeric', month:'long'}).format(dateObj);
-  const now = new Date();
+  const [clock,setClock]=useState(()=>Date.now());
+  useEffect(()=>{const id=window.setInterval(()=>setClock(Date.now()),20000);return()=>window.clearInterval(id)},[]);
+  const now = new Date(clock);
   const todayKey = now.toLocaleDateString('en-CA');
   const tomorrowKey = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toLocaleDateString('en-CA');
   const doneStepIds=new Set((dayRecords?.[localDateKey(now)]?.items??[]).filter(item=>item.status==='done').map(item=>item.id));
-  const upcomingTasks = nearestTasks(tasks, taskSchedules, prayers, now, 3, planStepsToday(dayPlan, prayers, now, doneStepIds));
+  // «الأقرب الآن»: أقرب ٣ مهام مفتوحة من الوقت الحالي، تتحدّث كل ٢٠ ثانية. عرض فقط.
+  const candidates = nearestTasks(tasks, taskSchedules, prayers, now, 60, planStepsToday(dayPlan, prayers, now, doneStepIds));
+  const todayCands = candidates.filter(t => t.date === todayKey && !t.overdue);
+  const ranked = buildNextUp(todayCands.map(t => ({id: t.id, time: t.time})), now, 3).map(r => ({row: r, task: todayCands.find(t => t.id === r.id)!}));
+  const rest = candidates.filter(t => !ranked.some(r => r.task.id === t.id));
+  const upcomingTasks: (HomeTask & {live?: string; liveState?: string})[] = [
+    ...ranked.map(r => ({...r.task, live: r.row.state === 'untimed' ? undefined : r.row.label, liveState: r.row.state})),
+    ...rest,
+  ].slice(0, 3);
   return <>
     <div className="home-date-bar" aria-label="تاريخ اليوم">
       <CalendarDays size={16} aria-hidden="true"/>
@@ -48,7 +60,7 @@ export default function HomeView({navigate,admin=false,prayers={},prayerLocation
     <section className="hero"><div className="hero-pattern"/><div className="hero-content"><span className="hero-tag"><Flower2 size={15}/> بسم الله الرحمن الرحيم</span><p className="hero-copy hero-ayah"><span className="hero-ayah-text">﴿يَٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُواْ ٱصۡبِرُواْ وَصَابِرُواْ وَرَابِطُواْ وَٱتَّقُواْ ٱللَّهَ لَعَلَّكُمۡ تُفۡلِحُونَ﴾</span><span className="hero-ayah-ref">آل عمران: ٢٠٠</span></p><button className="hero-btn" onClick={()=>navigate('day')}>ابدأ يومك <ArrowRight size={18}/></button></div><div className="hero-art"><div className="arch"><BookOpen size={64} strokeWidth={1.1}/><span>وَكُونُوا رَبَّانِيِّينَ</span></div></div></section>
     <HomeDashboard prayers={prayers} prayerLocation={prayerLocation} navigate={navigate}/>
     <button className="home-today-entry home-achievement-entry" data-section="journey" data-view="achievement" onClick={()=>navigate('achievement')}><span className="home-tasks-head"><span className="home-today-icon"><Trophy size={19} aria-hidden="true"/></span><span><strong>الإنجاز</strong><small>القرآن، السنة، الأهداف، الأذكار، الصلاة</small></span></span><ChevronLeft size={18} aria-hidden="true"/></button>
-    <button className="home-today-entry home-today-list" onClick={()=>navigate('tasks')}><span className="home-tasks-head"><span className="home-today-icon"><CalendarClock size={19} aria-hidden="true"/></span><strong>مهام اليوم</strong></span>{upcomingTasks.length===0?<small className="home-tasks-empty">اليوم · غدًا · المهام المتأخرة</small>:<ul className="home-tasks-rows">{upcomingTasks.map(task=><li key={task.id} className={task.overdue?'home-tasks-row home-tasks-row-overdue':'home-tasks-row'}><span className="home-task-dot" aria-hidden="true"/><span className="home-task-name">{task.title}</span><span className={task.overdue?'home-task-meta home-task-overdue':'home-task-meta'}>{homeTaskWhen(task.date, task.overdue, todayKey, tomorrowKey)}{task.time?` ${timeFmt.format(new Date(`${task.date}T${task.time}:00`))}`:''}</span></li>)}</ul>}<span className="home-tasks-all">عرض كل المهام <ArrowLeft size={15} aria-hidden="true"/></span></button>
+    <button className="home-today-entry home-today-list" onClick={()=>navigate('tasks')}><span className="home-tasks-head"><span className="home-today-icon"><CalendarClock size={19} aria-hidden="true"/></span><strong>مهام اليوم</strong></span>{upcomingTasks.length===0?<small className="home-tasks-empty">اليوم · غدًا · المهام المتأخرة</small>:<ul className="home-tasks-rows">{upcomingTasks.map(task=><li key={task.id} className={task.overdue?'home-tasks-row home-tasks-row-overdue':'home-tasks-row'}><span className="home-task-dot" aria-hidden="true"/><span className="home-task-name">{task.title}</span><span className={task.overdue?'home-task-meta home-task-overdue':'home-task-meta'}>{homeTaskWhen(task.date, task.overdue, todayKey, tomorrowKey)}{task.time?` ${timeFmt.format(new Date(`${task.date}T${task.time}:00`))}`:''}{task.live&&<b className={`home-task-live is-${task.liveState}`} data-nextup={task.liveState}> · {task.live}</b>}</span></li>)}</ul>}<span className="home-tasks-all">عرض كل المهام <ArrowLeft size={15} aria-hidden="true"/></span></button>
     {admin&&<a className="home-admin-entry" href="/admin"><span className="home-admin-icon"><ShieldCheck size={22}/></span><span><strong>لوحة الإدارة</strong><small>إدارة المنهج والموارد</small></span><ChevronLeft size={18}/></a>}
     <div className="section-title"><div><span className="eyebrow">تنظيم الحياة</span><h2>حياتي مع الله</h2><p>اجعل العبادة والعمل والأسرة والتعلم في خطة متوازنة.</p></div></div>
     <div className="feature-grid">{menu.map(m=><button key={m.id} data-section={m.section} data-view={m.id} className="feature-card" onClick={()=>navigate(m.id)}><span className="feature-icon"><m.icon size={22} aria-hidden="true"/></span><span className="feature-copy"><strong>{m.title}</strong><span>{m.desc}</span></span><ChevronLeft className="feature-arrow" size={18} aria-hidden="true"/></button>)}</div>

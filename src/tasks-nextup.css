@@ -8,3 +8,8 @@
 [data-theme="dark"] .today-task-nextup{background:rgba(70,192,159,.16);color:#8FE0C4;border-color:rgba(70,192,159,.4)}
 [data-theme="dark"] .today-task-nextup.is-soon,[data-theme="dark"] .today-task-nextup.is-now{background:rgba(232,203,139,.18);color:#E8CB8B;border-color:rgba(232,203,139,.5)}
 [data-theme="dark"] .today-task-nextup.is-late{background:rgba(240,120,100,.16);color:#FFB3A6;border-color:rgba(240,120,100,.45)}
+.home-task-live{font-weight:800}
+.home-task-live.is-late{color:#9B3427}
+.home-task-live.is-soon,.home-task-live.is-now{color:#8A6A1F}
+[data-theme="dark"] .home-task-live.is-late{color:#FFB3A6}
+[data-theme="dark"] .home-task-live.is-soon,[data-theme="dark"] .home-task-live.is-now{color:#E8CB8B}
