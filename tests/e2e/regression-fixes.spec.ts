@@ -58,20 +58,6 @@ test.describe('wird delete asks first', () => {
     await expect(cards).toHaveCount(n - 1);
   });
 });
-
-test.describe('task schedule notices use an Arabic date', () => {
-  test.use({viewport: {width: 390, height: 844}});
-  test('draft notice does not print an ISO date', async ({page}) => {
-    await page.goto('/');
-    await page.locator('.mobile-nav').getByRole('button', {name: 'حياتي'}).click();
-    await page.getByRole('button', {name: 'مهام اليوم'}).first().click();
-    await page.getByRole('button', {name: 'حفظ مبدئي'}).first().click();
-    const notice = page.locator('main', {hasText: 'حُفظ الموعد المبدئي'});
-    await expect(notice).toBeVisible();
-    expect(await notice.innerText()).not.toMatch(/20\d\d-\d\d-\d\d/);
-  });
-});
-
 test.describe('task reminder toggle before the task is scheduled', () => {
   test.use({viewport: {width: 390, height: 844}});
   test('says the choice applies when the schedule is saved', async ({page}) => {

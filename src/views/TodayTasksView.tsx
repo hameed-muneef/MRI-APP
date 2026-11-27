@@ -35,11 +35,6 @@ const LEAD_OPTIONS = [
   {value: 60, label: 'قبل ساعة', fullLabel: 'قبل ساعة (60 د)'},
 ];
 
-const arabicDate = (date: string) => {
-  const value = new Date(`${date}T12:00:00`);
-  return Number.isNaN(value.getTime()) ? date : new Intl.DateTimeFormat('ar-EG', {day: 'numeric', month: 'long', year: 'numeric'}).format(value);
-};
-
 const dateAfter = (date: string, days: number) => {
   const value = new Date(`${date}T12:00:00`);
   value.setDate(value.getDate() + days);
@@ -294,7 +289,7 @@ export default function TodayTasksView({
       },
     });
     notifyNativePrefsChanged();
-    setNotice(`حُفظ الموعد المبدئي لـ «${title}» بتاريخ ${arabicDate(date)} الساعة ${timeOfDayClock12(time)}. لم يُعتمد بعد.`);
+    setNotice(`حُفظ الموعد المبدئي لـ «${title}» بتاريخ ${date} الساعة ${timeOfDayClock12(time)}. لم يُعتمد بعد.`);
   };
 
   const confirmSchedule = (id: string, title: string, sourceLabel: string) => {
@@ -320,7 +315,7 @@ export default function TodayTasksView({
       },
     });
     notifyNativePrefsChanged();
-    setNotice(`تم تأكيد «${title}» ليوم ${arabicDate(date)} الساعة ${timeOfDayClock12(time)}.`);
+    setNotice(`تم تأكيد «${title}» ليوم ${date} الساعة ${timeOfDayClock12(time)}.`);
   };
 
   const toggleItemNotify = (id: string, title: string) => {
@@ -495,19 +490,19 @@ export default function TodayTasksView({
                       {'scheduledDate' in item && item.scheduledDate && (
                         <span className="today-task-meta-item">
                           <Clock3 size={13} aria-hidden="true"/>
-                          <span>الاستحقاق: {arabicDate(item.scheduledDate)}</span>
+                          <span>الاستحقاق: {item.scheduledDate}</span>
                         </span>
                       )}
                       {schedule?.confirmedDate && (
                         <span className="today-task-meta-item is-confirmed">
                           <CalendarClock size={13} aria-hidden="true"/>
-                          <span>مؤكد: {arabicDate(schedule.confirmedDate)}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</span>
+                          <span>مؤكد: {schedule.confirmedDate}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</span>
                         </span>
                       )}
                       {!schedule?.confirmedDate && schedule?.initialDate && (
                         <span className="today-task-meta-item">
                           <CalendarClock size={13} aria-hidden="true"/>
-                          <span>مبدئي: {arabicDate(schedule.initialDate)}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</span>
+                          <span>مبدئي: {schedule.initialDate}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</span>
                         </span>
                       )}
                       {hasSchedule && (
