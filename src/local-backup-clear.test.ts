@@ -87,6 +87,15 @@ describe('clearLocalData', () => {
     expect(store.has('rabbani-quran-offline-audio-v1')).toBe(true);
   });
 
+  it('throws when a key cannot be removed, so the screen can show a failure', () => {
+    const store = installMockWindow({'rabbani-v1': '{}', 'rabbani-theme-v1': 'dark'});
+    const w = (globalThis as unknown as {window: {localStorage: {removeItem: (k: string) => void}}}).window;
+    const original = w.localStorage.removeItem;
+    w.localStorage.removeItem = (k: string) => { if (k === 'rabbani-v1') throw new Error('quota'); original(k); };
+    expect(() => clearLocalData()).toThrow();
+    expect(store.has('rabbani-theme-v1')).toBe(false);
+  });
+
   it('does nothing when there is no window storage', () => {
     delete (globalThis as unknown as { window?: unknown }).window;
     expect(clearLocalData()).toEqual([]);

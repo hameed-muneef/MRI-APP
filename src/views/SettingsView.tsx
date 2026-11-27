@@ -273,7 +273,13 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
 
   const reset = () => {
     // «حذف البيانات المحلية» يمسح كل ما تشمله النسخة الاحتياطية، لا حالة التطبيق وحدها.
-    clearLocalData();
+    try {
+      clearLocalData();
+    } catch {
+      setConfirmReset(false);
+      notify('تعذر حذف كل البيانات المحلية. أعد المحاولة أو أعد تشغيل التطبيق.');
+      return;
+    }
     onReplace(createSeed());
     applyTheme(readAppearance(null));
     notifyNativePrefsChanged();
@@ -427,7 +433,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
               </button>
             ) : (
               <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف البيانات المحلية">
-                <p className="small">هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
+                <p className="small">سيُحذف كل ما حفظه التطبيق من بياناتك على هذا الجهاز. تبقى بيانات القرآن والتلاوات المحمّلة للقراءة دون اتصال. يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
                 <div className="settings-confirm-actions">
                   <button type="button" className="outline-danger" onClick={reset}>تأكيد الحذف النهائي</button>
                   <button type="button" className="soft-btn" onClick={() => setConfirmReset(false)}>إلغاء</button>

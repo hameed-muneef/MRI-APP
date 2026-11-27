@@ -111,16 +111,21 @@ export function clearLocalData(): string[] {
   const removed: string[] = [];
   if (typeof window === 'undefined' || !window.localStorage) return removed;
   const keys: string[] = [];
+  let failed = false;
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i);
       if (key && key.startsWith('rabbani-') && !KEEP_KEYS.has(key)) keys.push(key);
     }
-    for (const key of keys) {
+  } catch { failed = true; }
+  for (const key of keys) {
+    try {
       window.localStorage.removeItem(key);
       removed.push(key);
-    }
-  } catch { /* التخزين قد يكون مقفولًا — لا نُسقط الشاشة */ }
+    } catch { failed = true; }
+  }
+  // لا نُخفي الفشل: المستدعي يعرض حالة الخطأ بدل رسالة نجاح.
+  if (failed) throw new Error('local-data-clear-failed');
   return removed;
 }
 
