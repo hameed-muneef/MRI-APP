@@ -3939,3 +3939,85 @@ html[data-theme="dark"] #root .app main[data-section="quran"] .azkar-page .azkar
   flex: none;
   margin: 0;
 }
+
+/* استيراد التذكيرات من ملف: لوحة مراجعة بنمط منبه أو تنبيه لكل صفّ */
+#root .app .notif-import {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--line, rgba(120, 120, 120, 0.25));
+  background: var(--panel, rgba(255, 255, 255, 0.04));
+}
+#root .app .notif-import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#root .app .notif-import-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+}
+#root .app .notif-import-mode {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+#root .app .notif-import-mode select {
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 12px;
+  max-width: 100%;
+}
+#root .app .notif-import-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+#root .app .notif-import-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(120, 120, 120, 0.08);
+  font-size: 13px;
+}
+#root .app .notif-import-row.duplicate,
+#root .app .notif-import-row.invalid {
+  opacity: 0.7;
+}
+#root .app .notif-import-title {
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#root .app .notif-import-note {
+  font-size: 12px;
+  color: var(--muted, #8b8b8b);
+}
+#root .app .notif-import-toggle[aria-pressed="true"] {
+  border-color: #d4b678;
+  color: #d4b678;
+}
+#root .app .notif-import-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#root .app .notif-import-input {
+  display: none;
+}
