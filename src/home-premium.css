@@ -158,3 +158,4 @@ html #root .app .home-task-live, html #root .app .home-task-live b { font-weight
 html #root .app .hero .hero-btn { font-weight: 700; }
 html #root .app .mobile-nav button { font-size: 12px; font-weight: 600; }
 html:root #root .app.app main.main .home-dashboard .home-next-chevron, html:root #root .app.app main.main .home-today-entry > svg { color: var(--hm-text-muted) !important; }
+html #root .app .home-task-live { white-space: nowrap; display: inline-block; }
