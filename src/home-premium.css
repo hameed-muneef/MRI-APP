@@ -197,3 +197,9 @@ html:root { --font-body: 'Cairo', Tajawal, Arial, sans-serif; --font-heading: 'C
 html[data-theme="dark"]:root:root .mf-marker { color: #E2C06E; }
 html[data-theme="dark"]:root:root #root .app .soft-btn { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; color: #F3EFE4 !important; }
 html[data-theme="dark"]:root:root #root .app .mf-btn { background: #2A725E !important; border-color: #2A725E !important; color: #F3EFE4 !important; }
+
+/* Form controls and native dropdown lists use the palette tokens */
+html:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=range]), html:root:root #root select, html:root:root #root textarea { color: var(--hm-text); background-color: var(--hm-surface) !important; }
+html:root:root select option, html:root:root select optgroup { color: var(--hm-text); background-color: var(--hm-surface); font-family: Cairo, Tajawal, Arial, sans-serif; }
+html[data-theme="dark"]:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=range]), html[data-theme="dark"]:root:root #root select, html[data-theme="dark"]:root:root #root textarea { background-color: var(--hm-bg) !important; }
+html[data-theme="dark"]:root:root select option, html[data-theme="dark"]:root:root select optgroup { background-color: var(--hm-surface); color: #F3EFE4; }
