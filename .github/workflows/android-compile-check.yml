@@ -56,4 +56,7 @@ jobs:
           chmod +x android/gradlew
           ./android/gradlew -p android :app:compileDebugJavaWithJavac --no-daemon --stacktrace
       - name: Run native JUnit tests
-        run: ./android/gradlew -p android :app:testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          node scripts/gen-native-plan-parity.cjs
+          node scripts/gen-recurrence-parity.cjs
+          ./android/gradlew -p android :app:testDebugUnitTest --no-daemon --stacktrace
