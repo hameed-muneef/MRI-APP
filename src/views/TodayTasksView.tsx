@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
@@ -65,7 +65,7 @@ type Props = {
   onCourseCoach?: (coach: CourseCoach) => void;
   onCoachSettings?: (settings: CoachSettings) => void;
   onCompleteWird?: (wirdId: string) => void;
-  onCompletePlanDay?: (task: Task) => void;
+  onCompletePlanDay?: (task: Task) => Promise<'advanced' | 'stale' | 'failed'>;
   onUpdateWird?: (wird: WirdWithCoach) => void;
   onOpenQuran?: () => void;
   onOpenWirds?: () => void;
@@ -250,16 +250,51 @@ export default function TodayTasksView({
 
   // مقرر خطة الحفظ أو مهمة تسميع: الإنجاز اليدوي يقدّم الخطة ويسجّل الإنجاز، فيُطلب تأكيد بدل التراجع.
   const needsConfirm = (task: Task) => task.plan?.kind === 'day' || Boolean(task.hifz);
+  const confirmTriggerRef = useRef<HTMLElement | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const confirmBoxRef = useRef<HTMLDivElement | null>(null);
   const requestComplete = (task: Task) => {
-    if (needsConfirm(task)) {setConfirmDone(task); setNotice(''); return;}
+    if (needsConfirm(task)) {
+      confirmTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setUndo(null);
+      setConfirmDone(task);
+      setNotice('');
+      return;
+    }
     complete(task);
   };
-  const confirmComplete = (task: Task) => {
+  const closeConfirm = () => {
     setConfirmDone(null);
-    if (task.plan?.kind === 'day') onCompletePlanDay?.(task);
-    onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
+    const trigger = confirmTriggerRef.current;
+    confirmTriggerRef.current = null;
+    if (trigger && trigger.isConnected) trigger.focus();
+  };
+  useEffect(() => {
+    if (!confirmDone) return;
+    confirmBoxRef.current?.scrollIntoView({block: 'center'});
+    confirmButtonRef.current?.focus();
+  }, [confirmDone]);
+  const confirmComplete = async (task: Task) => {
+    setConfirmDone(null);
+    setUndo(null);
+    confirmTriggerRef.current = null;
+    if (task.plan?.kind === 'day') {
+      const result = onCompletePlanDay ? await onCompletePlanDay(task) : 'failed';
+      if (result === 'stale') {
+        setNotice(`لم يتغيّر شيء: «${task.title}» لم يعد مقرر اليوم الحالي في الخطة.`);
+        return;
+      }
+      if (result === 'failed') {
+        setNotice('تعذّر تقديم الخطة، فلم يتغيّر شيء. حاول مرة أخرى.');
+        return;
+      }
+    }
+    // مهمة مقرر اليوم تُزال تلقائيًا بعد تقدّم الخطة؛ لا نكتب قائمة المهام القديمة فوقها.
+    if (task.plan?.kind !== 'day') onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
     notifyNativePrefsChanged();
-    setNotice(`اعتُبر «${task.title}» منجزًا. لم تُجدول مراجعة لأن جلسة التسميع لم تُجرَ.`);
+    setNotice(task.plan?.kind === 'day'
+      ? `اعتُبر «${task.title}» منجزًا وتقدّمت الخطة. لم تُجدول مراجعة لأن جلسة التسميع لم تُجرَ.`
+      : `اعتُبرت «${task.title}» منجزة. لم تُسجَّل جلسة تسميع ولم تُجدول مراجعة.`);
   };
 
   const complete = (task: Task) => {
@@ -462,11 +497,22 @@ export default function TodayTasksView({
           </p>
         )}
         {confirmDone && (
-          <div className="notif-confirm" role="alertdialog" aria-label="تأكيد إنجاز المقرر">
-            <p className="small">اعتبار المقرر منجزًا؟ سيتقدّم مقرر الخطة ويُسجَّل الإنجاز، ولن تُجدول مراجعة لأن جلسة التسميع لم تُجرَ. لا يمكن التراجع عن هذا.</p>
+          <div
+            ref={confirmBoxRef}
+            className="notif-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="تأكيد إنجاز المقرر"
+            onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); closeConfirm(); } }}
+          >
+            <p className="small">
+              {confirmDone.plan?.kind === 'day'
+                ? 'اعتبار المقرر منجزًا؟ سيتقدّم مقرر الخطة ويُسجَّل الإنجاز، ولن تُجدول مراجعة لأن جلسة التسميع لم تُجرَ. لا يمكن التراجع عن هذا.'
+                : 'اعتبار هذه المهمة منجزة؟ ستُعلَّم منجزة فقط: لن تُسجَّل جلسة تسميع ولن تُجدول مراجعة، ولن تتغيّر خطة الحفظ.'}
+            </p>
             <div className="notif-confirm-actions">
-              <button type="button" className="primary" onClick={() => confirmComplete(confirmDone)}>نعم، اعتبره منجزًا</button>
-              <button type="button" className="soft-btn" onClick={() => setConfirmDone(null)}>إلغاء</button>
+              <button type="button" ref={confirmButtonRef} className="primary" onClick={() => { void confirmComplete(confirmDone); }}>نعم، اعتبره منجزًا</button>
+              <button type="button" className="soft-btn" onClick={closeConfirm}>إلغاء</button>
             </div>
           </div>
         )}
