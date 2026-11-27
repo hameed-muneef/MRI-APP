@@ -159,3 +159,35 @@ html #root .app .hero .hero-btn { font-weight: 700; }
 html #root .app .mobile-nav button { font-size: 12px; font-weight: 600; }
 html:root #root .app.app main.main .home-dashboard .home-next-chevron, html:root #root .app.app main.main .home-today-entry > svg { color: var(--hm-text-muted) !important; }
 html #root .app .home-task-live { white-space: nowrap; display: inline-block; }
+
+/* توحيد الألوان القديمة (أزرق/أسود) على رموز التصميم، لكل الشاشات */
+html[data-theme="dark"]:root {
+  --dark-surface-canvas: var(--hm-bg);
+  --dark-surface-page: var(--hm-bg);
+  --dark-surface: var(--hm-surface);
+  --dark-surface-raised: var(--hm-surface-2);
+  --dark-surface-sunken: #11283F;
+  --dark-line-card: var(--hm-border);
+  --dark-line-soft: #3F6389;
+  --dark-body: var(--hm-text);
+  --dark-muted: var(--hm-text-muted);
+  --dark-ink: var(--hm-text);
+  --grad-surface: linear-gradient(165deg, var(--hm-surface-2) 0%, var(--hm-surface) 100%);
+}
+html[data-theme="light"]:root {
+  --section-accent: #1E6F5C; --section-soft: var(--hm-surface-2); --section-strong: #1E6F5C; --section-strong-hover: #175A4A; --section-on-strong: #FFFFFF;
+}
+html[data-theme="light"]:root #root .app main.main[data-section] {
+  --section-accent: #1E6F5C !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #1E6F5C !important; --section-strong-hover: #175A4A !important;
+}
+html[data-theme="dark"]:root #root .app main.main[data-section] {
+  --section-accent: #7AD6B8 !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #7AD6B8 !important; --section-strong-hover: #A6E6D0 !important; --section-on-strong: #0D1722 !important;
+}
+html[data-theme="dark"]:root:root #root .app .icon-btn, html[data-theme="dark"]:root:root #root .app .notif-bell,
+html[data-theme="dark"]:root:root #root .app .panel, html[data-theme="dark"]:root:root #root .app .section-subnav,
+html[data-theme="dark"]:root:root #root .app .switch-row, html[data-theme="dark"]:root:root #root .app .qibla-dial {
+  background-color: var(--hm-surface) !important; border-color: var(--hm-border) !important;
+}
+html[data-theme="dark"]:root:root #root .app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html[data-theme="dark"]:root:root #root .app select, html[data-theme="dark"]:root:root #root .app textarea {
+  background-color: var(--hm-bg) !important; border-color: var(--hm-border) !important; color: var(--hm-text) !important;
+}
