@@ -16,7 +16,8 @@ async function open(page:Page,wird:string){
 const wirds=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-v1')!).wirds);
 const base={id:'w1',title:'استغفار',target:100,count:0,period:'daily',periodKey:'2026-11-26'};
 
-test.describe('unified coach: habits and wirds',()=>{
+// Skipped on purpose: the per-goal and per-wird suggestion panels were removed from the UI at the user's request (engine logic kept and covered by vitest).
+test.describe.skip('unified coach: habits and wirds',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
   test('suggestions muted: stores nothing',async({page})=>{
     await open(page,JSON.stringify(base));

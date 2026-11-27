@@ -18,7 +18,8 @@ async function seedGoal(page:Page){
 }
 const stored=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-v1')!).goals[0]);
 
-test.describe('unified coach: goals',()=>{
+// Skipped on purpose: the per-goal and per-wird suggestion panels were removed from the UI at the user's request (engine logic kept and covered by vitest).
+test.describe.skip('unified coach: goals',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
 
   test('suggestions muted: no suggestions, nothing stored',async({page})=>{
