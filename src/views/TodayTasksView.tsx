@@ -335,6 +335,8 @@ export default function TodayTasksView({
       });
       notifyNativePrefsChanged();
       setNotice(next ? `تم تفعيل تنبيه «${title}».` : `تم إيقاف تنبيه «${title}».`);
+    } else {
+      setNotice(next ? `سيُفعَّل تنبيه «${title}» عند حفظ موعده.` : `سيُوقَف تنبيه «${title}» عند حفظ موعده.`);
     }
   };
 

@@ -71,3 +71,14 @@ test.describe('task schedule notices use an Arabic date', () => {
     expect(await notice.innerText()).not.toMatch(/20\d\d-\d\d-\d\d/);
   });
 });
+
+test.describe('task reminder toggle before the task is scheduled', () => {
+  test.use({viewport: {width: 390, height: 844}});
+  test('says the choice applies when the schedule is saved', async ({page}) => {
+    await page.goto('/');
+    await page.locator('.mobile-nav').getByRole('button', {name: 'حياتي'}).click();
+    await page.getByRole('button', {name: 'مهام اليوم'}).first().click();
+    await page.getByRole('button', {name: /^إيقاف التنبيه لـ/}).first().click();
+    await expect(page.getByText(/عند حفظ موعده/).first()).toBeVisible();
+  });
+});
