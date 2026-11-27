@@ -210,3 +210,6 @@ html:root:root #root .app :is(button.back, .mf-btn, .mushaf-toolbar select, sele
 html:root:root #root .app a:is([href*="youtube"], [target="_blank"]) { min-height: 44px; display: inline-flex; align-items: center; }
 html:root:root #root .app .section-subnav button, html:root:root #root .app .scroll-top-fab { min-height: 44px; }
 html:root:root #root .app .scroll-top-fab { min-width: 44px; }
+html[data-theme="dark"]:root:root .mf-sajda { color: #E2A964; }
+html:root:root #root .app :is(.mf-btn.sm, summary, .icon-btn.danger) { min-height: 44px; }
+html:root:root #root .app .mf-btn.sm { min-width: 44px; }
