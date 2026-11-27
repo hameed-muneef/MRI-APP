@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {allCoachMessageSamples} from './messages';
 import {analyzeWorkload,defaultMinutes,TIGHT_SHARE} from './workload';
-import {buildSmartTodayPlan} from './smart';
+import {buildCoachHomeSummary,buildSmartTodayPlan} from './smart';
 import type {Goal} from '../goal-plan';
 
 const goalItem={source:'goal' as const,period:'daily' as const};
@@ -56,5 +56,13 @@ describe('workload in the smart plan',()=>{
   it('morning with free slots is not over',()=>{
     const plan=buildSmartTodayPlan({goals:mk(2),tasks:[],prayers,coachSettings:{globalEnabled:true,enabledAt:'2026-11-01'},now:new Date('2026-11-26T05:30:00')});
     expect(plan.workload.level).toBe('ok');
+  });
+  it('home summary lines: top item and workload when over; none when coach is off',()=>{
+    const on=buildCoachHomeSummary({goals:mk(4),tasks:[],prayers,coachSettings:{globalEnabled:true,enabledAt:'2026-11-01'},now:new Date('2026-11-26T21:00:00')});
+    expect(on.detailLines.length).toBeGreaterThan(0);
+    expect(on.detailLines.some(l=>l.includes('الوقت التقديري'))).toBe(true);
+    for(const l of on.detailLines)expect(l).not.toMatch(/[?؟]/);
+    const off=buildCoachHomeSummary({goals:mk(4),tasks:[],prayers,coachSettings:{globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true},now:new Date('2026-11-26T21:00:00')});
+    expect(off.detailLines).toEqual([]);
   });
 });

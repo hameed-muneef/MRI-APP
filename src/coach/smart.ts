@@ -157,6 +157,8 @@ export type CoachHomeSummary = {
   nextSlot: FreePrayerSlot | null;
   overdueCount: number;
   subtitle: string;
+  /** Static extra lines for the Today card: top item and workload warning. Empty when there is nothing to say. */
+  detailLines: string[];
 };
 
 export type SmartCoachInput = {
@@ -1082,9 +1084,19 @@ export function buildCoachHomeSummary(input: SmartCoachInput): CoachHomeSummary 
     }
   }
 
+  const detailLines: string[] = [];
+  if (plan.anyCoachOn && !plan.recovery.active) {
+    const top = plan.recommended[0];
+    if (top) detailLines.push(M.todayFocus.text({title: top.title}));
+    if (nextSlot && plan.recommended.length > 0) detailLines.push(M.todayNextSlot.text({label: nextSlot.label, minutes: nextSlot.freeMinutes}));
+    if (plan.workload.level === 'over') detailLines.push(M.workloadOver.text({planned: plan.workload.plannedMinutes, free: plan.workload.freeMinutes}));
+    else if (plan.workload.level === 'tight') detailLines.push(M.workloadTight.text({planned: plan.workload.plannedMinutes, free: plan.workload.freeMinutes}));
+  }
+
   return {
     anyActive: plan.anyCoachOn,
     globalEnabled: plan.globalEnabled,
+    detailLines,
     recommendedCount: plan.recommended.length,
     totalOpen: plan.totalOpen,
     recoveryActive: plan.recovery.active,
