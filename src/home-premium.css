@@ -136,7 +136,7 @@ html:root[data-theme="dark"] #root .app.app main.main .feature-card,
 html:root[data-theme="dark"] #root .app.app main.main .wide-card { box-shadow: 0 6px 18px rgba(4,12,22,.35) !important; border-color: var(--hm-border) !important; }
 /* التنقل: اللون النشط زمردي */
 html:root { --hm-active: #1E6F5C; --hm-active-bg: rgba(30,111,92,.12); }
-html:root[data-theme="dark"] { --hm-active: #5BC4A5; --hm-active-bg: rgba(91,196,165,.18); }
+html:root[data-theme="dark"] { --hm-active: #7AD6B8; --hm-active-bg: rgba(122,214,184,.18); }
 html #root .app.app .mobile-nav button.active { color: var(--hm-active) !important; background: var(--hm-active-bg) !important; }
 html #root .app.app .mobile-nav button.active svg, html #root .app.app .mobile-nav button.active span { color: var(--hm-active) !important; }
 html #root .app.app .section-title h2 { color: var(--hm-text) !important; }
@@ -145,3 +145,16 @@ html:root #root .app.app header, html:root #root .app.app .topbar { background-c
 html:root:root #root .topbar, html:root:root .topbar { background: var(--hm-bg) !important; border-bottom: 1px solid var(--hm-border) !important; box-shadow: none !important; }
 html:root:root #root .app.app .mobile-nav, html:root:root .mobile-nav { background: var(--hm-nav-bg) !important; border-top: 1px solid var(--hm-border) !important; }
 html[data-theme]:root:root #root .app.app .topbar, html[data-theme]:root:root #root .app.app main.main .topbar, html[data-theme]:root:root #root .app.app > .topbar { background: var(--hm-bg) !important; border-bottom-color: var(--hm-border) !important; }
+
+/* خط وأوزان (Cairo) */
+html #root .app { letter-spacing: 0; line-height: 1.7; }
+html #root .app .topbar h1, html #root .app .topbar .topbar-title { font-weight: 700; }
+html #root .app .section-title h2 { font-weight: 700; }
+html #root .app .home-today-entry strong, html #root .app .feature-card strong, html #root .app .wide-card h3, html #root .app .home-next-headline { font-weight: 600; }
+html #root .app .home-today-entry small, html #root .app .feature-card .feature-copy span, html #root .app .wide-card p, html #root .app .home-next-card small { font-size: max(12px, .8125rem); line-height: 1.7; }
+html[data-theme="dark"] #root .app .home-today-entry small, html[data-theme="dark"] #root .app .feature-card .feature-copy span, html[data-theme="dark"] #root .app .home-next-card small { font-weight: 500; }
+html #root .app .home-next-time, html #root .app .home-next-countdown, html #root .app .home-task-meta { font-weight: 600; font-size: max(12px, .8125rem); }
+html #root .app .home-task-live, html #root .app .home-task-live b { font-weight: 700; font-size: max(12px, .8125rem); }
+html #root .app .hero .hero-btn { font-weight: 700; }
+html #root .app .mobile-nav button { font-size: 12px; font-weight: 600; }
+html:root #root .app.app main.main .home-dashboard .home-next-chevron, html:root #root .app.app main.main .home-today-entry > svg { color: var(--hm-text-muted) !important; }

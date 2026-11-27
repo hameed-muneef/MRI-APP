@@ -10,7 +10,7 @@
   --hm-border: #E3D9C3;        /* decorative hairline only, 1.31:1, never the sole boundary of a control */
   /* text */
   --hm-text: #1F2A2A;          /* 15.11 on bg, 16.88 on surface */
-  --hm-text-muted: #5E6A66;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
+  --hm-text-muted: #566360;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
   /* brand */
   --hm-navy: #14305A;          /* primary fill; white on it 13.12 */
   --hm-on-navy: #FFFFFF;
@@ -40,13 +40,13 @@
   --hm-surface-2: #2D5276;
   --hm-border: #54799F;        /* 1.69 on bg, decorative */
   --hm-text: #F3EFE4;          /* 16.25 on bg, 14.42 on surface, 12.80 on surface-2 */
-  --hm-text-muted: #B4BECC;    /* 9.94 on bg, 8.82 on surface, 7.83 on surface-2 */
+  --hm-text-muted: #CBD5E1;    /* 9.94 on bg, 8.82 on surface, 7.83 on surface-2 */
   --hm-navy: #9DB8E8;          /* in dark the "navy" role is a light blue accent; 9.30 on bg */
   --hm-on-navy: #09131F;       /* 9.30 on it */
   --hm-gold: #E2C06E;          /* 10.67 on bg, 9.47 on surface: usable as text, icon and fill */
   --hm-on-gold: #1A1405;       /* 10.47 */
   --hm-gold-text: #E2C06E;
-  --hm-green: #74C6A4;         /* 9.21 on bg, 8.17 on surface */
+  --hm-green: #7AD6B8;         /* 9.21 on bg, 8.17 on surface */
   --hm-on-green: #06190F;      /* 8.98 */
   --hm-danger: #FF9C9C;        /* 8.27 on surface */
   --hm-focus: #E2C06E;
