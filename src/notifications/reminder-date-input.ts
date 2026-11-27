@@ -16,3 +16,19 @@ export function parseSpecificDates(raw: string): {dates: string[]; invalid: stri
   }
   return {dates, invalid};
 }
+
+/**
+ * تاريخ انتهاء التكرار يجب ألا يسبق تاريخ البداية: منبه ينتهي قبل أن يبدأ
+ * يُحفظ «مفعّلًا» ولا يرنّ أبدًا، فيبقى في القائمة بلا فائدة.
+ * يُعيد رسالة الخطأ، أو null حين يكون التاريخ صالحًا أو فارغًا.
+ */
+export function endDateError(startDate: string, endDate: string): string | null {
+  const value = endDate.trim();
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'اكتب تاريخ الانتهاء بصيغة YYYY-MM-DD.';
+  const start = startDate.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(start) && value < start) {
+    return 'تاريخ انتهاء التكرار يجب أن يكون في تاريخ البداية أو بعده.';
+  }
+  return null;
+}

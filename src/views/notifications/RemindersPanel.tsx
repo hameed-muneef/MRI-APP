@@ -22,7 +22,7 @@ import {effectiveNextDueDate, formatTimeHM, WEEK_DAYS} from '../../notifications
 import {createReminder, deleteReminder, snoozeReminder, toggleReminder, updateReminder} from '../../notifications/service';
 import {loadPrefs, loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
 import {testAlertMessage} from '../../notifications/test-alert-copy';
-import {parseSpecificDates} from '../../notifications/reminder-date-input';
+import {endDateError, parseSpecificDates} from '../../notifications/reminder-date-input';
 import {formatRemaining} from '../../notifications/upcoming';
 import {SoundSelectField} from './SoundPanel';
 import {RECURRENCE_LABELS, type Reminder, type ReminderRecurrence} from '../../notifications/types';
@@ -153,6 +153,8 @@ function draftError(draft: Draft): string {
   if (!draft.title.trim()) return 'اكتب عنوان المنبه.';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) return 'اختر تاريخًا صحيحًا.';
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(draft.time)) return 'اختر وقتًا صحيحًا.';
+  const endIssue = endDateError(draft.date, draft.endDate);
+  if (endIssue) return endIssue;
   if (draft.recurrence === 'weekdays' && !draft.days.length) return 'اختر يومًا واحدًا على الأقل للتكرار.';
   if (draft.recurrence === 'specific_dates') {
     const {dates, invalid} = parseSpecificDates(draft.specificDates);
