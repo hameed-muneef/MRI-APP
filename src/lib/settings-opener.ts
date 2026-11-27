@@ -1,4 +1,5 @@
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import {localSnoozeMinutes} from '../notifications/prefs-store';
 
 export interface OpenSettingsResult {
   opened: boolean;
@@ -139,14 +140,25 @@ export async function setNativeRecomputeSpec(spec: object | null): Promise<boole
   }
 }
 
+/**
+ * Each row carries the user's snooze minutes so the native notification writes the same delay on
+ * its «تأجيل» button that the settings screen promises, instead of a fixed ten minutes.
+ */
+export function withSnoozeMinutes<T extends object>(items: ReadonlyArray<T>, minutes: number): Array<T & { snoozeMinutes: number }> {
+  const safe = Math.max(1, Math.min(120, Math.round(Number.isFinite(minutes) ? minutes : 10)));
+  return items.map(item => ({...item, snoozeMinutes: safe}));
+}
+
 /** Stores reminders beyond the LocalNotifications window; native arms them as they come due (see NativeReminderQueue). */
 export async function setNativeReminderQueue(
   kind: 'reminder' | 'task' | 'review' | 'prayer',
-  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string }>,
+  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string; snoozeMinutes?: number }>,
+  snoozeMinutes?: number,
 ): Promise<boolean> {
   if (!isNative()) return false;
   try {
-    await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(items) });
+    const rows = withSnoozeMinutes(items, snoozeMinutes ?? localSnoozeMinutes());
+    await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(rows) });
     return true;
   } catch {
     return false;

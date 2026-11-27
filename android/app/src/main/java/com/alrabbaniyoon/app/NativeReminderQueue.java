@@ -161,9 +161,57 @@ public final class NativeReminderQueue {
     /** Distinct from the ids LocalNotifications/adhan use for the same payload id space. */
     static int requestCode(int id) { return 0x51000000 ^ id; }
 
+    // ---------- مدة الغفوة: تأتي مع كل حمولة من الواجهة، فزر «تأجيل» يطابق ما في الإعدادات ----------
+
+    private static final String KEY_SNOOZE = "snooze_minutes";
+
+    /** Pure: the snooze minutes the settings screen promises, kept inside the range the JS settings allow. */
+    static int clampSnoozeMinutes(int minutes) {
+        if (minutes < 1) return ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES;
+        return Math.min(120, minutes);
+    }
+
+    /** Reads the snooze minutes from the first row that carries them and remembers them for later alerts. */
+    static void storeSnoozeMinutes(Context c, String itemsJson) {
+        try {
+            if (itemsJson == null || itemsJson.isEmpty()) return;
+            JSONArray a = new JSONArray(itemsJson);
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.optJSONObject(i);
+                if (o == null || !o.has("snoozeMinutes")) continue;
+                int minutes = clampSnoozeMinutes(o.optInt("snoozeMinutes", ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
+                prefs(c).edit().putInt(KEY_SNOOZE, minutes).apply();
+                return;
+            }
+        } catch (Throwable ignored) {
+            // A malformed payload must never break the queue refresh.
+        }
+    }
+
+    /** The snooze delay written on the notification buttons and used when the user taps one. */
+    static int snoozeMinutes(Context c) {
+        try {
+            return clampSnoozeMinutes(prefs(c).getInt(KEY_SNOOZE, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
+        } catch (Throwable t) {
+            return ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES;
+        }
+    }
+
+    /** Pure: Latin digits as the Arabic-Indic digits the rest of the interface uses. */
+    static String arabicDigits(int value) {
+        String digits = String.valueOf(Math.max(0, value));
+        StringBuilder out = new StringBuilder(digits.length());
+        for (int i = 0; i < digits.length(); i++) {
+            char ch = digits.charAt(i);
+            out.append(ch >= '0' && ch <= '9' ? (char) ('\u0660' + (ch - '0')) : ch);
+        }
+        return out.toString();
+    }
+
     /** Replaces the queue of one kind ("reminder","task","review","prayer"): cancels its armed alarms, stores, arms due ones. */
     public static synchronized int setQueue(Context c, String kind, String itemsJson) {
         try {
+            storeSnoozeMinutes(c, itemsJson);
             cancelArmedOfKind(c, kind);
             List<Item> items = prune(parse(itemsJson), System.currentTimeMillis());
             TimeZone tz = TimeZone.getDefault();
@@ -441,7 +489,8 @@ public final class NativeReminderQueue {
         }
         // أزرار الإيقاف والتأجيل: تُغلق الإشعار فورًا، وتعيد جدولة نفسه بعد عشر دقائق عند التأجيل.
         b.addAction(0, "إيقاف", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_STOP, id, title, body, channelId, 0));
-        b.addAction(0, "تأجيل ١٠ د", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
+        int snooze = snoozeMinutes(c);
+        b.addAction(0, "تأجيل " + arabicDigits(snooze) + " د", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, snooze));
         try {
             androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
             if (!silent) { rememberRinging(c, id); ScreenOffStopReceiver.arm(c); }

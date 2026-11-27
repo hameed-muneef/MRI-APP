@@ -120,6 +120,16 @@ function saveLocalReminders(list: Reminder[]): void {
 
 export type PrefsSource = 'cloud' | 'local' | 'unknown';
 
+/**
+ * مدة الغفوة المحفوظة، للقراءة المتزامنة عند بناء حمولة المنبّه الأصلي.
+ * النسخة الأصلية تحتاج الرقم نفسه لتكتبه على زر «تأجيل» وتؤجّل به فعلًا.
+ */
+export function localSnoozeMinutes(): number {
+  const value = loadLocalPrefs().reminder_settings?.snooze_minutes;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 10;
+  return Math.max(1, Math.min(120, Math.round(value)));
+}
+
 /** يجلب التفضيلات: سحابة أولًا، وإن تعذَّر فالاحتياطي المحلي */
 export async function loadPrefs(): Promise<{prefs: NotificationPreference; source: PrefsSource}> {
   if (authClient) {
