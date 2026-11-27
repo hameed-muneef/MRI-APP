@@ -7,6 +7,7 @@ import {addLocalNotification} from './local-inbox';
 import type {Reminder, NotificationChannel, NotificationCategory} from './types';
 import {resolveAudioUrlForWeb} from '../audio/url-resolver';
 import {isNativePlatform} from '../lib/device-location';
+import {shouldRequestPermission} from './permission-ask';
 
 let permissionState: NotificationPermission | null = null;
 
@@ -36,8 +37,9 @@ let systemPermissionInFlight: Promise<'granted' | 'denied' | 'prompt' | 'unsuppo
 /**
  * يضمن إذن إشعارات النظام من مكان واحد. عند ask=false يكتفي بقراءة الحالة دون
  * إظهار أي نافذة. عند السؤال تلقائيًا (ask غير محدد) لا يعيد سؤال من رفض سابقًا.
+ * عند force=true (فعل صريح من المستخدم، مثل زر التفعيل) يُسمح بإعادة الطلب مرة أخرى.
  */
-export function ensureSystemNotificationPermission(options?: { ask?: boolean }): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> {
+export function ensureSystemNotificationPermission(options?: { ask?: boolean; force?: boolean }): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> {
   if (systemPermissionInFlight) return systemPermissionInFlight;
   const task = (async (): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> => {
     if (isNativePlatform()) {
@@ -47,8 +49,7 @@ export function ensureSystemNotificationPermission(options?: { ask?: boolean }):
         if (current.display === 'granted' || current.display === 'denied' || current.display === 'unsupported') {
           return current.display as 'granted' | 'denied' | 'unsupported';
         }
-        if (options?.ask === false) return 'prompt';
-        if (hasAskedSystemNotificationPermission()) return 'prompt';
+        if (!shouldRequestPermission({permission:'default',asked:hasAskedSystemNotificationPermission(),ask:options?.ask,force:options?.force})) return 'prompt';
         markSystemNotificationAsked();
         const requested = await scheduler.requestPermissions();
         return requested.display === 'granted' || requested.display === 'denied' ? requested.display : 'prompt';
@@ -60,7 +61,7 @@ export function ensureSystemNotificationPermission(options?: { ask?: boolean }):
     if (Notification.permission === 'granted' || Notification.permission === 'denied') {
       return Notification.permission;
     }
-    if (options?.ask === false || hasAskedSystemNotificationPermission()) return 'prompt';
+    if (!shouldRequestPermission({permission:'default',asked:hasAskedSystemNotificationPermission(),ask:options?.ask,force:options?.force})) return 'prompt';
     markSystemNotificationAsked();
     const result = await requestBrowserPermission();
     return result === 'granted' || result === 'denied' ? result : 'prompt';
