@@ -20,13 +20,13 @@ test.describe('unified coach: habits and wirds',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
   test('suggestions muted: stores nothing',async({page})=>{
     await open(page,JSON.stringify(base));
-    await expect(page.getByRole('switch',{name:/تفعيل المدرّب لورد/})).not.toBeChecked();
+    await expect(page.getByRole('switch',{name:/تفعيل الاقتراحات الذكية لورد/})).not.toBeChecked();
     await page.getByRole('button',{name:'+10'}).first().click();
     expect((await wirds(page))[0].coach).toBeUndefined();
   });
   test('on: logs a reached target, suggestion accept changes only the target, persists',async({page})=>{
     await open(page,JSON.stringify({...base,count:90,coach:{enabled:true,enabledAt:'2026-09-01',log:['2026-11-10']}}));
-    const card=page.getByRole('group',{name:'اقتراح المدرّب'}).filter({hasText:'اقتراح تنظيمي'});
+    const card=page.getByRole('group',{name:'اقتراح ذكي'}).filter({hasText:'اقتراح تنظيمي'});
     await expect(card).toHaveCount(1);
     await card.getByRole('button',{name:'أقبل'}).click();
     await expect.poll(async()=>(await wirds(page))[0].target).toBe(75);

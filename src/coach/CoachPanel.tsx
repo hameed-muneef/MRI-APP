@@ -35,10 +35,10 @@ export default function CoachPanel({goal,coachSettings,onChange}:Props){
     if(globalOn)onChange(setCoach(goal,checked,now,checked?'inherit':'off'));
     else onChange(setCoach(goal,checked,now));
   };
-  return <section className="goal-coach" aria-label={`مدرّب هدف ${goal.title}`}>
-    <label className="goal-coach-switch"><input type="checkbox" role="switch" aria-label={`تفعيل المدرّب لهدف ${goal.title}`} checked={on} onChange={e=>toggle(e.target.checked)}/><Sparkles size={15}/><span>المدرّب لهذا الهدف</span>{globalOn&&!on&&<small className="muted">(مستثنى)</small>}</label>
+  return <section className="goal-coach" aria-label={`اقتراحات الهدف ${goal.title}`}>
+    <label className="goal-coach-switch"><input type="checkbox" role="switch" aria-label={`تفعيل الاقتراحات الذكية لهدف ${goal.title}`} checked={on} onChange={e=>toggle(e.target.checked)}/><Sparkles size={15}/><span>اقتراحات ذكية لهذا الهدف</span>{globalOn&&!on&&<small className="muted">(مستثنى)</small>}</label>
     {!on&&<p className="muted small">{globalOn?'استثنيت هذا الهدف من التفعيل العام؛ أعد المفتاح لمتابعته.':'يقترح تعديل وتيرة خطواتك بحسب التزامك. لا يغيّر شيئًا إلا بموافقتك.'}</p>}
-    {on&&sum&&<p className="small goal-coach-summary">{sum.rate===null?'لا توجد فترات منتهية كافية بعد. سيبدأ المدرّب بالاقتراح بعد أن يتجمع سجل.':`آخر أسبوع: ${sum.done.toLocaleString('ar-EG')} من ${sum.expected.toLocaleString('ar-EG')} فترة منجزة.`}</p>}
-    {items.map(s=><div className="goal-coach-card" key={s.id} role="group" aria-label="اقتراح المدرّب"><p>{text(goal,s)}</p><div className="goal-coach-actions">{s.to&&s.stepId&&<button type="button" className="primary" onClick={()=>onChange(dismissSuggestion(applyStepPeriod(goal,s.stepId as string,s.to as 'daily'|'weekly'|'monthly'),s.id))}>أقبل</button>}<button type="button" className="soft-btn" onClick={()=>onChange(dismissSuggestion(goal,s.id))}>{s.to?'أبقها كما هي':'تمام'}</button></div></div>)}
+    {on&&sum&&<p className="small goal-coach-summary">{sum.rate===null?'لا توجد فترات منتهية كافية بعد. ستبدأ الاقتراحات بعد أن يتجمع سجل.':`آخر أسبوع: ${sum.done.toLocaleString('ar-EG')} من ${sum.expected.toLocaleString('ar-EG')} فترة منجزة.`}</p>}
+    {items.map(s=><div className="goal-coach-card" key={s.id} role="group" aria-label="اقتراح ذكي"><p>{text(goal,s)}</p><div className="goal-coach-actions">{s.to&&s.stepId&&<button type="button" className="primary" onClick={()=>onChange(dismissSuggestion(applyStepPeriod(goal,s.stepId as string,s.to as 'daily'|'weekly'|'monthly'),s.id))}>أقبل</button>}<button type="button" className="soft-btn" onClick={()=>onChange(dismissSuggestion(goal,s.id))}>{s.to?'أبقها كما هي':'تمام'}</button></div></div>)}
   </section>;
 }

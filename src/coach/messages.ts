@@ -56,7 +56,7 @@ export const COACH_MESSAGES = {
   wirdTitle: define({wird: 'ورد'}, ({wird}: {wird: string}) => `ورد «${wird}»`),
   weakDayTitle: define({day: 'الخميس'}, ({day}: {day: string}) => `أكثر يوم يشهد تراجعًا: ${day}`),
   weakDayBody: define({day: 'الخميس', peak: 'الصباح' as string | null}, ({day, peak}: {day: string; peak: string | null}) =>
-    `لاحظ المدرّب أن يوم ${day} هو الأقل إنجازًا في سجلك${peak ? `، بينما وقت ذروتك المعتاد هو ${peak}` : ''}. خفّف جدول ${day} مسبقًا لتحافظ على سلسلتك.`),
+    `لوحظ أن يوم ${day} هو الأقل إنجازًا في سجلك${peak ? `، بينما وقت ذروتك المعتاد هو ${peak}` : ''}. خفّف جدول ${day} مسبقًا لتحافظ على سلسلتك.`),
 
   // Home card subtitle
   homeRecovery: define({day: 1, count: 3, slot: 'بعد العصر' as string | null}, ({day, count, slot}: {day: number; count: number; slot: string | null}) =>
@@ -67,7 +67,7 @@ export const COACH_MESSAGES = {
   // Coach screen
   uiInvite: define({}, () => 'الاقتراحات متوقفة. يمكن تفعيلها من الإعدادات لترتيب اليوم حسب أوقات فراغك بين الصلوات.'),
   uiRecoveryNote: define({gap: 4, limit: 2}, ({gap, limit}: {gap: number; limit: number}) =>
-    `لاحظ المدرّب انقطاعًا منذ ${n(gap)} أيام؛ لذلك خفّف لك جدول اليوم إلى ${n(limit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.`),
+    `لوحظ انقطاع منذ ${n(gap)} أيام؛ لذلك خفّف لك جدول اليوم إلى ${n(limit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.`),
   uiCourseLate: define({title: 'مراجعة المقرر الأسبوعية'}, ({title}: {title: string}) =>
     `${title} تأخرت في الفترات الأخيرة. ابدأ بها اليوم قبل أن يتسع الفارق.`),
   rhythmPeak: define({window: 'الصباح'}, ({window}: {window: string}) => `وقت ذروتك المعتاد: ${window}. `),
@@ -106,7 +106,7 @@ export const COACH_MESSAGES = {
     `مضى ${n(elapsed)}٪ من ${unit} وأنجزت ${n(progress)}٪ من الهدف.`),
   wirdPaceUnknown: define({}, () => 'حدّد هدفًا عدديًا لهذا الورد ليظهر إيقاعه.'),
   // settings.* (Part A)
-  settingsSuggestionsTitle: define({}, () => 'اقتراحات التطبيق الذكية'),
+  settingsSuggestionsTitle: define({}, () => 'النظام الذكي'),
   settingsSuggestionsAbout: define({}, () => 'اقتراحات ثابتة تظهر في شاشاتك وتعمل دون اتصال. هي اقتراحات فقط ولا تغيّر جدولك أو أهدافك دون موافقتك.'),
   settingsSuggestionsOn: define({}, () => 'الاقتراحات مفعّلة'),
   settingsSuggestionsOff: define({}, () => 'الاقتراحات متوقفة'),

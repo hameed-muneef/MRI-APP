@@ -246,7 +246,7 @@ export default function CoachToday({
     </li>;
   };
 
-  return <section className="panel coach-today" aria-label="المدرّب اليوم">
+  return <section className="panel coach-today" aria-label="اقتراحات اليوم">
     <div className="coach-today-header">
       <div className="coach-today-brand">
         <span className="coach-today-icon" aria-hidden="true"><Sparkles size={18}/></span>
@@ -259,14 +259,14 @@ export default function CoachToday({
 
     <div className="coach-controls-row">
       <label className="goal-coach-switch">
-        <input type="checkbox" role="switch" aria-label="تفعيل المدرّب لمهام المقرر" checked={courseOn} onChange={e=>toggleCourse(e.target.checked)}/>
+        <input type="checkbox" role="switch" aria-label="تفعيل الاقتراحات الذكية لمهام المقرر" checked={courseOn} onChange={e=>toggleCourse(e.target.checked)}/>
         <Sparkles size={15}/>
-        <span>المدرّب لمهام المقرر</span>
+        <span>اقتراحات ذكية لمهام المقرر</span>
       </label>
       <CoachAboutNote/>
     </div>
 
-    <div className="coach-tabs" role="tablist" aria-label="عرض المدرّب الذكي">
+    <div className="coach-tabs" role="tablist" aria-label="عرض النظام الذكي">
       <button type="button" role="tab" aria-selected={tab==='today'} className={tab==='today'?'primary':'soft-btn'} onClick={()=>setTab('today')}>
         خطة اليوم{plan.anyCoachOn&&plan.recommended.length>0?` (${n(plan.recommended.length)})`:''}
       </button>
@@ -351,7 +351,7 @@ export default function CoachToday({
       </>}
 
       {warnings.map(w=>(
-        <div className="goal-coach-card" role="group" aria-label="اقتراح المدرّب" key={w.id}>
+        <div className="goal-coach-card" role="group" aria-label="اقتراح ذكي" key={w.id}>
           <p>{M.uiCourseLate.text({title: w.stepId==='course-month'?M.courseMonthTitle.text({}):M.courseWeekTitle.text({})})}</p>
           <div className="goal-coach-actions">
             <button type="button" className="soft-btn" onClick={()=>coach&&onCoach(dismissCourse(coach,w.id))}>تمام</button>

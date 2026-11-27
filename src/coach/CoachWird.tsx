@@ -31,8 +31,8 @@ export default function CoachWird({wird,coachSettings,onChange}:Props){
     if(globalOn)onChange(setHabitCoach(wird,checked,now,checked?'inherit':'off'));
     else onChange(setHabitCoach(wird,checked,now));
   };
-  return <div className="goal-coach" role="group" aria-label={`مدرّب ${wird.title}`}>
-    <label className="goal-coach-switch"><input type="checkbox" role="switch" aria-label={`تفعيل المدرّب لورد ${wird.title}`} checked={on} onChange={e=>toggle(e.target.checked)}/><Sparkles size={15}/><span>المدرّب</span>{globalOn&&!on&&<small className="muted">(مستثنى)</small>}</label>
-    {items.map(s=><div className="goal-coach-card" role="group" aria-label="اقتراح المدرّب" key={s.id}><p>{text(wird,s)}</p><div className="goal-coach-actions">{s.target!==undefined&&<button type="button" className="primary" onClick={()=>onChange(dismissHabit(applyHabitTarget(wird,s.target as number),s.id))}>أقبل</button>}<button type="button" className="soft-btn" onClick={()=>onChange(dismissHabit(wird,s.id))}>{s.target!==undefined?'أبقه كما هو':'تمام'}</button></div></div>)}
+  return <div className="goal-coach" role="group" aria-label={`اقتراحات ${wird.title}`}>
+    <label className="goal-coach-switch"><input type="checkbox" role="switch" aria-label={`تفعيل الاقتراحات الذكية لورد ${wird.title}`} checked={on} onChange={e=>toggle(e.target.checked)}/><Sparkles size={15}/><span>اقتراحات ذكية</span>{globalOn&&!on&&<small className="muted">(مستثنى)</small>}</label>
+    {items.map(s=><div className="goal-coach-card" role="group" aria-label="اقتراح ذكي" key={s.id}><p>{text(wird,s)}</p><div className="goal-coach-actions">{s.target!==undefined&&<button type="button" className="primary" onClick={()=>onChange(dismissHabit(applyHabitTarget(wird,s.target as number),s.id))}>أقبل</button>}<button type="button" className="soft-btn" onClick={()=>onChange(dismissHabit(wird,s.id))}>{s.target!==undefined?'أبقه كما هو':'تمام'}</button></div></div>)}
   </div>;
 }

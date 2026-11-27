@@ -2,7 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 
 // Embedded coach, Today/Tasks/Settings. Chrome at mobile width, not a device.
 const read=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-v1')!));
-const switchName='اقتراحات التطبيق الذكية';
+const switchName='النظام الذكي';
 
 test.describe('embedded coach: master switch',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
