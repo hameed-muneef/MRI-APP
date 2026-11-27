@@ -29,6 +29,7 @@ import type {DayPlan} from '../DayPlanner';
 import type {Goal} from '../goal-plan';
 import type {MemorizationPassage} from '../quran/types';
 import type {TaskScheduleContext} from './task-planner';
+import SoundStopButton from './SoundStopButton';
 
 const REFRESH_MS = 60000;
 // A single browser tab can briefly have two watcher deliveries during React
@@ -242,5 +243,5 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
       }
     },
   );
-  return null;
+  return <SoundStopButton/>;
     }
