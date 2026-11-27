@@ -33,3 +33,13 @@ html[data-pv] #root .app.app .mobile-nav button.active { color: var(--pv-active)
 html[data-pv] #root .app.app .mobile-nav button.active svg, html[data-pv] #root .app.app .mobile-nav button.active span { color: var(--pv-active) !important; }
 html[data-pv] #root .app.app main.main .home-task-name { font-weight:600; }
 html[data-pv] #root .app.app .section-title h2 { color: var(--hm-text) !important; }
+
+/* light palette candidates */
+html:root[data-pv="lA"][data-theme], html:root[data-pv="lB"][data-theme], html:root[data-pv="lC"][data-theme] { --hm-r-lg:16px; --pv-active:#1E6F5C; --pv-cta-text:#0D1722; --hm-nav-bg:rgba(255,255,255,.92); }
+html:root[data-pv="lA"][data-theme] { --hm-bg:#F4EEE1; --hm-surface:#FFFDF8; --hm-surface-2:#F1E8D2; --hm-border:#E3D9C3; --hm-text:#1F2A2A; --hm-text-muted:#5E6A66; --hm-gold-text:#7A5A12; --pv-active-bg:rgba(30,111,92,.13); --hm-nav-bg:rgba(255,253,248,.93); }
+html:root[data-pv="lB"][data-theme] { --hm-bg:#EAF1EC; --hm-surface:#FFFFFF; --hm-surface-2:#E1EFE7; --hm-border:#CFE0D5; --hm-text:#14291F; --hm-text-muted:#4F6358; --hm-gold-text:#6F5010; --pv-active:#1F6B52; --pv-active-bg:rgba(31,107,82,.14); }
+html:root[data-pv="lC"][data-theme] { --hm-bg:#EEF1F6; --hm-surface:#FFFFFF; --hm-surface-2:#FAF2DA; --hm-border:#DAE1EB; --hm-text:#12233A; --hm-text-muted:#55657A; --hm-gold-text:#7A5A12; --pv-active:#14305A; --pv-active-bg:rgba(20,48,90,.10); }
+html[data-pv^="l"] #root .app.app main.main .home-today-entry,
+html[data-pv^="l"] #root .app.app main.main .home-dashboard .home-next-card,
+html[data-pv^="l"] #root .app.app main.main .feature-card,
+html[data-pv^="l"] #root .app.app main.main .wide-card { box-shadow: 0 2px 10px rgba(28,37,44,.07) !important; }
