@@ -44,3 +44,36 @@ describe('quiet hours', () => {
     expect(isInQuietHours(settings, at(10, 1))).toBe(false);
   });
 });
+
+describe('quiet hours: النهايات والتطابق بين المسارين', () => {
+  const windows: Array<[string, string]> = [
+    ['22:00', '06:00'],
+    ['13:00', '15:00'],
+    ['00:00', '23:59'],
+    ['10:00', '10:00'],
+    ['06:00', '22:00'],
+  ];
+
+  it('the end minute is still quiet, the minute after is not', () => {
+    // سلوك حالي: النهاية تُحسب داخل النافذة (current <= end)، فالساعة 06:00 نفسها صامتة.
+    const settings = prefs('22:00', '06:00');
+    expect(isInQuietHours(settings, at(6, 0))).toBe(true);
+    expect(isInQuietHours(settings, at(6, 1))).toBe(false);
+    expect(isQuietHoursActive(settings as never, at(6, 0))).toBe(true);
+    expect(isQuietHoursActive(settings as never, at(6, 1))).toBe(false);
+  });
+
+  it('both paths agree across a grid of times and windows', () => {
+    const minutes = [0, 1, 15, 30, 59];
+    for (const [start, end] of windows) {
+      const settings = prefs(start, end);
+      for (let hours = 0; hours < 24; hours += 1) {
+        for (const minute of minutes) {
+          const now = at(hours, minute);
+          expect({start, end, hours, minute, active: isQuietHoursActive(settings as never, now)})
+            .toEqual({start, end, hours, minute, active: isInQuietHours(settings, now)});
+        }
+      }
+    }
+  });
+});
