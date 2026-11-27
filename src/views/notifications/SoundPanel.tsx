@@ -5,6 +5,7 @@ import {authClient} from '../../auth';
 import {LOCAL_ONLY} from '../../config';
 import {BUILTIN_SOUNDS, playBuiltInTone, previewSound, type SoundOption} from '../../notifications/builtin-sounds';
 import {getAudioElement, playAudio, stopAudio} from '../../notifications/audio';
+import {notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
 import {listAudioResources, uploadAudioResource} from '../../notifications/service';
 import type {AudioResource, NotificationChannel} from '../../notifications/types';
 import {
@@ -279,6 +280,8 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
   const removeCustom = async (item: CustomLibraryEntry) => {
     if (playing === item.id) stop();
     await deleteCustomSound(item.slot);
+    // Reminders that used this sound re-plan now: their phone rows fall back to the normal sound.
+    notifyNativePrefsChanged();
     setCustomSoundUrl(item.id, undefined);
     if (item.slot === 'alarm') setCustomAlarmUrl(undefined);
     await reload();

@@ -7,6 +7,7 @@ const mock = vi.hoisted(() => ({
   saved: [] as Array<{key: string; ext: string; len: number}>,
   saveOk: true,
   pruned: [] as string[],
+  gone: false,
 }));
 vi.mock('@capacitor/local-notifications', () => ({LocalNotifications: {
   checkPermissions: async () => ({display: 'granted'}),
@@ -26,7 +27,7 @@ vi.mock('../lib/settings-opener', () => ({
   pruneNativeCustomSounds: async (keep: string[]) => { mock.pruned = keep; return true; },
 }));
 vi.mock('../sounds/custom-store', () => ({
-  listAllCustomSounds: async () => [{slot: 'library:item:abc', name: 'نغمتي.MP3', type: 'audio/mpeg', data: new Uint8Array([1, 2, 3, 4]).buffer, updatedAt: 't1'}],
+  listAllCustomSounds: async () => mock.gone ? [] : [{slot: 'library:item:abc', name: 'نغمتي.MP3', type: 'audio/mpeg', data: new Uint8Array([1, 2, 3, 4]).buffer, updatedAt: 't1'}],
 }));
 import {resetNativeSoundCache, nativeSoundExt, nativeSoundKey, isImportedSoundId, soundIdOfSlot} from './native-custom-sounds';
 import {scheduleNativePersonalReminders, soundExtra} from './native-prayer-scheduler';
@@ -91,4 +92,15 @@ it('a bundled adhan picked for an alarm reminder sends its raw name', async () =
   const rows = mock.queue.filter(r => r.title === 'adh');
   expect(rows.length).toBeGreaterThan(0);
   expect(rows.every(r => r.rawSound === 'adhan_almulla' && r.alarmMode === true)).toBe(true);
+});
+
+it('deleting the sound: the next plan drops soundKey from its rows and prunes the phone copy', async () => {
+  resetNativeSoundCache();
+  mock.gone = true;
+  await scheduleNativePersonalReminders([mk('imp3', 'library:item:abc')], prefs(), new Date(2026, 10, 23, 7, 3));
+  expect(mock.pruned).toEqual([]);
+  const rows = mock.queue.filter(r => r.title === 'imp3');
+  expect(rows.length).toBeGreaterThan(0);
+  expect(rows.every(r => !('soundKey' in r))).toBe(true);
+  mock.gone = false;
 });

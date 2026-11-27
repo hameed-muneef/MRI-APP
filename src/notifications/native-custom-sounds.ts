@@ -64,7 +64,7 @@ export function resetNativeSoundCache(): void { sent.clear(); }
 export async function syncNativeCustomSounds(soundIds: Iterable<string | undefined>): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   const wanted = new Set([...soundIds].filter((id): id is string => isImportedSoundId(id)));
-  if (!isNativePlatform() || wanted.size === 0) return out;
+  if (!isNativePlatform()) return out;
   let records: StoredCustomSound[] = [];
   try { records = await listAllCustomSounds(); } catch { return out; }
   const keep: string[] = [];
@@ -82,6 +82,9 @@ export async function syncNativeCustomSounds(soundIds: Iterable<string | undefin
     }
     out.set(id, `${key}.${ext}`);
   }
-  void pruneNativeCustomSounds(keep);
+  // Files of deleted sounds leave the phone, and the copy cache forgets them so a later re-import copies again.
+  const keepKeys = new Set(keep.map(name => name.split('.')[0]));
+  for (const key of [...sent.keys()]) if (!keepKeys.has(key)) sent.delete(key);
+  try { void pruneNativeCustomSounds(keep); } catch { /* best effort */ }
   return out;
 }
