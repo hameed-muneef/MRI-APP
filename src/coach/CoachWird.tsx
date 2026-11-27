@@ -1,5 +1,6 @@
 import {Sparkles} from 'lucide-react';
-import {applyHabitTarget,dismissHabit,habitOn,habitSuggestions,setHabitCoach,type HabitSuggestion,type WirdWithCoach} from './habit';
+import {applyHabitTarget,dismissHabit,habitOn,habitSuggestions,setHabitCoach,type HabitSuggestion,type WirdPace,type WirdWithCoach} from './habit';
+import {COACH_MESSAGES as M} from './messages';
 import {coachEntitled} from './engine';
 import type {CoachSettings} from './types';
 
@@ -11,6 +12,14 @@ function text(w:WirdWithCoach,s:HabitSuggestion){
   if(s.kind==='lighten-target')return `هدفك ${unit[w.period]} (${n(w.target)}) صعب عليك مؤخرًا. اقتراح تنظيمي: اجعله ${n(s.target as number)} لتثبت عليه.`;
   return `ثبتّ على هدفك ${unit[w.period]} (${n(w.target)}). اقتراح تنظيمي: ارفعه إلى ${n(s.target as number)} إن شئت.`;
 }
+/** سطر إيقاع الورد: نسبة ما مضى من الفترة مقابل نسبة ما أُنجز منها. */
+const paceUnit={daily:'اليوم',weekly:'الأسبوع',monthly:'الشهر'} as const;
+export function wirdPaceText(w:WirdWithCoach,pace:WirdPace):string{
+  if(!pace.enough)return M.wirdPaceUnknown.text({});
+  const line=M.wirdPaceLine.text({elapsed:Math.round(pace.elapsed*100),progress:Math.round(pace.progress*100),unit:paceUnit[w.period]});
+  return `${line} ${pace.behind?M.wirdBehind.text({}):M.wirdOnTrack.text({})}`;
+}
+
 /** Optional per-wird coach. Targets are organizational; the coach never treats a number as better in itself. */
 export default function CoachWird({wird,coachSettings,onChange}:Props){
   if(!coachEntitled())return null;
