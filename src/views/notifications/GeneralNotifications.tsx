@@ -1,9 +1,10 @@
 // الإعدادات العامة للإشعارات: التفعيل العام، عدم الإزعاج، ساعات الهدوء، الفئات، والقناة والصوت الافتراضيان.
 
 import {useEffect, useState} from 'react';
-import {Send} from 'lucide-react';
+import {Send, Square} from 'lucide-react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {testAlertMessage} from '../../notifications/test-alert-copy';
+import {STOP_HINT_TEXT} from '../../notifications/stop-hint-copy';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationChannel, type NotificationPreference} from '../../notifications/types';
 import {channelLabel, SoundSelectField} from './SoundPanel';
 import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
@@ -135,6 +136,9 @@ export default function GeneralNotifications({notify}: {notify: (message: string
           </label>
         </div></details>
       </fieldset>
+      <p className="hint notif-stop-hint">
+        <Square size={15} aria-hidden="true"/> {STOP_HINT_TEXT}
+      </p>
       <div className="notif-form-actions">
         <button type="button" className="primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? 'جارٍ الحفظ…' : dirty ? 'حفظ التغييرات' : 'تم الحفظ'}</button>
         <button type="button" className="soft-btn" onClick={() => void testDefaultAlert()}><Send size={15}/> تجربة الصوت والتنبيه</button>
