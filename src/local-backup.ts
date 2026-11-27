@@ -92,6 +92,28 @@ export function exportLocalBackup(): LocalBackupPayload {
   };
 }
 
+/**
+ * يمسح كل بيانات المستخدم المحلية التي تشملها النسخة الاحتياطية (المفاتيح التي تبدأ بـ «rabbani-»).
+ * ذاكرة محتوى القرآن (quran-content-cache-v1:) لا تُمسح: ليست بيانات شخصية، ومسحها يعطّل القراءة دون إنترنت.
+ * يُعيد المفاتيح التي أُزيلت.
+ */
+export function clearLocalData(): string[] {
+  const removed: string[] = [];
+  if (typeof window === 'undefined' || !window.localStorage) return removed;
+  const keys: string[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('rabbani-')) keys.push(key);
+    }
+    for (const key of keys) {
+      window.localStorage.removeItem(key);
+      removed.push(key);
+    }
+  } catch { /* التخزين قد يكون مقفولًا — لا نُسقط الشاشة */ }
+  return removed;
+}
+
 export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'): State | null {
   const parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
   if (!parsed || typeof parsed !== 'object' || parsed.app !== BACKUP_APP_ID || parsed.version !== BACKUP_FORMAT_VERSION || typeof parsed.storage !== 'object' || !parsed.storage || Array.isArray(parsed.storage)) {

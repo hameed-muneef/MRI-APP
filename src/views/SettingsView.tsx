@@ -19,6 +19,7 @@ import {
 import {type State, createSeed} from '../app-state';
 import CoachSettingsSection from '../coach/CoachSettingsSection';
 import {
+  clearLocalData,
   exportLocalBackup,
   formatStorageBytes,
   getLocalStorageSummary,
@@ -38,6 +39,8 @@ import {LOCAL_ONLY} from '../config';
 import {playBuiltInTone} from '../notifications/builtin-sounds';
 import {unlockAudioPlayback} from '../notifications/audio';
 import {notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
+import {LOCAL_NOTIFICATIONS_EVENT} from '../notifications/local-inbox';
+import {applyTheme, readAppearance} from '../appearance';
 import {
   ADHAN_SELECTION_STORAGE_KEY,
   BUNDLED_ADHAN_SOUNDS,
@@ -269,7 +272,12 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   };
 
   const reset = () => {
+    // «حذف البيانات المحلية» يمسح كل ما تشمله النسخة الاحتياطية، لا حالة التطبيق وحدها.
+    clearLocalData();
     onReplace(createSeed());
+    applyTheme(readAppearance(null));
+    notifyNativePrefsChanged();
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(LOCAL_NOTIFICATIONS_EVENT));
     setConfirmReset(false);
     void getLocalStorageSummary().then(setStorageSummary);
     notify('تمت إعادة ضبط البيانات المحلية');
