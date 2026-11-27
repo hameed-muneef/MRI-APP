@@ -1,0 +1,35 @@
+/* PREVIEW ONLY (branch preview/home-spec). Not applied to the app. */
+html[data-pv] { --pv-gold: #C99A45; }
+html:root[data-pv="light"][data-theme] {
+  --hm-bg:#F8F6F1; --hm-surface:#FFFFFF; --hm-surface-2:#F3EFE6; --hm-border:#E8E4DC;
+  --hm-text:#1C252C; --hm-text-muted:#5C6670; --hm-gold-text:#7A5A12; --hm-r-lg:16px; --pv-active:#1E6F5C; --pv-active-bg:rgba(30,111,92,.12); --pv-cta-text:#0D1722;
+}
+html:root[data-pv="dark-navy"][data-theme] {
+  --hm-bg:#0D1722; --hm-surface:#162332; --hm-surface-2:#1C2D41; --hm-border:#24364B;
+  --hm-text:#F1F5F9; --hm-text-muted:#AEBBC8; --hm-gold:#D4A349; --hm-gold-text:#D4A349; --hm-r-lg:16px; --pv-active:#4DB89B; --pv-active-bg:rgba(77,184,155,.16); --pv-cta-text:#0D1722; --hm-nav-bg:rgba(13,23,34,.9);
+}
+html:root[data-pv="dark-emerald"][data-theme] {
+  --hm-bg:#0C1816; --hm-surface:#162624; --hm-surface-2:#1C302D; --hm-border:#24403B;
+  --hm-text:#F1F5F9; --hm-text-muted:#AEC2BD; --hm-gold:#D4A349; --hm-gold-text:#D4A349; --hm-r-lg:16px; --pv-active:#4DB89B; --pv-active-bg:rgba(77,184,155,.16); --pv-cta-text:#0D1722; --hm-nav-bg:rgba(12,24,22,.9);
+}
+html[data-pv] body, html[data-pv] #root .app.app { background-color: var(--hm-bg) !important; background-image:none !important; }
+html[data-pv] #root .app.app .hero .hero-btn { background: var(--pv-gold) !important; color: var(--pv-cta-text) !important; border: 0 !important; box-shadow: 0 4px 12px rgba(0,0,0,.18) !important; }
+html[data-pv="dark-navy"] #root .app.app .hero .hero-btn, html[data-pv="dark-emerald"] #root .app.app .hero .hero-btn { background:#D4A349 !important; }
+html[data-pv] #root .app.app main.main .home-today-entry,
+html[data-pv] #root .app.app main.main .home-dashboard .home-next-card,
+html[data-pv] #root .app.app main.main .feature-card,
+html[data-pv] #root .app.app main.main .wide-card { border-radius:16px !important; padding-block: 16px; }
+html[data-pv="light"] #root .app.app main.main .home-today-entry,
+html[data-pv="light"] #root .app.app main.main .home-dashboard .home-next-card,
+html[data-pv="light"] #root .app.app main.main .feature-card,
+html[data-pv="light"] #root .app.app main.main .wide-card { box-shadow: 0 2px 10px rgba(28,37,44,.07) !important; }
+/* date pill: hijri | gregorian */
+html[data-pv] #root .app .home-date-text { display:flex; gap:0; align-items:center; }
+html[data-pv] #root .app .home-greg-date::before { content:"|"; margin-inline:10px; color: var(--hm-border); }
+html[data-pv] #root .app .home-date-bar { background: var(--hm-surface) !important; border-radius:999px !important; }
+/* nav active = emerald icon + label */
+html[data-pv] #root .app.app .mobile-nav { background: var(--hm-nav-bg, rgba(255,255,255,.9)) !important; }
+html[data-pv] #root .app.app .mobile-nav button.active { color: var(--pv-active) !important; background: var(--pv-active-bg) !important; }
+html[data-pv] #root .app.app .mobile-nav button.active svg, html[data-pv] #root .app.app .mobile-nav button.active span { color: var(--pv-active) !important; }
+html[data-pv] #root .app.app main.main .home-task-name { font-weight:600; }
+html[data-pv] #root .app.app .section-title h2 { color: var(--hm-text) !important; }
