@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
+import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3, Sparkles} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {goalStepCompletionKey, goalStepDueDate, goalStepOccurrence, goalSteps, isGoalDateInRange} from '../goal-plan';
@@ -13,14 +13,14 @@ import {
   getTaskNotificationSettings,
   type NotificationPreference,
 } from '../notifications/types';
-import CoachToday from '../coach/CoachToday';
-import type {CourseCoach} from '../coach/course';
+import {courseCoachOn, type CourseCoach} from '../coach/course';
+import {buildSmartTodayPlan} from '../coach/smart';
+import {coachEntitled} from '../coach/engine';
+import {loadMasteryState} from '../quran-mastery/storage';
 import type {CoachSettings} from '../coach/types';
-import type {SmartTodayItem} from '../coach/smart';
 import type {WirdWithCoach} from '../coach/habit';
 import type {AchievementEntry} from '../achievement/log';
 import type {DayPlan} from '../DayPlanner';
-import {timeLabel} from '../day-timing';
 import type {DayRecords} from '../day-tracking';
 import type {MemorizationPassage} from '../quran/types';
 
@@ -83,21 +83,15 @@ export default function TodayTasksView({
   onOpenPlanTask,
   onBack,
   onOpenNotificationSettings,
+  onCompletePlanDay,
   courseCoach,
   coachSettings,
-  onCourseCoach,
-  onCoachSettings,
   wirds,
   prayers,
   dayPlan,
   dayRecords,
   achievementLog,
   quranPassages,
-  onCompleteWird,
-  onCompletePlanDay,
-  onUpdateWird,
-  onOpenQuran,
-  onOpenWirds,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
@@ -239,7 +233,29 @@ export default function TodayTasksView({
     return matchesDateFilter(date);
   };
 
-  const allItems = [...items, ...goalTasks].filter(matchesConfirmedDate);
+  const baseItems = [...items, ...goalTasks].filter(matchesConfirmedDate);
+
+  // «النظام الذكي»: ترتيب فقط. أهم المهام (حتى ٣) تظهر أولًا في اليوم بعلامة هادئة؛ لا يغيّر جدولًا ولا هدفًا.
+  const priorityInfo = useMemo(() => {
+    const map = new Map<string, string>();
+    if (filter !== 'today') return map;
+    try {
+      if (!coachEntitled() || !(coachSettings?.globalEnabled || courseCoachOn(courseCoach, coachSettings))) return map;
+      let masteryRoot = null;
+      try { masteryRoot = loadMasteryState(); } catch { masteryRoot = null; }
+      const plan = buildSmartTodayPlan({
+        goals, tasks, wirds: wirds ?? [], courseCoach, coachSettings, prayers: prayers ?? {}, dayPlan, dayRecords,
+        taskSchedules, achievementLog, quranPassages: quranPassages ?? [], masteryRoot, now: new Date(),
+      });
+      for (const item of plan.recommended) if (!map.has(item.taskId)) map.set(item.taskId, item.priorityNote);
+    } catch { /* الترتيب الذكي اختياري */ }
+    return map;
+  }, [filter, goals, tasks, wirds, courseCoach, coachSettings, prayers, dayPlan, dayRecords, taskSchedules, achievementLog, quranPassages]);
+  const priorityIds = baseItems.filter(item => priorityInfo.has(item.id)).sort((a, b) => 0 + [...priorityInfo.keys()].indexOf(a.id) - [...priorityInfo.keys()].indexOf(b.id)).slice(0, 3).map(item => item.id);
+  const allItems = [
+    ...priorityIds.map(id => baseItems.find(item => item.id === id)!),
+    ...baseItems.filter(item => !priorityIds.includes(item.id)),
+  ];
 
   const source = (task: Task & {sourceLabel?: string}) =>
     task.sourceLabel ??
@@ -436,64 +452,7 @@ export default function TodayTasksView({
 
   return (
     <div className="today-tasks-view">
-      <div className="page-intro">
-        <span className="eyebrow">حياتي مع الله</span>
-        <h1><CalendarClock size={26}/> مركز المهام</h1>
-        <p>تجتمع هنا الاستحقاقات من خططك الشخصية وأهدافك.</p>
-        <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
-      </div>
-
-      {onCourseCoach&&(
-        <CoachToday
-          goals={goals}
-          tasks={tasks}
-          wirds={wirds}
-          coach={courseCoach}
-          coachSettings={coachSettings}
-          prayers={prayers}
-          dayPlan={dayPlan}
-          dayRecords={dayRecords}
-          taskSchedules={taskSchedules}
-          achievementLog={achievementLog}
-          quranPassages={quranPassages}
-          onCoach={onCourseCoach}
-          onCoachSettings={onCoachSettings}
-          onCompleteGoalStep={completeGoal}
-          onCompleteCourseTask={taskId=>{
-            const t=tasks.find(x=>x.id===taskId);
-            if(t)requestComplete(t);
-          }}
-          onCompleteWird={onCompleteWird}
-          onUpdateGoal={nextGoal=>onGoals(goals.map(g=>g.id===nextGoal.id?nextGoal:g))}
-          onUpdateWird={onUpdateWird}
-          onScheduleSmartItem={(item:SmartTodayItem)=>{
-            if(!item.suggestedSlot)return;
-            const slot=item.suggestedSlot;
-            const existing=taskSchedules[item.taskId];
-            const existingDate=existing?.confirmedDate??existing?.initialDate;
-            if(existingDate&&existingDate>=now){setNotice(`«${item.title}» مجدولة بالفعل ولم أغيّر موعدها.`);return}
-            onTaskSchedules({
-              ...taskSchedules,
-              [item.taskId]:{
-                ...existing,
-                title:item.title,
-                sourceLabel:item.goalTitle,
-                initialDate:now,
-                initialTime:slot.startTime,
-                confirmedDate:now,
-                confirmedTime:slot.startTime,
-                notifyEnabled:existing?.notifyEnabled??true,
-              },
-            });
-            notifyNativePrefsChanged();
-            setNotice(`تمت جدولة «${item.title}» (${slot.label}) الساعة ${timeLabel(slot.startTime)}.`);
-          }}
-          onOpenPlanTask={onOpenPlanTask}
-          onOpenHifzTask={onOpenHifzTask}
-          onOpenQuran={onOpenQuran}
-          onOpenWirds={onOpenWirds}
-        />
-      )}
+      <h1 className="today-tasks-sr-title"><CalendarClock size={1} aria-hidden="true"/> مركز المهام</h1>
 
       <button type="button" className="soft-btn task-notif-link" onClick={() => onOpenNotificationSettings?.()} aria-label="ضبط تذكيرات المهام من التنبيهات">
         <BellRing size={16}/> {activeSummary} · ضبط التذكيرات من التنبيهات
@@ -564,6 +523,11 @@ export default function TodayTasksView({
                         <span aria-hidden="true">·</span>
                         <span>{itemSource}</span>
                       </span>
+                      {priorityIds.includes(item.id) && (
+                        <span className="today-task-priority" data-priority="true" title={priorityInfo.get(item.id) || 'أولوية اليوم'}>
+                          <Sparkles size={12} aria-hidden="true"/> أولوية اليوم
+                        </span>
+                      )}
                     </div>
                     {(item as Task).plan && onOpenPlanTask && <button type="button" className="soft-btn" onClick={() => onOpenPlanTask(item as Task)}>{(item as Task).plan!.kind === 'day' ? 'ابدأ مقرر اليوم' : 'ابدأ المراجعة'}</button>}
                     {(item as Task).hifz && onOpenHifzTask && <button type="button" className="soft-btn" onClick={() => onOpenHifzTask((item as Task).hifz!)}>ابدأ التسميع</button>}
