@@ -99,6 +99,48 @@ export function setCoach(goal:Goal,enabled:boolean,now=new Date(),mode?:CoachMod
   return {...goal,coach:nextCoach};
 }
 
+/** أرقام الوتيرة في نافذة واحدة: كم فترة انتهت وكم أُنجز منها. */
+export type PaceBand={done:number;expected:number;rate:number|null};
+/** وتيرة الهدف: الفترات الأخيرة مقابل ما قبلها. أرقام فقط، ولا تغيّر أي خطة. */
+export type GoalPace={recent:PaceBand;previous:PaceBand;trend:'up'|'down'|'flat'|null;behind:boolean;enough:boolean;steps:number};
+
+/** الوتيرة تُقاس على فترات منتهية فقط؛ الفترة الجارية ليست متأخرة بعد. */
+const PACE_MIN_PERIODS=3;
+const TREND_STEP=0.05;
+
+export function goalPace(goal:Goal,now=new Date(),settings?:CoachSettings):GoalPace{
+  let recentDone=0,recentExpected=0,previousDone=0,previousExpected=0,steps=0;
+  for(const step of goalSteps(goal)){
+    if(!isCoachable(step.period))continue;
+    const period=step.period;
+    const keys=finishedKeys(period,now,windowSize[period]).filter(key=>inScope(goal,period,key,settings));
+    if(!keys.length)continue;
+    steps++;
+    // نصف النافذة للفترات الأخيرة ونصفها لما قبلها (يومي: ٧ مقابل ٧، أسبوعي: ٢ مقابل ٢، شهري: ١ مقابل ١).
+    const half=Math.max(1,Math.floor(windowSize[period]/2));
+    const recentKeys=keys.slice(0,half);
+    const previousKeys=keys.slice(half,half*2);
+    recentDone+=recentKeys.filter(key=>step.done[key]).length;
+    recentExpected+=recentKeys.length;
+    previousDone+=previousKeys.filter(key=>step.done[key]).length;
+    previousExpected+=previousKeys.length;
+  }
+  const rate=recentExpected?recentDone/recentExpected:null;
+  const previousRate=previousExpected?previousDone/previousExpected:null;
+  const enough=recentExpected>=PACE_MIN_PERIODS;
+  const trend=enough&&rate!==null&&previousRate!==null
+    ?(rate>previousRate+TREND_STEP?'up':rate<previousRate-TREND_STEP?'down':'flat')
+    :null;
+  return {
+    recent:{done:recentDone,expected:recentExpected,rate},
+    previous:{done:previousDone,expected:previousExpected,rate:previousRate},
+    trend,
+    behind:trend==='down',
+    enough,
+    steps,
+  };
+}
+
 export type StartHere={goalId:string;goalTitle:string;stepId:string;title:string;period:CoachablePeriod;reason:'behind'|'deadline'|'due'};
 /** One ordered list for today: steps that slipped first, then nearest target date, then daily before weekly before monthly. */
 export function startHere(goals:Goal[],now=new Date(),settings?:CoachSettings):StartHere[]{

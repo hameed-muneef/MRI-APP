@@ -1,6 +1,7 @@
 import {Sparkles} from 'lucide-react';
 import {goalSteps,type Goal,type GoalPeriod} from '../goal-plan';
-import {applyStepPeriod,coachEntitled,coachOn,dismissSuggestion,setCoach,suggestionsFor,weeklySummary,type Suggestion} from './engine';
+import {applyStepPeriod,coachEntitled,coachOn,dismissSuggestion,setCoach,suggestionsFor,weeklySummary,type GoalPace,type Suggestion} from './engine';
+import {COACH_MESSAGES as M} from './messages';
 import type {CoachSettings} from './types';
 
 const label:Record<GoalPeriod,string>={daily:'يوميًا',weekly:'أسبوعيًا',monthly:'شهريًا',yearly:'سنويًا',custom:'تاريخ مخصص'};
@@ -13,6 +14,14 @@ function text(goal:Goal,s:Suggestion){
   if(s.kind==='increase')return `ماشي كويس في خطوة ${name}. اقتراح: ارفع وتيرتها إلى ${label[s.to as GoalPeriod]}.`;
   if(s.kind==='early-warning')return `انقطعت عن خطوة ${name} في الفترات الأخيرة. ابدأ بها اليوم قبل أن يتسع الفارق.`;
   return 'اقترب موعد الهدف والالتزام بخطواته أقل من النصف. فكّر في تخفيف الخطوات أو تعديل الموعد.';
+}
+
+/** سطر وتيرة الهدف: أرقام الفترات الأخيرة وما قبلها، وحالة واحدة من الرسائل الثابتة. */
+export function goalPaceText(pace:GoalPace):string{
+  if(!pace.steps)return M.goalsNoSteps.text({});
+  if(!pace.enough)return M.goalsPaceUnknown.text({});
+  const line=M.goalsPaceLine.text({done:pace.recent.done,expected:pace.recent.expected,prevDone:pace.previous.done,prevExpected:pace.previous.expected});
+  return `${line} ${pace.behind?M.goalsBehind.text({}):M.goalsOnTrack.text({})}`;
 }
 
 export default function CoachPanel({goal,coachSettings,onChange}:Props){

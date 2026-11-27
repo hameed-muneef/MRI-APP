@@ -96,9 +96,15 @@ export const COACH_MESSAGES = {
   goalsBehind: define({}, () => 'وتيرة هذا الهدف أبطأ من المعتاد في الفترات الأخيرة.'),
   goalsOnTrack: define({}, () => 'هذا الهدف يسير على وتيرته.'),
   goalsNoSteps: define({}, () => 'لا توجد خطوات لهذا الهدف بعد.'),
+  goalsPaceLine: define({done: 4, expected: 7, prevDone: 6, prevExpected: 7}, ({done, expected, prevDone, prevExpected}: {done: number; expected: number; prevDone: number; prevExpected: number}) =>
+    `الوتيرة الأخيرة: ${n(done)} من ${n(expected)} فترة${prevExpected > 0 ? ` · وما قبلها ${n(prevDone)} من ${n(prevExpected)}` : ''}.`),
+  goalsPaceUnknown: define({}, () => 'لم تتجمع فترات منتهية كافية لحساب الوتيرة بعد.'),
   // wird.* (Part B)
-  wirdBehind: define({}, () => 'تقدّم هذا الورد اليوم أقل من وتيرته المعتادة.'),
-  wirdOnTrack: define({}, () => 'تقدّم هذا الورد اليوم على وتيرته.'),
+  wirdBehind: define({}, () => 'تقدّم هذا الورد أقل مما مضى من وقته.'),
+  wirdOnTrack: define({}, () => 'تقدّم هذا الورد على إيقاع وقته.'),
+  wirdPaceLine: define({elapsed: 50, progress: 20, unit: 'اليوم'}, ({elapsed, progress, unit}: {elapsed: number; progress: number; unit: string}) =>
+    `مضى ${n(elapsed)}٪ من ${unit} وأنجزت ${n(progress)}٪ من الهدف.`),
+  wirdPaceUnknown: define({}, () => 'حدّد هدفًا عدديًا لهذا الورد ليظهر إيقاعه.'),
   // settings.* (Part A)
   settingsSuggestionsTitle: define({}, () => 'اقتراحات التطبيق الذكية'),
   settingsSuggestionsAbout: define({}, () => 'اقتراحات ثابتة تظهر في شاشاتك وتعمل دون اتصال. هي اقتراحات فقط ولا تغيّر جدولك أو أهدافك دون موافقتك.'),
