@@ -1109,3 +1109,6 @@ html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
 html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#EAF3FC;color:#20537A}
 html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
 html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#16293A;color:#EAF3FC}
+
+.coach-suggestion-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;margin:6px 0;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.08));font-size:.9rem;line-height:1.6}
+.coach-suggestion-line>span{flex:1 1 12rem}

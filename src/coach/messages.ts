@@ -84,6 +84,26 @@ export const COACH_MESSAGES = {
   workloadOverCapacity: define({}, () => 'عبء عملك الحالي يتجاوز طاقتك اليومية المعتادة.'),
   workloadNoHistory: define({}, () => 'لا توجد بيانات كافية لتخصيص هذه التوصية بعد؛ التقدير مبني على مدد افتراضية.'),
   minutesEstimate: define({minutes: 15}, ({minutes}: {minutes: number}) => `≈ ${n(minutes)} د (تقدير)`),
+
+  // ---- Embedded coach: one block per screen owner. Add keys only inside your own block, one per line. ----
+  // today.* (Part A)
+  todayFocus: define({title: 'مراجعة الحفظ'}, ({title}: {title: string}) => `الأهم الآن: ${title}`),
+  todayNextSlot: define({label: 'بعد العصر', minutes: 60}, ({label, minutes}: {label: string; minutes: number}) =>
+    `أقرب وقت فراغ: ${label} · ${n(minutes)} د`),
+  // tasks.* (Part A)
+  tasksScheduledOn: define({date: '٢٠٢٦-١١-٢٨'}, ({date}: {date: string}) => `مجدولة بتاريخ ${date}`),
+  tasksScheduleAt: define({label: 'بعد العصر'}, ({label}: {label: string}) => `جدولة في وقت مقترح (${label})`),
+  // goals.* (Part B)
+  goalsBehind: define({}, () => 'وتيرة هذا الهدف أبطأ من المعتاد في الفترات الأخيرة.'),
+  goalsOnTrack: define({}, () => 'هذا الهدف يسير على وتيرته.'),
+  goalsNoSteps: define({}, () => 'لا توجد خطوات لهذا الهدف بعد.'),
+  // wird.* (Part B)
+  wirdBehind: define({}, () => 'تقدّم هذا الورد اليوم أقل من وتيرته المعتادة.'),
+  wirdOnTrack: define({}, () => 'تقدّم هذا الورد اليوم على وتيرته.'),
+  // settings.* (Part A)
+  settingsSuggestionsTitle: define({}, () => 'اقتراحات التطبيق الذكية'),
+  settingsSuggestionsAbout: define({}, () => 'اقتراحات ثابتة تظهر في شاشاتك وتعمل دون اتصال. هي اقتراحات فقط ولا تغيّر جدولك أو أهدافك دون موافقتك.'),
+  settingsSuggestionsMute: define({}, () => 'إيقاف الاقتراحات'),
 };
 
 export type CoachMessageId = keyof typeof COACH_MESSAGES;

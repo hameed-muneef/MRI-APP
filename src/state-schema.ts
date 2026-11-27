@@ -41,7 +41,7 @@ export const storedStateSchema=obj({
  wirds:z.array(obj({id:str,title:str,target:num,count:num,period,periodKey:str,coach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:z.array(str).optional(),mode:coachMode.optional()}).optional()})).optional(),
  reflections:z.array(obj({id:str,date:str,text:str})).optional(),lessonStep:num.optional(),prayers:rec(str).optional(),
  courseCoach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:obj({day:z.array(str).optional(),week:z.array(str).optional(),month:z.array(str).optional()}).optional(),mode:coachMode.optional()}).optional(),
- coachSettings:obj({globalEnabled:bool,enabledAt:str.optional(),recovery:obj({startedAt:str,dismissedUntil:str.optional(),completed:bool.optional()}).optional(),dismissedWeekly:z.array(str).optional(),preferredCapacity:num.optional()}).optional(),
+ coachSettings:obj({globalEnabled:bool,enabledAt:str.optional(),recovery:obj({startedAt:str,dismissedUntil:str.optional(),completed:bool.optional()}).optional(),dismissedWeekly:z.array(str).optional(),preferredCapacity:num.optional(),suggestionsMuted:bool.optional()}).optional(),
  taskSchedules:rec(schedule).optional(),dayPlan:dayPlan.optional(),dayRecords:rec(dayRecord).optional(),
  prayerLocation:obj({name:str,country:str,latitude:num.min(-90).max(90),longitude:num.min(-180).max(180),timezone:str.refine(zone=>{try{new Intl.DateTimeFormat('en',{timeZone:zone});return true}catch{return false}}),method:num.optional(),school:z.union([z.literal(0),z.literal(1)]).optional()}).optional(),quran:quran.optional(),achievementLog:z.array(obj({id:str,kind:z.enum(['bilquran_step','adhkar_category','wird_complete']),date:str,refId:str,label:str.optional(),at:str})).optional(),
 });
