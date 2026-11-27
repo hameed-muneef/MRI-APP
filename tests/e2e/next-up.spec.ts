@@ -16,10 +16,9 @@ for (const theme of ['light', 'dark'] as const) {
   test(`next up: 3 nearest, live labels, re-sorts and pulls the next in (${theme})`, async ({ page }) => {
     await page.clock.install({ time: new Date('2026-11-27T19:00:00+02:00') });
     await page.addInitScript(t => localStorage.setItem('rabbani-theme-v1', t), theme);
+    // Seed before the app boots: seeding after load and reloading raced with the app's own state flush.
+    await page.addInitScript(seed);
     await page.goto('/');
-    await expect.poll(() => page.evaluate(() => Boolean(localStorage.getItem('rabbani-v1')))).toBe(true);
-    await page.evaluate(seed);
-    await page.reload();
     await page.locator('.home-today-list').click();
     const cards = page.locator('.today-task-card');
     await expect(cards.first()).toBeVisible();
@@ -49,10 +48,9 @@ for (const theme of ['light', 'dark'] as const) {
   test(`home: live nearest-now rows, order and completion (${theme})`, async ({ page }) => {
     await page.clock.install({ time: new Date('2026-11-27T19:00:00+02:00') });
     await page.addInitScript(t => localStorage.setItem('rabbani-theme-v1', t), theme);
+    // Seed before the app boots: seeding after load and reloading raced with the app's own state flush.
+    await page.addInitScript(seed);
     await page.goto('/');
-    await expect.poll(() => page.evaluate(() => Boolean(localStorage.getItem('rabbani-v1')))).toBe(true);
-    await page.evaluate(seed);
-    await page.reload();
     const card = page.locator('.home-today-list');
     await expect(card.locator('.home-tasks-row')).toHaveCount(3);
     await expect(card.locator('.home-tasks-row').nth(0)).toContainText('مهمة أ');
