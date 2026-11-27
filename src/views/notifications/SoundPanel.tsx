@@ -5,6 +5,7 @@ import {authClient} from '../../auth';
 import {LOCAL_ONLY} from '../../config';
 import {BUILTIN_SOUNDS, playBuiltInTone, previewSound, type SoundOption} from '../../notifications/builtin-sounds';
 import {getAudioElement, playAudio, stopAudio} from '../../notifications/audio';
+import {notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
 import {listAudioResources, uploadAudioResource} from '../../notifications/service';
 import type {AudioResource, NotificationChannel} from '../../notifications/types';
 import {
@@ -279,6 +280,8 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
   const removeCustom = async (item: CustomLibraryEntry) => {
     if (playing === item.id) stop();
     await deleteCustomSound(item.slot);
+    // Reminders that used this sound re-plan now: their phone rows fall back to the normal sound.
+    notifyNativePrefsChanged();
     setCustomSoundUrl(item.id, undefined);
     if (item.slot === 'alarm') setCustomAlarmUrl(undefined);
     await reload();
@@ -374,7 +377,7 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
           <li key={sound.soundId}>
             <div className="notif-sound-main">
               <strong>{sound.name}</strong>
-              <small>أذان · مدمج (يعمل بدون إنترنت)</small>
+              <small>أذان · مدمج</small>
             </div>
             <button
               type="button"
@@ -391,7 +394,7 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
           <li key={EID_TAKBEERAT_SOUND.soundId}>
             <div className="notif-sound-main">
               <strong>{EID_TAKBEERAT_SOUND.name}</strong>
-              <small>تكبيرات · مدمج (يعمل بدون إنترنت)</small>
+              <small>تكبيرات · مدمج</small>
             </div>
             <button
               type="button"

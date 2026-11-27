@@ -142,8 +142,19 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
             .setAutoCancel(true)
             .setContentIntent(contentPi);
 
+        // زر إيقاف على إشعار الأذان القصير/الصامت (النغمة تعمل من القناة، وإلغاء الإشعار يوقفها).
+        builder.addAction(
+            0,
+            "إيقاف",
+            ReminderActionReceiver.actionIntent(context, ReminderActionReceiver.ACTION_STOP, notificationId, title, body, channelId, 0)
+        );
+
         try {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build());
+            if (!silent) {
+                NativeReminderQueue.rememberRinging(context, notificationId);
+                ScreenOffStopReceiver.arm(context);
+            }
         } catch (SecurityException ignored) {}
     }
 }

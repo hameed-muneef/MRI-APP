@@ -65,6 +65,22 @@ public class AdhanPlaybackService extends Service {
         }
     };
 
+    // زر الجانب (الطاقة): لا يمكن قراءته مباشرة، فنوقف الصوت عند تغيّر حالة الشاشة بعد بدء الأذان.
+    private boolean screenReceiverRegistered = false;
+    private boolean startedInteractive = true;
+    private long playbackStartedAt = 0L;
+
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent != null ? intent.getAction() : null;
+            long elapsed = SystemClock.elapsedRealtime() - playbackStartedAt;
+            if (ScreenKeyStopPolicy.shouldStop(action, startedInteractive, elapsed)) {
+                stopPlaybackAndSelf();
+            }
+        }
+    };
+
     private final AudioManager.OnAudioFocusChangeListener focusChangeListener = focusChange -> {
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS
             || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
@@ -181,6 +197,7 @@ public class AdhanPlaybackService extends Service {
         acquireWakeLock();
         requestAudioFocus();
         registerNoisyReceiver();
+        registerScreenReceiver();
 
         handler.removeCallbacks(watchdogStop);
         handler.postDelayed(watchdogStop, MAX_PLAYBACK_MS);
@@ -266,6 +283,24 @@ public class AdhanPlaybackService extends Service {
         noisyReceiverRegistered = true;
     }
 
+    private void registerScreenReceiver() {
+        if (screenReceiverRegistered) return;
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        startedInteractive = pm == null || pm.isInteractive();
+        playbackStartedAt = SystemClock.elapsedRealtime();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        ContextCompat.registerReceiver(this, screenReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        screenReceiverRegistered = true;
+    }
+
+    private void unregisterScreenReceiver() {
+        if (!screenReceiverRegistered) return;
+        try { unregisterReceiver(screenReceiver); } catch (Exception ignored) {}
+        screenReceiverRegistered = false;
+    }
+
     private void unregisterNoisyReceiver() {
         if (!noisyReceiverRegistered) return;
         try { unregisterReceiver(noisyReceiver); } catch (Exception ignored) {}
@@ -285,6 +320,7 @@ public class AdhanPlaybackService extends Service {
             mediaPlayer = null;
         }
         unregisterNoisyReceiver();
+        unregisterScreenReceiver();
         abandonAudioFocus();
         if (wakeLock != null && wakeLock.isHeld()) {
             try { wakeLock.release(); } catch (Exception ignored) {}

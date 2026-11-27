@@ -7,6 +7,7 @@ async function seedGoal(page:Page){
   await page.evaluate(async()=>{
     const {createSeed}=await import(/* @vite-ignore */ '/src/app-state.ts');
     const state=createSeed();
+    state.coachSettings={globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true};
     state.goals=[{id:'g1',title:'قراءة كتاب نافع',benefit:'العلم',createdAt:'2026-09-01',steps:[{id:'s1',title:'قراءة صفحة',period:'daily',done:{'2026-11-10':true}}]}];
     localStorage.setItem('rabbani-v1',JSON.stringify(state));
   });
@@ -17,22 +18,23 @@ async function seedGoal(page:Page){
 }
 const stored=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('rabbani-v1')!).goals[0]);
 
-test.describe('unified coach: goals',()=>{
+// Skipped on purpose: the per-goal and per-wird suggestion panels were removed from the UI at the user's request (engine logic kept and covered by vitest).
+test.describe.skip('unified coach: goals',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
 
-  test('off by default, no suggestions, nothing stored',async({page})=>{
+  test('suggestions muted: no suggestions, nothing stored',async({page})=>{
     await seedGoal(page);
-    await expect(page.getByRole('switch',{name:/تفعيل المدرّب/})).not.toBeChecked();
-    await expect(page.getByRole('group',{name:'اقتراح المدرّب'})).toHaveCount(0);
+    await expect(page.getByRole('switch',{name:/تفعيل الاقتراحات الذكية/})).not.toBeChecked();
+    await expect(page.getByRole('group',{name:'اقتراح ذكي'})).toHaveCount(0);
     expect((await stored(page)).coach).toBeUndefined();
   });
 
   test('enabling starts the evidence window today, so no suggestion yet',async({page})=>{
     await seedGoal(page);
-    await page.getByRole('switch',{name:/تفعيل المدرّب/}).check();
+    await page.getByRole('switch',{name:/تفعيل الاقتراحات الذكية/}).check();
     await expect.poll(async()=>(await stored(page)).coach?.enabled).toBe(true);
     // enabling starts the evidence window today, so a goal with only old history says nothing yet.
-    await expect(page.getByRole('group',{name:'اقتراح المدرّب'})).toHaveCount(0);
+    await expect(page.getByRole('group',{name:'اقتراح ذكي'})).toHaveCount(0);
   });
 
   test('on with an earlier start: lighten, accept, persists after reload',async({page})=>{
@@ -42,7 +44,7 @@ test.describe('unified coach: goals',()=>{
     await page.locator('.mobile-nav').getByRole('button',{name:'حياتي'}).click();
     await page.locator('.section-subnav').getByRole('button',{name:'المؤمن القوي'}).click();
     await page.getByRole('button',{name:'عرض الخطة'}).first().click();
-    const card=page.getByRole('group',{name:'اقتراح المدرّب'}).filter({hasText:'اجعلها'});
+    const card=page.getByRole('group',{name:'اقتراح ذكي'}).filter({hasText:'اجعلها'});
     await expect(card).toHaveCount(1);
     await card.getByRole('button',{name:'أقبل'}).click();
     await expect.poll(async()=>(await stored(page)).steps[0].period).toBe('weekly');
@@ -58,8 +60,8 @@ test.describe('unified coach: goals',()=>{
     await page.locator('.mobile-nav').getByRole('button',{name:'حياتي'}).click();
     await page.locator('.section-subnav').getByRole('button',{name:'المؤمن القوي'}).click();
     await page.getByRole('button',{name:'عرض الخطة'}).first().click();
-    await page.getByRole('group',{name:'اقتراح المدرّب'}).filter({hasText:'اجعلها'}).getByRole('button',{name:'أبقها كما هي'}).click();
-    await expect(page.getByRole('group',{name:'اقتراح المدرّب'}).filter({hasText:'اجعلها'})).toHaveCount(0);
+    await page.getByRole('group',{name:'اقتراح ذكي'}).filter({hasText:'اجعلها'}).getByRole('button',{name:'أبقها كما هي'}).click();
+    await expect(page.getByRole('group',{name:'اقتراح ذكي'}).filter({hasText:'اجعلها'})).toHaveCount(0);
     const g=await stored(page);
     expect(g.steps[0].period).toBe('daily');
     expect(g.coach.dismissed.length).toBeGreaterThan(0);

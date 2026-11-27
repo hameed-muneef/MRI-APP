@@ -43,6 +43,7 @@
 .notif-task-panel{display:grid;gap:14px}
 .task-push-permission-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--color-border,#d8d2c4);background:rgba(31,92,74,.05);font-size:13.5px}
 .task-push-permission-bar.perm-denied{background:rgba(166,65,55,.08);border-color:rgba(166,65,55,.25)}
+.task-push-permission-bar .notif-enable-note{flex:1 0 100%;margin:0;color:#a7463b;line-height:1.7}
 .task-push-ok{display:inline-flex;align-items:center;gap:5px;color:#1f5c4a;font-weight:700;font-size:13px}
 .task-lead-presets{display:grid;gap:8px;margin-bottom:10px}
 .task-preset-chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -69,3 +70,6 @@
 [data-theme="dark"] .task-alert-preview-list li{background:#1D3346;border-color:#365570}
 [data-theme="dark"] .task-alert-preview-list li small{color:#C3D4E0}
 [data-theme="dark"] .task-alert-time{color:#9ED3B7}
+
+/* زر إيقاف الصوت أثناء الأذان أو التنبيه داخل التطبيق */
+.live-sound-stop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:1200;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 22px;border-radius:999px;border:1px solid #b8975a;background:#d4b678;color:#1b2430;font:inherit;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.35)}

@@ -1,0 +1,427 @@
+/* المساجد القريبة — تصميم مميز (بصري فقط). يُحمَّل أخيرًا ليتغلب على طبقات الأنماط السابقة. */
+.mosques-page {
+  --mq-ink: var(--hm-text);
+  --mq-deep: var(--hm-emerald-deep);
+  --mq-mid: var(--hm-green);
+  --mq-bright: var(--hm-green);
+  --mq-gold: var(--hm-gold-soft);
+  --mq-gold-ink: var(--hm-warn-text);
+  --mq-card: var(--hm-surface);
+  --mq-card-edge: var(--hm-border);
+  --mq-soft: var(--hm-surface-2);
+  --mq-text: var(--hm-text);
+  --mq-muted: var(--hm-muted-green);
+  --mq-shadow: 0 10px 28px rgba(15, 61, 58, .12);
+  counter-reset: mq;
+  gap: 14px !important;
+}
+[data-theme="dark"] .mosques-page {
+  --mq-ink: var(--hm-text);
+  --mq-deep: var(--hm-surface-2);
+  --mq-mid: var(--hm-emerald-mid);
+  --mq-bright: var(--hm-emerald-soft);
+  --mq-gold: var(--hm-gold-soft);
+  --mq-gold-ink: var(--hm-gold-soft);
+  --mq-card: var(--hm-surface);
+  --mq-card-edge: var(--hm-border);
+  --mq-soft: var(--hm-surface-2);
+  --mq-text: var(--hm-text);
+  --mq-muted: var(--hm-text-muted);
+  --mq-shadow: 0 12px 30px rgba(0, 0, 0, .38);
+}
+
+/* ---------- Hero header ---------- */
+html #root .app .mosques-header {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  gap: 14px;
+  padding: 22px 20px 18px;
+  border-radius: 26px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(227, 194, 122, .28) 0, transparent 55%),
+    linear-gradient(145deg, var(--mq-deep) 0%, var(--mq-mid) 100%);
+  color: var(--hm-on-fill);
+  box-shadow: var(--mq-shadow);
+}
+html #root .app .mosques-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .16;
+  background:
+    repeating-radial-gradient(circle at 12% 120%, transparent 0 16px, var(--hm-gold-pale) 17px 18px, transparent 19px 38px);
+}
+html #root .app .mosques-header::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-inline-start: -34px;
+  top: -34px;
+  width: 128px;
+  height: 128px;
+  border: 1px solid rgba(227, 194, 122, .55);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, .04), 0 0 0 12px rgba(227, 194, 122, .12);
+}
+html #root .app .mosques-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  color: var(--hm-on-fill) !important;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+html #root .app .mosques-header h1 svg {
+  box-sizing: content-box;
+  padding: 10px;
+  border-radius: 16px;
+  color: var(--mq-deep);
+  background: linear-gradient(145deg, var(--hm-gold-pale), var(--mq-gold));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .25);
+}
+html #root .app .mosques-header p {
+  color: rgba(255, 255, 255, .86) !important;
+  font-size: 14px;
+  line-height: 1.85;
+}
+html #root .app .mosques-privacy-pill {
+  justify-self: start;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .13) !important;
+  border: 1px solid rgba(227, 194, 122, .6) !important;
+  color: var(--hm-gold-pale) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- Controls panel ---------- */
+html #root .app .mosques-controls {
+  background: var(--mq-card) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  border-radius: 24px;
+  padding: 16px;
+  gap: 16px;
+  box-shadow: var(--mq-shadow) !important;
+  color: var(--mq-text) !important;
+}
+html #root .app .mosques-control-row { display: grid; gap: 16px; }
+
+/* distance chips */
+html #root .app .mosques-radius-group {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px;
+}
+html #root .app .mosques-chip-btn {
+  min-height: 46px;
+  border-radius: 999px;
+  border: 1.5px solid var(--mq-card-edge) !important;
+  background: var(--mq-soft) !important;
+  color: var(--mq-text) !important;
+  font-weight: 800;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+html #root .app .mosques-chip-btn:active { transform: scale(.96); }
+html #root .app .mosques-chip-btn.active,
+html #root .app .mosques-chip-btn.active * {
+  color: var(--hm-on-fill) !important;
+}
+html #root .app .mosques-chip-btn.active {
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  border-color: var(--mq-gold) !important;
+  box-shadow: 0 6px 14px rgba(15, 61, 58, .32), inset 0 0 0 1px rgba(227, 194, 122, .35);
+}
+
+/* slider */
+html #root .app .mosques-radius-custom {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-areas: "label label" "range num" !important;
+  align-items: center;
+  gap: 10px 14px !important;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--mq-soft);
+  border: 1px dashed var(--mq-card-edge);
+}
+html #root .app .mosques-radius-custom label {
+  color: var(--mq-muted) !important;
+  font-size: 13px;
+  font-weight: 800;
+}
+html #root .app .mosques-radius-custom input[type=range] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 30px !important;
+  border-radius: 999px;
+  background: transparent !important;
+  accent-color: var(--mq-mid);
+}
+html #root .app .mosques-radius-custom input[type=range]::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(to left, var(--mq-bright) 0, var(--mq-mid) var(--mq-fill, 0%), rgba(120, 150, 140, .28) var(--mq-fill, 0%));
+}
+html #root .app .mosques-radius-custom input[type=range]::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(120, 150, 140, .28);
+}
+html #root .app .mosques-radius-custom input[type=range]::-moz-range-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--mq-mid);
+}
+html #root .app .mosques-radius-custom input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--mq-deep) 0 5px, var(--hm-gold-pale) 6px);
+  border: 3px solid var(--mq-gold);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
+}
+html #root .app .mosques-radius-custom input[type=range]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--hm-gold-pale);
+  border: 3px solid var(--mq-gold);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
+}
+html #root .app .mosques-radius-custom input[type=number] {
+  width: 92px !important;
+  min-height: 46px;
+  padding: 6px 10px !important;
+  border-radius: 14px !important;
+  border: 2px solid var(--mq-mid) !important;
+  background: var(--mq-card) !important;
+  color: var(--mq-text) !important;
+  font-size: 20px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* walk / car segmented toggle */
+html #root .app .mosques-mode-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--mq-soft);
+  border: 1px solid var(--mq-card-edge);
+}
+html #root .app .mosques-mode-group .mosques-chip-btn {
+  border: 0 !important;
+  background: transparent !important;
+  min-height: 46px;
+}
+html #root .app .mosques-mode-group .mosques-chip-btn.active {
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  box-shadow: 0 5px 12px rgba(15, 61, 58, .35);
+}
+
+/* actions */
+html #root .app .mosques-action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+html #root .app .mosques-action-row .soft-btn {
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--mq-soft) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  color: var(--mq-text) !important;
+  font-weight: 800;
+  white-space: normal;
+  line-height: 1.35;
+}
+html #root .app .mosques-action-row .soft-btn svg { color: var(--mq-mid); flex-shrink: 0; }
+html #root .app .mosques-action-row .soft-btn:first-child {
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  border-color: var(--mq-gold) !important;
+  color: var(--hm-on-fill) !important;
+}
+html #root .app .mosques-action-row .soft-btn:first-child svg { color: var(--mq-gold); }
+
+/* status */
+html #root .app .mosques-location-bar {
+  display: grid;
+  gap: 6px;
+  border-top: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(46, 154, 123, .12), rgba(227, 194, 122, .16));
+  border: 1px solid var(--mq-card-edge);
+  color: var(--mq-muted) !important;
+  line-height: 1.8;
+}
+html #root .app .mosques-location-bar strong { color: var(--mq-text); }
+html #root .app .mosques-location-bar > span:last-child { color: var(--mq-text); font-weight: 700; }
+html #root .app .mosques-controls > p[role="status"] {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(227, 194, 122, .2);
+  border: 1px solid var(--mq-gold);
+  color: var(--mq-text) !important;
+}
+
+/* ---------- Results ---------- */
+html #root .app .mosques-list { gap: 14px; counter-reset: mq; }
+html #root .app .mosque-card {
+  counter-increment: mq;
+  position: relative;
+  overflow: hidden;
+  padding: 16px 18px 16px 16px;
+  border-radius: 22px;
+  background: var(--mq-card) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  box-shadow: var(--mq-shadow) !important;
+  gap: 14px;
+}
+html #root .app .mosque-card::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--mq-gold), var(--mq-mid));
+}
+html #root .app .mosque-card-icon {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  color: var(--mq-gold) !important;
+  box-shadow: 0 6px 12px rgba(15, 61, 58, .3);
+}
+html #root .app .mosque-card-icon::after {
+  content: counter(mq);
+  position: absolute;
+  inset-block-end: -6px;
+  inset-inline-end: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--mq-gold);
+  color: var(--hm-on-gold-dark);
+  border: 2px solid var(--mq-card);
+}
+html #root .app .mosque-card-text h3 { color: var(--mq-text) !important; font-size: 17px; font-weight: 800; }
+html #root .app .mosque-card-loc { color: var(--mq-muted) !important; }
+html #root .app .mosque-distance-badge {
+  min-width: 78px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--hm-gold-pale), var(--mq-gold)) !important;
+  color: var(--hm-on-gold-dark) !important;
+  border: 0 !important;
+  box-shadow: 0 6px 12px rgba(138, 106, 31, .25);
+}
+html #root .app .mosque-distance-badge strong { font-size: 16px; font-weight: 800; color: var(--hm-on-gold-dark); }
+html #root .app .mosque-distance-badge small { color: var(--hm-warn-text-strong) !important; font-weight: 700; }
+html #root .app .mosque-eta {
+  display: inline-flex;
+  padding: 7px 12px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--mq-soft);
+  border: 1px solid var(--mq-card-edge);
+  color: var(--mq-text);
+  font-weight: 700;
+}
+html #root .app .mosque-eta svg { color: var(--mq-mid); }
+html #root .app .mosque-eta small { color: var(--mq-muted); }
+html #root .app .mosque-card .mosque-maps-btn.primary,
+html #root .app .mosque-maps-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  background: var(--mq-deep) linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  background-color: var(--mq-deep) !important;
+  background-image: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  color: var(--hm-on-fill) !important;
+  border: 1px solid rgba(227, 194, 122, .6) !important;
+  box-shadow: 0 8px 16px rgba(15, 61, 58, .3);
+}
+html #root .app .mosque-maps-btn svg { color: var(--mq-gold); }
+html #root .app .mosque-maps-btn:active { transform: scale(.98); }
+
+/* ---------- Empty / error / prompt states ---------- */
+html #root .app .mosque-state-card {
+  justify-items: center;
+  text-align: center;
+  padding: 28px 20px;
+  border-radius: 26px;
+  background:
+    radial-gradient(90% 70% at 50% 0%, rgba(227, 194, 122, .2), transparent 70%),
+    var(--mq-card) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  box-shadow: var(--mq-shadow) !important;
+}
+html #root .app .mosque-state-card h2 { color: var(--mq-text) !important; font-size: 20px; font-weight: 800; }
+html #root .app .mosque-state-card p { color: var(--mq-muted) !important; max-width: 34ch; }
+html #root .app .mosque-state-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  color: var(--mq-gold) !important;
+  box-shadow: 0 0 0 8px rgba(46, 154, 123, .14), 0 10px 20px rgba(15, 61, 58, .28);
+}
+html #root .app .mosque-state-card.warn .mosque-state-icon {
+  background: linear-gradient(145deg, var(--hm-gold-deep), var(--hm-gold-text)) !important;
+  color: var(--hm-gold-pale) !important;
+  box-shadow: 0 0 0 8px rgba(227, 194, 122, .2), 0 10px 20px rgba(0, 0, 0, .25);
+}
+html #root .app .mosque-state-actions { justify-content: center; }
+html #root .app .mosque-state-actions .primary,
+html #root .app .mosque-state-actions .soft-btn { border-radius: 16px; min-height: 48px; font-weight: 800; padding-inline: 18px; }
+html #root .app .mosque-state-actions .primary {
+  background: linear-gradient(145deg, var(--mq-mid), var(--mq-deep)) !important;
+  color: var(--hm-on-fill) !important;
+  border: 1px solid rgba(227, 194, 122, .6);
+}
+html #root .app .mosque-state-actions .soft-btn {
+  background: var(--mq-soft) !important;
+  color: var(--mq-text) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+}
+
+/* manual picker + skeleton + attribution */
+html #root .app .mosque-manual-picker,
+html #root .app .mosque-skeleton-card {
+  background: var(--mq-card) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  border-radius: 22px;
+  box-shadow: var(--mq-shadow) !important;
+}
+html #root .app .mosque-city-list li button {
+  border-radius: 14px;
+  background: var(--mq-soft) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  color: var(--mq-text) !important;
+  font-weight: 700;
+}
+html #root .app .mosque-skel-line,
+html #root .app .mosque-skel-btn { background: linear-gradient(90deg, var(--mq-soft), rgba(227, 194, 122, .3), var(--mq-soft)) !important; background-size: 200% 100% !important; }
+html #root .app .mosques-attribution {
+  background: var(--mq-soft) !important;
+  border: 1px solid var(--mq-card-edge) !important;
+  border-radius: 16px;
+  color: var(--mq-muted) !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html #root .app .mosque-card { animation: mq-rise .35s ease both; }
+  @keyframes mq-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}

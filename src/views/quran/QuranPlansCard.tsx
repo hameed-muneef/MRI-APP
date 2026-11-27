@@ -78,7 +78,7 @@ export default function QuranPlansCard({asset, state, notify, onOpen, onOpenHifz
       <p>مقرر اليوم: <strong>{formatStepSummary(asset, bilQuranStep)}</strong></p>
       <button type="button" className="qm-primary" onClick={openBilQuranToday}>ابدأ مقرر اليوم في مصحف الحفظ</button>
     </div> : <div className="qm-card">
-      <h3>خطط الحفظ والمراجعة (منهج بالقرآن نحيا)</h3>
+      <h3>خطط الحفظ والمراجعة</h3>
       <p>اختر خطة مناسبة لوقتك (للمبتدئين أو من البقرة أو من الناس) مع البدء من أي اتجاه داخل مصحف الحفظ والإتقان.</p>
       <button type="button" className="qm-primary" onClick={onOpenHifz}>اختيار خطة في مصحف الحفظ</button>
     </div>}

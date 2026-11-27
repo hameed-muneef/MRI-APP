@@ -12,8 +12,10 @@ import {
   unreadLocalNotificationCount,
 } from '../notifications/local-inbox';
 import {syncDeliveredNativeNotifications} from '../notifications/native-history';
+import {notificationCenterVisibility} from '../notifications/center-visibility';
 import '../notifications.css';
 import {useBackHandler} from '../navigation/useBackHandler';
+import {useScrollLock} from '../navigation/useScrollLock';
 
 type NotificationCategory='reminder'|'system';
 type NotificationRow={
@@ -79,10 +81,12 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   const [confirmClear,setConfirmClear]=useState(false);
   const rootRef=useRef<HTMLDivElement>(null);
   const [nowMs,setNowMs]=useState(()=>Date.now());
-  const preferencesOff=profile?.notification_preferences?.enabled===false;
+  const visibility=notificationCenterVisibility(profile?.notification_preferences);
+  const preferencesOff=visibility.panel==='preferences-off';
   // الرجوع يغلق تأكيد الحذف أولًا، ثم لوحة الإشعارات.
   useBackHandler(()=>setConfirmClear(false),confirmClear);
   useBackHandler(()=>{setOpen(false);setConfirmClear(false)},open);
+  useScrollLock(open);
 
   const loadLocal=useCallback(()=>{
     const rows=listLocalNotifications();
@@ -297,8 +301,6 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     }
   };
 
-  if(preferencesOff)return null;
-
   return <div className="notif-center" ref={rootRef}>
     <button type="button" className="notif-bell" onClick={()=>setOpen(value=>{const next=!value;if(!next)setConfirmClear(false);return next})} aria-label={`الإشعارات${unread?` (${unread} غير مقروءة)`:''}`} aria-expanded={open} aria-haspopup="dialog">
       <Bell size={18}/>
@@ -310,6 +312,11 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
         <button type="button" className="soft-btn notif-mark-all" disabled={busy||unread===0} onClick={()=>void markAll()}><CheckCheck size={15}/> تعليم الكل كمقروء</button>
         <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> مسح التنبيهات</button>
       </header>
+      {preferencesOff?<div className="notif-state" role="status">
+        <Bell size={18}/>
+        <span>الإشعارات متوقفة من الإعدادات، فلا تصل تنبيهات جديدة. يمكنك تفعيلها من إعدادات الإشعارات.</span>
+        <button type="button" className="soft-btn" onClick={()=>{setOpen(false);onNavigate('settings')}}>فتح إعدادات الإشعارات</button>
+      </div>:<>
       {confirmClear&&(
         <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف جميع الإشعارات">
           <p className="small">سيتم حذف جميع الإشعارات من هذا الجهاز. متابعة؟</p>
@@ -345,6 +352,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
           })}
         </ul>}
       {!legacy&&hasMore&&<button type="button" className="soft-btn notif-more" disabled={loading} onClick={()=>void loadMore()}>{loading?'جارٍ التحميل…':'تحميل المزيد'}</button>}
+      </>}
     </div>}
   </div>;
 }

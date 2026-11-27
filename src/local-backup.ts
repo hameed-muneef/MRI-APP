@@ -92,8 +92,51 @@ export function exportLocalBackup(): LocalBackupPayload {
   };
 }
 
+/**
+ * يمسح كل بيانات المستخدم المحلية التي تشملها النسخة الاحتياطية (المفاتيح التي تبدأ بـ «rabbani-»).
+ * ذاكرة محتوى القرآن (quran-content-cache-v1:) لا تُمسح: ليست بيانات شخصية، ومسحها يعطّل القراءة دون إنترنت.
+ * يُعيد المفاتيح التي أُزيلت.
+ */
+// تبقى هذه المفاتيح عمدًا: معرّفات المنبهات الأصلية يحتاجها المجدوِل لإلغاء المنبهات المجدولة فعلًا
+// (حذفها يترك منبهات يتيمة تدق بعد الحذف)، وفهرس التلاوات المحمّلة يرتبط بملفات صوت باقية.
+const KEEP_KEYS = new Set([
+  'rabbani-native-prayer-ids-v1',
+  'rabbani-native-reminder-ids-v1',
+  'rabbani-native-task-ids-v1',
+  'rabbani-native-review-ids-v1',
+  'rabbani-quran-offline-audio-v1',
+]);
+
+export function clearLocalData(): string[] {
+  const removed: string[] = [];
+  if (typeof window === 'undefined' || !window.localStorage) return removed;
+  const keys: string[] = [];
+  let failed = false;
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('rabbani-') && !KEEP_KEYS.has(key)) keys.push(key);
+    }
+  } catch { failed = true; }
+  for (const key of keys) {
+    try {
+      window.localStorage.removeItem(key);
+      removed.push(key);
+    } catch { failed = true; }
+  }
+  // لا نُخفي الفشل: المستدعي يعرض حالة الخطأ بدل رسالة نجاح.
+  if (failed) throw new Error('local-data-clear-failed');
+  return removed;
+}
+
 export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'): State | null {
-  const parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
+  let parsed: Partial<LocalBackupPayload> | null;
+  try {
+    parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
+  } catch {
+    // ملف ليس JSON أصلًا: رسالة عربية مفهومة بدل خطأ المحلل بالإنجليزية.
+    throw new Error('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
+  }
   if (!parsed || typeof parsed !== 'object' || parsed.app !== BACKUP_APP_ID || parsed.version !== BACKUP_FORMAT_VERSION || typeof parsed.storage !== 'object' || !parsed.storage || Array.isArray(parsed.storage)) {
     throw new Error('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
   }

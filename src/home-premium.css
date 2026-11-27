@@ -1,0 +1,243 @@
+/* ---------- Cards ---------- */
+html #root .app .home-today-entry,
+html #root .app .feature-card,
+html #root .app .wide-card {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+html #root .app .home-today-entry:active,
+html #root .app .feature-card:active,
+html #root .app .wide-card:active { transform: scale(.985); }
+html #root .app .home-today-icon,
+html #root .app .feature-icon,
+html #root .app .wide-icon {
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: 14px !important;
+}
+html #root .app .home-today-entry strong,
+html #root .app .feature-card strong,
+html #root .app .wide-card h3 { color: var(--hm-text) !important; font-weight: 800; }
+html #root .app .home-today-entry small,
+html #root .app .feature-card p,
+html #root .app .wide-card p { color: var(--hm-text-muted) !important; }
+html #root .app .section-title h2 { color: var(--hm-text) !important; font-weight: 800; }
+html #root .app .section-title .eyebrow { color: var(--hm-gold-text) !important; font-weight: 800; letter-spacing: .3px; }
+html #root .app .home-date-bar {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-md) !important;
+  box-shadow: var(--hm-shadow-2);
+}
+
+/* today's tasks rows */
+html #root .app .home-task-dot { background: var(--hm-gold) !important; }
+html #root .app main.main .home-today-list .home-tasks-row { border-color: var(--hm-border) !important; }
+html #root .app .home-task-live { color: var(--hm-green); }
+html #root .app .home-tasks-all { color: var(--hm-text) !important; font-weight: 800; }
+
+/* ---------- Bottom navigation ---------- */
+html #root .app .mobile-nav {
+  background: color-mix(in srgb, var(--hm-surface) 92%, transparent) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--hm-border) !important;
+  box-shadow: 0 -8px 26px rgba(16, 36, 58, .1);
+}
+html #root .app .mobile-nav button { color: var(--hm-text-muted) !important; font-weight: 700; }
+html #root .app .mobile-nav button.active {
+  background: color-mix(in srgb, var(--hm-gold) 28%, transparent) !important;
+  color: var(--hm-text) !important;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html #root .app { background-color: var(--hm-bg); }
+html #root .app .home-today-list .home-tasks-row { color: var(--hm-text); }
+
+/* بطاقات الصلاة / التذكيرات / الإنجاز */
+html:root #root .app.app main.main .home-dashboard .home-next-card,
+html:root #root .app.app main.main .home-dashboard .home-next-card:hover {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
+}
+html:root #root .app.app main.main .home-dashboard .home-next-card .home-next-icon {
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-md) !important;
+}
+html:root #root .app.app main.main .home-dashboard .home-next-headline,
+html:root #root .app.app main.main .home-dashboard .home-next-time { color: var(--hm-text) !important; }
+html:root #root .app.app main.main .home-dashboard .home-next-kicker small,
+html:root #root .app.app main.main .home-dashboard .home-next-card small,
+html:root #root .app.app main.main .home-dashboard .home-next-chevron { color: var(--hm-text-muted) !important; }
+
+html:root #root .app.app main.main .home-today-entry,
+html:root #root .app.app main.main .feature-card,
+html:root #root .app.app main.main .wide-card {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
+}
+html:root #root .app.app main.main .home-today-entry .home-today-icon,
+html:root #root .app.app main.main .feature-card .feature-icon,
+html:root #root .app.app main.main .wide-card .wide-icon {
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
+}
+html:root #root .app.app main.main .home-today-entry strong,
+html:root #root .app.app main.main .feature-card strong,
+html:root #root .app.app main.main .wide-card h3 { color: var(--hm-text) !important; }
+html:root #root .app.app main.main .home-today-entry small,
+html:root #root .app.app main.main .feature-card .feature-copy span,
+html:root #root .app.app main.main .wide-card p { color: var(--hm-text-muted) !important; }
+
+html[data-theme="dark"]:root #root .app.app,
+html[data-theme="dark"]:root body { background-color: var(--hm-bg) !important; background-image: none; }
+html[data-theme="dark"]:root #root .app.app .mobile-nav { background: var(--hm-nav-bg) !important; }
+
+/* Cairo (محلي، بدون اتصال) */
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-arabic-wght-normal.woff2') format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-latin-wght-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-latin-ext-wght-normal.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+/* Amiri (SIL OFL 1.1), bundled locally so the home verse keeps the same shaping without the remote Google Fonts link */
+@font-face{font-family:'Amiri';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/amiri-arabic-400.woff2') format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC}
+@font-face{font-family:'Amiri';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/amiri-latin-400.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD}
+@font-face{font-family:'Amiri';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/amiri-arabic-700.woff2') format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC}
+@font-face{font-family:'Amiri';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/amiri-latin-700.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD}
+html body, html body button, html body input, html body select, html body textarea { font-family: 'Cairo', Tajawal, Arial, sans-serif; }
+
+/* زر البدء: ذهبي هادئ بنص كحلي */
+html #root .app.app .hero .hero-btn { background:#C99A45 !important; color:#0D1722 !important; border:0 !important; box-shadow:0 4px 12px rgba(0,0,0,.18) !important; }
+html[data-theme="dark"] #root .app.app .hero .hero-btn { background:#D4A349 !important; }
+/* الشريط الزمني: هجري | ميلادي */
+html #root .app .home-date-text { display:flex; align-items:center; }
+html #root .app .home-greg-date::before { content:"|"; margin-inline:10px; color: var(--hm-border); }
+html #root .app .home-date-bar { background: var(--hm-surface) !important; border-radius:999px !important; border:1px solid var(--hm-border) !important; }
+/* بطاقات: فصل واضح عن الصفحة */
+html:root #root .app.app main.main .home-today-entry,
+html:root #root .app.app main.main .home-dashboard .home-next-card,
+html:root #root .app.app main.main .feature-card,
+html:root #root .app.app main.main .wide-card { border-radius:16px !important; }
+html:root[data-theme="light"] #root .app.app main.main .home-today-entry,
+html:root[data-theme="light"] #root .app.app main.main .home-dashboard .home-next-card,
+html:root[data-theme="light"] #root .app.app main.main .feature-card,
+html:root[data-theme="light"] #root .app.app main.main .wide-card { box-shadow: 0 2px 10px rgba(28,37,44,.07) !important; }
+html:root[data-theme="dark"] #root .app.app main.main .home-today-entry,
+html:root[data-theme="dark"] #root .app.app main.main .home-dashboard .home-next-card,
+html:root[data-theme="dark"] #root .app.app main.main .feature-card,
+html:root[data-theme="dark"] #root .app.app main.main .wide-card { box-shadow: 0 6px 18px rgba(4,12,22,.35) !important; border-color: var(--hm-border) !important; }
+/* التنقل: اللون النشط زمردي */
+html:root { --hm-active: #1E6F5C; --hm-active-bg: rgba(30,111,92,.12); }
+html:root[data-theme="dark"] { --hm-active: #7AD6B8; --hm-active-bg: rgba(122,214,184,.18); }
+html #root .app.app .mobile-nav button.active { color: var(--hm-active) !important; background: var(--hm-active-bg) !important; }
+html #root .app.app .mobile-nav button.active svg, html #root .app.app .mobile-nav button.active span { color: var(--hm-active) !important; }
+html #root .app.app .section-title h2 { color: var(--hm-text) !important; }
+html:root #root .app.app, html:root body, html:root #root .app.app main.main { background-color: var(--hm-bg) !important; background-image: none !important; }
+html:root #root .app.app header, html:root #root .app.app .topbar { background-color: var(--hm-bg) !important; border-bottom: 1px solid var(--hm-border) !important; }
+html:root:root #root .topbar, html:root:root .topbar { background: var(--hm-bg) !important; border-bottom: 1px solid var(--hm-border) !important; box-shadow: none !important; }
+html:root:root #root .app.app .mobile-nav, html:root:root .mobile-nav { background: var(--hm-nav-bg) !important; border-top: 1px solid var(--hm-border) !important; }
+html[data-theme]:root:root #root .app.app .topbar, html[data-theme]:root:root #root .app.app main.main .topbar, html[data-theme]:root:root #root .app.app > .topbar { background: var(--hm-bg) !important; border-bottom-color: var(--hm-border) !important; }
+
+/* خط وأوزان (Cairo) */
+html #root .app { letter-spacing: 0; line-height: 1.7; }
+html #root .app .topbar h1, html #root .app .topbar .topbar-title { font-weight: 700; }
+html #root .app .section-title h2 { font-weight: 700; }
+html #root .app .home-today-entry strong, html #root .app .feature-card strong, html #root .app .wide-card h3, html #root .app .home-next-headline { font-weight: 600; }
+html #root .app .home-today-entry small, html #root .app .feature-card .feature-copy span, html #root .app .wide-card p, html #root .app .home-next-card small { font-size: max(12px, .8125rem); line-height: 1.7; }
+html[data-theme="dark"] #root .app .home-today-entry small, html[data-theme="dark"] #root .app .feature-card .feature-copy span, html[data-theme="dark"] #root .app .home-next-card small { font-weight: 500; }
+html #root .app .home-next-time, html #root .app .home-next-countdown, html #root .app .home-task-meta { font-weight: 600; font-size: max(12px, .8125rem); }
+html #root .app .home-task-live, html #root .app .home-task-live b { font-weight: 700; font-size: max(12px, .8125rem); }
+html #root .app .hero .hero-btn { font-weight: 700; }
+html #root .app .mobile-nav button { font-size: 12px; font-weight: 600; }
+html:root #root .app.app main.main .home-dashboard .home-next-chevron, html:root #root .app.app main.main .home-today-entry > svg { color: var(--hm-text-muted) !important; }
+html #root .app .home-task-live { white-space: nowrap; display: inline-block; }
+
+/* توحيد الألوان القديمة (أزرق/أسود) على رموز التصميم، لكل الشاشات */
+html[data-theme="dark"]:root {
+  --dark-surface-canvas: var(--hm-bg);
+  --dark-surface-page: var(--hm-bg);
+  --dark-surface: var(--hm-surface);
+  --dark-surface-raised: var(--hm-surface-2);
+  --dark-surface-sunken: #11283F;
+  --dark-line-card: var(--hm-border);
+  --dark-line-soft: #3F6389;
+  --dark-body: var(--hm-text);
+  --dark-muted: var(--hm-text-muted);
+  --dark-ink: var(--hm-text);
+  --grad-surface: linear-gradient(165deg, var(--hm-surface-2) 0%, var(--hm-surface) 100%);
+}
+html[data-theme="light"]:root {
+  --section-accent: #1E6F5C; --section-soft: var(--hm-surface-2); --section-strong: #1E6F5C; --section-strong-hover: #175A4A; --section-on-strong: #FFFFFF;
+}
+html[data-theme="light"]:root #root .app main.main[data-section] {
+  --section-accent: #1E6F5C !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #1E6F5C !important; --section-strong-hover: #175A4A !important;
+}
+html[data-theme="dark"]:root #root .app main.main[data-section] {
+  --section-accent: #7AD6B8 !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #7AD6B8 !important; --section-strong-hover: #A6E6D0 !important; --section-on-strong: #0D1722 !important;
+}
+html[data-theme="dark"]:root:root #root .app .icon-btn, html[data-theme="dark"]:root:root #root .app .notif-bell,
+html[data-theme="dark"]:root:root #root .app .panel, html[data-theme="dark"]:root:root #root .app .section-subnav,
+html[data-theme="dark"]:root:root #root .app .switch-row, html[data-theme="dark"]:root:root #root .app .qibla-dial {
+  background-color: var(--hm-surface) !important; border-color: var(--hm-border) !important;
+}
+html[data-theme="dark"]:root:root #root .app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html[data-theme="dark"]:root:root #root .app select, html[data-theme="dark"]:root:root #root .app textarea {
+  background-color: var(--hm-bg) !important; border-color: var(--hm-border) !important; color: var(--hm-text) !important;
+}
+html:root { --font-body: 'Cairo', Tajawal, Arial, sans-serif; --font-heading: 'Cairo', Tajawal, Arial, sans-serif; --font-ui: 'Cairo', Tajawal, Arial, sans-serif; }
+
+/* Audit fixes: contrast >= 4.5:1 on final surfaces */
+html[data-theme="dark"]:root:root .mf-marker { color: #E2C06E; }
+html[data-theme="dark"]:root:root #root .app .soft-btn { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; color: #F3EFE4 !important; }
+html[data-theme="dark"]:root:root #root .app .mf-btn { background: #2A725E !important; border-color: #2A725E !important; color: #F3EFE4 !important; }
+
+/* Form controls and native dropdown lists use the palette tokens */
+html:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=range]), html:root:root #root select, html:root:root #root textarea { color: var(--hm-text); background-color: var(--hm-surface) !important; }
+html:root:root select option, html:root:root select optgroup { color: var(--hm-text); background-color: var(--hm-surface); font-family: Cairo, Tajawal, Arial, sans-serif; }
+html[data-theme="dark"]:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=range]), html[data-theme="dark"]:root:root #root select, html[data-theme="dark"]:root:root #root textarea { background-color: var(--hm-bg) !important; }
+html[data-theme="dark"]:root:root select option, html[data-theme="dark"]:root:root select optgroup { background-color: var(--hm-surface); color: #F3EFE4; }
+
+/* Tap targets: at least 44px without moving surrounding layout */
+html:root:root #root .app :is(.icon-btn, .notif-bell) { min-width: 44px; min-height: 44px; }
+html:root:root #root .app :is(button.back, .mf-btn, .mushaf-toolbar select, select) { min-height: 44px; }
+html:root:root #root .app a:is([href*="youtube"], [target="_blank"]) { min-height: 44px; display: inline-flex; align-items: center; }
+html:root:root #root .app .section-subnav button, html:root:root #root .app .scroll-top-fab { min-height: 44px; }
+html:root:root #root .app .scroll-top-fab { min-width: 44px; }
+html[data-theme="dark"]:root:root .mf-sajda { color: #E2A964; }
+html:root:root #root .app :is(.mf-btn.sm, summary, .icon-btn.danger) { min-height: 44px; }
+html:root:root #root .app .mf-btn.sm { min-width: 44px; }
+html[data-theme="dark"]:root:root .mf-badge { background: var(--hm-surface-2); color: #F3EFE4; }
+html:root:root #root .app .section-subnav { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22px); mask-image: linear-gradient(to right, transparent 0, #000 22px); }
+
+/* Hifz entry and mastery text in dark: readable on the lifted surfaces */
+html[data-theme="dark"]:root:root #root .hf-link { color: #7AD6B8; }
+html[data-theme="dark"]:root:root #root .hf-screen :is(p, small, .qm-muted, .hf-link-quiet) { color: #CBD5E1; opacity: 1; }
+html[data-theme="dark"]:root:root #root .hf-choice small { color: #CBD5E1; opacity: 1; }
+html[data-theme="dark"]:root:root .qm-workspace .qm-muted { color: #CBD5E1; }
+
+/* Light mode: remaining blue borders and icon strokes found in the audit (tafsir library list, icon buttons, active chips) */
+html[data-theme="light"]:root:root #root .app .ol-row { border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) { border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) svg { color: #1E6F5C; stroke: currentColor; }
+html[data-theme="light"]:root:root #root .app button.active:not(.mobile-nav button) { border-color: var(--hm-border); }
+html[data-theme="light"]:root:root #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2) { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
+html[data-theme="dark"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface) !important; border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app .mobile-nav button.active, html[data-theme="light"]:root:root #root .app .mobile-nav button[data-section].active { border-color: var(--hm-border) !important; }
+
+/* Muted small text: at least 4.5:1 on the final surfaces */
+html[data-theme="dark"]:root:root .quran-hadith-summary span, html[data-theme="dark"]:root:root :is(.rev-stat-label, .rev-stat-caption) { color: #CBD5E1; }
+html[data-theme="light"]:root:root #root .hf-choice small { color: var(--hm-text-muted); opacity: 1; }

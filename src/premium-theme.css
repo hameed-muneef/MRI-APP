@@ -595,7 +595,7 @@ body:has(.learning-content) body::before{opacity:.18}
 
 /* ---------- 15) لوح الإشعارات: بلا تجاوز أفقي عند الفتح في الموبايل ---------- */
 @media(max-width:640px){
-  #root .app .notif-panel{inset-inline:auto;left:10px;right:10px;width:auto}
+  #root .app .notif-panel{left:10px;right:10px;width:auto}
 }
 /* ---------- 16) أحجام موحّدة: أيقونات الشريط + مربعات الاختيار ---------- */
 #root .app .top-actions svg{width:18px;height:18px;stroke-width:2}

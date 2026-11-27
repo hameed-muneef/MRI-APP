@@ -14,7 +14,10 @@ public class QueuedReminderReceiver extends BroadcastReceiver {
             intent.getIntExtra("id", 0),
             intent.getStringExtra("title"),
             intent.getStringExtra("body"),
-            intent.getStringExtra("channelId")
+            intent.getStringExtra("channelId"),
+            intent.getBooleanExtra("alarmMode", false),
+            intent.getStringExtra("soundKey"),
+            intent.getStringExtra("rawSound")
         );
     }
 }

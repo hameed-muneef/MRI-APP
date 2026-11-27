@@ -1,0 +1,56 @@
+name: Android debug APK
+
+# DEBUG apk for phone testing. Isolated variant: applicationId com.alrabbaniyoon.app.test6 and label الربانيون (تجريبي ٦),
+# set only inside the CI workspace (repo files are not changed), so it installs next to the real app with separate empty data.
+# No release keys, no secrets, no Google Play.
+# Test build 7b: per-card accent colors (opaque backgrounds), Amiri bundled, audit fixes.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/smart-coach-enhancement]
+    paths:
+      - '.github/workflows/android-debug-apk.yml'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web assets and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Make isolated test variant (CI workspace only)
+        run: |
+          sed -i 's/applicationId "com.alrabbaniyoon.app"/applicationId "com.alrabbaniyoon.app.test6"/' android/app/build.gradle
+          sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">الربانيون (تجريبي ٦)</string>|; s|<string name="title_activity_main">[^<]*</string>|<string name="title_activity_main">الربانيون (تجريبي ٦)</string>|' android/app/src/main/res/values/strings.xml
+          grep -n 'applicationId' android/app/build.gradle
+          grep -n 'app_name\|title_activity_main' android/app/src/main/res/values/strings.xml
+      - name: Build debug APK
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew -p android assembleDebug --no-daemon
+      - name: Inspect APK (id, label, signing, commit)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          BT=$(ls -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/build-tools/* | sort -V | tail -1)
+          echo "HEAD=$(git rev-parse HEAD)"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label:" | head -5
+          "$BT/apksigner" verify --print-certs "$APK" | head -4
+          sha256sum "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk-test6
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14

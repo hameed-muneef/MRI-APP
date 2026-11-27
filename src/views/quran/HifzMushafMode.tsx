@@ -35,6 +35,7 @@ import {
   type BilQuranPlanSpec,
 } from '../../quran-mastery/bilquran-plans';
 import BilQuranPlansBrowser from './BilQuranPlansBrowser';
+import {useScrollLock} from '../../navigation/useScrollLock';
 
 // واجهة الحفظ الجديدة: الصفحة الكاملة من المصحف أولًا، وتحتها ثلاثة أزرار: إخفاء/إظهار، تشغيل القارئ، تسجيل التسميع.
 // لا تغيّر نص القرآن ولا بيانات الإتقان القديمة؛ الوضع المفصّل ما زال متاحًا.
@@ -175,6 +176,7 @@ export default function HifzMushafMode({asset, notify, onDetailed, onExit, tasks
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, started]);
   const [ask, setAsk] = useState(false);
+  useScrollLock(ask || sheet || listSheet);
   const [sched, setSched] = useState(false);
   const [schedDate, setSchedDate] = useState('');
   const [schedTime, setSchedTime] = useState('20:00');
@@ -591,7 +593,7 @@ export default function HifzMushafMode({asset, notify, onDetailed, onExit, tasks
 
         <button type="button" className="hf-plan-launch" onClick={() => setPhase('plans')}>
           <div>
-            <strong>خطط الحفظ والمراجعة (منهج بالقرآن نحيا)</strong>
+            <strong>خطط الحفظ والمراجعة</strong>
             <small>اختر من ١٢ خطة للمبتدئين ومن البقرة ومن الناس (٥ إلى ٤٨ شهرًا) بأي اتجاه</small>
           </div>
           <span>استعراض الخطط</span>

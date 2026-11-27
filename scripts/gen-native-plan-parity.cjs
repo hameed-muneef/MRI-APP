@@ -16,7 +16,7 @@ if (!process.env.PARITY_TZ) {
 } else {
   const {buildSync} = require('esbuild'); fs.mkdirSync('tmp', {recursive: true});
   const outfile = path.join(process.cwd(), 'tmp', 'np-' + process.env.PARITY_TZ.replace('/', '_') + '.cjs');
-  buildSync({stdin: {contents: "export * from './src/notifications/native-prayer-scheduler'; export * from './src/notifications/native-recompute-spec'; export {DEFAULT_NOTIFICATION_PREFERENCE as P} from './src/notifications/types';", resolveDir: process.cwd(), loader: 'ts'}, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'error', external: ['@capacitor/*']});
+  buildSync({stdin: {contents: "export * from './src/notifications/native-prayer-scheduler'; export * from './src/notifications/native-recompute-spec'; export {DEFAULT_NOTIFICATION_PREFERENCE as P} from './src/notifications/types';", resolveDir: process.cwd(), loader: 'ts'}, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'error', define: {'import.meta': '{"env":{}}'}, external: ['@capacitor/*']});
   const m = require(outfile);
   const locs = [[21.4225, 39.8262, 'UmmAlQura'], [30.0444, 31.2357, 'Egyptian'], [51.5074, -0.1278, 'MuslimWorldLeague'], [69.6492, 18.9553, 'MuslimWorldLeague'],
     [34.0522, -118.2437, 'NorthAmerica'], [-36.8485, 174.7633, 'MuslimWorldLeague'], [28.6139, 77.209, 'Karachi'], [-23.55, -46.63, 'MuslimWorldLeague'], [1.3521, 103.8198, 'Singapore'], [35.6892, 51.389, 'Tehran'], [41.0082, 28.9784, 'Turkey']];

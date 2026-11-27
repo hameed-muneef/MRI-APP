@@ -18,7 +18,7 @@ const task=obj({id:str,title:str,period,done:bool,optional:bool,weekStart:str.op
 const step=obj({id:str,title:str,period:goalPeriod,done:rec(bool),customDate:str.optional()});
 const coachMode=z.enum(['inherit','on','off']);
 const goal=obj({id:str,title:str,benefit:str,targetDate:str.optional(),createdAt:str.optional(),steps:z.array(step).optional(),action:str.optional(),period:goalPeriod.optional(),coach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),mode:coachMode.optional()}).optional()});
-const schedule=obj({initialDate:str.optional(),initialSlot:str.optional(),initialTime:str.optional(),confirmedDate:str.optional(),confirmedSlot:str.optional(),confirmedTime:str.optional(),title:str,sourceLabel:str,notifyEnabled:bool.optional(),remindBeforeMinutes:num.optional()});
+const schedule=obj({initialDate:str.optional(),initialSlot:str.optional(),initialTime:str.optional(),confirmedDate:str.optional(),confirmedSlot:str.optional(),confirmedTime:str.optional(),title:str,sourceLabel:str,notifyEnabled:bool.optional(),remindBeforeMinutes:num.optional(),alarmMode:bool.optional()});
 const dayPlan=obj({activities:rec(z.array(activity)),completed:rec(str),workStart:str,sleep:str,defaultsVersion:num.optional()});
 const tracked=obj({id:str,title:str,period:str,start:str,end:str,startDay:str,endDay:str,duration:num,status:z.enum(['pending','done','deferred'])});
 const dayRecord=obj({date:str,savedAt:str,items:z.array(tracked),openingMessage:str.optional(),resolveMessage:str.optional(),review:obj({gratitude:str,improvement:str,savedAt:str}).optional(),prayers:rec(z.enum(['ontime','late','excused','missed'])).optional()});
@@ -41,7 +41,7 @@ export const storedStateSchema=obj({
  wirds:z.array(obj({id:str,title:str,target:num,count:num,period,periodKey:str,coach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:z.array(str).optional(),mode:coachMode.optional()}).optional()})).optional(),
  reflections:z.array(obj({id:str,date:str,text:str})).optional(),lessonStep:num.optional(),prayers:rec(str).optional(),
  courseCoach:obj({enabled:bool,enabledAt:str,dismissed:z.array(str).optional(),log:obj({day:z.array(str).optional(),week:z.array(str).optional(),month:z.array(str).optional()}).optional(),mode:coachMode.optional()}).optional(),
- coachSettings:obj({globalEnabled:bool,enabledAt:str.optional(),recovery:obj({startedAt:str,dismissedUntil:str.optional(),completed:bool.optional()}).optional(),dismissedWeekly:z.array(str).optional(),preferredCapacity:num.optional()}).optional(),
+ coachSettings:obj({globalEnabled:bool,enabledAt:str.optional(),recovery:obj({startedAt:str,dismissedUntil:str.optional(),completed:bool.optional()}).optional(),dismissedWeekly:z.array(str).optional(),preferredCapacity:num.optional(),suggestionsMuted:bool.optional()}).optional(),
  taskSchedules:rec(schedule).optional(),dayPlan:dayPlan.optional(),dayRecords:rec(dayRecord).optional(),
  prayerLocation:obj({name:str,country:str,latitude:num.min(-90).max(90),longitude:num.min(-180).max(180),timezone:str.refine(zone=>{try{new Intl.DateTimeFormat('en',{timeZone:zone});return true}catch{return false}}),method:num.optional(),school:z.union([z.literal(0),z.literal(1)]).optional()}).optional(),quran:quran.optional(),achievementLog:z.array(obj({id:str,kind:z.enum(['bilquran_step','adhkar_category','wird_complete']),date:str,refId:str,label:str.optional(),at:str})).optional(),
 });

@@ -28,6 +28,9 @@ test('malformed saved nested state cannot brick startup',async({page})=>{
 
 test('malformed backup is rejected without changing saved data',async({page})=>{
  await page.goto('/');
+ // let the app finish its first state write so "before" is the settled value
+ await expect.poll(()=>page.evaluate(()=>Boolean(localStorage.getItem('rabbani-v1')))).toBe(true);
+ await page.waitForTimeout(1500);
  const result=await page.evaluate(async()=>{
   const before=localStorage.getItem('rabbani-v1');
   const path='/src/local-backup.ts';const {importLocalBackup}=await import(/* @vite-ignore */path);

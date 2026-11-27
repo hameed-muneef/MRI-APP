@@ -480,16 +480,16 @@ html #root .hifz-actions{position:sticky;bottom:78px;z-index:30;padding:8px;bord
 html[data-theme="dark"] #root .hifz-actions,html #root[data-theme="dark"] .hifz-actions{background:#1B3A56;border-color:#26486B}
 
 /* جدول التخطيط اليومي (المستعاد): لوحة الألوان الزرقاء المعتمدة في الوضع النهاري، دون تغيير الأشكال */
-html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval{background:#EAF3FC!important;border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval{background:#F3EFE4!important;border-color:#7AD6B8!important}
 html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval-heading{background:#F4F8FC!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .planned-activity-card{background:#F4F8FC!important;border-color:#9FC4E6!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .fixed-prayer-bar{background:linear-gradient(115deg,#20537A 0%,#1B4466 100%)!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-note.sunrise-marker,html:not([data-theme="dark"]) #root .app .day-plan-content .sunrise-in-slot{background:#F4F8FC!important;border-color:#9FC4E6!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .group-add-trigger{background:#F4F8FC!important;border-color:#9FC4E6!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .task-time-selects select,html:not([data-theme="dark"]) #root .app .day-plan-content .rename-activity input{border-color:#9FC4E6!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .planned-activity-card{background:#F4F8FC!important;border-color:#7AD6B8!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .fixed-prayer-bar{background:linear-gradient(115deg,var(--hm-border) 0%,var(--hm-border) 100%)!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-note.sunrise-marker,html:not([data-theme="dark"]) #root .app .day-plan-content .sunrise-in-slot{background:#F4F8FC!important;border-color:#7AD6B8!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .group-add-trigger{background:#F4F8FC!important;border-color:#7AD6B8!important}
+html:not([data-theme="dark"]) #root .app .day-plan-content .task-time-selects select,html:not([data-theme="dark"]) #root .app .day-plan-content .rename-activity input{border-color:#7AD6B8!important}
 
 /* الوضع الليلي: إزالة بقايا الأخضر في أزرار المخطط */
-html[data-theme="dark"] #root .app .day-plan-content .soft-btn,html[data-theme="dark"] #root .app .day-plan-content input[type="date"],html[data-theme="dark"] #root .app .day-plan-content .tabs button.active,html[data-theme="dark"] #root .app .day-plan-content [aria-pressed="true"],html[data-theme="dark"] #root .app .day-plan-content [aria-selected="true"]{background:#26486B!important;border-color:#3d6a94!important;color:#E3F0FB!important}
+html[data-theme="dark"] #root .app .day-plan-content .soft-btn,html[data-theme="dark"] #root .app .day-plan-content input[type="date"],html[data-theme="dark"] #root .app .day-plan-content .tabs button.active,html[data-theme="dark"] #root .app .day-plan-content [aria-pressed="true"],html[data-theme="dark"] #root .app .day-plan-content [aria-selected="true"]{background:var(--hm-border)!important;border-color:var(--hm-border)!important;color:#F3EFE4!important}
 
 /* شريط الأدوات الثلاثة ثابت أسفل الشاشة فوق شريط التنقل ليبقى في المتناول مع الصفحة الطويلة */
 html #root .hifz-actions{position:static!important}
@@ -505,7 +505,7 @@ html #root .hifz-actions button svg{width:16px;height:16px;flex:none}
 /* staged hifz flow */
 html #root .hf-screen,html #root .hf-screen *{box-sizing:border-box}
 html #root .hf-screen{direction:rtl;max-width:100vw;overflow-x:hidden}
-html #root .hf-entry{position:fixed;inset:0;z-index:2000;width:100%;max-width:100vw;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;gap:10px;background:#f4f8fc;padding:max(10px,env(safe-area-inset-top)) 12px max(22px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;min-height:0}
+html #root .hf-entry{position:fixed;inset:0;z-index:2000;width:100%;max-width:100vw;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;gap:10px;background:var(--hm-bg);padding:max(10px,env(safe-area-inset-top)) 12px max(22px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;min-height:0}
 html #root .hf-entry-head{display:flex;align-items:center;gap:8px;flex:none;min-height:44px;width:100%;max-width:1060px;margin-inline:auto}
 html #root .hf-entry-head strong{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html #root .hf-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex:none;border-radius:12px;background:transparent;border:0;color:inherit;padding:0;cursor:pointer}
@@ -513,20 +513,20 @@ html #root .hf-icon-btn.rec{background:#c0392b;color:#fff}
 html #root .hf-entry-body{display:flex;flex-direction:column;gap:12px;padding:4px 0 18px;width:100%;max-width:1060px;margin-inline:auto}
 html #root .hf-entry-body > h2{margin:2px 0;font-size:19px}
 html #root .hf-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-html #root .hf-choice{display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;min-height:112px;padding:12px 8px;border-radius:16px;font-size:20px;background:#EAF3FC;border:1px solid #9FC4E6;color:#20537A;min-width:0}
+html #root .hf-choice{display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;min-height:112px;padding:12px 8px;border-radius:16px;font-size:20px;background:var(--hm-surface-2);border:1px solid var(--hm-border);color:#1E6F5C;min-width:0}
 html #root .hf-choice small{font-size:12px;opacity:.85;text-align:center}
-html #root .hf-link{background:none;border:0;color:#2f6b3f;text-decoration:underline;font-size:14px;padding:8px;min-height:44px;cursor:pointer}
+html #root .hf-link{background:none;border:0;color:#1E6F5C;text-decoration:underline;font-size:14px;padding:8px;min-height:44px;cursor:pointer}
 html #root .hf-link-quiet{color:inherit;opacity:.7;font-size:12.5px}
-html #root .hf-range-card{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:16px;background:#EAF3FC;border:1px solid #9FC4E6;width:100%;max-width:520px;margin-inline:auto}
+html #root .hf-range-card{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:16px;background:var(--hm-surface-2);border:1px solid var(--hm-border);width:100%;max-width:520px;margin-inline:auto}
 html #root .hf-range-card h2{margin:0;font-size:18px}
 html #root .hf-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 html #root .hf-seg button{min-height:44px;border-radius:12px;font-size:13px;padding:6px 8px;min-width:0;cursor:pointer}
-html #root .hf-seg button.on{background:#2f6b3f;color:#fff}
+html #root .hf-seg button.on{background:#1E6F5C;color:#fff}
 html #root .hf-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 html #root .hf-fields label{display:flex;flex-direction:column;gap:4px;font-size:13px;min-width:0}
 html #root .hf-fields .hf-wide{grid-column:1/-1}
 html #root .hf-hint{font-size:12.5px;margin:0;opacity:.85;line-height:1.55}
-html #root .hf-ok{min-height:46px;border-radius:12px;background:#2f6b3f;color:#fff;font-size:15.5px;font-weight:700;border:0;padding:8px 14px;cursor:pointer}
+html #root .hf-ok{min-height:46px;border-radius:12px;background:#1E6F5C;color:#fff;font-size:15.5px;font-weight:700;border:0;padding:8px 14px;cursor:pointer}
 html #root .hf-reading{position:fixed;inset:0;z-index:2000;width:100%;max-width:100vw;height:100dvh;max-height:100dvh;overflow:hidden;display:flex;flex-direction:column;background:#fbf6ea;color:#222}
 html #root .hf-top{flex:none;display:flex;align-items:center;gap:6px;padding:max(6px,env(safe-area-inset-top)) 8px 6px;min-height:48px;background:#fbf6ea;border-bottom:1px solid #e3d9bd}
 html #root .hf-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px;font-weight:600;color:#6b5a1e}
@@ -544,18 +544,18 @@ html #root .hf-status{font-size:12.5px;text-align:center;margin:6px auto;max-wid
 html #root .hf-scrim{position:fixed;inset:0;z-index:5;background:rgba(0,0,0,.62);border:0;border-radius:0}
 html #root .hf-bottom{position:relative;flex:none;z-index:6;display:flex;flex-direction:column-reverse;gap:0;padding:0 0 max(6px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #e3d9bd}
 html #root .hf-strip{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;margin:0 auto;padding:8px 10px;background:#fff;color:#2c2c2c;min-height:60px;width:100%;max-width:540px}
-html #root .hf-step{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;background:#fff;border:1px solid #cdbf8d;border-radius:12px;padding:6px 10px;color:#2f6b3f;font-size:13.5px;font-weight:600;min-height:46px;cursor:pointer}
+html #root .hf-step{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;background:#fff;border:1px solid #cdbf8d;border-radius:12px;padding:6px 10px;color:#1E6F5C;font-size:13.5px;font-weight:600;min-height:46px;cursor:pointer}
 html #root .hf-step span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 html #root .hf-step i{width:2px;height:20px;flex:none;background:#8a7a3a;opacity:.7}
-html #root .hf-plus{width:40px;height:40px;flex:none;border-radius:8px;background:#0b8a4a;color:#fff;border:0;display:inline-flex;align-items:center;justify-content:center;padding:0}
-html #root .hf-chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:40px;padding:5px 10px;border-radius:10px;background:#EAF3FC;border:1px solid #9FC4E6;color:#20537A;font-size:12.5px;font-weight:600;cursor:pointer}
+html #root .hf-plus{width:40px;height:40px;flex:none;border-radius:8px;background:#1E6F5C;color:#fff;border:0;display:inline-flex;align-items:center;justify-content:center;padding:0}
+html #root .hf-chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:40px;padding:5px 10px;border-radius:10px;background:var(--hm-surface-2);border:1px solid var(--hm-border);color:#1E6F5C;font-size:12.5px;font-weight:600;cursor:pointer}
 html #root .hf-recite{flex-wrap:wrap;gap:6px;padding:6px 8px}
-html #root .hf-next{flex:none;min-height:46px;min-width:78px;padding:0 14px;border-radius:14px;background:#2f6b3f;color:#fff;border:0;font-size:15px;font-weight:700;box-shadow:0 3px 8px rgba(0,0,0,.22);cursor:pointer}
+html #root .hf-next{flex:none;min-height:46px;min-width:78px;padding:0 14px;border-radius:14px;background:#1E6F5C;color:#fff;border:0;font-size:15px;font-weight:700;box-shadow:0 3px 8px rgba(0,0,0,.22);cursor:pointer}
 html #root .hf-assess{display:flex;flex-direction:column;gap:8px;width:100%}
 html #root .hf-assess div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-html #root .hf-assess button{min-height:44px;border-radius:12px;background:#EAF3FC;border:1px solid #9FC4E6;color:#20537A;font-size:13px;font-weight:600;padding:6px 8px}
+html #root .hf-assess button{min-height:44px;border-radius:12px;background:var(--hm-surface-2);border:1px solid var(--hm-border);color:#1E6F5C;font-size:13px;font-weight:600;padding:6px 8px}
 html #root .hf-tip{position:absolute;left:0;right:0;bottom:100%;z-index:8;margin:0 auto 10px;max-width:500px;width:calc(100% - 24px);max-height:44dvh;overflow-y:auto;padding:12px 14px;border-radius:16px;background:#fff;color:#6b5a1e;text-align:center;box-shadow:0 8px 26px rgba(0,0,0,.26)}
-html #root .hf-tip h3{margin:0 0 4px;color:#0b7a43;font-size:18px}
+html #root .hf-tip h3{margin:0 0 4px;color:#1E6F5C;font-size:18px}
 html #root .hf-tip p{margin:0;font-size:14px;line-height:1.7}
 html #root .hf-tip i{display:none}
 html #root .hf-rec{background:#fff;color:#222;padding:8px 10px;display:flex;flex-direction:column;gap:6px;border-top:1px solid #ddd;max-width:540px;width:100%;margin-inline:auto}
@@ -565,7 +565,7 @@ html #root .hf-sheet-wrap{position:fixed;inset:0;z-index:2100;display:flex;flex-
 html #root .hf-sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);border:0;border-radius:0}
 html #root .hf-sheet{position:relative;max-height:88dvh;width:100%;max-width:520px;margin-inline:auto;overflow-y:auto;overflow-x:hidden;background:#fff;color:#222;border-radius:20px 20px 0 0;padding:14px 14px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
 html #root .hf-sheet-x{align-self:flex-start}
-html #root .hf-sheet-surah{margin:0;text-align:center;font-size:18px;text-decoration:underline;color:#20537A}
+html #root .hf-sheet-surah{margin:0;text-align:center;font-size:18px;text-decoration:underline;color:#1E6F5C}
 html #root .hf-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 html #root .hf-pair > *{min-width:0}
 html #root .hf-field{display:flex;flex-direction:column;gap:6px;font-size:13px;min-width:0}
@@ -574,136 +574,136 @@ html #root .hf-stepper{display:flex;align-items:center;justify-content:space-bet
 html #root .hf-stepper button{width:40px;height:40px;flex:none;border-radius:10px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 html #root .hf-speeds{display:flex;gap:6px;flex-wrap:wrap}
 html #root .hf-speeds button{flex:1 1 auto;min-height:44px;border-radius:10px;background:#fff;border:1px solid #bbb;color:#333;padding:6px 8px}
-html #root .hf-speeds button.on{background:#2f6b3f;color:#fff;border-color:#2f6b3f}
+html #root .hf-speeds button.on{background:#1E6F5C;color:#fff;border-color:#1E6F5C}
 html #root .hf-follow{display:flex;gap:8px;align-items:center;font-size:13px;min-height:40px}
 html #root .hf-saved h3{font-size:14px;margin:0 0 6px}
 html #root .hf-list h3{text-align:center;font-size:19px;margin:0}
 html #root .hf-list-sub{text-align:center;margin:0;font-size:13px;opacity:.7}
-html #root .hf-list-group{font-size:12.5px;padding:6px 8px;background:#eef2f3;border-radius:8px}
+html #root .hf-list-group{font-size:12.5px;padding:6px 8px;background:var(--hm-bg);border-radius:8px}
 html #root .hf-list-row{display:flex;justify-content:space-between;align-items:center;min-height:48px;background:#fff;border:0;border-bottom:1px solid #e5e5e5;border-radius:0;font-size:15.5px;color:#222;text-align:right;padding:8px 6px}
-html #root .hf-list-row[aria-current="true"]{background:#eef2f3}
+html #root .hf-list-row[aria-current="true"]{background:var(--hm-bg)}
 html #root:has(.hf-reading) .mobile-nav,html #root:has(.hf-reading) .scroll-top-fab-dock{display:none!important}
-html[data-theme="dark"] #root .hf-reading,html[data-theme="dark"] #root .hf-top{background:#14212c;color:#e6eef5;border-color:#26486B}
-html[data-theme="dark"] #root .hf-bottom{background:#1B3A56;border-top-color:#26486B}
-html[data-theme="dark"] #root .hf-range-card,html[data-theme="dark"] #root .hf-choice{background:#1B3A56;border-color:#26486B;color:#e6eef5}
-html[data-theme="dark"] #root .hf-entry{background:#0E1A24;color:#e6eef5}
+html[data-theme="dark"] #root .hf-reading,html[data-theme="dark"] #root .hf-top{background:var(--hm-surface-2);color:#F3EFE4;border-color:var(--hm-border)}
+html[data-theme="dark"] #root .hf-bottom{background:var(--hm-surface-2);border-top-color:var(--hm-border)}
+html[data-theme="dark"] #root .hf-range-card,html[data-theme="dark"] #root .hf-choice{background:var(--hm-surface-2);border-color:var(--hm-border);color:#F3EFE4}
+html[data-theme="dark"] #root .hf-entry{background:var(--hm-surface);color:#F3EFE4}
 html #root .hf-fields input,html #root .hf-fields select{width:100%;min-width:0;box-sizing:border-box}
 html #root:has(.hf-screen) .mobile-nav,html #root:has(.hf-screen) .scroll-top-fab-dock{display:none!important}
 html #root .hf-ask h3{text-align:center;font-size:19px;margin:0}
 html #root .hf-ask p{text-align:center;margin:0;font-size:14px;line-height:1.6}
-html #root .hf-ghost{min-height:46px;border-radius:12px;background:#fff;border:1px solid #2f6b3f;color:#2f6b3f;font-size:15px;font-weight:700;padding:8px 14px;cursor:pointer}
+html #root .hf-ghost{min-height:46px;border-radius:12px;background:#fff;border:1px solid #1E6F5C;color:#1E6F5C;font-size:15px;font-weight:700;padding:8px 14px;cursor:pointer}
 html #root .hf-field input{min-height:44px;border-radius:10px;width:100%;box-sizing:border-box}
 html #root .hf-ok:disabled{opacity:.5}
 @media(max-width:360px){html #root .hf-pair{grid-template-columns:1fr}}
-html[data-theme="dark"] #root .hf-reading .qm-mushaf-card{background:#101F2D!important;border-color:#26486B!important}
+html[data-theme="dark"] #root .hf-reading .qm-mushaf-card{background:var(--hm-surface)!important;border-color:var(--hm-border)!important}
 html[data-theme="dark"] #root .hf-reading .qm-w{color:#eef3f7!important}
-html[data-theme="dark"] #root .hf-sheet,html[data-theme="dark"] #root .hf-rec{background:#1B3A56!important;color:#e6eef5!important}
+html[data-theme="dark"] #root .hf-sheet,html[data-theme="dark"] #root .hf-rec{background:var(--hm-surface-2)!important;color:#F3EFE4!important}
 html[data-theme="dark"] #root .hf-sheet *{color:inherit}
 html[data-theme="dark"] #root .hf-sheet .hf-ok,html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{color:#fff!important}
-html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf-sheet input{background:#101F2D!important;color:#e6eef5!important;border-color:#26486B!important}
-html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-list-row,html[data-theme="dark"] #root .hf-ghost,html[data-theme="dark"] #root .hf-stepper button{background:#101F2D!important;color:#e6eef5!important;border-color:#26486B!important}
-html[data-theme="dark"] #root .hf-list-group{background:#26486B}
-html[data-theme="dark"] #root .hf-list-row[aria-current="true"]{background:#26486B!important}
-html[data-theme="dark"] #root .hf-strip,html[data-theme="dark"] #root .hf-tip{background:#1B3A56;color:#e6eef5}
-html[data-theme="dark"] #root .hf-tip i{background:#1B3A56}
-html[data-theme="dark"] #root .hf-tip p{color:#cfe2f2}
-html[data-theme="dark"] #root .hf-step{background:#101F2D;color:#9be0b0;border-color:#26486B}
-html[data-theme="dark"] #root .hf-assess button,html[data-theme="dark"] #root .hf-chip{background:#101F2D;color:#AED3EE;border-color:#26486B}
-html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{background:#2f6b3f!important;border-color:#2f6b3f!important}
+html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf-sheet input{background:var(--hm-surface)!important;color:#F3EFE4!important;border-color:var(--hm-border)!important}
+html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-list-row,html[data-theme="dark"] #root .hf-ghost,html[data-theme="dark"] #root .hf-stepper button{background:var(--hm-surface)!important;color:#F3EFE4!important;border-color:var(--hm-border)!important}
+html[data-theme="dark"] #root .hf-list-group{background:var(--hm-border)}
+html[data-theme="dark"] #root .hf-list-row[aria-current="true"]{background:var(--hm-border)!important}
+html[data-theme="dark"] #root .hf-strip,html[data-theme="dark"] #root .hf-tip{background:var(--hm-surface-2);color:#F3EFE4}
+html[data-theme="dark"] #root .hf-tip i{background:var(--hm-surface-2)}
+html[data-theme="dark"] #root .hf-tip p{color:#F3EFE4}
+html[data-theme="dark"] #root .hf-step{background:var(--hm-surface);color:#F3EFE4;border-color:var(--hm-border)}
+html[data-theme="dark"] #root .hf-assess button,html[data-theme="dark"] #root .hf-chip{background:var(--hm-surface);color:#F3EFE4;border-color:var(--hm-border)}
+html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{background:var(--hm-border)!important;border-color:var(--hm-border)!important}
 
 html #root .hf-title{color:#6b5a1e}
 html[data-theme="dark"] #root .hf-title{color:#f0d98a!important}
-html[data-theme="dark"] #root .hf-top .hf-icon-btn{color:#e6eef5}
-html[data-theme="dark"] #root .hf-pagearea .qm-card,html[data-theme="dark"] #root .hf-pagearea .qm-page-bar{color:#e6eef5}
-html #root .hf-reading select,html #root .hf-reading input[type=number],html #root .hf-reading input[type=date],html #root .hf-reading input[type=time],html #root .hf-entry select,html #root .hf-entry input{appearance:none;-webkit-appearance:none;border:1.5px solid #9FC4E6;border-radius:12px;background:#fff;color:#20537A;padding:0 12px;min-height:46px;font-size:15px}
-html #root .hf-reading select,html #root .hf-entry select{background-image:linear-gradient(45deg,transparent 50%,#20537A 50%),linear-gradient(-45deg,transparent 50%,#20537A 50%);background-size:6px 6px;background-repeat:no-repeat;background-position:14px 50%,20px 50%;padding-inline-start:34px}
-html #root .hf-stepper{border:1.5px solid #9FC4E6}
-html #root .hf-stepper button{background:#EAF3FC;border:0;color:#20537A}
-html[data-theme="dark"] #root .hf-pagearea button{background:#1B3A56!important;color:#e6eef5!important;border-color:#26486B!important}
-html #root .hf-entry-body .qm-notice{background:#EAF3FC;color:#20537A;border:1px solid #9FC4E6;border-radius:14px;padding:12px 14px}
-html[data-theme="dark"] #root .hf-entry-body .qm-notice{background:#1B3A56;color:#EAF3FC;border-color:#26486B}
-html #root .hf-seg button{background:#fff;color:#20537A;border:1px solid #9FC4E6}
-html #root .hf-seg button.on{background:#2f6b3f;color:#fff;border-color:#2f6b3f}
-html[data-theme="dark"] #root .hf-seg button{background:#101F2D;color:#EAF3FC;border:1px solid #26486B}
-html[data-theme="dark"] #root .hf-seg button.on{background:#2f6b3f;color:#fff;border-color:#3f8a53}
+html[data-theme="dark"] #root .hf-top .hf-icon-btn{color:#F3EFE4}
+html[data-theme="dark"] #root .hf-pagearea .qm-card,html[data-theme="dark"] #root .hf-pagearea .qm-page-bar{color:#F3EFE4}
+html #root .hf-reading select,html #root .hf-reading input[type=number],html #root .hf-reading input[type=date],html #root .hf-reading input[type=time],html #root .hf-entry select,html #root .hf-entry input{appearance:none;-webkit-appearance:none;border:1.5px solid var(--hm-border);border-radius:12px;background:#fff;color:#1E6F5C;padding:0 12px;min-height:46px;font-size:15px}
+html #root .hf-reading select,html #root .hf-entry select{background-image:linear-gradient(45deg,transparent 50%,#1E6F5C 50%),linear-gradient(-45deg,transparent 50%,#1E6F5C 50%);background-size:6px 6px;background-repeat:no-repeat;background-position:14px 50%,20px 50%;padding-inline-start:34px}
+html #root .hf-stepper{border:1.5px solid var(--hm-border)}
+html #root .hf-stepper button{background:var(--hm-surface-2);border:0;color:#1E6F5C}
+html[data-theme="dark"] #root .hf-pagearea button{background:var(--hm-surface-2)!important;color:#F3EFE4!important;border-color:var(--hm-border)!important}
+html #root .hf-entry-body .qm-notice{background:var(--hm-surface-2);color:#1E6F5C;border:1px solid var(--hm-border);border-radius:14px;padding:12px 14px}
+html[data-theme="dark"] #root .hf-entry-body .qm-notice{background:var(--hm-surface-2);color:#F3EFE4;border-color:var(--hm-border)}
+html #root .hf-seg button{background:#fff;color:#1E6F5C;border:1px solid var(--hm-border)}
+html #root .hf-seg button.on{background:#1E6F5C;color:#fff;border-color:#1E6F5C}
+html[data-theme="dark"] #root .hf-seg button{background:var(--hm-surface);color:#F3EFE4;border:1px solid var(--hm-border)}
+html[data-theme="dark"] #root .hf-seg button.on{background:var(--hm-border);color:#fff;border-color:#3f8a53}
 
 /* فهم الآية فوق وضع الحفظ الكامل (z-index:2000): كانت اللوحة مرسومة تحته فلا يظهر نص التفسير */
 html .qm-sheet-backdrop{z-index:2600!important}
 /* الوضع الليلي للوحة فهم الآية ولوحة إعدادات الاستماع */
-html[data-theme="dark"] .qm-sheet{background:#142b40;color:#e6f0f8;box-shadow:0 -8px 30px rgba(0,0,0,.5)}
-html[data-theme="dark"] .qm-sheet-head{background:#142b40}
-html[data-theme="dark"] .qm-sheet h3,html[data-theme="dark"] .qm-sheet h4,html[data-theme="dark"] .qm-sheet summary,html[data-theme="dark"] .qm-sheet label,html[data-theme="dark"] .qm-sheet .qm-muted{color:#e6f0f8}
-html[data-theme="dark"] .qm-sheet-verse{background:#1b3a56;color:#f1f7fc}
-html[data-theme="dark"] .qm-sheet button{background:#26486b;color:#f1f7fc;border-color:#4c7aa6}
-html[data-theme="dark"] .qm-sheet button[aria-pressed="true"],html[data-theme="dark"] .qm-sheet .qm-primary{background:#3b82c4;color:#fff;border-color:#8cc0ee}
-html[data-theme="dark"] .qm-sheet .icon-btn{background:#26486b;color:#fff;border:1px solid #8cc0ee;opacity:1}
+html[data-theme="dark"] .qm-sheet{background:var(--hm-surface-2);color:#F3EFE4;box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+html[data-theme="dark"] .qm-sheet-head{background:var(--hm-surface-2)}
+html[data-theme="dark"] .qm-sheet h3,html[data-theme="dark"] .qm-sheet h4,html[data-theme="dark"] .qm-sheet summary,html[data-theme="dark"] .qm-sheet label,html[data-theme="dark"] .qm-sheet .qm-muted{color:#F3EFE4}
+html[data-theme="dark"] .qm-sheet-verse{background:var(--hm-surface-2);color:#f1f7fc}
+html[data-theme="dark"] .qm-sheet button{background:var(--hm-border);color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] .qm-sheet button[aria-pressed="true"],html[data-theme="dark"] .qm-sheet .qm-primary{background:#3b82c4;color:#fff;border-color:#7AD6B8}
+html[data-theme="dark"] .qm-sheet .icon-btn{background:var(--hm-border);color:#fff;border:1px solid #7AD6B8;opacity:1}
 html[data-theme="dark"] .qm-sheet .icon-btn svg{color:#fff;stroke:#fff;opacity:1}
-html[data-theme="dark"] .qm-sheet select,html[data-theme="dark"] .qm-sheet textarea{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
-html[data-theme="dark"] #root .hf-sheet{background:#142b40;color:#e6f0f8}
+html[data-theme="dark"] .qm-sheet select,html[data-theme="dark"] .qm-sheet textarea{background:var(--hm-surface);color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet{background:var(--hm-surface-2);color:#F3EFE4}
 html[data-theme="dark"] #root .hf-sheet .hf-icon-btn,html[data-theme="dark"] #root .hf-sheet .hf-sheet-x{color:#fff}
-html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf-sheet input{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
-html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-sheet .hf-stepper button{background:#26486b;color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf-sheet input{background:var(--hm-surface);color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-sheet .hf-stepper button{background:var(--hm-border);color:#f1f7fc;border-color:#4c7aa6}
 html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{background:#3b82c4;color:#fff}
 html #root .hf-reciter{gap:6px}
-html #root .hf-rsearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid #9FC4E6;border-radius:12px;padding:8px 12px;font:inherit;background:#fff;color:#17324f}
-html #root .hf-rnote{color:#5b6f82;font-size:.8rem;line-height:1.5}
-html[data-theme="dark"] #root .hf-rsearch{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
-html[data-theme="dark"] #root .hf-rnote{color:#a9c0d4}
+html #root .hf-rsearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid var(--hm-border);border-radius:12px;padding:8px 12px;font:inherit;background:#fff;color:#1F2A2A}
+html #root .hf-rnote{color:#1E6F5C;font-size:.8rem;line-height:1.5}
+html[data-theme="dark"] #root .hf-rsearch{background:var(--hm-surface);color:#f1f7fc;border-color:#4c7aa6}
+html[data-theme="dark"] #root .hf-rnote{color:#7AD6B8}
 
-/* خطط الحفظ والمراجعة (منهج بالقرآن نحيا) داخل مصحف الحفظ والإتقان */
+/* خطط الحفظ والمراجعة داخل مصحف الحفظ والإتقان */
 html #root .hf-entry-body{width:100%;max-width:1060px;margin-inline:auto;box-sizing:border-box}
-html #root .hf-active-plan{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1.5px solid #9FC4E6;color:#17324f}
+html #root .hf-active-plan{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1.5px solid var(--hm-border);color:#1F2A2A}
 html #root .hf-active-plan-head{display:flex;flex-direction:column;gap:4px}
-html #root .hf-active-plan-head strong{font-size:18px;color:#12305a}
-html #root .hf-active-plan-meta{margin:0;font-size:13px;color:#496680;font-variant-numeric:tabular-nums}
-html #root .hf-plan-kicker{font-size:12.5px;font-weight:600;color:#20537A;opacity:.88}
-html #root .hf-plan-progress{height:7px;border-radius:6px;background:#EAF3FC;overflow:hidden}
-html #root .hf-plan-progress > div{height:100%;background:#2f6b3f;border-radius:6px;transition:width .2s ease}
-html #root .hf-active-plan-portion{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:#F4F8FC;border:1px solid #d4e6f7}
-html #root .hf-active-plan-portion small{font-size:12.5px;color:#496680}
+html #root .hf-active-plan-head strong{font-size:18px;color:#1F2A2A}
+html #root .hf-active-plan-meta{margin:0;font-size:13px;color:#566360;font-variant-numeric:tabular-nums}
+html #root .hf-plan-kicker{font-size:12.5px;font-weight:600;color:#1E6F5C;opacity:.88}
+html #root .hf-plan-progress{height:7px;border-radius:6px;background:var(--hm-surface-2);overflow:hidden}
+html #root .hf-plan-progress > div{height:100%;background:#1E6F5C;border-radius:6px;transition:width .2s ease}
+html #root .hf-active-plan-portion{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:var(--hm-surface-2);border:1px solid var(--hm-border)}
+html #root .hf-active-plan-portion small{font-size:12.5px;color:#566360}
 html #root .hf-active-plan-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 html #root .hf-active-plan-actions .hf-ok{flex:1 1 200px;padding:0 16px}
 html #root .hf-active-plan-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 html #root .hf-active-plan-nav button{min-height:44px}
-html #root .hf-plan-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:#fff;border:1.5px solid #9FC4E6;color:#17324f;text-align:right;min-height:68px;cursor:pointer}
+html #root .hf-plan-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:#fff;border:1.5px solid var(--hm-border);color:#1F2A2A;text-align:right;min-height:68px;cursor:pointer}
 html #root .hf-plan-launch div{display:flex;flex-direction:column;gap:4px;min-width:0}
-html #root .hf-plan-launch strong{font-size:15.5px;color:#12305a}
-html #root .hf-plan-launch small{font-size:12.5px;color:#496680;line-height:1.5}
-html #root .hf-plan-launch > span{flex:none;padding:8px 14px;border-radius:10px;background:#2f6b3f;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap}
+html #root .hf-plan-launch strong{font-size:15.5px;color:#1F2A2A}
+html #root .hf-plan-launch small{font-size:12.5px;color:#566360;line-height:1.5}
+html #root .hf-plan-launch > span{flex:none;padding:8px 14px;border-radius:10px;background:#1E6F5C;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap}
 html #root .hf-plans-wrap{display:flex;flex-direction:column;gap:16px;padding-bottom:24px}
 html #root .hf-plans-hero{display:flex;flex-direction:column;gap:6px;text-align:center;max-width:680px;margin-inline:auto}
-html #root .hf-plans-hero h2{margin:0;font-size:clamp(22px,3.2vw,30px);color:#12305a;text-wrap:balance}
-html #root .hf-plans-hero p{margin:0;font-size:14px;color:#496680;line-height:1.65}
-html #root .hf-dir-box{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#fff;border:1px solid #c5ddf3}
-html #root .hf-dir-head{display:flex;align-items:center;gap:8px;color:#174a8c;font-size:14.5px}
+html #root .hf-plans-hero h2{margin:0;font-size:clamp(22px,3.2vw,30px);color:#1F2A2A;text-wrap:balance}
+html #root .hf-plans-hero p{margin:0;font-size:14px;color:#566360;line-height:1.65}
+html #root .hf-dir-box{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#fff;border:1px solid var(--hm-border)}
+html #root .hf-dir-head{display:flex;align-items:center;gap:8px;color:#1E6F5C;font-size:14.5px}
 html #root .hf-dir-bar{display:flex;flex-direction:column;gap:8px}
-html #root .hf-dir-label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#20537A}
+html #root .hf-dir-label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#1E6F5C}
 html #root .hf-track-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-html #root .hf-track-tabs button{min-height:42px;padding:6px 12px;border-radius:10px;background:#fff;border:1px solid #9FC4E6;color:#20537A;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
-html #root .hf-track-tabs button.on{background:#12305a;border-color:#12305a;color:#fff}
+html #root .hf-track-tabs button{min-height:42px;padding:6px 12px;border-radius:10px;background:#fff;border:1px solid var(--hm-border);color:#1E6F5C;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+html #root .hf-track-tabs button.on{background:#1F2A2A;border-color:#1F2A2A;color:#fff}
 html #root .hf-plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px;align-items:stretch}
-html #root .hf-plan-card{display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid #c5ddf3;color:#17324f;min-width:0}
-html #root .hf-plan-card.is-active{border:2px solid #2f6b3f}
+html #root .hf-plan-card{display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid var(--hm-border);color:#1F2A2A;min-width:0}
+html #root .hf-plan-card.is-active{border:2px solid #1E6F5C}
 html #root .hf-plan-card-top{display:flex;flex-direction:column;gap:6px}
-html #root .hf-plan-duration{font-size:24px;font-weight:800;color:#12305a;font-variant-numeric:tabular-nums}
-html #root .hf-plan-card h3{margin:0;font-size:17px;color:#174a8c}
-html #root .hf-plan-sub{margin:0;font-size:13.5px;color:#496680}
-html #root .hf-plan-preview-line{display:flex;align-items:flex-start;gap:6px;padding:10px;border-radius:10px;background:#F4F8FC;font-size:12.5px;color:#20537A;line-height:1.55}
+html #root .hf-plan-duration{font-size:24px;font-weight:800;color:#1F2A2A;font-variant-numeric:tabular-nums}
+html #root .hf-plan-card h3{margin:0;font-size:17px;color:#1E6F5C}
+html #root .hf-plan-sub{margin:0;font-size:13.5px;color:#566360}
+html #root .hf-plan-preview-line{display:flex;align-items:flex-start;gap:6px;padding:10px;border-radius:10px;background:var(--hm-surface-2);font-size:12.5px;color:#1E6F5C;line-height:1.55}
 html #root .hf-plan-preview-line svg{flex:none;margin-top:2px}
 html #root .hf-plan-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 html #root .hf-plan-card-actions button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:13.5px;font-weight:700;padding:8px 10px;cursor:pointer}
-html #root .hf-plan-preview-head{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid #c5ddf3}
+html #root .hf-plan-preview-head{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid var(--hm-border)}
 html #root .hf-plan-preview-title{display:flex;flex-direction:column;gap:6px}
-html #root .hf-plan-preview-title h2{margin:0;font-size:21px;color:#12305a}
-html #root .hf-plan-preview-title p{margin:0;font-size:13.5px;color:#496680;line-height:1.6}
+html #root .hf-plan-preview-title h2{margin:0;font-size:21px;color:#1F2A2A}
+html #root .hf-plan-preview-title p{margin:0;font-size:13.5px;color:#566360;line-height:1.6}
 html #root .hf-plan-back{align-self:flex-start;padding:8px 14px;min-height:44px;cursor:pointer}
 html #root .hf-schedule-list{display:flex;flex-direction:column;gap:8px}
-html #root .hf-schedule-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #d4e6f7}
-html #root .hf-schedule-row.is-milestone{border-color:#84b891;background:#f7fcf8}
+html #root .hf-schedule-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid var(--hm-surface-2)}
+html #root .hf-schedule-row.is-milestone{border-color:var(--hm-border);background:#f7fcf8}
 html #root .hf-schedule-meta{display:flex;flex-direction:column;gap:3px;min-width:0}
-html #root .hf-schedule-meta strong{font-size:14px;color:#12305a}
-html #root .hf-schedule-meta span{font-size:13.5px;color:#174a8c;font-weight:600}
-html #root .hf-schedule-meta small{font-size:12px;color:#496680}
+html #root .hf-schedule-meta strong{font-size:14px;color:#1F2A2A}
+html #root .hf-schedule-meta span{font-size:13.5px;color:#1E6F5C;font-weight:600}
+html #root .hf-schedule-meta small{font-size:12px;color:#1E6F5C}
 html #root .hf-schedule-row .hf-chip{min-height:44px;flex:none;font-weight:700;cursor:pointer}
 @media(max-width:480px){
   html #root .hf-plan-launch{flex-direction:column;align-items:stretch}
@@ -716,7 +716,7 @@ html[data-theme="dark"] #root .hf-plan-launch,
 html[data-theme="dark"] #root .hf-dir-box,
 html[data-theme="dark"] #root .hf-plan-card,
 html[data-theme="dark"] #root .hf-plan-preview-head,
-html[data-theme="dark"] #root .hf-schedule-row{background:#152B40;border-color:#26486B;color:#e6eef5}
+html[data-theme="dark"] #root .hf-schedule-row{background:var(--hm-surface-2);border-color:var(--hm-border);color:#F3EFE4}
 html[data-theme="dark"] #root .hf-active-plan-head strong,
 html[data-theme="dark"] #root .hf-plan-launch strong,
 html[data-theme="dark"] #root .hf-plans-hero h2,
@@ -1109,3 +1109,15 @@ html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
 html #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#EAF3FC;color:#20537A}
 html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):hover:not(:disabled),
 html[data-theme="dark"] #root .app :is(.hf-seg,.hf-speeds) button:not(.on):active:not(:disabled){background:#16293A;color:#EAF3FC}
+
+.coach-suggestion-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;margin:6px 0;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.08));font-size:.9rem;line-height:1.6}
+.coach-suggestion-line>span{flex:1 1 12rem}
+.home-coach-details{list-style:none;margin:-4px 0 10px;padding:8px 14px;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.08));font-size:.88rem;line-height:1.7;display:grid;gap:2px}
+
+/* Mosques polish (overrides earlier layers) */
+html #root .mosques-radius-custom{display:grid!important;grid-template-columns:1fr auto;grid-template-areas:"label label" "range num";gap:8px 12px}
+html #root .mosques-radius-custom input[type=range]{grid-area:range;min-width:0;width:100%;appearance:auto;-webkit-appearance:auto;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;height:28px;accent-color:#1d4e72}
+html #root .mosques-radius-custom input[type=number]{grid-area:num}
+html #root .mosques-radius-custom label{grid-area:label}
+html #root .mosques-chip-btn.active,html #root .mosques-chip-btn.active *{color:#fff!important}
+html #root .mosques-radius-group{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:8px}html #root .mosques-radius-group .mosques-chip-btn{padding-inline:4px}

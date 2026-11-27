@@ -14,60 +14,60 @@ html[data-theme="light"] {
   /* Background hierarchy: warm paper -> clean white / cool tints */
   --bg-app: #FFFFFF;
   --bg-page: #FFFFFF;
-  --bg-secondary: #F4F8FC;
+  --bg-secondary: var(--hm-surface-2);
   --bg-elevated: #FFFFFF;
-  --bg-sidebar: #F7FAFD;
-  --bg-header: #F4F8FC;
+  --bg-sidebar: var(--hm-surface);
+  --bg-header: var(--hm-surface-2);
   --bg-image-overlay: linear-gradient(135deg, rgba(255, 255, 255, .84), rgba(234, 243, 252, .72));
 
   /* Surfaces: warm cream -> white and pale blue (one step above the cards) */
-  --surface-card: #F7FAFD;
+  --surface-card: var(--hm-surface);
   --surface-card-elevated: #FFFFFF;
-  --surface-nested: #EAF3FC;
-  --surface-panel: #F7FAFD;
+  --surface-nested: var(--hm-surface-2);
+  --surface-panel: var(--hm-surface);
   --surface-modal: #FFFFFF;
   --surface-dropdown: #FFFFFF;
   --surface-input: #FFFFFF;
 
   /* Typography: existing values already cool; link and on-accent go blue/white */
-  --text-link: #1F5675;
+  --text-link: #1E6F5C;
   --text-inverse: #FFFFFF;
   --text-on-accent: #FFFFFF;
 
   /* Accents: dark teal -> navy blue; gold (--accent-cream) stays as accent */
-  --accent-primary: #20537A;
-  --accent-primary-hover: #1A4465;
-  --accent-secondary: #4E6E88;
-  --accent-blue: #2F6C96;
+  --accent-primary: #1E6F5C;
+  --accent-primary-hover: #175A4A;
+  --accent-secondary: #566360;
+  --accent-blue: #2A7B67;
   --accent-hero-start: #1E3A56;
   --accent-hero-end: #2F5B85;
 
   /* Borders and states: warm grays -> blue-grays */
-  --border-subtle: #E2EAF2;
-  --border-default: #C9DEF0;
-  --border-strong: #9FC4E6;
-  --border-focus: #2F6C96;
+  --border-subtle: var(--hm-border);
+  --border-default: var(--hm-border);
+  --border-strong: #CDBE98;
+  --border-focus: #2A7B67;
   --state-hover: rgba(31, 86, 117, .08);
   --state-active: rgba(31, 86, 117, .14);
-  --state-selected: #DBEAF7;
+  --state-selected: var(--hm-surface-2);
   --state-focus: rgba(32, 83, 122, .24);
-  --state-disabled: #E8EDF2;
-  --state-pressed: #C9DEF0;
+  --state-disabled: #ECE5D6;
+  --state-pressed: var(--hm-border);
 
   /* Legacy brand tokens consumed by older components */
   --color-canvas: #FFFFFF;
-  --color-surface: #F7FAFD;
-  --color-surface-warm: #F4F8FC;
-  --color-ivory: #F7FAFD;
-  --color-primary: #20537A;
-  --color-primary-hover: #1A4465;
-  --color-accent: #4E6E88;
-  --color-border: #C9DEF0;
-  --color-border-strong: #9FC4E6;
-  --color-selected: #DBEAF7;
+  --color-surface: var(--hm-surface);
+  --color-surface-warm: var(--hm-surface-2);
+  --color-ivory: var(--hm-surface);
+  --color-primary: #1E6F5C;
+  --color-primary-hover: #175A4A;
+  --color-accent: #566360;
+  --color-border: var(--hm-border);
+  --color-border-strong: #CDBE98;
+  --color-selected: var(--hm-surface-2);
   --surface-glass: rgba(255, 255, 255, .94);
-  --line-soft: #D9E6F1;
-  --grad-canvas: linear-gradient(180deg, #FFFFFF 0%, #F4F8FC 100%);
+  --line-soft: var(--hm-border);
+  --grad-canvas: linear-gradient(180deg, #FFFFFF 0%, var(--hm-surface-2) 100%);
 }
 
 /* The mobile shell pins literal warm backgrounds (#EFEAE0) that token changes
@@ -78,7 +78,7 @@ html[data-theme="light"] #root .app .main {
 }
 
 html[data-theme="light"] #root .app {
-  border-inline-color: #D3E2F0 !important;
+  border-inline-color: var(--hm-border) !important;
 }
 
 /* ---------- Literal pins: legacy warm/green component colors -> white/blue ----------
@@ -86,64 +86,64 @@ html[data-theme="light"] #root .app {
    reach. These pins recolor the high-visibility ones only (color, never
    geometry). Progress/success indicators keep their green as a semantic cue. */
 html[data-theme="light"] #root .app .panel {
-  background: #F7FAFD !important;
-  border-color: #D3E2F0 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .settings-tabs button.active,
 html[data-theme="light"] #root .app .notif-subtabs button.active,
 html[data-theme="light"] #root .app .switch-row button.selected,
 html[data-theme="light"] #root .app .primary {
-  background: #20537A !important;
-  border-color: #20537A !important;
+  background: #1E6F5C !important;
+  border-color: #1E6F5C !important;
   color: #FFFFFF !important;
 }
 
 html[data-theme="light"] #root .app .primary:hover {
-  background: #1A4465 !important;
+  background: #175A4A !important;
 }
 
 html[data-theme="light"] #root .app .notif-subtabs button {
-  background: #F4F8FC !important;
-  border-color: #C9DEF0 !important;
-  color: #30485C !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
+  color: #3F4A47 !important;
 }
 
 html[data-theme="light"] #root .app .settings-inner-details {
-  border-top-color: #E2EAF2 !important;
+  border-top-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .settings-inner-details summary {
-  color: #20537A !important;
+  color: #1E6F5C !important;
 }
 
 html[data-theme="light"] #root .app .notif-empty {
-  border-color: #B7D3EA !important;
-  background: #F4F8FC !important;
-  color: #4E6E88 !important;
+  border-color: var(--hm-border) !important;
+  background: var(--hm-surface-2) !important;
+  color: #566360 !important;
 }
 
 html[data-theme="light"] #root .app .notif-reminder-form {
-  border-color: #C9DEF0 !important;
-  background: #F7FAFD !important;
+  border-color: var(--hm-border) !important;
+  background: var(--hm-surface) !important;
 }
 
 html[data-theme="light"] #root .app input:not([type="checkbox"]),
 html[data-theme="light"] #root .app select,
 html[data-theme="light"] #root .app textarea {
   background: #FFFFFF !important;
-  border-color: #C9DEF0 !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .hint {
-  background: #F0F6FB !important;
-  border-color: #D3E2F0 !important;
-  color: #4E6E88 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
+  color: #566360 !important;
 }
 
 html[data-theme="light"] #root .app .soft-btn {
-  background: #E4EFF9 !important;
-  color: #20537A !important;
+  background: var(--hm-surface-2) !important;
+  color: #1E6F5C !important;
 }
 
 html[data-theme="light"] #root .app .lesson-banner,
@@ -164,66 +164,66 @@ html[data-theme="light"] #root .app .hero {
    family for daytime coherence. !important beats the injected custom-property
    declarations. Dark section palettes are untouched. */
 html[data-theme="light"] {
-  --section-accent: #20537A;
-  --section-soft: #DBEAF7;
-  --section-strong: #20537A;
-  --section-strong-hover: #1A4465;
+  --section-accent: #1E6F5C;
+  --section-soft: var(--hm-surface-2);
+  --section-strong: #1E6F5C;
+  --section-strong-hover: #175A4A;
   --section-on-strong: #FFFFFF;
 }
 
 html[data-theme="light"] #root .app main.main[data-section] {
-  --section-accent: #20537A !important;
-  --section-soft: #DBEAF7 !important;
-  --section-strong: #20537A !important;
-  --section-strong-hover: #1A4465 !important;
+  --section-accent: #1E6F5C !important;
+  --section-soft: var(--hm-surface-2) !important;
+  --section-strong: #1E6F5C !important;
+  --section-strong-hover: #175A4A !important;
   --section-on-strong: #FFFFFF !important;
 }
 
 /* Quran index navigation tabs: green -> blue (reading surfaces stay paper) */
 html[data-theme="light"] body #root .app main.main[data-section="quran"] .quran-section-grid [data-quran-tab],
 html[data-theme="light"] body #root .app main.main[data-section="quran"] [data-quran-tab] {
-  --qtab-bg: #EAF3FC !important;
-  --qtab-border: #9FC4E6 !important;
-  --qtab-icon-bg: #DBEAF7 !important;
-  --qtab-icon-fg: #20537A !important;
-  --qtab-active-bg: #DBEAF7 !important;
+  --qtab-bg: var(--hm-surface-2) !important;
+  --qtab-border: #CDBE98 !important;
+  --qtab-icon-bg: var(--hm-surface-2) !important;
+  --qtab-icon-fg: #1E6F5C !important;
+  --qtab-active-bg: var(--hm-surface-2) !important;
 }
 
 /* Quran index intro panel: warm gradient -> pale blue-white */
 html[data-theme="light"] body #root .app main.main[data-section="quran"] .quran-intro,
 html[data-theme="light"] body #root .app .quran-intro {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F0F6FB 100%) !important;
-  border-color: #C9DEF0 !important;
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--hm-surface-2) 100%) !important;
+  border-color: var(--hm-border) !important;
 }
 
 /* Quran journey card on the index: warm ivory -> pale blue, gold accent kept */
 html[data-theme="light"] #root .app .quran-journey {
-  --q-emerald: #20537A;
-  --q-forest: #1F5675;
-  --q-ivory: #F0F6FB;
-  --q-sand: #C9DEF0;
+  --q-emerald: #1E6F5C;
+  --q-forest: #1E6F5C;
+  --q-ivory: var(--hm-surface-2);
+  --q-sand: var(--hm-border);
   --q-charcoal: #0F2C44;
-  --q-pale: #4E6E88;
+  --q-pale: #566360;
 }
 
 /* ---------- Segmented controls: tan containers -> pale blue ---------- */
 html[data-theme="light"] #root .app .section-subnav,
 html[data-theme="light"] #root .app .switch-row,
 html[data-theme="light"] #root .app .settings-tabs {
-  background: #EAF3FC !important;
-  border-color: #C9DEF0 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .section-subnav button,
 html[data-theme="light"] #root .app .switch-row button,
 html[data-theme="light"] #root .app .settings-tabs button {
-  color: #4E6E88 !important;
+  color: #566360 !important;
 }
 
 html[data-theme="light"] #root .app .section-subnav button.active,
 html[data-theme="light"] #root .app .switch-row button.selected {
   background: #FFFFFF !important;
-  color: #20537A !important;
+  color: #1E6F5C !important;
 }
 
 /* ---------- Feature banners: deep green -> navy blue ---------- */
@@ -234,35 +234,35 @@ html[data-theme="light"] #root .app .intention-card {
 
 /* ---------- Mosques page leftovers ---------- */
 html[data-theme="light"] #root .app .mosques-attribution {
-  background: #F7FAFD !important;
-  border-color: #D3E2F0 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .mosque-state-icon {
-  background: #EAF3FC !important;
-  color: #20537A !important;
+  background: var(--hm-surface-2) !important;
+  color: #1E6F5C !important;
 }
 
 /* ---------- Prayer chips: warm pastels -> blue family ---------- */
 html[data-theme="light"] #root .app .day-plan-content .prayer-grid .prayer {
-  background: #F0F6FB !important;
-  border-color: #C9DEF0 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
 }
 
 /* ---------- Day planner soft boxes: green-grays -> blue-grays ---------- */
 html[data-theme="light"] #root .app .day-header-date {
-  background: #F4F8FC !important;
-  border-color: #D3E2F0 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .day-view-switch {
-  background: #EAF3FC !important;
-  border-color: #C9DEF0 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="light"] #root .app .day-start-bar {
-  background: #F7FAFD !important;
-  border-color: #D3E2F0 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 /* ==========================================================================
@@ -273,73 +273,73 @@ html[data-theme="light"] #root .app .day-start-bar {
    ========================================================================== */
 
 html[data-theme="dark"] {
-  --section-accent: #8AC6ED;
-  --section-soft: #26486B;
-  --section-strong: #AED3EE;
-  --section-strong-hover: #C9E4F7;
-  --section-on-strong: #0D1924;
+  --section-accent: #7AD6B8;
+  --section-soft: var(--hm-surface-2);
+  --section-strong: #7AD6B8;
+  --section-strong-hover: #A6E6D0;
+  --section-on-strong: #0D1722;
 }
 
 html[data-theme="dark"] #root .app main.main[data-section] {
-  --section-accent: #8AC6ED !important;
-  --section-soft: #26486B !important;
-  --section-strong: #AED3EE !important;
-  --section-strong-hover: #C9E4F7 !important;
-  --section-on-strong: #0D1924 !important;
+  --section-accent: #7AD6B8 !important;
+  --section-soft: var(--hm-surface-2) !important;
+  --section-strong: #7AD6B8 !important;
+  --section-strong-hover: #A6E6D0 !important;
+  --section-on-strong: #0D1722 !important;
 }
 
 html[data-theme="dark"] #root .app .settings-tabs button.active,
 html[data-theme="dark"] #root .app .notif-subtabs button.active,
 html[data-theme="dark"] #root .app .switch-row button.selected {
-  background: #26486B !important;
-  border-color: #3D6488 !important;
-  color: #F0F6FC !important;
+  background: var(--hm-surface-2) !important;
+  border-color: var(--hm-border) !important;
+  color: #F3EFE4 !important;
 }
 
 html[data-theme="dark"] #root .app .appearance-seg button.selected {
-  background: #26486B !important;
-  color: #F0F6FC !important;
+  background: var(--hm-surface-2) !important;
+  color: #F3EFE4 !important;
 }
 
 html[data-theme="dark"] #root .app .primary {
-  background: #2F6C96 !important;
-  border-color: #2F6C96 !important;
-  color: #F0F6FC !important;
+  background: #2A725E !important;
+  border-color: #2A725E !important;
+  color: #F3EFE4 !important;
 }
 
 html[data-theme="dark"] #root .app .primary:hover {
-  background: #3A7DAD !important;
+  background: #236152 !important;
 }
 
 html[data-theme="dark"] #root .app .intention-card {
-  background: linear-gradient(155deg, #1E3A56 0%, #152B42 100%) !important;
-  border-color: #3A5F81 !important;
+  background: linear-gradient(155deg, var(--hm-surface) 0%, var(--hm-surface) 100%) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="dark"] #root .app .day-view-switch {
-  background: #13222F !important;
-  border-color: #2A4358 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="dark"] #root .app .day-header-date,
 html[data-theme="dark"] #root .app .day-start-bar {
-  background: #162837 !important;
-  border-color: #2A4358 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 html[data-theme="dark"] body #root .app main.main[data-section="quran"] .quran-section-grid [data-quran-tab],
 html[data-theme="dark"] body #root .app main.main[data-section="quran"] [data-quran-tab] {
-  --qtab-bg: #1B3A56 !important;
-  --qtab-border: #3A5F81 !important;
-  --qtab-icon-bg: #26486B !important;
-  --qtab-icon-fg: #AED3EE !important;
-  --qtab-active-bg: #26486B !important;
+  --qtab-bg: var(--hm-surface) !important;
+  --qtab-border: var(--hm-border) !important;
+  --qtab-icon-bg: var(--hm-surface-2) !important;
+  --qtab-icon-fg: #7AD6B8 !important;
+  --qtab-active-bg: var(--hm-surface-2) !important;
 }
 
 html[data-theme="dark"] body #root .app main.main[data-section="quran"] .quran-intro,
 html[data-theme="dark"] body #root .app .quran-intro {
-  background: linear-gradient(135deg, #162837 0%, #101F2D 100%) !important;
-  border-color: #2A4A68 !important;
+  background: linear-gradient(135deg, var(--hm-surface) 0%, var(--hm-surface) 100%) !important;
+  border-color: var(--hm-border) !important;
 }
 
 /* Day planner header: green -> navy in both modes */
@@ -349,8 +349,8 @@ html[data-theme="light"] #root .app .day-planner .day-page-header {
 }
 
 html[data-theme="dark"] #root .app .day-planner .day-page-header {
-  background: #162837 !important;
-  border-color: #2A4358 !important;
+  background: var(--hm-surface) !important;
+  border-color: var(--hm-border) !important;
 }
 
 /* Notification/settings surfaces: warm beige + teal leftovers -> blue coherence */
@@ -409,22 +409,22 @@ html[data-theme="light"] #root .app .topbar .user-chip-avatar {
 
 /* Dark mode: align the same surfaces to the navy palette */
 html[data-theme="dark"] #root .app .notif-switch {
-  background: #1B3A56 !important;
+  background: var(--hm-surface) !important;
   border-color: #34526A !important;
 }
 
 html[data-theme="dark"] #root .app .notif-switch input[type="checkbox"] {
-  accent-color: #AED3EE !important;
+  accent-color: #7AD6B8 !important;
 }
 
 html[data-theme="dark"] #root .app .notif-sound-list li,
 html[data-theme="dark"] #root .app .notif-day {
-  background: #1B3A56 !important;
+  background: var(--hm-surface) !important;
   border-color: #34526A !important;
 }
 
 html[data-theme="dark"] #root .app .topbar .topbar-settings.active {
-  background: #26486B !important;
-  border-color: #3D6C96 !important;
+  background: var(--hm-surface-2) !important;
+  border-color: #38906F !important;
   color: #F1F6F2 !important;
 }

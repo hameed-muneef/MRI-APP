@@ -34,6 +34,7 @@ import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
 import { rebalanceNativeReminderQueue, setNativeReminderQueue, setNativeReminderRules } from '../lib/settings-opener';
 import { buildNativeRecurrenceRules } from './native-recurrence-rules';
+import { isImportedSoundId, syncNativeCustomSounds } from './native-custom-sounds';
 import { dailyTaskEvents, type TaskScheduleContext } from './task-planner';
 import {
   getTaskNotificationSettings,
@@ -83,11 +84,12 @@ export const FAR_QUEUE_MAX_ITEMS = 400;
 export function farQueueItems(
   extended: readonly NativeNotificationPayload[],
   registered: readonly NativeNotificationPayload[],
-): Array<{ id: number; at: number; title: string; body: string; channelId: string }> {
+  soundKeys?: ReadonlyMap<string, string>,
+): Array<{ id: number; at: number; title: string; body: string; channelId: string; alarmMode?: boolean; soundKey?: string; rawSound?: string }> {
   const have = new Set(registered.map((p) => p.id));
   return extended
     .filter((p) => !have.has(p.id))
-    .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID }));
+    .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID, ...(isAlarmPayload(p) ? { alarmMode: true } : {}), ...soundFieldsOf(p, soundKeys) }));
 }
 
 /**
@@ -104,6 +106,47 @@ export function splitSilentForLegacyAndroid<T extends { channelId?: string }>(
   return {
     registered: payloads.filter((p) => p.channelId !== SILENT_REMINDER_CHANNEL_ID),
     queued: payloads.filter((p) => p.channelId === SILENT_REMINDER_CHANNEL_ID),
+  };
+}
+
+/** True for a payload that must ring as an alarm (per-reminder or per-task switch). */
+export function isAlarmPayload(p: { extra?: Record<string, unknown> }): boolean {
+  return p.extra?.alarmMode === true;
+}
+
+/** True when the payload's sound is an imported file: LocalNotifications cannot play it, so the device queue does. */
+export function hasImportedSound(p: { extra?: Record<string, unknown> }): boolean {
+  return typeof p.extra?.soundId === 'string' && p.extra.soundId !== '';
+}
+
+/** Pure. The optional sound fields of a queue row: the copied file (when it reached the phone) and the bundled raw name. */
+export function soundFieldsOf(p: { extra?: Record<string, unknown> }, soundKeys?: ReadonlyMap<string, string>): { soundKey?: string; rawSound?: string } {
+  const out: { soundKey?: string; rawSound?: string } = {};
+  const id = p.extra?.soundId;
+  const key = typeof id === 'string' ? soundKeys?.get(id) : undefined;
+  if (key) out.soundKey = key;
+  else if (typeof p.extra?.rawSound === 'string' && p.extra.rawSound) out.rawSound = p.extra.rawSound;
+  return out;
+}
+
+/** Extra fields a reminder/task payload carries for its sound choice (alarm rows with a bundled adhan, or any imported sound). */
+export function soundExtra(soundId: string | undefined, alarm: boolean): Record<string, unknown> {
+  if (isImportedSoundId(soundId)) return { soundId };
+  if (alarm) {
+    const adhan = findOrdinaryAdhan(soundId);
+    if (adhan) return { rawSound: adhan.rawName };
+  }
+  return {};
+}
+
+/**
+ * Alarm-mode items never go through LocalNotifications (it cannot loop a sound): they are handed to the native queue
+ * only, with alarmMode: true on the row. Pure split of what LocalNotifications may register.
+ */
+export function splitAlarmPayloads<T extends { extra?: Record<string, unknown> }>(payloads: readonly T[]): { registered: T[]; alarms: T[] } {
+  return {
+    registered: payloads.filter((p) => !isAlarmPayload(p) && !hasImportedSound(p)),
+    alarms: payloads.filter((p) => isAlarmPayload(p) || hasImportedSound(p)),
   };
 }
 
@@ -487,6 +530,7 @@ export function buildNativeReminderPayloads(
       generalChannelId,
     );
 
+    const reminderSoundExtra = soundExtra(reminder.sound_id ?? prefs.reminder_settings?.default_sound_id, reminder.alarm_mode === true);
     const snoozeAt = reminder.snooze_until ? new Date(reminder.snooze_until) : null;
     if (snoozeAt && !Number.isNaN(snoozeAt.getTime()) && snoozeAt.getTime() > nowMs + 1000 && !isQuietHoursActive(prefs, snoozeAt)) {
       payloads.push({
@@ -497,7 +541,7 @@ export function buildNativeReminderPayloads(
         channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
-        extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
+        extra: { rabbaniKind: 'reminder', reminderId: reminder.id, ...(reminder.alarm_mode === true ? { alarmMode: true } : {}), ...reminderSoundExtra },
       });
     }
 
@@ -514,7 +558,7 @@ export function buildNativeReminderPayloads(
         channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
-        extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
+        extra: { rabbaniKind: 'reminder', reminderId: reminder.id, ...(reminder.alarm_mode === true ? { alarmMode: true } : {}), ...reminderSoundExtra },
       });
     }
   }
@@ -548,6 +592,7 @@ export function buildNativeTaskPayloads(
   const payloads: NativeNotificationPayload[] = [];
 
   for (const event of events) {
+    const taskSoundExtra = soundExtra(settings.sound_id ?? prefs.reminder_settings?.default_sound_id, event.alarmMode === true);
     if (event.at.getTime() <= nowMs + 1000) continue;
     if (isQuietHoursActive(prefs, event.at)) continue;
     payloads.push({
@@ -563,6 +608,8 @@ export function buildNativeTaskPayloads(
         taskId: event.taskId,
         date: event.date,
         eventType: event.kind,
+        ...(event.alarmMode === true ? { alarmMode: true } : {}),
+        ...taskSoundExtra,
       },
     });
   }
@@ -924,11 +971,12 @@ export async function scheduleNativePersonalReminders(
     if (perms.display !== 'granted') { await setNativeReminderRules([]); await setNativeReminderQueue('reminder', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = splitAlarmPayloads(buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted)).registered;
     const extended = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
-    const farItems = farQueueItems(extended, payloads);
+    const soundKeys = await syncNativeCustomSounds(extended.map((p) => p.extra?.soundId as string | undefined));
+    const farItems = farQueueItems(extended, payloads, soundKeys);
     // Daily and weekly reminders keep renewing on the device past the planned window; replaced (or emptied) on every run, before the queue.
-    await setNativeReminderRules(buildNativeRecurrenceRules(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, extended, GENERAL_CHANNEL_ID));
+    await setNativeReminderRules(buildNativeRecurrenceRules(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, extended, GENERAL_CHANNEL_ID, soundKeys));
     if (payloads.length === 0) { await setNativeReminderQueue('reminder', farItems); return 0; }
 
     try {
@@ -939,7 +987,7 @@ export async function scheduleNativePersonalReminders(
       return res.notifications?.length ?? payloads.length;
     } catch {
       // Registering failed (for example the OS alarm limit): hand everything to the native queue instead of losing it.
-      await setNativeReminderQueue('reminder', farQueueItems(extended, []));
+      await setNativeReminderQueue('reminder', farQueueItems(extended, [], soundKeys));
       return 0;
     }
   });
@@ -965,9 +1013,10 @@ export async function scheduleNativeTaskNotifications(
     if (perms.display !== 'granted') { await setNativeReminderQueue('task', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = splitAlarmPayloads(buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted)).registered;
     const extended = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
-    const farItems = farQueueItems(extended, payloads);
+    const soundKeys = await syncNativeCustomSounds(extended.map((p) => p.extra?.soundId as string | undefined));
+    const farItems = farQueueItems(extended, payloads, soundKeys);
     if (payloads.length === 0) { await setNativeReminderQueue('task', farItems); return 0; }
 
     try {
@@ -978,7 +1027,7 @@ export async function scheduleNativeTaskNotifications(
       return res.notifications?.length ?? payloads.length;
     } catch {
       // Registering failed (for example the OS alarm limit): hand everything to the native queue instead of losing it.
-      await setNativeReminderQueue('task', farQueueItems(extended, []));
+      await setNativeReminderQueue('task', farQueueItems(extended, [], soundKeys));
       return 0;
     }
   });

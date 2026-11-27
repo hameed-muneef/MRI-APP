@@ -118,3 +118,18 @@ describe('local-backup', () => {
     expect(restored?.courseCoach).toBeUndefined();
   });
 });
+
+// ملف ليس JSON (نسخة تالفة أو ملف آخر أُعيد تسميته): المستخدم يرى رسالة عربية مفهومة،
+// لا خطأ محلل JSON بالإنجليزية، ولا تُمسّ بياناته.
+describe('corrupted backup files', () => {
+  it('refuses a truncated file with an Arabic message', () => {
+    expect(() => importLocalBackup('{"version": "1.0.0", "app": "rabbaniyun", "storage": {')).toThrow(
+      'ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.',
+    );
+  });
+
+  it('refuses a file that is not JSON at all', () => {
+    expect(() => importLocalBackup('hello world')).toThrow('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
+    expect(() => importLocalBackup('')).toThrow('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
+  });
+});

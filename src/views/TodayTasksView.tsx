@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {Fragment, useEffect, useMemo, useRef, useState} from 'react';
 import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
@@ -13,14 +13,12 @@ import {
   getTaskNotificationSettings,
   type NotificationPreference,
 } from '../notifications/types';
-import CoachToday from '../coach/CoachToday';
 import type {CourseCoach} from '../coach/course';
+import {buildNextUp} from '../next-up';
 import type {CoachSettings} from '../coach/types';
-import type {SmartTodayItem} from '../coach/smart';
 import type {WirdWithCoach} from '../coach/habit';
 import type {AchievementEntry} from '../achievement/log';
 import type {DayPlan} from '../DayPlanner';
-import {timeLabel} from '../day-timing';
 import type {DayRecords} from '../day-tracking';
 import type {MemorizationPassage} from '../quran/types';
 
@@ -65,6 +63,7 @@ type Props = {
   onCourseCoach?: (coach: CourseCoach) => void;
   onCoachSettings?: (settings: CoachSettings) => void;
   onCompleteWird?: (wirdId: string) => void;
+  onCompletePlanDay?: (task: Task) => Promise<'advanced' | 'stale' | 'failed'>;
   onUpdateWird?: (wird: WirdWithCoach) => void;
   onOpenQuran?: () => void;
   onOpenWirds?: () => void;
@@ -82,28 +81,17 @@ export default function TodayTasksView({
   onOpenPlanTask,
   onBack,
   onOpenNotificationSettings,
-  courseCoach,
-  coachSettings,
-  onCourseCoach,
-  onCoachSettings,
-  wirds,
-  prayers,
-  dayPlan,
-  dayRecords,
-  achievementLog,
-  quranPassages,
-  onCompleteWird,
-  onUpdateWird,
-  onOpenQuran,
-  onOpenWirds,
+  onCompletePlanDay,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
   const [dateByTask, setDateByTask] = useState<Record<string, string>>({});
   const [notifyDraftByTask, setNotifyDraftByTask] = useState<Record<string, boolean>>({});
   const [leadDraftByTask, setLeadDraftByTask] = useState<Record<string, number | undefined>>({});
+  const [alarmDraftByTask, setAlarmDraftByTask] = useState<Record<string, boolean>>({});
   const [notice, setNotice] = useState('');
-  const [undo, setUndo] = useState<{label: string; before: Task[]} | null>(null);
+  const [undo, setUndo] = useState<{label: string; before?: Task[]; beforeGoals?: Goal[]} | null>(null);
+  const [confirmDone, setConfirmDone] = useState<Task | null>(null);
 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
 
@@ -235,7 +223,31 @@ export default function TodayTasksView({
     return matchesDateFilter(date);
   };
 
-  const allItems = [...items, ...goalTasks].filter(matchesConfirmedDate);
+  const baseItems = [...items, ...goalTasks].filter(matchesConfirmedDate);
+
+  // «الأقرب الآن» (النظام الذكي): أقرب ٣ مهام من الوقت الحالي، حية تتحدّث كل ٢٠ ثانية. ترتيب وعرض فقط.
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(Date.now()), 20000);
+    return () => window.clearInterval(id);
+  }, []);
+  const nextUpRows = useMemo(() => {
+    if (filter !== 'today') return [];
+    return buildNextUp(
+      baseItems.map(item => {
+        const sch = taskSchedules[item.id];
+        return {id: item.id, time: sch?.confirmedTime ?? sch?.initialTime ?? ''};
+      }),
+      new Date(clock),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, baseItems.map(i => i.id).join('|'), taskSchedules, clock]);
+  const nextUpById = new Map(nextUpRows.map(row => [row.id, row]));
+  const nextUpIds = nextUpRows.map(row => row.id);
+  const allItems = [
+    ...nextUpIds.map(id => baseItems.find(item => item.id === id)!).filter(Boolean),
+    ...baseItems.filter(item => !nextUpById.has(item.id)),
+  ];
 
   const source = (task: Task & {sourceLabel?: string}) =>
     task.sourceLabel ??
@@ -245,6 +257,55 @@ export default function TodayTasksView({
         ? 'المؤمن القوي · الخطة الأسبوعية'
         : 'المؤمن القوي · الخطة الشهرية');
 
+  // مقرر خطة الحفظ أو مهمة تسميع: الإنجاز اليدوي يقدّم الخطة ويسجّل الإنجاز، فيُطلب تأكيد بدل التراجع.
+  const needsConfirm = (task: Task) => task.plan?.kind === 'day' || Boolean(task.hifz);
+  const confirmTriggerRef = useRef<HTMLElement | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const confirmBoxRef = useRef<HTMLDivElement | null>(null);
+  const requestComplete = (task: Task) => {
+    if (needsConfirm(task)) {
+      confirmTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setUndo(null);
+      setConfirmDone(task);
+      setNotice('');
+      return;
+    }
+    complete(task);
+  };
+  const closeConfirm = () => {
+    setConfirmDone(null);
+    const trigger = confirmTriggerRef.current;
+    confirmTriggerRef.current = null;
+    if (trigger && trigger.isConnected) trigger.focus();
+  };
+  useEffect(() => {
+    if (!confirmDone) return;
+    confirmBoxRef.current?.scrollIntoView({block: 'center'});
+    confirmButtonRef.current?.focus();
+  }, [confirmDone]);
+  const confirmComplete = async (task: Task) => {
+    setConfirmDone(null);
+    setUndo(null);
+    confirmTriggerRef.current = null;
+    if (task.plan?.kind === 'day') {
+      const result = onCompletePlanDay ? await onCompletePlanDay(task) : 'failed';
+      if (result === 'stale') {
+        setNotice(`لم يتغيّر شيء: «${task.title}» لم يعد مقرر اليوم الحالي في الخطة.`);
+        return;
+      }
+      if (result === 'failed') {
+        setNotice('تعذّر تقديم الخطة، فلم يتغيّر شيء. حاول مرة أخرى.');
+        return;
+      }
+    }
+    // مهمة مقرر اليوم تُزال تلقائيًا بعد تقدّم الخطة؛ لا نكتب قائمة المهام القديمة فوقها.
+    if (task.plan?.kind !== 'day') onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
+    notifyNativePrefsChanged();
+    setNotice(task.plan?.kind === 'day'
+      ? `اعتُبر «${task.title}» منجزًا وتقدّمت الخطة. لم تُجدول مراجعة لأن جلسة التسميع لم تُجرَ.`
+      : `اعتُبرت «${task.title}» منجزة. لم تُسجَّل جلسة تسميع ولم تُجدول مراجعة.`);
+  };
+
   const complete = (task: Task) => {
     setUndo({label: task.title, before: tasks});
     onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
@@ -253,6 +314,7 @@ export default function TodayTasksView({
   };
 
   const completeGoal = (goalId: string, stepId: string) => {
+    setUndo({label: goals.find(g => g.id === goalId)?.title ?? 'خطوة الهدف', beforeGoals: goals});
     onGoals(
       goals.map(goal =>
         goal.id === goalId
@@ -274,6 +336,7 @@ export default function TodayTasksView({
     const time = timeByTask[id] ?? (timeOfTask(existing) || currentTime());
     const notifyEnabled = notifyDraftByTask[id] ?? existing?.notifyEnabled ?? true;
     const remindBeforeMinutes = id in leadDraftByTask ? leadDraftByTask[id] : existing?.remindBeforeMinutes;
+    const alarmMode = alarmDraftByTask[id] ?? existing?.alarmMode === true;
     onTaskSchedules({
       ...taskSchedules,
       [id]: {
@@ -286,6 +349,7 @@ export default function TodayTasksView({
         confirmedSlot: undefined,
         notifyEnabled,
         remindBeforeMinutes,
+        alarmMode: alarmMode ? true : undefined,
       },
     });
     notifyNativePrefsChanged();
@@ -298,6 +362,7 @@ export default function TodayTasksView({
     const time = timeByTask[id] ?? (timeOfTask(existing) || currentTime());
     const notifyEnabled = notifyDraftByTask[id] ?? existing?.notifyEnabled ?? true;
     const remindBeforeMinutes = id in leadDraftByTask ? leadDraftByTask[id] : existing?.remindBeforeMinutes;
+    const alarmMode = alarmDraftByTask[id] ?? existing?.alarmMode === true;
     onTaskSchedules({
       ...taskSchedules,
       [id]: {
@@ -312,6 +377,7 @@ export default function TodayTasksView({
         confirmedSlot: undefined,
         notifyEnabled,
         remindBeforeMinutes,
+        alarmMode: alarmMode ? true : undefined,
       },
     });
     notifyNativePrefsChanged();
@@ -330,6 +396,21 @@ export default function TodayTasksView({
       });
       notifyNativePrefsChanged();
       setNotice(next ? `تم تفعيل تنبيه «${title}».` : `تم إيقاف تنبيه «${title}».`);
+    } else {
+      setNotice(next ? `سيُفعَّل تنبيه «${title}» عند حفظ موعده.` : `سيُوقَف تنبيه «${title}» عند حفظ موعده.`);
+    }
+  };
+
+  const toggleItemAlarm = (id: string, title: string) => {
+    const existing = taskSchedules[id];
+    const next = !(alarmDraftByTask[id] ?? existing?.alarmMode === true);
+    setAlarmDraftByTask(prev => ({...prev, [id]: next}));
+    if (existing) {
+      onTaskSchedules({...taskSchedules, [id]: {...existing, alarmMode: next ? true : undefined}});
+      notifyNativePrefsChanged();
+      setNotice(next ? `سيرنّ تنبيه «${title}» بنمط منبه على الهاتف.` : `عاد تنبيه «${title}» إلى الإشعار العادي.`);
+    } else {
+      setNotice(next ? `سيُفعَّل نمط المنبه لـ «${title}» عند حفظ موعده.` : `لن يُفعَّل نمط المنبه لـ «${title}».`);
     }
   };
 
@@ -363,62 +444,7 @@ export default function TodayTasksView({
 
   return (
     <div className="today-tasks-view">
-      <div className="page-intro">
-        <span className="eyebrow">حياتي مع الله</span>
-        <h1><CalendarClock size={26}/> مركز المهام</h1>
-        <p>تجتمع هنا الاستحقاقات من خططك الشخصية وأهدافك.</p>
-        <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
-      </div>
-
-      {onCourseCoach&&(
-        <CoachToday
-          goals={goals}
-          tasks={tasks}
-          wirds={wirds}
-          coach={courseCoach}
-          coachSettings={coachSettings}
-          prayers={prayers}
-          dayPlan={dayPlan}
-          dayRecords={dayRecords}
-          taskSchedules={taskSchedules}
-          achievementLog={achievementLog}
-          quranPassages={quranPassages}
-          onCoach={onCourseCoach}
-          onCoachSettings={onCoachSettings}
-          onCompleteGoalStep={completeGoal}
-          onCompleteCourseTask={taskId=>{
-            const t=tasks.find(x=>x.id===taskId);
-            if(t)complete(t);
-          }}
-          onCompleteWird={onCompleteWird}
-          onUpdateGoal={nextGoal=>onGoals(goals.map(g=>g.id===nextGoal.id?nextGoal:g))}
-          onUpdateWird={onUpdateWird}
-          onScheduleSmartItem={(item:SmartTodayItem)=>{
-            if(!item.suggestedSlot)return;
-            const slot=item.suggestedSlot;
-            const existing=taskSchedules[item.taskId];
-            onTaskSchedules({
-              ...taskSchedules,
-              [item.taskId]:{
-                ...existing,
-                title:item.title,
-                sourceLabel:item.goalTitle,
-                initialDate:now,
-                initialTime:slot.startTime,
-                confirmedDate:now,
-                confirmedTime:slot.startTime,
-                notifyEnabled:existing?.notifyEnabled??true,
-              },
-            });
-            notifyNativePrefsChanged();
-            setNotice(`تمت جدولة «${item.title}» (${slot.label}) الساعة ${timeLabel(slot.startTime)}.`);
-          }}
-          onOpenPlanTask={onOpenPlanTask}
-          onOpenHifzTask={onOpenHifzTask}
-          onOpenQuran={onOpenQuran}
-          onOpenWirds={onOpenWirds}
-        />
-      )}
+      <h1 className="today-tasks-sr-title"><CalendarClock size={1} aria-hidden="true"/> مركز المهام</h1>
 
       <button type="button" className="soft-btn task-notif-link" onClick={() => onOpenNotificationSettings?.()} aria-label="ضبط تذكيرات المهام من التنبيهات">
         <BellRing size={16}/> {activeSummary} · ضبط التذكيرات من التنبيهات
@@ -435,21 +461,42 @@ export default function TodayTasksView({
         {undo && (
           <p className="hint" role="status">
             أُنجزت «{undo.label}».{' '}
-            <button type="button" className="soft-btn" onClick={() => {onTasks(undo.before); setUndo(null); notifyNativePrefsChanged();}}>تراجع</button>{' '}
+            <button type="button" className="soft-btn" onClick={() => {if (undo.before) onTasks(undo.before); if (undo.beforeGoals) onGoals(undo.beforeGoals); setUndo(null); notifyNativePrefsChanged();}}>تراجع</button>{' '}
             <button type="button" className="soft-btn" aria-label="إغلاق" onClick={() => setUndo(null)}>✕</button>
           </p>
+        )}
+        {confirmDone && (
+          <div
+            ref={confirmBoxRef}
+            className="notif-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="تأكيد إنجاز المقرر"
+            onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); closeConfirm(); } }}
+          >
+            <p className="small">
+              {confirmDone.plan?.kind === 'day'
+                ? 'اعتبار المقرر منجزًا؟ سيتقدّم مقرر الخطة ويُسجَّل الإنجاز، ولن تُجدول مراجعة لأن جلسة التسميع لم تُجرَ. لا يمكن التراجع عن هذا.'
+                : 'اعتبار هذه المهمة منجزة؟ ستُعلَّم منجزة فقط: لن تُسجَّل جلسة تسميع ولن تُجدول مراجعة، ولن تتغيّر خطة الحفظ.'}
+            </p>
+            <div className="notif-confirm-actions">
+              <button type="button" ref={confirmButtonRef} className="primary" onClick={() => { void confirmComplete(confirmDone); }}>نعم، اعتبره منجزًا</button>
+              <button type="button" className="soft-btn" onClick={closeConfirm}>إلغاء</button>
+            </div>
+          </div>
         )}
         {notice && <p className="hint" role="status">{notice}</p>}
         {allItems.length === 0 ? (
           <p className="muted">لا توجد مهام غير منجزة في هذا القسم.</p>
         ) : (
           <ul className="today-task-list">
-            {allItems.map(item => {
+            {allItems.map((item, index) => {
               const isGoal = 'goalId' in item;
               const itemSource = source(item as Task & {sourceLabel?: string});
               const schedule = taskSchedules[item.id];
               const itemNotifyEnabled = notifyDraftByTask[item.id] ?? schedule?.notifyEnabled ?? true;
               const itemLeadMinutes = item.id in leadDraftByTask ? leadDraftByTask[item.id] : schedule?.remindBeforeMinutes;
+              const itemAlarmMode = alarmDraftByTask[item.id] ?? schedule?.alarmMode === true;
               const effectiveLead = itemLeadMinutes ?? taskSettings.remind_before_minutes;
               const hasSchedule = Boolean(schedule?.confirmedDate || schedule?.initialDate);
               const showMeta = Boolean(
@@ -459,7 +506,10 @@ export default function TodayTasksView({
                   hasSchedule,
               );
               return (
-                <li key={item.id} className="today-task-card">
+                <Fragment key={item.id}>
+                {nextUpIds.length > 0 && index === 0 && <li className="today-task-heading" aria-hidden="true">الأقرب الآن</li>}
+                {nextUpIds.length > 0 && index === nextUpIds.length && <li className="today-task-heading" aria-hidden="true">باقي مهام اليوم</li>}
+                <li className="today-task-card">
                   <div className="today-task-head">
                     <div className="today-task-info">
                       <strong className="today-task-title">{item.title}</strong>
@@ -468,13 +518,18 @@ export default function TodayTasksView({
                         <span aria-hidden="true">·</span>
                         <span>{itemSource}</span>
                       </span>
+                      {nextUpById.has(item.id) && (
+                        <span className={`today-task-nextup is-${nextUpById.get(item.id)!.state}`} data-nextup={nextUpById.get(item.id)!.state}>
+                          <Clock3 size={12} aria-hidden="true"/> {nextUpById.get(item.id)!.label}
+                        </span>
+                      )}
                     </div>
                     {(item as Task).plan && onOpenPlanTask && <button type="button" className="soft-btn" onClick={() => onOpenPlanTask(item as Task)}>{(item as Task).plan!.kind === 'day' ? 'ابدأ مقرر اليوم' : 'ابدأ المراجعة'}</button>}
                     {(item as Task).hifz && onOpenHifzTask && <button type="button" className="soft-btn" onClick={() => onOpenHifzTask((item as Task).hifz!)}>ابدأ التسميع</button>}
                     <button
                       type="button"
                       className="today-task-complete-btn"
-                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : complete(item as Task))}
+                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : requestComplete(item as Task))}
                     >
                       <CheckCircle2 size={16} aria-hidden="true"/>
                       <span>إنجاز</span>
@@ -509,7 +564,7 @@ export default function TodayTasksView({
                               ? 'التنبيه موقوف'
                               : effectiveLead > 0
                                 ? `تنبيه قبل ${effectiveLead} د`
-                                : 'تنبيه عند الموعد'}
+                                : 'تنبيه عند الموعد'}{itemNotifyEnabled && itemAlarmMode ? ' · نمط منبه' : ''}
                           </span>
                         </span>
                       )}
@@ -567,6 +622,16 @@ export default function TodayTasksView({
                       </div>
                     </div>
 
+                    <label className="today-task-alarm-mode">
+                      <input
+                        type="checkbox"
+                        checked={itemAlarmMode}
+                        aria-label={`نمط منبه لـ ${item.title}`}
+                        onChange={() => toggleItemAlarm(item.id, item.title)}
+                      />
+                      <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
+                    </label>
+
                     <div className="today-task-footer">
                       <button
                         type="button"
@@ -585,6 +650,7 @@ export default function TodayTasksView({
                     </div>
                   </div>
                 </li>
+                </Fragment>
               );
             })}
           </ul>

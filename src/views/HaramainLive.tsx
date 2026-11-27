@@ -105,6 +105,7 @@ export default function HaramainLive() {
   const [hlsFailedIds, setHlsFailedIds] = useState<ReadonlySet<string>>(new Set());
   const [retry, setRetry] = useState(0);
   const videoAudibleRef = useRef(false);
+  const handoffRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let active = true;
@@ -157,6 +158,10 @@ export default function HaramainLive() {
       });
     };
 
+    handoffRef.current = () => {
+      videoAudibleRef.current = true;
+      handoffIfAudible();
+    };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
         handoffIfAudible();
@@ -263,7 +268,13 @@ export default function HaramainLive() {
       mode={mode}
       bgActiveForChannel={bgActiveForChannel}
       onToggleBackgroundAudio={toggleBackgroundAudio}
-      onAudibleChange={(audible) => { videoAudibleRef.current = audible; }}
+      onAudibleChange={(audible) => {
+        const wasAudible = videoAudibleRef.current;
+        videoAudibleRef.current = audible;
+        // The WebView can pause the <video> as the app goes to background, before or just after the
+        // visibility event. If sound was playing and the page is already hidden, keep it going natively.
+        if (!audible && wasAudible && document.visibilityState === 'hidden') handoffRef.current();
+      }}
       onHlsFailed={onHlsFailed}
     />
     {mode === 'embed' && channelHlsNote(active)}

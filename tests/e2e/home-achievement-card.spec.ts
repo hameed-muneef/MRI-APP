@@ -7,7 +7,9 @@ import {expect, test} from '@playwright/test';
 for (const selector of ['.home-achievement-entry', '.home-coach-entry'] as const) {
   for (const theme of ['light', 'dark'] as const) {
     for (const width of [360, 390, 412]) {
-      test(`${selector} is centred on one row, no overflow (${width}px, ${theme})`, async ({page}) => {
+      // .home-coach-entry was removed from Home on the user's request (suggestion UI removed): skipped, not deleted.
+      const t = selector === '.home-coach-entry' ? test.skip : test;
+      t(`${selector} is centred on one row, no overflow (${width}px, ${theme})`, async ({page}) => {
         await page.setViewportSize({width, height: 800});
         await page.addInitScript((t) => { try { localStorage.setItem('rabbani-theme-v1', t); } catch { /* ignore */ } }, theme);
         await page.goto('/');

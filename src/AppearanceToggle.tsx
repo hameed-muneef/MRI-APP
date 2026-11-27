@@ -51,7 +51,7 @@ export function AppearancePanel(): JSX.Element {
   return (
     <section className="panel" aria-label="مظهر المنصة">
       <h3>مظهر المنصة</h3>
-      <p className="muted small">اختر النمط النهاري أو الليلي. الافتراضي نهاري.</p>
+      <p className="muted small">اختر النمط النهاري أو الليلي.</p>
       <div className="appearance-seg" role="radiogroup" aria-label="اختيار المظهر">
         {ORDER.map(option => (
           <button

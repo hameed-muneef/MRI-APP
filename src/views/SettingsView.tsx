@@ -17,7 +17,9 @@ import {
   Volume2,
 } from 'lucide-react';
 import {type State, createSeed} from '../app-state';
+import CoachSettingsSection from '../coach/CoachSettingsSection';
 import {
+  clearLocalData,
   exportLocalBackup,
   formatStorageBytes,
   getLocalStorageSummary,
@@ -37,6 +39,8 @@ import {LOCAL_ONLY} from '../config';
 import {playBuiltInTone} from '../notifications/builtin-sounds';
 import {unlockAudioPlayback} from '../notifications/audio';
 import {notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
+import {LOCAL_NOTIFICATIONS_EVENT} from '../notifications/local-inbox';
+import {applyTheme, readAppearance} from '../appearance';
 import {
   ADHAN_SELECTION_STORAGE_KEY,
   BUNDLED_ADHAN_SOUNDS,
@@ -75,6 +79,12 @@ function tabForOpenSection(section: OpenSection | null): SettingsTab {
 export default function SettingsView({state, onReplace, notify, onOpenProfile}: Props) {
   const [initialTarget] = useState<OpenSection | null>(() => consumeOpenSection());
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => tabForOpenSection(initialTarget));
+  // لوحتا الأذان وساعات الهدوء تحملان تعديلات لم تُحفظ بعد: بعد أول زيارة نُبقيهما مُحمَّلتين ومخفيتين
+  // بدل إلغائهما، كي لا تضيع التعديلات عند التنقل بين التبويبات.
+  const [keptTabs, setKeptTabs] = useState<ReadonlySet<SettingsTab>>(() => new Set([tabForOpenSection(initialTarget)]));
+  useEffect(() => {
+    setKeptTabs(old => (old.has(activeTab) ? old : new Set(old).add(activeTab)));
+  }, [activeTab]);
   const [focusTarget, setFocusTarget] = useState<OpenSection | null>(initialTarget);
   const [defaultAdhanId, setDefaultAdhanId] = useState<string>(() => getSelectedDefaultAdhanId());
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
@@ -268,7 +278,18 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   };
 
   const reset = () => {
+    // «حذف البيانات المحلية» يمسح كل ما تشمله النسخة الاحتياطية، لا حالة التطبيق وحدها.
+    try {
+      clearLocalData();
+    } catch {
+      setConfirmReset(false);
+      notify('تعذر حذف كل البيانات المحلية. أعد المحاولة أو أعد تشغيل التطبيق.');
+      return;
+    }
     onReplace(createSeed());
+    applyTheme(readAppearance(null));
+    notifyNativePrefsChanged();
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(LOCAL_NOTIFICATIONS_EVENT));
     setConfirmReset(false);
     void getLocalStorageSummary().then(setStorageSummary);
     notify('تمت إعادة ضبط البيانات المحلية');
@@ -281,7 +302,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
     <div className="settings-section-stack">
       <section className="panel adhan-player" dir="rtl" aria-labelledby="offline-adhan-select-title">
         <h3 id="offline-adhan-select-title"><Volume2 size={18}/> أصوات الأذان والمؤذنين ({BUNDLED_ADHAN_SOUNDS.length} مؤذنًا بدون إنترنت)</h3>
-        <p className="muted">اختر المؤذن الافتراضي للصلوات من {BUNDLED_ADHAN_SOUNDS.length} تسجيلات مدمجة محليًا. لتخصيص صوت صلاة بعينها، افتح «تخصيص» على بطاقتها في قائمة الصلوات بالأعلى.</p>
+        <p className="muted">اختر المؤذن الافتراضي للصلوات من {BUNDLED_ADHAN_SOUNDS.length} تسجيلات مدمجة.</p>
         <div className="adhan-row adhan-default-row">
           <select
             className="adhan-select"
@@ -315,8 +336,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         <h1>الإعدادات والمنبهات</h1>
         <p>
           {LOCAL_ONLY
-            ? 'إدارة المنبهات، أوقات الصلاة والأذان، المظهر، والنسخ الاحتياطي محليًا بالكامل على جهازك.'
-            : 'إدارة المنبهات، أوقات الصلاة والأذان، والمظهر والنسخ الاحتياطي، مع مزامنة حسابك عند الاتصال.'}
+            ? 'المنبهات، الأذان، المظهر، والنسخ الاحتياطي على جهازك.'
+            : 'المنبهات، الأذان، المظهر، والنسخ الاحتياطي، مع مزامنة الحساب عند الاتصال.'}
         </p>
       </div>
 
@@ -361,6 +382,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
 
       {activeTab === 'general' && (
         <div className="settings-section-stack">
+          <CoachSettingsSection coachSettings={state.coachSettings} onCoachSettings={coachSettings => onReplace({...state, coachSettings})}/>
           {!LOCAL_ONLY && onOpenProfile && (
             <section className="panel">
               <h3><UserRound size={18}/> الملف الشخصي وإعدادات الحساب</h3>
@@ -417,7 +439,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
               </button>
             ) : (
               <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف البيانات المحلية">
-                <p className="small">هل تريد حذف كل البيانات المحلية في هذا الجهاز؟ يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
+                <p className="small">سيُحذف كل ما حفظه التطبيق من بياناتك على هذا الجهاز. تبقى بيانات القرآن والتلاوات المحمّلة للقراءة دون اتصال. يُنصح بتصدير نسخة احتياطية أولًا. لا يمكن التراجع.</p>
                 <div className="settings-confirm-actions">
                   <button type="button" className="outline-danger" onClick={reset}>تأكيد الحذف النهائي</button>
                   <button type="button" className="soft-btn" onClick={() => setConfirmReset(false)}>إلغاء</button>
@@ -457,7 +479,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         />
       )}
 
-      {activeTab === 'adhan' && (
+      {(activeTab === 'adhan' || keptTabs.has('adhan')) && (
+        <div hidden={activeTab !== 'adhan'}>
         <NotificationSettings
           mode="adhan"
           focusTarget={focusTarget}
@@ -466,14 +489,17 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
           onPrayerLocation={prayerLocation => onReplace({...state, prayerLocation})}
           extraAdhanContent={adhanAudioPanel}
         />
+        </div>
       )}
 
-      {activeTab === 'quiet' && (
+      {(activeTab === 'quiet' || keptTabs.has('quiet')) && (
+        <div hidden={activeTab !== 'quiet'}>
         <NotificationSettings
           mode="quiet"
           focusTarget={focusTarget}
           notify={notify}
         />
+        </div>
       )}
 
       {showDiagnostics && <AudioDiagnostics/>}

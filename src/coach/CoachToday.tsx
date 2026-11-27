@@ -25,6 +25,7 @@ import {
   type SmartTodayItem,
   type WeeklyRecommendation,
 } from './smart';
+import {COACH_MESSAGES as M} from './messages';
 import type {CoachSettings} from './types';
 
 type Props={
@@ -58,27 +59,27 @@ const reason={behind:'تأخّرت عنها',deadline:'موعدها قريب',du
 const period={daily:'يومي',weekly:'أسبوعي',monthly:'شهري'} as const;
 const n=(v:number)=>v.toLocaleString('ar-EG');
 
-const HOWTO_KEY='rabbani-coach-howto-v1';
-const howTo=[
-  {title:'ما هو المدرّب الذكي؟',text:'محرك محلي يعمل بلا إنترنت يرتّب خطواتك اليومية حسب أولويتك وأوقات فراغك بين الصلوات، دون أي تدخل قسري في خطتك.'},
-  {title:'كيف أفعّله؟',text:'مفتاح «تفعيل للكل» يشغّل المدرّب على أهدافك وأورادك ومقررك دفعة واحدة، ويمكنك استثناء أي هدف أو ورد من بطاقته الخاصة.'},
-  {title:'عودة هادئة وتقرير أسبوعي',text:'عند الانقطاع ٣ أيام أو أكثر يقترح عليك نصف الحمل المعتاد لثلاثة أيام حتى تعود بثبات، ويعرض لك تقريرًا أسبوعيًا واقتراحات موازنة.'},
-] as const;
+const HOWTO_KEY='rabbani-coach-howto-v2';
+const aboutNote=[
+  {title:M.howtoAboutTitle.text({}),text:M.howtoAboutBody.text({})},
+  {title:M.howtoPlanTitle.text({}),text:M.howtoPlanBody.text({})},
+  {title:M.howtoRecoveryTitle.text({}),text:M.howtoRecoveryBody.text({})},
+  {title:M.howtoAboutTitle.text({}),text:M.howtoTurnOff.text({})},
+];
 
-function CoachHowTo(){
+/** Static note about the suggestions. Shown once, then reachable from a small link. No questions, no steps to activate. */
+function CoachAboutNote(){
   const [open,setOpen]=useState(()=>{try{return localStorage.getItem(HOWTO_KEY)!=='1'}catch{return false}});
-  const [i,setI]=useState(0);
-  if(!open)return <button type="button" className="soft-btn coach-howto-trigger" onClick={()=>{setI(0);setOpen(true)}}>كيف أستفيد من المدرّب؟</button>;
+  if(!open)return <button type="button" className="soft-btn coach-howto-trigger" onClick={()=>setOpen(true)}>{M.howtoAboutTitle.text({})}</button>;
   const close=()=>{try{localStorage.setItem(HOWTO_KEY,'1')}catch{/* ignore */}setOpen(false)};
-  const step=howTo[i];
-  return <div className="goal-coach-card" role="group" aria-label="شرح المدرّب">
-    <button type="button" className="icon-btn" aria-label="إغلاق الشرح" onClick={close} style={{float:'left'}}>✕</button>
-    <strong>{step.title} ({n(i+1)}/{n(howTo.length)})</strong>
-    <p>{step.text}</p>
-    <div className="counter-actions">
-      <button type="button" className="soft-btn" disabled={i===0} onClick={()=>setI(i-1)}>السابق</button>
-      {i<howTo.length-1?<button type="button" className="primary" onClick={()=>setI(i+1)}>التالي</button>:<button type="button" className="primary" onClick={close}>فهمت</button>}
-    </div>
+  return <div className="goal-coach-card" role="note" aria-label={M.howtoAboutTitle.text({})}>
+    <button type="button" className="icon-btn" aria-label="إغلاق" onClick={close} style={{float:'left'}}>✕</button>
+    <strong>{aboutNote[0].title}</strong>
+    <p>{aboutNote[0].text}</p>
+    <p>{aboutNote[1].text}</p>
+    <p>{aboutNote[2].text}</p>
+    <p className="muted small">{aboutNote[3].text}</p>
+    <div className="counter-actions"><button type="button" className="primary" onClick={close}>تم</button></div>
   </div>;
 }
 
@@ -144,15 +145,6 @@ export default function CoachToday({
   const warnings=courseSuggestions(coach,now,coachSettings);
   const topQuranTask=plan.quran.topDueTaskId?tasks.find(t=>t.id===plan.quran.topDueTaskId):undefined;
 
-  const toggleGlobal=(checked:boolean)=>{
-    if(!onCoachSettings)return;
-    onCoachSettings({
-      ...(coachSettings??{globalEnabled:false}),
-      globalEnabled:checked,
-      enabledAt:coachSettings?.enabledAt??todayKey,
-    });
-  };
-
   const toggleCourse=(checked:boolean)=>{
     if(globalOn)onCoach(setCourseCoach(coach,checked,now,checked?'inherit':'off'));
     else onCoach(setCourseCoach(coach,checked,now));
@@ -205,9 +197,12 @@ export default function CoachToday({
       <div className="coach-item-main">
         <div className="coach-item-copy">
           <strong>{item.title}</strong>
+          <span className="muted small"> · {M.minutesEstimate.text({minutes:item.estimatedMinutes})}</span>
           <span className="muted small"> · {item.goalTitle} · {period[item.period]} · {reason[item.reason]}</span>
           {item.scheduledTimeToday?(
             <div className="coach-item-slot is-scheduled"><Clock3 size={13} aria-hidden="true"/><span>مجدولة اليوم الساعة {timeLabel(item.scheduledTimeToday)}</span></div>
+          ):item.scheduledDate?(
+            <div className="coach-item-slot is-scheduled"><Clock3 size={13} aria-hidden="true"/><span>مجدولة بتاريخ {item.scheduledDate}</span></div>
           ):item.suggestedSlot?(
             <div className="coach-item-slot"><Clock3 size={13} aria-hidden="true"/><span>المقترح: {item.suggestedSlot.label} ({timeLabel(item.suggestedSlot.startTime)} · {n(item.suggestedSlot.freeMinutes)} د)</span></div>
           ):null}
@@ -251,33 +246,27 @@ export default function CoachToday({
     </li>;
   };
 
-  return <section className="panel coach-today" aria-label="المدرّب اليوم">
+  return <section className="panel coach-today" aria-label="اقتراحات اليوم">
     <div className="coach-today-header">
       <div className="coach-today-brand">
         <span className="coach-today-icon" aria-hidden="true"><Sparkles size={18}/></span>
         <div>
-          <strong className="coach-today-heading">المدرّب الذكي</strong>
-          <small className="muted coach-today-sub">محرك محلي بلا إنترنت · يقترح ولا يفرض</small>
+          <strong className="coach-today-heading">اقتراحات اليوم</strong>
+          <small className="muted coach-today-sub">تعمل دون اتصال · اقتراحات فقط</small>
         </div>
       </div>
-      {onCoachSettings&&(
-        <label className="goal-coach-switch coach-global-switch">
-          <input type="checkbox" role="switch" aria-label="تفعيل المدرّب الذكي للكل" checked={globalOn} onChange={e=>toggleGlobal(e.target.checked)}/>
-          <span>تفعيل للكل</span>
-        </label>
-      )}
     </div>
 
     <div className="coach-controls-row">
       <label className="goal-coach-switch">
-        <input type="checkbox" role="switch" aria-label="تفعيل المدرّب لمهام المقرر" checked={courseOn} onChange={e=>toggleCourse(e.target.checked)}/>
+        <input type="checkbox" role="switch" aria-label="تفعيل الاقتراحات الذكية لمهام المقرر" checked={courseOn} onChange={e=>toggleCourse(e.target.checked)}/>
         <Sparkles size={15}/>
-        <span>المدرّب لمهام المقرر</span>
+        <span>اقتراحات ذكية لمهام المقرر</span>
       </label>
-      <CoachHowTo/>
+      <CoachAboutNote/>
     </div>
 
-    <div className="coach-tabs" role="tablist" aria-label="عرض المدرّب الذكي">
+    <div className="coach-tabs" role="tablist" aria-label="عرض النظام الذكي">
       <button type="button" role="tab" aria-selected={tab==='today'} className={tab==='today'?'primary':'soft-btn'} onClick={()=>setTab('today')}>
         خطة اليوم{plan.anyCoachOn&&plan.recommended.length>0?` (${n(plan.recommended.length)})`:''}
       </button>
@@ -290,13 +279,7 @@ export default function CoachToday({
     {tab==='today'&&<>
       {!plan.anyCoachOn&&(
         <div className="coach-empty-invite">
-          <p className="muted small">فعّل «المدرّب الذكي للكل» ليرتّب لك ما تبدأ به اليوم حسب أوقات فراغك بين الصلوات، ويكشف لك أيام التعثر في تقرير أسبوعي شامل.</p>
-          {onCoachSettings&&(
-            <button type="button" className="primary coach-activate-btn" onClick={()=>toggleGlobal(true)}>
-              <Sparkles size={16} aria-hidden="true"/>
-              <span>تفعيل المدرّب الذكي الآن</span>
-            </button>
-          )}
+          <p className="muted small">{M.uiInvite.text({})}</p>
         </div>
       )}
 
@@ -307,13 +290,26 @@ export default function CoachToday({
           {plan.patterns.peakWindowLabel&&<span>وقت ذروتك: <strong>{plan.patterns.peakWindowLabel}</strong></span>}
         </div>
 
+        {(plan.workload.level!=='ok'||plan.workload.exceedsCapacity)&&(
+          <div className="goal-coach-card coach-workload-card" role="region" aria-label="تنبيه الحمل">
+            <div className="coach-callout-head">
+              <Clock3 size={17} aria-hidden="true"/>
+              <strong>تنبيه الحمل</strong>
+            </div>
+            {plan.workload.level==='over'&&<p>{M.workloadOver.text({planned:plan.workload.plannedMinutes,free:plan.workload.freeMinutes})}</p>}
+            {plan.workload.level==='tight'&&<p>{M.workloadTight.text({planned:plan.workload.plannedMinutes,free:plan.workload.freeMinutes})}</p>}
+            {plan.workload.exceedsCapacity&&<p>{M.workloadOverCapacity.text({})}</p>}
+            <p className="muted small">{M.workloadNoHistory.text({})}</p>
+          </div>
+        )}
+
         {plan.recovery.active&&(
           <div className="goal-coach-card coach-recovery-card" role="region" aria-label="عودة هادئة">
             <div className="coach-callout-head">
               <Flame size={17} aria-hidden="true"/>
               <strong>عودة هادئة · اليوم {n(plan.recovery.dayNumber)} من ٣ (نصف الحمل المعتاد)</strong>
             </div>
-            <p>لاحظ المدرّب انقطاعًا منذ {n(plan.recovery.gapDays)} أيام؛ لذلك خفّف لك جدول اليوم إلى {n(plan.recovery.dailyLimit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.</p>
+            <p>{M.uiRecoveryNote.text({gap: plan.recovery.gapDays, limit: plan.recovery.dailyLimit})}</p>
             {onCoachSettings&&(
               <div className="goal-coach-actions">
                 <button type="button" className="soft-btn" onClick={dismissRecoveryToday}>عرض الحمل الكامل اليوم</button>
@@ -355,8 +351,8 @@ export default function CoachToday({
       </>}
 
       {warnings.map(w=>(
-        <div className="goal-coach-card" role="group" aria-label="اقتراح المدرّب" key={w.id}>
-          <p>{w.stepId==='course-month'?'مراجعة المقرر الشهرية':'مراجعة المقرر الأسبوعية'} تأخرت في الفترات الأخيرة. ابدأ بها اليوم قبل أن يتسع الفارق.</p>
+        <div className="goal-coach-card" role="group" aria-label="اقتراح ذكي" key={w.id}>
+          <p>{M.uiCourseLate.text({title: w.stepId==='course-month'?M.courseMonthTitle.text({}):M.courseWeekTitle.text({})})}</p>
           <div className="goal-coach-actions">
             <button type="button" className="soft-btn" onClick={()=>coach&&onCoach(dismissCourse(coach,w.id))}>تمام</button>
           </div>
@@ -420,14 +416,14 @@ export default function CoachToday({
         <div className="goal-coach-card coach-rhythm-card">
           <strong>تحليل الإيقاع الشخصي</strong>
           <p>
-            {report.patterns.peakWindowLabel?`وقت ذروتك المعتاد: ${report.patterns.peakWindowLabel}. `: 'سيظهر وقت ذروتك بعد تسجيل بضعة إنجازات. '}
-            {report.patterns.weakestWeekdayLabel?`أكثر يوم يتراجع فيه الإنجاز: ${report.patterns.weakestWeekdayLabel}. `:''}
-            {`سعتك اليومية المعتادة نحو ${n(report.patterns.estimatedCapacity)} خطوات.`}
+            {report.patterns.peakWindowLabel?M.rhythmPeak.text({window: report.patterns.peakWindowLabel}):M.rhythmNoPeak.text({})}
+            {report.patterns.weakestWeekdayLabel?M.rhythmWeakDay.text({day: report.patterns.weakestWeekdayLabel}):''}
+            {M.rhythmCapacity.text({capacity: report.patterns.estimatedCapacity})}
           </p>
         </div>
 
         {report.recommendations.length===0?(
-          <p className="muted small">لا توجد توصيات تعديل معلّقة حاليًا. استمر على إيقاعك الهادئ!</p>
+          <p className="muted small">{M.noRecommendations.text({})}</p>
         ):(
           <div className="coach-weekly-recs">
             <h3 className="coach-today-title">توصيات الأسبوع القادم</h3>

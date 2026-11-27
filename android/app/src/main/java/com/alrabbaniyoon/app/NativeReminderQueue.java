@@ -51,15 +51,37 @@ public final class NativeReminderQueue {
         public final String title;
         public final String body;
         public final String channelId;
+        /** وضع المنبه: الصوت يرنّ متكررًا حتى الإيقاف أو ستين ثانية (انظر {@link ReminderAlarmPolicy}). */
+        public final boolean alarmMode;
+        /** صوت مخصص نُسخ إلى مساحة التطبيق: "<key>.<ext>"، أو null للصوت الافتراضي. */
+        public final String soundKey;
+        /** اسم ملف في res/raw بلا امتداد، أو null. */
+        public final String rawSound;
         /** Wall-clock fields {year, month(1-12), day, hour, minute, second} in {@link #zone}; null for absolute-instant items. */
         public final int[] wall;
         public final String zone;
         Item(int id, long atMs, String title, String body, String channelId) {
-            this(id, atMs, title, body, channelId, null, null);
+            this(id, atMs, title, body, channelId, null, null, false, null, null);
         }
         Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone) {
+            this(id, atMs, title, body, channelId, wall, zone, false, null, null);
+        }
+        Item(int id, long atMs, String title, String body, String channelId, boolean alarmMode) {
+            this(id, atMs, title, body, channelId, null, null, alarmMode, null, null);
+        }
+        Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone, boolean alarmMode) {
+            this(id, atMs, title, body, channelId, wall, zone, alarmMode, null, null);
+        }
+        Item(int id, long atMs, String title, String body, String channelId, int[] wall, String zone,
+             boolean alarmMode, String soundKey, String rawSound) {
             this.id = id; this.atMs = atMs; this.title = title; this.body = body; this.channelId = channelId;
-            this.wall = wall; this.zone = zone;
+            this.wall = wall; this.zone = zone; this.alarmMode = alarmMode;
+            this.soundKey = soundKey; this.rawSound = rawSound;
+        }
+
+        /** هل يحتاج هذا الصفّ خدمة تشغيل (منبه، أو صوت مخصص) بدل إشعار بصوت القناة؟ */
+        boolean needsPlayback() {
+            return alarmMode || (soundKey != null && !soundKey.isEmpty()) || (rawSound != null && !rawSound.isEmpty());
         }
     }
 
@@ -97,7 +119,8 @@ public final class NativeReminderQueue {
         String id = now.getID();
         for (Item it : items) {
             if (it.wall == null || it.zone == null || it.zone.equals(id)) { out.add(it); continue; }
-            out.add(new Item(it.id, instantOf(it.wall, now), it.title, it.body, it.channelId, it.wall, id));
+            out.add(new Item(it.id, instantOf(it.wall, now), it.title, it.body, it.channelId, it.wall, id, it.alarmMode,
+                it.soundKey, it.rawSound));
         }
         return out;
     }
@@ -124,7 +147,12 @@ public final class NativeReminderQueue {
                 }
                 String zone = o.optString("zone", "");
                 if (wall == null || zone.isEmpty()) { wall = null; zone = null; }
-                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch, wall, zone));
+                // وضع المنبه اختياري: أي صفّ لا يذكره يبقى تنبيهًا عاديًا بصوت واحد.
+                boolean alarmMode = o.optBoolean("alarmMode", false);
+                String soundKey = o.optString("soundKey", "");
+                String rawSound = o.optString("rawSound", "");
+                out.add(new Item(o.optInt("id"), at, title, o.optString("body", ""), ch, wall, zone, alarmMode,
+                    soundKey.isEmpty() ? null : soundKey, rawSound.isEmpty() ? null : rawSound));
             }
         } catch (JSONException ignored) {}
         return out;
@@ -155,15 +183,66 @@ public final class NativeReminderQueue {
         i.putExtra("title", it.title);
         i.putExtra("body", it.body);
         i.putExtra("channelId", it.channelId);
+        i.putExtra("alarmMode", it.alarmMode);
+        i.putExtra("soundKey", it.soundKey == null ? "" : it.soundKey);
+        i.putExtra("rawSound", it.rawSound == null ? "" : it.rawSound);
         return PendingIntent.getBroadcast(c, requestCode(it.id), i, flags | PendingIntent.FLAG_IMMUTABLE);
     }
 
     /** Distinct from the ids LocalNotifications/adhan use for the same payload id space. */
     static int requestCode(int id) { return 0x51000000 ^ id; }
 
+    // ---------- مدة الغفوة: تأتي مع كل حمولة من الواجهة، فزر «تأجيل» يطابق ما في الإعدادات ----------
+
+    private static final String KEY_SNOOZE = "snooze_minutes";
+
+    /** Pure: the snooze minutes the settings screen promises, kept inside the range the JS settings allow. */
+    static int clampSnoozeMinutes(int minutes) {
+        if (minutes < 1) return ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES;
+        return Math.min(120, minutes);
+    }
+
+    /** Reads the snooze minutes from the first row that carries them and remembers them for later alerts. */
+    static void storeSnoozeMinutes(Context c, String itemsJson) {
+        try {
+            if (itemsJson == null || itemsJson.isEmpty()) return;
+            JSONArray a = new JSONArray(itemsJson);
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.optJSONObject(i);
+                if (o == null || !o.has("snoozeMinutes")) continue;
+                int minutes = clampSnoozeMinutes(o.optInt("snoozeMinutes", ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
+                prefs(c).edit().putInt(KEY_SNOOZE, minutes).apply();
+                return;
+            }
+        } catch (Throwable ignored) {
+            // A malformed payload must never break the queue refresh.
+        }
+    }
+
+    /** The snooze delay written on the notification buttons and used when the user taps one. */
+    static int snoozeMinutes(Context c) {
+        try {
+            return clampSnoozeMinutes(prefs(c).getInt(KEY_SNOOZE, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
+        } catch (Throwable t) {
+            return ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES;
+        }
+    }
+
+    /** Pure: Latin digits as the Arabic-Indic digits the rest of the interface uses. */
+    static String arabicDigits(int value) {
+        String digits = String.valueOf(Math.max(0, value));
+        StringBuilder out = new StringBuilder(digits.length());
+        for (int i = 0; i < digits.length(); i++) {
+            char ch = digits.charAt(i);
+            out.append(ch >= '0' && ch <= '9' ? (char) ('\u0660' + (ch - '0')) : ch);
+        }
+        return out.toString();
+    }
+
     /** Replaces the queue of one kind ("reminder","task","review","prayer"): cancels its armed alarms, stores, arms due ones. */
     public static synchronized int setQueue(Context c, String kind, String itemsJson) {
         try {
+            storeSnoozeMinutes(c, itemsJson);
             cancelArmedOfKind(c, kind);
             List<Item> items = prune(parse(itemsJson), System.currentTimeMillis());
             TimeZone tz = TimeZone.getDefault();
@@ -185,12 +264,16 @@ public final class NativeReminderQueue {
     /** Pure: stamps a wall-clock item with the local fields of its instant in the zone the app planned it in (the device zone). */
     static Item withWall(Item it, String kind, TimeZone tz) {
         if (!followsWallClock(kind) || it.wall != null) return it;
-        return new Item(it.id, it.atMs, it.title, it.body, it.channelId, wallOf(it.atMs, tz), tz.getID());
+        return new Item(it.id, it.atMs, it.title, it.body, it.channelId, wallOf(it.atMs, tz), tz.getID(), it.alarmMode,
+            it.soundKey, it.rawSound);
     }
 
     private static void putStored(JSONArray stored, Item it) throws JSONException {
         JSONObject o = new JSONObject();
         o.put("id", it.id); o.put("at", it.atMs); o.put("title", it.title); o.put("body", it.body); o.put("channelId", it.channelId);
+        if (it.alarmMode) o.put("alarmMode", true);
+        if (it.soundKey != null && !it.soundKey.isEmpty()) o.put("soundKey", it.soundKey);
+        if (it.rawSound != null && !it.rawSound.isEmpty()) o.put("rawSound", it.rawSound);
         if (it.wall != null && it.zone != null) {
             JSONArray w = new JSONArray();
             for (int v : it.wall) w.put(v);
@@ -324,6 +407,9 @@ public final class NativeReminderQueue {
                     JSONObject r = new JSONObject();
                     r.put("kind", kinds.get(idx)); r.put("id", it.id); r.put("at", it.atMs);
                     r.put("title", it.title); r.put("body", it.body); r.put("channelId", it.channelId);
+                    if (it.alarmMode) r.put("alarmMode", true);
+                    if (it.soundKey != null && !it.soundKey.isEmpty()) r.put("soundKey", it.soundKey);
+                    if (it.rawSound != null && !it.rawSound.isEmpty()) r.put("rawSound", it.rawSound);
                     record.put(r);
                     armed++;
                 } catch (IllegalStateException limit) {
@@ -343,7 +429,8 @@ public final class NativeReminderQueue {
             for (int i = 0; i < rec.length(); i++) {
                 JSONObject r = rec.getJSONObject(i);
                 if (kind.equals(r.optString("kind"))) {
-                    Item it = new Item(r.optInt("id"), r.optLong("at"), r.optString("title"), r.optString("body"), r.optString("channelId", GENERAL_CHANNEL_ID));
+                    Item it = new Item(r.optInt("id"), r.optLong("at"), r.optString("title"), r.optString("body"), r.optString("channelId", GENERAL_CHANNEL_ID), null, null, r.optBoolean("alarmMode", false),
+                        r.optString("soundKey", null), r.optString("rawSound", null));
                     PendingIntent pi = pending(c, it, PendingIntent.FLAG_NO_CREATE);
                     if (am != null && pi != null) { am.cancel(pi); pi.cancel(); }
                 } else keep.put(r);
@@ -368,6 +455,14 @@ public final class NativeReminderQueue {
             ch.enableVibration(false);
             ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             nm.createNotificationChannel(ch);
+        } else if (ReminderAlarmPolicy.CHANNEL_ID.equals(channelId)) {
+            NotificationChannel ch = new NotificationChannel(channelId, ReminderAlarmPolicy.CHANNEL_NAME, NotificationManager.IMPORTANCE_MAX);
+            ch.setDescription(ReminderAlarmPolicy.CHANNEL_DESCRIPTION);
+            // الصوت نفسه يشغّله وضع المنبه في حلقة، فالقناة صامتة حتى لا يتعارض صوتان.
+            ch.setSound(null, null);
+            ch.enableVibration(true);
+            ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            nm.createNotificationChannel(ch);
         } else if (GENERAL_CHANNEL_ID.equals(channelId)) {
             NotificationChannel ch = new NotificationChannel(channelId, "تنبيهات عامة", NotificationManager.IMPORTANCE_HIGH);
             ch.setDescription("تذكيرات وتنبيهات عامة بصوت");
@@ -386,15 +481,55 @@ public final class NativeReminderQueue {
 
     /** Alarm fired: post the stored notification like LocalNotifications does, then top up the window. Never throws. */
     public static void onFire(Context c, int id, String title, String body, String channelId) {
+        onFire(c, id, title, body, channelId, false);
+    }
+
+    /** Same, with the row's alarm mode: a marked row rings through {@link ReminderAlarmService} instead. */
+    public static void onFire(Context c, int id, String title, String body, String channelId, boolean alarmMode) {
+        onFire(c, id, title, body, channelId, alarmMode, null, null);
+    }
+
+    /** Same, with the row's custom sound: a soundKey copied into app storage and/or a bundled raw name. */
+    public static void onFire(Context c, int id, String title, String body, String channelId, boolean alarmMode,
+                              String soundKey, String rawSound) {
         try {
             if (title == null || title.isEmpty()) return;
             String ch = channelId == null || channelId.isEmpty() || "al-rabbani-general".equals(channelId) ? GENERAL_CHANNEL_ID : channelId; // old queued items used the retired silent-prone channel
-            ensureChannel(c, ch);
-            post(c, id, ch, title, body == null ? "" : body);
+            boolean hasSound = (soundKey != null && !soundKey.isEmpty()) || (rawSound != null && !rawSound.isEmpty());
+            if (ReminderAlarmPolicy.isAlarmMode(alarmMode) || hasSound) {
+                // منبه، أو تذكير بصوت اختاره المستخدم: الصوت يشغّله التطبيق (حلقة للمنبه، مرة واحدة لغيره).
+                postWithSound(c, id, title, body == null ? "" : body, alarmMode, soundKey, rawSound);
+            } else {
+                ensureChannel(c, ch);
+                post(c, id, ch, title, body == null ? "" : body);
+            }
         } catch (Throwable ignored) {
             // A notification failure must never crash the receiver.
         }
         try { promote(c); } catch (Throwable ignored) {}
+    }
+
+    /**
+     * وضع المنبه: الإشعار نفسه تنشئه الخدمة الأمامية بنفس معرّف الصف، فيبقى زرّا الإيقاف والتأجيل وقائمة
+     * «ما يرنّ الآن» تعمل كما هي. إن رفض النظام تشغيل الخدمة رجعنا إلى تنبيه عادي بصوت واحد بدل تنبيه صامت.
+     */
+    static void postWithSound(Context c, int id, String title, String body, boolean alarmMode,
+                              String soundKey, String rawSound) {
+        try {
+            if (!androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
+            if (alarmMode) ensureChannel(c, ReminderAlarmPolicy.CHANNEL_ID);
+            else CustomSounds.ensureCustomChannel(c);
+            int snooze = snoozeMinutes(c);
+            if (!ReminderAlarmService.start(c, id, title, body, snooze, alarmMode, soundKey, rawSound)) {
+                // الخدمة لم تبدأ: إشعار عادي بصوت القناة، فلا يصمت التذكير.
+                post(c, id, GENERAL_CHANNEL_ID, title, body);
+                return;
+            }
+            rememberRinging(c, id);
+            ScreenOffStopReceiver.arm(c);
+        } catch (Throwable t) {
+            try { post(c, id, GENERAL_CHANNEL_ID, title, body); } catch (Throwable ignored) {}
+        }
     }
 
     /**
@@ -439,8 +574,159 @@ public final class NativeReminderQueue {
                 b.setDefaults(android.app.Notification.DEFAULT_ALL);
             }
         }
+        // أزرار الإيقاف والتأجيل: تُغلق الإشعار فورًا، وتعيد جدولة نفسه بعد عشر دقائق عند التأجيل.
+        b.addAction(0, "إيقاف", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_STOP, id, title, body, channelId, 0));
+        int snooze = snoozeMinutes(c);
+        b.addAction(0, "تأجيل " + arabicDigits(snooze) + " د", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, snooze));
         try {
             androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
+            if (!silent) { rememberRinging(c, id); ScreenOffStopReceiver.arm(c); }
         } catch (SecurityException ignored) {}
+    }
+
+    /** Snooze alarms live in their own request-code space so they never overwrite a queued reminder. */
+    static int snoozeRequestCode(int id) { return 0x5A000000 ^ id; }
+
+    /**
+     * Re-arms one notification after a Snooze tap. Uses the same receiver and extras as a queued
+     * reminder, so the alert comes back even if the app is closed. The request code sits in its
+     * own range ({@link #snoozeRequestCode(int)}), so a later refresh of the queue never cancels a
+     * snooze and a snooze never cancels a queued reminder. Exact when the device allows it,
+     * inexact otherwise, exactly like {@link #promote(Context)}.
+     */
+    public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes) {
+        armSnoozed(c, id, title, body, channelId, minutes, false);
+    }
+
+    /** Same, remembering the row's alarm mode so a snoozed alarm rings like an alarm again. */
+    public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes, boolean alarmMode) {
+        armSnoozed(c, id, title, body, channelId, minutes, alarmMode, null, null);
+    }
+
+    /** Same, keeping the row's custom sound so a snoozed reminder rings with the same file. */
+    public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes,
+                                  boolean alarmMode, String soundKey, String rawSound) {
+        long at = System.currentTimeMillis() + Math.max(1, minutes) * 60_000L;
+        Intent i = new Intent(c, QueuedReminderReceiver.class).setAction(ACTION);
+        i.putExtra("id", id);
+        i.putExtra("title", title);
+        i.putExtra("body", body == null ? "" : body);
+        i.putExtra("channelId", channelId == null || channelId.isEmpty() ? GENERAL_CHANNEL_ID : channelId);
+        i.putExtra("alarmMode", alarmMode);
+        i.putExtra("soundKey", soundKey == null ? "" : soundKey);
+        i.putExtra("rawSound", rawSound == null ? "" : rawSound);
+        PendingIntent pi = PendingIntent.getBroadcast(
+            c,
+            snoozeRequestCode(id),
+            i,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        try {
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            if (am == null) return;
+            if (NativeAdhanStore.canScheduleExact(c)) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            } else {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            }
+        } catch (SecurityException se) {
+            // Exact alarms revoked between the check and the call: an inexact alarm still fires, just later.
+            try {
+                AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+                if (am != null) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            // A failed snooze must never crash the receiver.
+        }
+    }
+
+    /** Drops a pending snooze for one notification, so "Stop" really ends it instead of leaving it armed. */
+    public static void cancelSnoozed(Context c, int id) {
+        try {
+            Intent i = new Intent(c, QueuedReminderReceiver.class).setAction(ACTION);
+            PendingIntent pi = PendingIntent.getBroadcast(
+                c,
+                snoozeRequestCode(id),
+                i,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
+            );
+            if (pi == null) return;
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            if (am != null) am.cancel(pi);
+            pi.cancel();
+        } catch (Throwable ignored) {
+            // Cancelling must never crash the receiver.
+        }
+    }
+
+    // ---------- ما يرنّ الآن: حتى يوقفه زر الإيقاف أو مفتاح الطاقة (شاشة تُطفأ) ----------
+
+    /** Ids of alerts this app posted in the last few minutes, i.e. ones whose sound may still be playing. */
+    private static final String KEY_RINGING = "ringing";
+    static final long RINGING_TTL_MS = 3L * 60 * 1000;
+
+    private static JSONObject ringingMap(Context c) {
+        try {
+            String raw = prefs(c).getString(KEY_RINGING, null);
+            if (raw == null || raw.isEmpty()) return new JSONObject();
+            return new JSONObject(raw);
+        } catch (Throwable t) {
+            return new JSONObject();
+        }
+    }
+
+    static void rememberRinging(Context c, int id) {
+        try {
+            JSONObject map = ringingMap(c);
+            map.put(String.valueOf(id), System.currentTimeMillis());
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {
+            // Bookkeeping must never crash the notifier.
+        }
+    }
+
+    static void forgetRinging(Context c, int id) {
+        try {
+            JSONObject map = ringingMap(c);
+            map.remove(String.valueOf(id));
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Silences whatever this app may still be ringing: the screen-off / power-key case. Cancelling the
+     * notification is what stops a channel sound, and any snooze armed for the same id goes with it.
+     * Only ids posted in the last {@link #RINGING_TTL_MS} are touched, so older notifications in the
+     * shade are left alone.
+     */
+    public static synchronized void stopRinging(Context c) {
+        // وضع المنبه يشغّل الصوت بنفسه، فإلغاء الإشعار وحده لا يكفي: تُوقف الخدمة أيضًا.
+        ReminderAlarmService.stop(c);
+        JSONObject map = ringingMap(c);
+        long now = System.currentTimeMillis();
+        List<String> keys = new ArrayList<>();
+        for (java.util.Iterator<String> it = map.keys(); it.hasNext(); ) keys.add(it.next());
+        for (String key : keys) {
+            long postedAt = map.optLong(key, 0L);
+            if (now - postedAt > RINGING_TTL_MS) {
+                map.remove(key);
+                continue;
+            }
+            int id;
+            try {
+                id = Integer.parseInt(key);
+            } catch (NumberFormatException bad) {
+                map.remove(key);
+                continue;
+            }
+            try {
+                androidx.core.app.NotificationManagerCompat.from(c).cancel(id);
+            } catch (Throwable ignored) {}
+            cancelSnoozed(c, id);
+            map.remove(key);
+        }
+        try {
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {}
     }
 }

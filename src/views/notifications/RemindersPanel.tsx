@@ -15,12 +15,15 @@ import {
   Send,
   Sparkles,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import {uid} from '../../id';
 import {effectiveNextDueDate, formatTimeHM, WEEK_DAYS} from '../../notifications/scheduler';
 import {createReminder, deleteReminder, snoozeReminder, toggleReminder, updateReminder} from '../../notifications/service';
 import {loadPrefs, loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
+import {testAlertMessage} from '../../notifications/test-alert-copy';
+import {endDateError, parseSpecificDates} from '../../notifications/reminder-date-input';
 import {formatRemaining} from '../../notifications/upcoming';
 import {SoundSelectField} from './SoundPanel';
 import {RECURRENCE_LABELS, type Reminder, type ReminderRecurrence} from '../../notifications/types';
@@ -39,6 +42,17 @@ import {
 import {playAudio, stopAudio, unlockAudioPlayback} from '../../notifications/audio';
 import {playBuiltInTone} from '../../notifications/builtin-sounds';
 import {soundPlanForReminder} from '../../notifications/sound-selection';
+import {
+  decodeImportBytes,
+  importableItems,
+  importedToReminder,
+  parseReminderImport,
+  resolveModes,
+  roomFor,
+  type ImportDefaultMode,
+  type ImportMode,
+  type ImportedItem,
+} from '../../notifications/reminder-import';
 
 type Draft = {
   id?: string;
@@ -54,6 +68,7 @@ type Draft = {
   category: string;
   soundId: string | undefined;
   linkedGoalId: string | undefined;
+  alarmMode: boolean;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -97,6 +112,7 @@ function emptyDraft(): Draft {
     category: 'reminder',
     soundId: undefined,
     linkedGoalId: undefined,
+    alarmMode: false,
   };
 }
 
@@ -117,6 +133,7 @@ function draftFromReminder(reminder: Reminder): Draft {
     category: reminder.category,
     soundId: reminder.sound_id,
     linkedGoalId: reminder.linked_goal_id,
+    alarmMode: reminder.alarm_mode === true,
   };
 }
 
@@ -135,13 +152,14 @@ function buildReminder(draft: Draft): Omit<Reminder, 'id' | 'user_id' | 'created
       start_date: draft.date,
       end_date: draft.endDate || undefined,
       specific_dates: draft.recurrence === 'specific_dates'
-        ? draft.specificDates.split(/[،,]/).map(part => part.trim()).filter(Boolean)
+        ? parseSpecificDates(draft.specificDates).dates
         : undefined,
       interval_days: draft.recurrence === 'custom' ? Math.max(1, Math.round(draft.intervalDays)) : undefined,
     },
     sound_id: draft.soundId,
     category: draft.category,
     linked_goal_id: draft.linkedGoalId,
+    alarm_mode: draft.alarmMode ? true : undefined,
     snooze_until: undefined,
     enabled: true,
   };
@@ -151,8 +169,14 @@ function draftError(draft: Draft): string {
   if (!draft.title.trim()) return 'اكتب عنوان المنبه.';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) return 'اختر تاريخًا صحيحًا.';
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(draft.time)) return 'اختر وقتًا صحيحًا.';
+  const endIssue = endDateError(draft.date, draft.endDate);
+  if (endIssue) return endIssue;
   if (draft.recurrence === 'weekdays' && !draft.days.length) return 'اختر يومًا واحدًا على الأقل للتكرار.';
-  if (draft.recurrence === 'specific_dates' && !draft.specificDates.trim()) return 'اكتب تاريخًا واحدًا على الأقل (بفواصل بينها).';
+  if (draft.recurrence === 'specific_dates') {
+    const {dates, invalid} = parseSpecificDates(draft.specificDates);
+    if (!dates.length && !invalid.length) return 'اكتب تاريخًا واحدًا على الأقل (بفواصل بينها).';
+    if (invalid.length) return 'اكتب التواريخ بصيغة YYYY-MM-DD، مثل 2026-12-01.';
+  }
   return '';
 }
 
@@ -217,6 +241,12 @@ export default function RemindersPanel({
   const [busy, setBusy] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [globalEnabled, setGlobalEnabled] = useState(true);
+  // استيراد تذكيرات من ملف: مراجعة قبل الإضافة، ونمط منبه أو تنبيه لكل صفّ أو للملف كله.
+  const [importReview, setImportReview] = useState<{fileName: string; items: ImportedItem[]} | null>(null);
+  const [importMode, setImportMode] = useState<ImportDefaultMode>('file');
+  const [importOverrides, setImportOverrides] = useState<Record<string, ImportMode>>({});
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -224,8 +254,11 @@ export default function RemindersPanel({
     const sync = () => {
       void (async () => {
         try {
-          const {reminders: loaded} = await loadReminders();
-          if (active) setReminders(loaded);
+          const [{reminders: loaded}, {prefs: currentPrefs}] = await Promise.all([loadReminders(), loadPrefs()]);
+          if (active) {
+            setReminders(loaded);
+            setGlobalEnabled(currentPrefs.global_enabled !== false);
+          }
         } catch {/* تجاهل — القائمة فارغة في البداية */}
       })();
     };
@@ -286,7 +319,7 @@ export default function RemindersPanel({
         const editId = draft.id;
         try {
           const stored = await updateReminder(editId, {...values, snooze_until: undefined, enabled: true});
-          commitReminders(list => list.map(item => (item.id === stored.id ? stored : item)));
+          commitReminders(list => list.map(item => (item.id === stored.id ? {...stored, alarm_mode: values.alarm_mode} : item)));
           notify('حُدِّث المنبه');
         } catch {
           commitReminders(list =>
@@ -301,7 +334,7 @@ export default function RemindersPanel({
       } else {
         try {
           const stored = await createReminder(values);
-          commitReminders(list => [...list, stored]);
+          commitReminders(list => [...list, {...stored, alarm_mode: values.alarm_mode}]);
           notify('أُضيف المنبه');
         } catch {
           const stamp = new Date().toISOString();
@@ -375,8 +408,9 @@ export default function RemindersPanel({
           linked_goal_id: reminder.linked_goal_id,
           linked_task_id: reminder.linked_task_id,
           enabled: reminder.enabled,
+          alarm_mode: reminder.alarm_mode,
         });
-        commitReminders(list => [...list, stored]);
+        commitReminders(list => [...list, {...stored, alarm_mode: reminder.alarm_mode}]);
         notify('تم نسخ المنبه');
       } catch {
         const stamp = new Date().toISOString();
@@ -395,6 +429,7 @@ export default function RemindersPanel({
             linked_goal_id: reminder.linked_goal_id,
             linked_task_id: reminder.linked_task_id,
             enabled: reminder.enabled,
+            alarm_mode: reminder.alarm_mode,
             created_at: stamp,
             updated_at: stamp,
           },
@@ -412,7 +447,7 @@ export default function RemindersPanel({
     try {
       try {
         const stored = await snoozeReminder(reminder.id, 10);
-        commitReminders(list => list.map(item => (item.id === stored.id ? stored : item)));
+        commitReminders(list => list.map(item => (item.id === stored.id ? {...stored, alarm_mode: item.alarm_mode} : item)));
       } catch {
         const until = new Date(Date.now() + 10 * 60000).toISOString();
         commitReminders(list =>
@@ -443,22 +478,87 @@ export default function RemindersPanel({
     }
     const label = title?.trim() || 'تذكير شخصي';
     await deliverNotification('reminder', `تنبيه تجريبي · ${label}`, 'هذا اختبار لصوت وظهور المنبه.', 'settings', effectiveSound);
-    notify(plan.mode === 'none' ? 'أُرسل التنبيه التجريبي (صامت).' : 'أُرسل التنبيه التجريبي وشُغِّل الصوت.');
+    notify(testAlertMessage(plan.mode, prefs.global_enabled !== false));
+  };
+
+  const importPreview = useMemo(
+    () => (importReview ? resolveModes(importReview.items, {defaultMode: importMode, overrides: importOverrides}) : []),
+    [importReview, importMode, importOverrides],
+  );
+
+  const importableCount = useMemo(() => importableItems(importPreview).length, [importPreview]);
+  const importSkipped = useMemo(() => importPreview.length - importableCount, [importPreview, importableCount]);
+
+  const readImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    setError('');
+    setImportReview(null);
+    try {
+      const decoded = decodeImportBytes(new Uint8Array(await file.arrayBuffer()));
+      if (decoded.fileProblem || !decoded.text) {
+        setError(decoded.fileProblem ?? 'تعذّر قراءة الملف.');
+        return;
+      }
+      const parsed = parseReminderImport(decoded.text, {
+        defaultMode: importMode === 'file' ? 'reminder' : importMode,
+        existing: reminders,
+      });
+      if (parsed.fileProblem) {
+        setError(parsed.fileProblem);
+        return;
+      }
+      setImportOverrides({});
+      setImportReview({fileName: file.name, items: parsed.items});
+    } catch {
+      setError('تعذّر قراءة الملف. اختر ملف تذكيرات بصيغة JSON.');
+    }
+  };
+
+  const applyImport = () => {
+    if (!importReview) return;
+    const rows = importableItems(importPreview);
+    if (!rows.length) {
+      setError('لا يوجد ما يُضاف: كل الصفوف مكرّرة أو غير صالحة.');
+      return;
+    }
+    const room = roomFor(reminders.length);
+    if (rows.length > room) {
+      setError(room === 0
+        ? 'بلغت الحدّ الأقصى ٢٠٠ تذكير. احذف بعض التذكيرات ثم أعد الاستيراد.'
+        : `لا توجد مساحة إلا لـ ${room} تذكير من ${rows.length}. احذف بعض التذكيرات أو قسّم الملف.`);
+      return;
+    }
+    const stamp = new Date().toISOString();
+    commitReminders(list => [
+      ...list,
+      ...rows.map(row => ({...importedToReminder(row, uid(), new Date(stamp)), created_at: stamp, updated_at: stamp})),
+    ]);
+    setImportReview(null);
+    setImportOverrides({});
+    setError('');
+    const alarms = rows.filter(row => row.alarmMode).length;
+    notify(alarms > 0 ? `أُضيف ${rows.length} تذكيرًا، منها ${alarms} بنمط منبه` : `أُضيف ${rows.length} تذكيرًا`);
   };
 
   const editing = draft !== null;
 
   return (
     <div ref={rootRef} className="notif-reminders">
+      {!globalEnabled && (
+        <p className="notif-state" role="status">
+          <Bell size={17}/> التنبيهات متوقفة من «الهدوء والإشعارات»، فلن يرنّ أي منبه حتى تعيد تفعيلها.
+        </p>
+      )}
       {!editing && (
         <div className="notif-reminders-toolbar">
           <div className="notif-reminders-summary">
             <strong>المنبهات الشخصية</strong>
-            <span className="muted small">
-              {reminders.length === 0
-                ? 'لا توجد منبهات محفوظة بعد'
-                : `${activeCount} مفعّل${pausedCount > 0 ? ` · ${pausedCount} متوقف` : ''}`}
-            </span>
+            {/* الرسالة الفارغة تظهر مرة واحدة في بطاقة الحالة أدناه، فلا تتكرر هنا. */}
+            {reminders.length > 0 && (
+              <span className="muted small">
+                {`${activeCount} مفعّل${pausedCount > 0 ? ` · ${pausedCount} متوقف` : ''}`}
+              </span>
+            )}
           </div>
           <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
             <button
@@ -470,6 +570,25 @@ export default function RemindersPanel({
             </button>
             <button
               type="button"
+              className="soft-btn notif-import-open"
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload size={15}/> استيراد من ملف
+            </button>
+            <input
+              ref={importInputRef}
+              className="notif-import-input"
+              type="file"
+              accept="application/json,.json,.txt"
+              aria-label="ملف التذكيرات للاستيراد"
+              onChange={event => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                void readImportFile(file);
+              }}
+            />
+            <button
+              type="button"
               className="primary notif-add-btn"
               onClick={() => openDraft(emptyDraft())}
             >
@@ -478,6 +597,90 @@ export default function RemindersPanel({
           </div>
         </div>
       )}
+
+      {importReview && (
+        <section className="notif-import" aria-label="مراجعة التذكيرات المستوردة">
+          <div className="notif-import-head">
+            <h3><Upload size={17}/> مراجعة الاستيراد</h3>
+            <span className="muted small">
+              {importReview.fileName} · {importReview.items.length} صفًّا
+            </span>
+          </div>
+          <label className="notif-import-mode">
+            <span>نمط كل التذكيرات في هذا الملف</span>
+            <select
+              value={importMode}
+              onChange={event => {
+                setImportMode(event.target.value as ImportDefaultMode);
+                setImportOverrides({});
+              }}
+            >
+              <option value="file">حسب الملف</option>
+              <option value="reminder">تنبيه عادي للكل</option>
+              <option value="alarm">نمط منبه للكل (صوت متكرر)</option>
+            </select>
+          </label>
+          <p className="muted small">
+            نمط المنبه يرنّ على الهاتف نحو دقيقة، ويتوقف بزر الإيقاف أو التأجيل أو زر الشاشة. يمكنك تغيير النمط لكل صفّ.
+          </p>
+          <ul className="notif-import-rows">
+            {importPreview.map(item => (
+              <li
+                key={item.key}
+                className={`notif-import-row${item.problem ? ' invalid' : item.duplicate ? ' duplicate' : ''}`}
+              >
+                <span className="notif-import-title">{item.title || 'بلا عنوان'}</span>
+                <span className="muted small">
+                  {item.scheduled_at ? `${item.scheduled_at.slice(0, 10)} · ${item.scheduled_at.slice(11, 16)}` : '—'}
+                </span>
+                {item.problem ? (
+                  <span className="notif-import-note">{item.problem}</span>
+                ) : item.duplicate ? (
+                  <span className="notif-import-note">مكرّر — سيُتجاهل</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="soft-btn notif-import-toggle"
+                    aria-pressed={item.alarmMode}
+                    onClick={() =>
+                      setImportOverrides(previous => ({...previous, [item.key]: item.alarmMode ? 'reminder' : 'alarm'}))
+                    }
+                  >
+                    {item.alarmMode ? 'منبه' : 'تنبيه'}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">
+            {importableCount > 0 ? `${importableCount} سيُضاف` : 'لا شيء سيُضاف'}
+            {importSkipped > 0 ? ` · ${importSkipped} سيُتجاهل (مكرّر أو غير صالح)` : ''}
+          </p>
+          <div className="notif-import-actions">
+            <button
+              type="button"
+              className="primary notif-import-apply"
+              disabled={importableCount === 0}
+              onClick={applyImport}
+            >
+              أضف {importableCount} تذكيرًا
+            </button>
+            <button
+              type="button"
+              className="soft-btn notif-import-cancel"
+              onClick={() => {
+                setImportReview(null);
+                setImportOverrides({});
+                setError('');
+              }}
+            >
+              إلغاء
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!editing && error && <p role="alert" className="notif-error">{error}</p>}
 
       {editing && draft && (
         <form
@@ -633,6 +836,16 @@ export default function RemindersPanel({
             </label>
           </div>
 
+          <label className="notif-alarm-mode">
+            <input
+              type="checkbox"
+              checked={draft.alarmMode}
+              onChange={event => setDraft({...draft, alarmMode: event.target.checked})}
+            />
+            <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
+          </label>
+          {draft.alarmMode && <p className="muted notif-alarm-mode-hint">على الهاتف يرنّ المنبه نحو دقيقة، ويتوقف بزر الإيقاف أو التأجيل أو بزر الشاشة. مغلق افتراضيًا.</p>}
+
           {goals.length > 0 && (
             <label>ربط بهدف (اختياري)
               <select
@@ -677,7 +890,7 @@ export default function RemindersPanel({
           <Bell size={20} aria-hidden="true"/>
           <div>
             <strong>لا توجد منبهات شخصية بعد</strong>
-            <p className="muted small">اضغط «منبه جديد» لإعداد منبه مخصص، أو ابدأ فورًا من القوالب اليومية أدناه.</p>
+            <p className="muted small">ابدأ من قالب جاهز أو أضف منبهًا جديدًا.</p>
           </div>
         </div>
       )}
@@ -697,6 +910,7 @@ export default function RemindersPanel({
                     </div>
                     <small className="notif-reminder-meta">
                       {recurrenceHint(reminder)} · {CATEGORY_LABELS[reminder.category] ?? reminder.category}
+                      {reminder.alarm_mode ? ' · نمط منبه' : ''}
                       {reminder.description ? ` · ${reminder.description}` : ''}
                     </small>
                     <small className={`notif-reminder-due${info.isSnoozed ? ' snoozed' : ''}`}>
@@ -780,7 +994,6 @@ export default function RemindersPanel({
         <div className="notif-templates">
           <div className="notif-templates-head">
             <h4><Sparkles size={15}/> قوالب يومية جاهزة</h4>
-            <small className="muted">اضغط على أي قالب لتعبئة المنبه وتعديله قبل الحفظ</small>
           </div>
           <div className="notif-template-grid">
             {TEMPLATES.map(template => (

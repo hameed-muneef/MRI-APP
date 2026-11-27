@@ -3,6 +3,7 @@
 import {useEffect, useState, type JSX} from 'react';
 import {Download, Smartphone} from 'lucide-react';
 import {useBackHandler} from './navigation/useBackHandler';
+import {useScrollLock} from './navigation/useScrollLock';
 
 type BIPEvent = Event & {prompt: () => Promise<void>; userChoice: Promise<{outcome: string}>};
 
@@ -61,6 +62,7 @@ function useInstallCapability(): InstallCapability {
 export function InstallAppButton(): JSX.Element | null {
   const {promptEvent, ios, installed, setPromptEvent} = useInstallCapability();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  useScrollLock(showIOSGuide);
   useBackHandler(() => setShowIOSGuide(false), showIOSGuide);
   const isNative = typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform === 'function'
     && Boolean((window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform());

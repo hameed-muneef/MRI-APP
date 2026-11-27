@@ -1,4 +1,4 @@
-import type { NativeNotificationPayload } from './native-prayer-scheduler';
+import { soundExtra, soundFieldsOf, type NativeNotificationPayload } from './native-prayer-scheduler';
 import { isReminderAllowed } from './rules';
 import type { NotificationPreference, Reminder } from './types';
 
@@ -14,6 +14,11 @@ export interface NativeRecurrenceRule {
   title: string;
   body: string;
   channelId: string;
+  /** True when the reminder rings as an alarm; the device posts its occurrences on the alarm channel. */
+  alarmMode: boolean;
+  /** Imported sound file copied to the phone ("<key>.<ext>"), or a bundled raw name for an alarm. Absent = the normal sound. */
+  soundKey?: string;
+  rawSound?: string;
   kind: 'daily' | 'weekly';
   baseMs: number;
   /** YYYY-MM-DD or null. */
@@ -41,6 +46,7 @@ export function buildNativeRecurrenceRules(
   now: Date,
   extended: readonly NativeNotificationPayload[],
   channelId: string,
+  soundKeys?: ReadonlyMap<string, string>,
 ): NativeRecurrenceRule[] {
   if (!prefs.global_enabled || prefs.dnd_enabled) return [];
   const nowMs = now.getTime();
@@ -72,6 +78,8 @@ export function buildNativeRecurrenceRules(
       title: r.title,
       body: r.description || 'تذكير مخصص',
       channelId,
+      alarmMode: r.alarm_mode === true,
+      ...soundFieldsOf({extra: soundExtra(r.sound_id ?? prefs.reminder_settings?.default_sound_id, r.alarm_mode === true)}, soundKeys),
       kind: r.recurrence,
       baseMs,
       start,

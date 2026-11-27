@@ -23,7 +23,7 @@ export default defineConfig({plugins:[react(),VitePWA({
     ],
   },
   // الملفات الكبيرة (JSON ضخم والخط) تُستثنى من التخزين المسبق؛ كبيرة الحجم — تُخزَّن عند الطلب عبر runtimeCaching.
-  includeAssets:['icons/app-icon.svg','brand/book-mark.svg','brand/logo-compact.svg','brand/logo-compact-dark.svg','brand/logo-full-vertical.svg','brand/logo-full-horizontal.svg','brand/logo-full-horizontal-dark.svg','books/manifest.json','azkar/ar.json','azkar/en.json','azkar/tr.json','azkar/manifest.json','quran/manifest.json','quran/reciters.json','hadith/manifest.json'],
+  includeAssets:['fonts/cairo-arabic-wght-normal.woff2','fonts/cairo-latin-wght-normal.woff2','fonts/cairo-latin-ext-wght-normal.woff2','fonts/kfgqpc-hafs-v30.ttf','fonts/amiri-arabic-400.woff2','fonts/amiri-arabic-700.woff2','fonts/amiri-latin-400.woff2','fonts/amiri-latin-700.woff2','icons/app-icon.svg','brand/book-mark.svg','brand/logo-compact.svg','brand/logo-compact-dark.svg','brand/logo-full-vertical.svg','brand/logo-full-horizontal.svg','brand/logo-full-horizontal-dark.svg','books/manifest.json','azkar/ar.json','azkar/en.json','azkar/tr.json','azkar/manifest.json','quran/manifest.json','quran/reciters.json','hadith/manifest.json'],
   manifest:{
     name:'الربانيون | على هدي الكتاب والسنة',
     short_name:'الربانيون',

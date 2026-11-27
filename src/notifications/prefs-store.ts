@@ -94,6 +94,7 @@ function sanitizeReminder(value: unknown): Reminder | null {
     linked_goal_id: item.linked_goal_id,
     linked_task_id: item.linked_task_id,
     enabled: item.enabled !== false,
+    ...(item.alarm_mode === true ? {alarm_mode: true} : {}),
     snooze_until: typeof item.snooze_until === 'string' ? item.snooze_until : null,
     created_at: typeof item.created_at === 'string' ? item.created_at : new Date().toISOString(),
     updated_at: typeof item.updated_at === 'string' ? item.updated_at : new Date().toISOString(),
@@ -119,6 +120,16 @@ function saveLocalReminders(list: Reminder[]): void {
 }
 
 export type PrefsSource = 'cloud' | 'local' | 'unknown';
+
+/**
+ * مدة الغفوة المحفوظة، للقراءة المتزامنة عند بناء حمولة المنبّه الأصلي.
+ * النسخة الأصلية تحتاج الرقم نفسه لتكتبه على زر «تأجيل» وتؤجّل به فعلًا.
+ */
+export function localSnoozeMinutes(): number {
+  const value = loadLocalPrefs().reminder_settings?.snooze_minutes;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 10;
+  return Math.max(1, Math.min(120, Math.round(value)));
+}
 
 /** يجلب التفضيلات: سحابة أولًا، وإن تعذَّر فالاحتياطي المحلي */
 export async function loadPrefs(): Promise<{prefs: NotificationPreference; source: PrefsSource}> {

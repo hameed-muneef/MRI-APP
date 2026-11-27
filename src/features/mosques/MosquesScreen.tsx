@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Car, Footprints, LocateFixed, MapPin, RefreshCw, ShieldCheck, SlidersHorizontal, WifiOff } from 'lucide-react';
 import { formatArabicDistance } from '../../lib/geo';
@@ -173,6 +173,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                   max={100}
                   step={1}
                   value={sliderFromRadius(radiusMeters)}
+                  style={{ '--mq-fill': `${sliderFromRadius(radiusMeters)}%` } as CSSProperties}
                   aria-valuetext={formatArabicDistance(radiusMeters)}
                   onChange={(e) => setRadiusMeters(radiusFromSlider(Number(e.target.value)))}
                 />
@@ -187,7 +188,6 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                   aria-label="المسافة بالكيلومتر، حتى 40 كم"
                   onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
                 />
-                <small>أي قيمة حتى 40 كم</small>
               </div>
 
               <div className="mosques-mode-group" role="group" aria-label="وسيلة التنقل في خرائط Google">

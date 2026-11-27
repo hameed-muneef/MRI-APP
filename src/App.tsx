@@ -1,7 +1,7 @@
 import {lazy,Suspense,useEffect,useRef,useState} from 'react';
 import HomeView from './views/HomeView';
 import AchievementView from './views/AchievementView';
-import {ACHIEVEMENT_LOG_EVENT,appendEntry,applyRemoteState,makeEntry,type AchievementEntry} from './achievement/log';
+import {ACHIEVEMENT_LOG_EVENT,appendEntry,applyRemoteState,emitAchievement,makeEntry,type AchievementEntry} from './achievement/log';
 import {replacePeriodTasks,updateDayRecords} from './weekly-planning';
 import {slotClockTime} from './day-timing';
 import {load,today,type State,type View} from './app-state';
@@ -26,14 +26,16 @@ import {authClient} from './auth';
 import {LOCAL_ONLY} from './config';
 import {InternetBadge,useOnline} from './online';
 import {requestPersistentStorage} from './local-backup';
-import {BILQURAN_PLAN_CHANGED_EVENT,buildBilQuranDailySteps,findBilQuranPlan,formatStepSummary,loadActiveBilQuranPlan} from './quran-mastery/bilquran-plans';
+import {BILQURAN_PLAN_CHANGED_EVENT,buildBilQuranDailySteps,findBilQuranPlan,formatStepSummary,loadActiveBilQuranPlan,completeBilQuranStep} from './quran-mastery/bilquran-plans';
 import {recordCourseCompletions} from './coach/course';
 import {recordHabitCompletions} from './coach/habit';
 import {analyzePatterns,analyzeRecovery} from './coach/smart';
+import {migrateSuggestionsDefault} from './coach/types';
 import {clearPlanTasks,planTaskLaunch,reconcilePlanTasks} from './quran-mastery/plan-tasks';
 import {loadMasteryState} from './quran-mastery/storage';
 import {revisionQueue} from './quran-mastery/planning';
 import {loadQuran} from './quran/content';
+import {localDay} from './quran-mastery/planning';
 import {checkAdminAccess,type AdminAccess} from './admin-access';
 import {useAppBackButton} from './navigation/useAppBackButton';
 import {fetchCloudState,saveCloudState} from './cloud-state';
@@ -44,6 +46,8 @@ import {changeWirdCount, normalizeWirds} from './wird-periods';
 import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
 import {resolveSchedulingLocation} from './notifications/scheduling-location';
 import {installAudioUnlockListeners} from './notifications/audio';
+import {installAlertActionListener} from './notifications/alert-actions';
+import {createToastNotifier} from './lib/toast-queue';
 import {useCentralLocation} from './hooks/useCentralLocation';
 import usePrayerTimes from './usePrayerTimes';
 import {sanitizePrayerLocation} from './prayer-location';
@@ -134,6 +138,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
   useEffect(()=>{void requestPersistentStorage()},[]);
   useEffect(()=>installAudioUnlockListeners(),[]);
+  // أزرار «إيقاف» و«تأجيل» على التنبيهات الفورية (أندرويد): تُركَّب مرة واحدة مع بدء التطبيق.
+  useEffect(()=>installAlertActionListener(),[]);
   useEffect(()=>{
     const refreshPeriods=()=>{setCurrentDate(today());setState(current=>{
       const wirds=normalizeWirds(current.wirds);
@@ -194,6 +200,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   // مدرّب المقرر والأوراد يحتفظ بسجل فترات منجزة + تتبع التعافي الهادئ لثلاثة أيام عند التفعيل العام.
   useEffect(()=>{setState(s=>{const wirds=recordHabitCompletions(s.wirds,new Date(),s.coachSettings);return wirds===s.wirds?s:{...s,wirds}})},[state.wirds,state.coachSettings]);
   useEffect(()=>{setState(s=>{const next=recordCourseCompletions(s.courseCoach,s.tasks,new Date(),s.coachSettings);return next===s.courseCoach?s:{...s,courseCoach:next}})},[state.tasks,state.courseCoach?.enabled,state.coachSettings]);
+  // اقتراحات التطبيق الذكية مفعّلة افتراضيًا لمن لم يختر بنفسه؛ من أوقفها صراحةً تبقى متوقفة.
+  useEffect(()=>{setState(s=>{const next=migrateSuggestionsDefault(s.coachSettings,today());return next===s.coachSettings?s:{...s,coachSettings:next}})},[state.coachSettings]);
   useEffect(()=>{
     if(!state.coachSettings?.globalEnabled)return;
     const now=new Date();
@@ -235,6 +243,18 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     document.addEventListener('visibilitychange',onVisible);
     return()=>{on=false;window.removeEventListener(BILQURAN_PLAN_CHANGED_EVENT,sync);window.removeEventListener('rabbani-mastery-changed',sync);document.removeEventListener('visibilitychange',onVisible)};
   },[cloudReady]);
+  const completePlanDayTask=async(task:import('./app-state').Task):Promise<'advanced'|'stale'|'failed'>=>{
+    try{
+      const plan=loadActiveBilQuranPlan();const spec=plan?findBilQuranPlan(plan.planId):undefined;
+      const step=task.plan?.step;
+      if(!plan||!spec||step===undefined||step!==plan.currentIndex)return 'stale';
+      const asset=await loadQuran();
+      const total=buildBilQuranDailySteps(asset,spec,plan.direction).length;
+      completeBilQuranStep(plan,step,total);
+      emitAchievement(makeEntry('bilquran_step',`${plan.planId}#${step}`,localDay(new Date(),Intl.DateTimeFormat().resolvedOptions().timeZone||'Africa/Cairo'),String(step+1)));
+      return 'advanced';
+    }catch{return 'failed'}
+  };
   const openPlanTask=async(task:import('./app-state').Task)=>{
     try{
       const plan=loadActiveBilQuranPlan();const spec=plan?findBilQuranPlan(plan.planId):undefined;
@@ -307,7 +327,11 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>{active=false};
   },[view,requiredFeature,user?.id,admin,retryFeatureAccess]);
 
-  const notify=(t:string)=>{setToast(t);setTimeout(()=>setToast(''),2600)};
+  // مُشعِر واحد للرسائل القصيرة: الرسالة الجديدة تلغي مؤقّت السابقة كي لا تُمحى قبل وقتها.
+  const toastNotifier=useRef<ReturnType<typeof createToastNotifier>|null>(null);
+  if(!toastNotifier.current)toastNotifier.current=createToastNotifier(setToast);
+  useEffect(()=>()=>toastNotifier.current?.dispose(),[]);
+  const notify=(t:string)=>toastNotifier.current?.notify(t);
   // زر/إيماءة الرجوع: إغلاق الطبقات ثم العودة للرئيسية ثم تأكيد الخروج بضغطتين.
   useAppBackButton({
     view,
@@ -487,7 +511,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {featureCheckFailed&&<section className="panel feature-access-required" dir="rtl" role="alert"><h2>تعذّر التحقق من صلاحية الميزة</h2><p>لم نفتح القسم لأن خدمة الصلاحيات لم تُرجع نتيجة موثوقة. تحقق من الاتصال ثم أعد المحاولة.</p><button className="soft-btn" onClick={()=>setRetryFeatureAccess(value=>value+1)}>إعادة التحقق</button></section>}
     {canRenderView&&<ErrorBoundary key={`${view}:${viewRecovery}`} fallback={<section className="panel feature-access-required" dir="rtl" role="alert"><h2>{typeof navigator!=='undefined'&&!navigator.onLine?'هذا القسم غير متاح دون اتصال بالإنترنت':'تعذر فتح هذا القسم'}</h2><p>{typeof navigator!=='undefined'&&!navigator.onLine?'تحقق من اتصالك بالإنترنت ثم أعد المحاولة؛ بيانات حسابك محفوظة وبقية الأقسام المحلية تعمل بلا اتصال.':'حدث خلل أثناء عرض الصفحة. بيانات حسابك محفوظة؛ جرّب إعادة فتح القسم.'}</p><button className="soft-btn" onClick={()=>setViewRecovery(value=>value+1)}>إعادة المحاولة</button></section>}><Suspense fallback={loadingView}>
     {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={mergedTaskPrayers} prayerLocation={state.prayerLocation} currentDate={currentDate} tasks={state.tasks} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} dayRecords={state.dayRecords} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} coachSettings={state.coachSettings}/>}
-    {view==='tasks'&&<TodayTasksView onOpenPlanTask={t=>{void openPlanTask(t)}} onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} coachSettings={state.coachSettings} prayers={mergedTaskPrayers} dayPlan={state.dayPlan} dayRecords={state.dayRecords} achievementLog={state.achievementLog} quranPassages={state.quran?.passages??[]} onCourseCoach={courseCoach=>update(s=>({...s,courseCoach}))} onCoachSettings={coachSettings=>update(s=>({...s,coachSettings}))} onCompleteWird={id=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);if(!before)return s;const delta=Math.max(1,before.target-before.count);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onUpdateWird={nextWird=>update(s=>({...s,wirds:normalizeWirds(s.wirds.map(w=>w.id===nextWird.id?nextWird:w))}))} onOpenQuran={()=>{setQuranSection('hifz');navigate('quran')}} onOpenWirds={()=>navigate('wird')} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
+    {view==='tasks'&&<TodayTasksView onCompletePlanDay={completePlanDayTask} onOpenPlanTask={t=>{void openPlanTask(t)}} onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} coachSettings={state.coachSettings} prayers={mergedTaskPrayers} dayPlan={state.dayPlan} dayRecords={state.dayRecords} achievementLog={state.achievementLog} quranPassages={state.quran?.passages??[]} onCourseCoach={courseCoach=>update(s=>({...s,courseCoach}))} onCoachSettings={coachSettings=>update(s=>({...s,coachSettings}))} onCompleteWird={id=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);if(!before)return s;const delta=Math.max(1,before.target-before.count);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onUpdateWird={nextWird=>update(s=>({...s,wirds:normalizeWirds(s.wirds.map(w=>w.id===nextWird.id?nextWird:w))}))} onOpenQuran={()=>{setQuranSection('hifz');navigate('quran')}} onOpenWirds={()=>navigate('wird')} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
     {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')}/>}
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}

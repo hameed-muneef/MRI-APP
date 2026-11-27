@@ -138,7 +138,7 @@ export default function BilQuranPlansBrowser({asset, activePlan, onActivatePlan}
   return (
     <div className="hf-plans-wrap" aria-label="خطط الحفظ والمراجعة">
       <div className="hf-plans-hero">
-        <span className="hf-plan-kicker">خطط الحفظ والمراجعة · منهج بالقرآن نحيا</span>
+        <span className="hf-plan-kicker">خطط الحفظ والمراجعة</span>
         <h2>اختر الخطة التي تناسب وقتك</h2>
         <p>ثلاث مسارات متنوعة مع إمكانية البدء من أول المصحف أو من آخره. تُقسَّم الآيات والصفحات يوميًا وتُربط تراكميًا داخل المصحف.</p>
       </div>

@@ -22,6 +22,8 @@ export function PermissionStatus() {
   const nativeApp = isNativePlatform();
   const [nativeDisplay, setNativeDisplay] = useState<string>('prompt');
   const [browserPerm, setBrowserPerm] = useState<NotificationPermission | null>(() => getBrowserPermission());
+  // سبب عدم اكتمال التفعيل: يظهر بدل أن يبدو الزر بلا أثر.
+  const [enableNote, setEnableNote] = useState('');
   const browserSupported = !nativeApp && isBrowserNotificationSupported();
 
   useEffect(() => {
@@ -81,11 +83,18 @@ export function PermissionStatus() {
           className="primary"
           onClick={() => {
             unlockAudioPlayback();
-            void requestBrowserPermission().then((next) => setBrowserPerm(next));
+            setEnableNote('');
+            void requestBrowserPermission().then((next) => {
+              setBrowserPerm(next);
+              if (next !== 'granted') {
+                setEnableNote('لم يمنح المتصفح الإذن. افتح إعدادات الموقع من رمز القفل بجانب العنوان، وفعّل الإشعارات.');
+              }
+            });
           }}
         >
           <BellRing size={15}/> تفعيل إشعارات المتصفح
         </button>
+        {enableNote&&<p className="small notif-enable-note" role="status">{enableNote}</p>}
       </div>
     );
   }
@@ -110,13 +119,20 @@ export function PermissionStatus() {
       <button
         type="button"
         className="primary"
-        onClick={() => void ensureSystemNotificationPermission().then((result) => {
+        onClick={() => void (async () => {
+          setEnableNote('');
+          const result = await ensureSystemNotificationPermission({force: true});
           setNativeDisplay(result);
-          if (result !== 'granted') void openAppSettings();
-        })}
+          if (result === 'granted') return;
+          const opened = await openAppSettings();
+          if (!opened.opened) {
+            setEnableNote('لم يُفتح إعدادات الهاتف من التطبيق. افتح إعدادات الجهاز ثم التطبيقات ثم الربانيون ثم الإشعارات وفعّلها.');
+          }
+        })()}
       >
         <BellRing size={15}/> تفعيل إشعارات الهاتف
       </button>
+      {enableNote&&<p className="small notif-enable-note" role="status">{enableNote}</p>}
     </div>
   );
 }

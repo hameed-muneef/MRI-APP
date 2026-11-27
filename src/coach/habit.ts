@@ -65,3 +65,36 @@ export function habitSuggestions(w:WirdWithCoach,now=new Date(),settings?:CoachS
   return out.filter(s=>!w.coach?.dismissed?.includes(s.id));
 }
 export const habitBehind=(w:WirdWithCoach,now=new Date(),settings?:CoachSettings)=>habitSuggestions(w,now,settings).some(s=>s.kind==='early-warning');
+
+export type WirdPace={period:Wird['period'];progress:number;elapsed:number;behind:boolean;enough:boolean};
+const clampShare=(value:number)=>Math.max(0,Math.min(1,value));
+
+/** نسبة ما مضى من الفترة الجارية (٠ إلى ١)، بنفس ترقيم مفاتيح فترات الورد. */
+export function periodElapsedShare(period:Wird['period'],now:Date):number{
+  if(period==='daily'){
+    const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    return clampShare((now.getTime()-start.getTime())/86400000);
+  }
+  if(period==='monthly'){
+    const start=new Date(now.getFullYear(),now.getMonth(),1);
+    const end=new Date(now.getFullYear(),now.getMonth()+1,1);
+    return clampShare((now.getTime()-start.getTime())/(end.getTime()-start.getTime()));
+  }
+  // الأسبوعي: أسبوع السنة يبدأ من ١ يناير في periodKey نفسها.
+  const jan1Utc=Date.UTC(now.getFullYear(),0,1);
+  const todayUtc=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const daysSinceJan1=Math.floor((todayUtc-jan1Utc)/86400000);
+  const week=Number(wirdPeriodKey('weekly',now).split('-W')[1]);
+  const weekStartDay=(week-1)*7-new Date(jan1Utc).getUTCDay();
+  return clampShare((daysSinceJan1-weekStartDay)/7);
+}
+
+/** تقدّم الورد مقابل ما مضى من فترته. عدّ الفترة السابقة لا يُحسب تقدّمًا لهذه الفترة. */
+export function wirdPace(w:WirdWithCoach,now=new Date()):WirdPace{
+  const target=Math.max(0,w.target);
+  const current=w.periodKey===wirdPeriodKey(w.period,now);
+  const progress=target>0?(current?clampShare(w.count/target):0):0;
+  const elapsed=periodElapsedShare(w.period,now);
+  return {period:w.period,progress,elapsed,behind:target>0&&elapsed>=0.2&&progress<elapsed-0.1,enough:target>0};
+}
+

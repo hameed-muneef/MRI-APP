@@ -97,7 +97,7 @@ export const BILQURAN_PLANS: BilQuranPlanSpec[] = [
     pagesPerDay: 0.75,
     daysPerWeek: 5,
     defaultDirection: 'baqarah',
-    methodologyNote: 'أشهر خطط المبتدئين في منهج بالقرآن نحيا؛ حمل يسير لبناء عادة الحفظ المتقن دون انقطاع.',
+    methodologyNote: 'أشهر خطط المبتدئين؛ حمل يسير لبناء عادة الحفظ المتقن دون انقطاع.',
   },
   {
     id: 'beginner-48m',

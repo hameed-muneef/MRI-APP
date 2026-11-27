@@ -28,10 +28,12 @@ async function prepare(page:Page){
 
 test.describe('unified coach: course tasks',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
-  test('off by default, nothing logged and no list',async({page})=>{
-    await prepare(page);await openTasks(page);
-    await expect(page.getByRole('switch',{name:'تفعيل المدرّب لمهام المقرر'})).not.toBeChecked();
+  test('suggestions muted: nothing logged and no list',async({page})=>{
+    await prepare(page);
+    await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('rabbani-v1')!);s.coachSettings={globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true};localStorage.setItem('rabbani-v1',JSON.stringify(s))});
+    await page.reload();await openTasks(page);
     await expect(page.getByText('ابدأ من هنا')).toHaveCount(0);
+    await expect(page.locator('[data-priority="true"]')).toHaveCount(0);
     expect((await read(page)).courseCoach).toBeUndefined();
   });
   test('on: logs the finished week once, lists the rest, persists',async({page})=>{
@@ -44,11 +46,8 @@ test.describe('unified coach: course tasks',()=>{
     await page.reload();
     await expect.poll(async()=>(await read(page)).courseCoach?.log?.week).toEqual(['2026-11-30']);
     await openTasks(page);
-    await expect(page.getByRole('switch',{name:'تفعيل المدرّب لمهام المقرر'})).toBeChecked();
-    await expect(page.locator('.coach-today-list li').filter({hasText:'صفحة'})).toHaveCount(1);
-    await expect(page.locator('.coach-today-list li').filter({hasText:'مراجعة الشهر'})).toHaveCount(1);
-    await expect(page.locator('.coach-today-list li').filter({hasText:'مراجعة ربط الأسبوع'})).toHaveCount(0);
-    const box=await page.locator('.coach-today').boundingBox();
+    await expect(page.locator('.coach-today')).toHaveCount(0);
+    const box=await page.locator('.today-task-list').boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(400);
     await page.screenshot({path:'/tmp/coach-course.png'});
     await page.reload();await page.waitForTimeout(1200);

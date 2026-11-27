@@ -3,7 +3,7 @@ name: Mastery Android compile only
 # Verification only. No signing secrets, APK/AAB packaging, uploads, or releases.
 on:
   push:
-    branches: [feat/mastery-phase-3, feat/mastery-phases-5-7]
+    branches: [feat/mastery-phase-3, feat/mastery-phases-5-7, feature/smart-coach-enhancement]
     paths:
       - '.github/workflows/android-compile-check.yml'
       - 'android/**'
@@ -55,3 +55,8 @@ jobs:
         run: |
           chmod +x android/gradlew
           ./android/gradlew -p android :app:compileDebugJavaWithJavac --no-daemon --stacktrace
+      - name: Run native JUnit tests
+        run: |
+          node scripts/gen-native-plan-parity.cjs
+          node scripts/gen-recurrence-parity.cjs
+          ./android/gradlew -p android :app:testDebugUnitTest --no-daemon --stacktrace

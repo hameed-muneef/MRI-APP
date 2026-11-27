@@ -30,6 +30,8 @@ import {
   type HabitSuggestion,
   type WirdWithCoach,
 } from './habit';
+import {COACH_MESSAGES as M} from './messages';
+import {analyzeWorkload,defaultMinutes,type WorkloadStatus} from './workload';
 import type {CoachSettings} from './types';
 
 export type TimeWindow = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
@@ -89,8 +91,12 @@ export type SmartTodayItem = TodayItem & {
   taskId: string;
   suggestedSlot: FreePrayerSlot | null;
   scheduledTimeToday?: string;
+  /** Date (YYYY-MM-DD) of an existing schedule that is today or later. The coach never overwrites it. */
+  scheduledDate?: string;
   priorityScore: number;
   priorityNote: string;
+  /** Default estimate in minutes (no history yet). */
+  estimatedMinutes: number;
 };
 
 export type SmartTodayPlan = {
@@ -107,6 +113,7 @@ export type SmartTodayPlan = {
   recommended: SmartTodayItem[];
   deferred: SmartTodayItem[];
   totalOpen: number;
+  workload: WorkloadStatus;
 };
 
 export type WeeklyPillarSummary = {
@@ -150,6 +157,8 @@ export type CoachHomeSummary = {
   nextSlot: FreePrayerSlot | null;
   overdueCount: number;
   subtitle: string;
+  /** Static extra lines for the Today card: top item and workload warning. Empty when there is nothing to say. */
+  detailLines: string[];
 };
 
 export type SmartCoachInput = {
@@ -647,9 +656,9 @@ export function analyzeQuranCoach({
 
   let message: string | null = null;
   if (shouldConsolidateFirst) {
-    message = `لديك ${weakCount > 0 ? `${weakCount.toLocaleString('ar-EG')} مقاطع تحتاج تثبيتًا` : ''}${weakCount > 0 && overdueReviews > 0 ? ' و' : ''}${overdueReviews > 0 ? `${overdueReviews.toLocaleString('ar-EG')} مراجعات متأخرة` : ''}. الأفضل اليوم: ثبّت القديم أولًا قبل إضافة حفظ جديد.`;
+    message = M.quranConsolidate.text({weak: weakCount, overdue: overdueReviews});
   } else if (dueReviews > 0) {
-    message = `تنتظرك اليوم ${dueReviews.toLocaleString('ar-EG')} مراجعة قرآنية مستحقة؛ البدء بها يثبّت محفوظك.`;
+    message = M.quranDue.text({due: dueReviews});
   }
 
   return {
@@ -687,8 +696,8 @@ export function coldStartInsights({
     insights.push({
       id: 'cold-overload',
       kind: 'overload',
-      title: 'حمل يومي مزدحم',
-      detail: `لديك ${dailyItems.length.toLocaleString('ar-EG')} خطوات يومية مفتوحة، وهو أكبر من طاقتك المعتادة (${capacity.toLocaleString('ar-EG')}). ركّز على أهم ${capacity.toLocaleString('ar-EG')} اليوم والبقية للتدرّج.`,
+      title: M.overloadTitle.text({}),
+      detail: M.overloadDetail.text({count: dailyItems.length, capacity}),
     });
   }
 
@@ -701,8 +710,8 @@ export function coldStartInsights({
       insights.push({
         id: `cold-deadline-${g.id}`,
         kind: 'tight-deadline',
-        title: `موعد هدف «${g.title}» قريب`,
-        detail: `بقي ${daysLeft.toLocaleString('ar-EG')} يوم على موعد الهدف ولم يُسجّل إنجاز بعد. ابدأ بأصغر خطوة فيه اليوم.`,
+        title: M.deadlineTitle.text({goal: g.title}),
+        detail: M.deadlineDetail.text({days: daysLeft}),
         goalId: g.id,
       });
       break;
@@ -717,8 +726,8 @@ export function coldStartInsights({
     insights.push({
       id: 'cold-unscheduled',
       kind: 'unscheduled-today',
-      title: 'خطوات اليوم غير مجدولة بعد',
-      detail: `يمكنك حجز وقت فراغك (${slot.label} · ${slot.freeMinutes.toLocaleString('ar-EG')} د) بضغطة واحدة لتثبيت أهم خطوة اليوم.`,
+      title: M.unscheduledTitle.text({}),
+      detail: M.unscheduledDetail.text({label: slot.label, minutes: slot.freeMinutes}),
     });
   }
 
@@ -784,16 +793,17 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
     const sched = taskSchedules[taskId];
     const schedDate = sched?.confirmedDate ?? sched?.initialDate;
     const scheduledTimeToday = schedDate === dateKey ? sched?.confirmedTime ?? sched?.initialTime : undefined;
+    const upcomingScheduleDate = schedDate && schedDate >= dateKey ? schedDate : undefined;
 
     let score = 0;
-    let priorityNote = 'مستحقة اليوم';
+    let priorityNote = M.priorityDue.text({});
 
     if (item.reason === 'behind') {
       score += 40;
-      priorityNote = 'تأخرت في الفترات الأخيرة';
+      priorityNote = M.priorityBehind.text({});
     } else if (item.reason === 'deadline') {
       score += 28;
-      priorityNote = 'موعد الهدف قريب';
+      priorityNote = M.priorityDeadline.text({});
     } else {
       score += 12;
     }
@@ -810,7 +820,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
       matchingTask.plan.kind !== 'day'
     ) {
       score += 45;
-      priorityNote = 'الأولوية لتثبيت المراجعة المتأخرة';
+      priorityNote = M.priorityConsolidate.text({});
     } else if (quran.dueReviews > 0 && item.source === 'course') {
       score += 15;
     }
@@ -822,8 +832,10 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
       taskId,
       suggestedSlot: null,
       scheduledTimeToday,
+      scheduledDate: upcomingScheduleDate,
       priorityScore: score,
       priorityNote,
+      estimatedMinutes: defaultMinutes(item),
     };
   });
 
@@ -847,7 +859,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
 
   let slotCursor = 0;
   const enriched = scored.map(item => {
-    if (item.scheduledTimeToday || availableSlots.length === 0) return item;
+    if (item.scheduledTimeToday || item.scheduledDate || availableSlots.length === 0) return item;
     const picked = availableSlots[slotCursor % availableSlots.length];
     slotCursor += 1;
     return {...item, suggestedSlot: picked};
@@ -870,6 +882,12 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
     recommended,
     deferred,
     totalOpen: enriched.length,
+    workload: analyzeWorkload({
+      items: recommended,
+      freeMinutes: freeSlots.reduce((sum, slot) => sum + slot.freeMinutes, 0),
+      openCount: enriched.length,
+      capacity: patterns.estimatedCapacity,
+    }),
   };
 }
 
@@ -901,17 +919,17 @@ export function buildWeeklyReport(input: SmartCoachInput): WeeklyReport {
       let title = `هدف «${goal.title}»`;
       let body = '';
       if (s.kind === 'lighten') {
-        title = `تخفيف خطوة ${stepName}`;
-        body = `الالتزام بخطوة ${stepName} في «${goal.title}» دون ٤٠٪ مؤخرًا. يمكنك تحويلها إلى ${periodName[s.to ?? 'weekly']} لتحافظ على الاستمرار.`;
+        title = M.lightenTitle.text({step: stepName});
+        body = M.lightenBody.text({step: stepName, goal: goal.title, to: periodName[s.to ?? 'weekly']});
       } else if (s.kind === 'increase') {
-        title = `ترقية وتيرة ${stepName}`;
-        body = `أداؤك منتظم في ${stepName} ضمن «${goal.title}». يمكنك رفعها إلى ${periodName[s.to ?? 'daily']}.`;
+        title = M.increaseTitle.text({step: stepName});
+        body = M.increaseBody.text({step: stepName, goal: goal.title, to: periodName[s.to ?? 'daily']});
       } else if (s.kind === 'early-warning') {
-        title = `تنبيه استباق لانقطاع ${stepName}`;
-        body = `مرّت عدة فترات دون تسجيل ${stepName} في «${goal.title}». البدء بخطوة صغيرة اليوم يوقف الفجوة.`;
+        title = M.earlyWarningTitle.text({step: stepName});
+        body = M.earlyWarningBody.text({step: stepName, goal: goal.title});
       } else {
-        title = `اقتراب موعد «${goal.title}»`;
-        body = `المتبقي قليل على موعد هدف «${goal.title}» مع نسبة التزام دون النصف. راجع الخطوات أو وسّع الموعد.`;
+        title = M.deadlineRiskTitle.text({goal: goal.title});
+        body = M.deadlineRiskBody.text({goal: goal.title});
       }
       recommendations.push({
         id: s.id,
@@ -944,8 +962,8 @@ export function buildWeeklyReport(input: SmartCoachInput): WeeklyReport {
       recommendations.push({
         id: w.id,
         kind: 'course-warning',
-        title: w.stepId === 'course-month' ? 'مراجعة المقرر الشهرية' : 'مراجعة المقرر الأسبوعية',
-        body: 'تأخرت مراجعة المقرر في الفترات الأخيرة؛ ابدأ بها اليوم قبل تراكم المحفوظ.',
+        title: w.stepId === 'course-month' ? M.courseMonthTitle.text({}) : M.courseWeekTitle.text({}),
+        body: M.courseWarningBody.text({}),
         suggestion: w,
         actionable: false,
       });
@@ -979,14 +997,14 @@ export function buildWeeklyReport(input: SmartCoachInput): WeeklyReport {
       if (dismissed.has(hs.id)) continue;
       const body =
         hs.kind === 'lighten-target'
-          ? `الهدف التنظيمي (${w.target.toLocaleString('ar-EG')}) لورد «${w.title}» شاق مؤخرًا. اقتراح: اجعله ${hs.target?.toLocaleString('ar-EG')} لتثبت عليه.`
+          ? M.wirdLightenBody.text({target: w.target, next: hs.target ?? w.target, wird: w.title})
           : hs.kind === 'raise-target'
-            ? `ثبات ممتاز على ورد «${w.title}»! يمكنك رفع الهدف التنظيمي إلى ${hs.target?.toLocaleString('ar-EG')} إن أحببت.`
-            : `انقطعت مؤخرًا عن ورد «${w.title}». ابدأ اليوم بما تيسّر لك.`;
+            ? M.wirdRaiseBody.text({next: hs.target ?? w.target, wird: w.title})
+            : M.wirdGapBody.text({wird: w.title});
       recommendations.push({
         id: hs.id,
         kind: 'habit-suggestion',
-        title: `ورد «${w.title}»`,
+        title: M.wirdTitle.text({wird: w.title}),
         body,
         wird: w,
         habitSuggestion: hs,
@@ -1002,8 +1020,8 @@ export function buildWeeklyReport(input: SmartCoachInput): WeeklyReport {
       recommendations.push({
         id: tipId,
         kind: 'pattern-tip',
-        title: `أكثر يوم يشهد تراجعًا: ${patterns.weakestWeekdayLabel}`,
-        body: `لاحظ المدرّب أن يوم ${patterns.weakestWeekdayLabel} هو الأقل إنجازًا في سجلك${patterns.peakWindowLabel ? `، بينما وقت ذروتك المعتاد هو ${patterns.peakWindowLabel}` : ''}. خفّف جدول ${patterns.weakestWeekdayLabel} مسبقًا لتحافظ على سلسلتك.`,
+        title: M.weakDayTitle.text({day: patterns.weakestWeekdayLabel}),
+        body: M.weakDayBody.text({day: patterns.weakestWeekdayLabel, peak: patterns.peakWindowLabel}),
         actionable: false,
       });
     }
@@ -1055,20 +1073,30 @@ export function buildCoachHomeSummary(input: SmartCoachInput): CoachHomeSummary 
   const overdueCount = plan.recommended.filter(i => i.reason === 'behind').length + plan.deferred.filter(i => i.reason === 'behind').length;
   const nextSlot = plan.freeSlots.find(s => !s.inWorkHours) ?? plan.freeSlots[0] ?? null;
 
-  let subtitle = 'يرتّب يومك بين الصلوات ويقترح الخطوة الأنسب بلا اتصال · اضغط للتفعيل';
+  let subtitle = M.homeMuted.text({});
   if (plan.anyCoachOn) {
     if (plan.recovery.active) {
-      subtitle = `عودة هادئة (اليوم ${plan.recovery.dayNumber.toLocaleString('ar-EG')} من ٣ · نصف الحمل) · ${plan.recommended.length.toLocaleString('ar-EG')} خطوات مقترحة${nextSlot ? ` · الأنسب ${nextSlot.label}` : ''}`;
+      subtitle = M.homeRecovery.text({day: plan.recovery.dayNumber, count: plan.recommended.length, slot: nextSlot ? nextSlot.label : null});
     } else if (plan.totalOpen > 0) {
-      subtitle = `${plan.recommended.length.toLocaleString('ar-EG')} خطوات مقترحة اليوم${nextSlot ? ` · الأنسب الآن ${nextSlot.label}` : ''} · والتقرير الأسبوعي`;
+      subtitle = M.homeSuggested.text({count: plan.recommended.length, slot: nextSlot ? nextSlot.label : null});
     } else {
-      subtitle = 'خطوات اليوم المفعّلة منجزة · افتح التقرير الأسبوعي الذكي';
+      subtitle = M.homeAllDone.text({});
     }
+  }
+
+  const detailLines: string[] = [];
+  if (plan.anyCoachOn && !plan.recovery.active) {
+    const top = plan.recommended[0];
+    if (top) detailLines.push(M.todayFocus.text({title: top.title}));
+    if (nextSlot && plan.recommended.length > 0) detailLines.push(M.todayNextSlot.text({label: nextSlot.label, minutes: nextSlot.freeMinutes}));
+    if (plan.workload.level === 'over') detailLines.push(M.workloadOver.text({planned: plan.workload.plannedMinutes, free: plan.workload.freeMinutes}));
+    else if (plan.workload.level === 'tight') detailLines.push(M.workloadTight.text({planned: plan.workload.plannedMinutes, free: plan.workload.freeMinutes}));
   }
 
   return {
     anyActive: plan.anyCoachOn,
     globalEnabled: plan.globalEnabled,
+    detailLines,
     recommendedCount: plan.recommended.length,
     totalOpen: plan.totalOpen,
     recoveryActive: plan.recovery.active,
