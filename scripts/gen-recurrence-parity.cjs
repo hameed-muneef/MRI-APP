@@ -17,7 +17,7 @@ if (!process.env.PARITY_TZ) {
 } else {
   const {buildSync} = require('esbuild'); fs.mkdirSync('tmp', {recursive: true});
   const outfile = path.join(process.cwd(), 'tmp', 'rp-' + process.env.PARITY_TZ.replace('/', '_') + '.cjs');
-  buildSync({stdin: {contents: "export * from './src/notifications/native-prayer-scheduler'; export * from './src/notifications/native-recurrence-rules'; export {upcomingOccurrences} from './src/notifications/scheduler'; export {prayerId} from './src/lib/prayer-schedule'; export {isQuietHoursActive, DEFAULT_NOTIFICATION_PREFERENCE as P} from './src/notifications/types';", resolveDir: process.cwd(), loader: 'ts'}, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'error', external: ['@capacitor/*']});
+  buildSync({stdin: {contents: "export * from './src/notifications/native-prayer-scheduler'; export * from './src/notifications/native-recurrence-rules'; export {upcomingOccurrences} from './src/notifications/scheduler'; export {prayerId} from './src/lib/prayer-schedule'; export {isQuietHoursActive, DEFAULT_NOTIFICATION_PREFERENCE as P} from './src/notifications/types';", resolveDir: process.cwd(), loader: 'ts'}, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'error', define: {'import.meta': '{"env":{}}'}, external: ['@capacitor/*']});
   const m = require(outfile);
   const scenarios = [
     {id: 'd1', rec: 'daily', base: '2026-10-20T08:30:00Z'},
