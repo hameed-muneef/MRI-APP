@@ -89,6 +89,8 @@ export type SmartTodayItem = TodayItem & {
   taskId: string;
   suggestedSlot: FreePrayerSlot | null;
   scheduledTimeToday?: string;
+  /** Date (YYYY-MM-DD) of an existing schedule that is today or later. The coach never overwrites it. */
+  scheduledDate?: string;
   priorityScore: number;
   priorityNote: string;
 };
@@ -784,6 +786,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
     const sched = taskSchedules[taskId];
     const schedDate = sched?.confirmedDate ?? sched?.initialDate;
     const scheduledTimeToday = schedDate === dateKey ? sched?.confirmedTime ?? sched?.initialTime : undefined;
+    const upcomingScheduleDate = schedDate && schedDate >= dateKey ? schedDate : undefined;
 
     let score = 0;
     let priorityNote = 'مستحقة اليوم';
@@ -822,6 +825,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
       taskId,
       suggestedSlot: null,
       scheduledTimeToday,
+      scheduledDate: upcomingScheduleDate,
       priorityScore: score,
       priorityNote,
     };
@@ -847,7 +851,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
 
   let slotCursor = 0;
   const enriched = scored.map(item => {
-    if (item.scheduledTimeToday || availableSlots.length === 0) return item;
+    if (item.scheduledTimeToday || item.scheduledDate || availableSlots.length === 0) return item;
     const picked = availableSlots[slotCursor % availableSlots.length];
     slotCursor += 1;
     return {...item, suggestedSlot: picked};

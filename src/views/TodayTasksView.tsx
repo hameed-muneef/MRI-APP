@@ -397,6 +397,8 @@ export default function TodayTasksView({
             if(!item.suggestedSlot)return;
             const slot=item.suggestedSlot;
             const existing=taskSchedules[item.taskId];
+            const existingDate=existing?.confirmedDate??existing?.initialDate;
+            if(existingDate&&existingDate>=now){setNotice(`«${item.title}» مجدولة بالفعل ولم أغيّر موعدها.`);return}
             onTaskSchedules({
               ...taskSchedules,
               [item.taskId]:{

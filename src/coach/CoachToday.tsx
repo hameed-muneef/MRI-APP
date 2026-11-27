@@ -208,6 +208,8 @@ export default function CoachToday({
           <span className="muted small"> · {item.goalTitle} · {period[item.period]} · {reason[item.reason]}</span>
           {item.scheduledTimeToday?(
             <div className="coach-item-slot is-scheduled"><Clock3 size={13} aria-hidden="true"/><span>مجدولة اليوم الساعة {timeLabel(item.scheduledTimeToday)}</span></div>
+          ):item.scheduledDate?(
+            <div className="coach-item-slot is-scheduled"><Clock3 size={13} aria-hidden="true"/><span>مجدولة بتاريخ {item.scheduledDate}</span></div>
           ):item.suggestedSlot?(
             <div className="coach-item-slot"><Clock3 size={13} aria-hidden="true"/><span>المقترح: {item.suggestedSlot.label} ({timeLabel(item.suggestedSlot.startTime)} · {n(item.suggestedSlot.freeMinutes)} د)</span></div>
           ):null}
