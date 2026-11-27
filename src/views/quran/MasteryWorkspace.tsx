@@ -16,6 +16,7 @@ import UnderstandingSheet from './UnderstandingSheet';
 import MasteryPlanning from './MasteryPlanning';
 import MasteryOffline from './MasteryOffline';
 import '../../quran-mastery/mastery.css';
+import {useScrollLock} from '../../navigation/useScrollLock';
 
 type Props={asset:QuranAsset;purpose:SessionPurpose;notify:(text:string)=>void};
 const upsert=<T extends {id:string}>(list:T[],item:T)=>[...list.filter(v=>v.id!==item.id),item];
@@ -57,6 +58,7 @@ export default function MasteryWorkspace({asset,purpose:initialPurpose,notify}:P
   const [activeId,setActiveId]=useState<string|null>(null);
   const [summary,setSummary]=useState('');
   const [celebrate,setCelebrate]=useState(false);
+  useScrollLock(celebrate);
   const [validation,setValidation]=useState('');
   const active=root.sessions.find(s=>s.id===activeId);
   useEffect(()=>{const frame=requestAnimationFrame(()=>{const heading=entryRef.current?.querySelector<HTMLElement>('h2');heading?.focus({preventScroll:true});entryRef.current?.scrollIntoView({block:'start',behavior:'auto'});});return()=>cancelAnimationFrame(frame);},[activeId]);

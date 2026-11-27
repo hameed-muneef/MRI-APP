@@ -35,6 +35,7 @@ import {
   type BilQuranPlanSpec,
 } from '../../quran-mastery/bilquran-plans';
 import BilQuranPlansBrowser from './BilQuranPlansBrowser';
+import {useScrollLock} from '../../navigation/useScrollLock';
 
 // واجهة الحفظ الجديدة: الصفحة الكاملة من المصحف أولًا، وتحتها ثلاثة أزرار: إخفاء/إظهار، تشغيل القارئ، تسجيل التسميع.
 // لا تغيّر نص القرآن ولا بيانات الإتقان القديمة؛ الوضع المفصّل ما زال متاحًا.
@@ -175,6 +176,7 @@ export default function HifzMushafMode({asset, notify, onDetailed, onExit, tasks
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, started]);
   const [ask, setAsk] = useState(false);
+  useScrollLock(ask || sheet || listSheet);
   const [sched, setSched] = useState(false);
   const [schedDate, setSchedDate] = useState('');
   const [schedTime, setSchedTime] = useState('20:00');

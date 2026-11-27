@@ -15,6 +15,7 @@ import {syncDeliveredNativeNotifications} from '../notifications/native-history'
 import {notificationCenterVisibility} from '../notifications/center-visibility';
 import '../notifications.css';
 import {useBackHandler} from '../navigation/useBackHandler';
+import {useScrollLock} from '../navigation/useScrollLock';
 
 type NotificationCategory='reminder'|'system';
 type NotificationRow={
@@ -85,6 +86,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   // الرجوع يغلق تأكيد الحذف أولًا، ثم لوحة الإشعارات.
   useBackHandler(()=>setConfirmClear(false),confirmClear);
   useBackHandler(()=>{setOpen(false);setConfirmClear(false)},open);
+  useScrollLock(open);
 
   const loadLocal=useCallback(()=>{
     const rows=listLocalNotifications();

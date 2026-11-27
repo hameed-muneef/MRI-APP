@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { fetchTafsir, fetchTranslation, fetchWordMeanings, WORD_MEANINGS_ATTRIBUTION, WORD_MEANINGS_PROVIDER, TAFSIRS, TRANSLATIONS, type WordMeaning } from '../../quran/content-api';
 import { getVerseNote, saveVerseNote, deleteVerseNote } from '../../quran/verse-notes';
 import { toArabicNumber, verseBody, verseMarker } from '../../quran/content';
+import { useScrollLock } from '../../navigation/useScrollLock';
 
 /** صيغة نسبة المصدر (تُعرض في مواضع المصادر العامة). */
 export function attributionLabel(sourceName: string, provider?: string): string {
@@ -28,6 +29,7 @@ type Props = {
  * وملاحظات خاصة محلية قابلة للحذف. لا تلمس حالة الجلسة؛ الإغلاق يعيد للنطاق كما كان.
  */
 export default function UnderstandingSheet({ surah, surahName, ayahStart, ayahEnd, verseText, onClose, initialTopic, initialTafsirId, initialTranslationId }: Props) {
+  useScrollLock(true);
   const [topic,setTopic]=useState<'tafsir'|'translation'|'words'>(initialTopic ?? 'tafsir');
   const [ayah, setAyah] = useState(ayahStart);
   const [tafsirId, setTafsirId] = useState(initialTafsirId ?? TAFSIRS[0].id);
