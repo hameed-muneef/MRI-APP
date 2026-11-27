@@ -42,7 +42,7 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 [data-theme="dark"] #root .app .qm-workspace{--qm-ink:var(--hm-text);--qm-pale:var(--hm-surface-2);--qm-blue:#7AD6B8;background:var(--hm-bg);color:var(--hm-text);border-color:var(--hm-border)}
 [data-theme="dark"] #root .app .qm-workspace .qm-card,[data-theme="dark"] #root .app .qm-workspace .qm-footer{background:var(--hm-surface);color:var(--hm-text);border-color:var(--hm-border)}
 [data-theme="dark"] #root .app .qm-workspace :is(h2,h3,h4,summary,label,strong){color:var(--hm-text)!important}
-[data-theme="dark"] #root .app .qm-workspace :is(p,small,.qm-muted,.qm-kicker,.qm-steps li){color:var(--hm-border)!important}
+[data-theme="dark"] #root .app .qm-workspace :is(p,small,.qm-muted,.qm-kicker,.qm-steps li){color:#CBD5E1!important}
 [data-theme="dark"] #root .app .qm-workspace :is(.quran-verse-text,p.qm-mushaf-flow,p.qm-basmala){color:var(--hm-text)!important}
 [data-theme="dark"] #root .app .qm-workspace .qm-mushaf-flow .quran-verse-marker{color:#7AD6B8!important}
 [data-theme="dark"] #root .app .qm-workspace .qm-verse-inline:hover{background:var(--hm-surface-2)}

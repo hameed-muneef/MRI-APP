@@ -221,3 +221,23 @@ html:root:root #root .app :is(.mf-btn.sm, summary, .icon-btn.danger) { min-heigh
 html:root:root #root .app .mf-btn.sm { min-width: 44px; }
 html[data-theme="dark"]:root:root .mf-badge { background: var(--hm-surface-2); color: #F3EFE4; }
 html:root:root #root .app .section-subnav { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22px); mask-image: linear-gradient(to right, transparent 0, #000 22px); }
+
+/* Hifz entry and mastery text in dark: readable on the lifted surfaces */
+html[data-theme="dark"]:root:root #root .hf-link { color: #7AD6B8; }
+html[data-theme="dark"]:root:root #root .hf-screen :is(p, small, .qm-muted, .hf-link-quiet) { color: #CBD5E1; opacity: 1; }
+html[data-theme="dark"]:root:root #root .hf-choice small { color: #CBD5E1; opacity: 1; }
+html[data-theme="dark"]:root:root .qm-workspace .qm-muted { color: #CBD5E1; }
+
+/* Light mode: remaining blue borders and icon strokes found in the audit (tafsir library list, icon buttons, active chips) */
+html[data-theme="light"]:root:root #root .app .ol-row { border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) { border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) svg { color: #1E6F5C; stroke: currentColor; }
+html[data-theme="light"]:root:root #root .app button.active:not(.mobile-nav button) { border-color: var(--hm-border); }
+html[data-theme="light"]:root:root #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2) { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
+html[data-theme="dark"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface) !important; border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app .mobile-nav button.active, html[data-theme="light"]:root:root #root .app .mobile-nav button[data-section].active { border-color: var(--hm-border) !important; }
+
+/* Muted small text: at least 4.5:1 on the final surfaces */
+html[data-theme="dark"]:root:root .quran-hadith-summary span, html[data-theme="dark"]:root:root :is(.rev-stat-label, .rev-stat-caption) { color: #CBD5E1; }
+html[data-theme="light"]:root:root #root .hf-choice small { color: var(--hm-text-muted); opacity: 1; }
