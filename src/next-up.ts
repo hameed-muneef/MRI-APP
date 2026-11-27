@@ -25,9 +25,12 @@ export function relativeLabel(minutes: number): string {
 export function minutesUntil(time: string, now: Date): number | null {
   const m = /^(\d{1,2}):(\d{2})$/.exec(time);
   if (!m) return null;
-  const at = new Date(now);
-  at.setHours(Number(m[1]), Number(m[2]), 0, 0);
-  return (at.getTime() - now.getTime()) / 60000;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  // فارق بالساعة الجدارية (لا بالطابع الزمني) حتى لا يضلّل تغيير التوقيت الصيفي في يوم الإعادة.
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  return h * 60 + min - nowMin;
 }
 
 /**
@@ -38,8 +41,8 @@ export function buildNextUp(items: NextUpInput[], now: Date, limit = 3): NextUpR
   const timed = items
     .map(item => ({id: item.id, minutes: minutesUntil(item.time, now)}))
     .filter((x): x is {id: string; minutes: number} => x.minutes !== null);
-  const past = timed.filter(x => x.minutes < 0 && x.minutes >= -180).sort((a, b) => b.minutes - a.minutes);
-  const upcoming = timed.filter(x => x.minutes >= 0).sort((a, b) => a.minutes - b.minutes);
+  const past = timed.filter(x => x.minutes <= -1 && x.minutes >= -180).sort((a, b) => b.minutes - a.minutes);
+  const upcoming = timed.filter(x => x.minutes > -1).sort((a, b) => a.minutes - b.minutes);
   const untimed = items.filter(item => minutesUntil(item.time, now) === null);
   const rows: NextUpRow[] = [];
   if (past[0]) rows.push({id: past[0].id, minutes: past[0].minutes, label: relativeLabel(past[0].minutes), state: 'late'});
