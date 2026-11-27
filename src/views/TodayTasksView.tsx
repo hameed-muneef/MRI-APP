@@ -65,6 +65,7 @@ type Props = {
   onCourseCoach?: (coach: CourseCoach) => void;
   onCoachSettings?: (settings: CoachSettings) => void;
   onCompleteWird?: (wirdId: string) => void;
+  onCompletePlanDay?: (task: Task) => void;
   onUpdateWird?: (wird: WirdWithCoach) => void;
   onOpenQuran?: () => void;
   onOpenWirds?: () => void;
@@ -93,6 +94,7 @@ export default function TodayTasksView({
   achievementLog,
   quranPassages,
   onCompleteWird,
+  onCompletePlanDay,
   onUpdateWird,
   onOpenQuran,
   onOpenWirds,
@@ -103,7 +105,8 @@ export default function TodayTasksView({
   const [notifyDraftByTask, setNotifyDraftByTask] = useState<Record<string, boolean>>({});
   const [leadDraftByTask, setLeadDraftByTask] = useState<Record<string, number | undefined>>({});
   const [notice, setNotice] = useState('');
-  const [undo, setUndo] = useState<{label: string; before: Task[]} | null>(null);
+  const [undo, setUndo] = useState<{label: string; before?: Task[]; beforeGoals?: Goal[]} | null>(null);
+  const [confirmDone, setConfirmDone] = useState<Task | null>(null);
 
   const [prefs, setPrefs] = useState<NotificationPreference>(DEFAULT_NOTIFICATION_PREFERENCE);
 
@@ -245,6 +248,20 @@ export default function TodayTasksView({
         ? 'المؤمن القوي · الخطة الأسبوعية'
         : 'المؤمن القوي · الخطة الشهرية');
 
+  // مقرر خطة الحفظ أو مهمة تسميع: الإنجاز اليدوي يقدّم الخطة ويسجّل الإنجاز، فيُطلب تأكيد بدل التراجع.
+  const needsConfirm = (task: Task) => task.plan?.kind === 'day' || Boolean(task.hifz);
+  const requestComplete = (task: Task) => {
+    if (needsConfirm(task)) {setConfirmDone(task); setNotice(''); return;}
+    complete(task);
+  };
+  const confirmComplete = (task: Task) => {
+    setConfirmDone(null);
+    if (task.plan?.kind === 'day') onCompletePlanDay?.(task);
+    onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
+    notifyNativePrefsChanged();
+    setNotice(`اعتُبر «${task.title}» منجزًا. لم تُجدول مراجعة لأن جلسة التسميع لم تُجرَ.`);
+  };
+
   const complete = (task: Task) => {
     setUndo({label: task.title, before: tasks});
     onTasks(tasks.map(item => (item.id === task.id ? markTaskDone(item, true) : item)));
@@ -253,6 +270,7 @@ export default function TodayTasksView({
   };
 
   const completeGoal = (goalId: string, stepId: string) => {
+    setUndo({label: goals.find(g => g.id === goalId)?.title ?? 'خطوة الهدف', beforeGoals: goals});
     onGoals(
       goals.map(goal =>
         goal.id === goalId
@@ -390,7 +408,7 @@ export default function TodayTasksView({
           onCompleteGoalStep={completeGoal}
           onCompleteCourseTask={taskId=>{
             const t=tasks.find(x=>x.id===taskId);
-            if(t)complete(t);
+            if(t)requestComplete(t);
           }}
           onCompleteWird={onCompleteWird}
           onUpdateGoal={nextGoal=>onGoals(goals.map(g=>g.id===nextGoal.id?nextGoal:g))}
@@ -439,9 +457,18 @@ export default function TodayTasksView({
         {undo && (
           <p className="hint" role="status">
             أُنجزت «{undo.label}».{' '}
-            <button type="button" className="soft-btn" onClick={() => {onTasks(undo.before); setUndo(null); notifyNativePrefsChanged();}}>تراجع</button>{' '}
+            <button type="button" className="soft-btn" onClick={() => {if (undo.before) onTasks(undo.before); if (undo.beforeGoals) onGoals(undo.beforeGoals); setUndo(null); notifyNativePrefsChanged();}}>تراجع</button>{' '}
             <button type="button" className="soft-btn" aria-label="إغلاق" onClick={() => setUndo(null)}>✕</button>
           </p>
+        )}
+        {confirmDone && (
+          <div className="notif-confirm" role="alertdialog" aria-label="تأكيد إنجاز المقرر">
+            <p className="small">اعتبار المقرر منجزًا؟ سيتقدّم مقرر الخطة ويُسجَّل الإنجاز، ولن تُجدول مراجعة لأن جلسة التسميع لم تُجرَ. لا يمكن التراجع عن هذا.</p>
+            <div className="notif-confirm-actions">
+              <button type="button" className="primary" onClick={() => confirmComplete(confirmDone)}>نعم، اعتبره منجزًا</button>
+              <button type="button" className="soft-btn" onClick={() => setConfirmDone(null)}>إلغاء</button>
+            </div>
+          </div>
         )}
         {notice && <p className="hint" role="status">{notice}</p>}
         {allItems.length === 0 ? (
@@ -478,7 +505,7 @@ export default function TodayTasksView({
                     <button
                       type="button"
                       className="today-task-complete-btn"
-                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : complete(item as Task))}
+                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : requestComplete(item as Task))}
                     >
                       <CheckCircle2 size={16} aria-hidden="true"/>
                       <span>إنجاز</span>
