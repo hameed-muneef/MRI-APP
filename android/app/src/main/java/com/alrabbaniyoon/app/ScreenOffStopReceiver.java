@@ -20,7 +20,7 @@ import android.os.SystemClock;
  * sound. Only alerts posted in the last few minutes are touched, see {@link NativeReminderQueue#stopRinging}.
  */
 public class ScreenOffStopReceiver extends BroadcastReceiver {
-    private static final long LIFETIME_MS = 3L * 60 * 1000;
+    private static final long LIFETIME_MS = NativeReminderQueue.RINGING_TTL_MS;
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
     private static ScreenOffStopReceiver active;
     private static Runnable expiry;
@@ -77,5 +77,7 @@ public class ScreenOffStopReceiver extends BroadcastReceiver {
         } catch (Throwable ignored) {
             // A failing stop must never crash the receiver.
         }
+        // The sound is silenced: stop listening instead of waiting for the expiry timer.
+        disarm(context.getApplicationContext() != null ? context.getApplicationContext() : context);
     }
 }

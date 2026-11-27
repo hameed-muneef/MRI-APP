@@ -513,7 +513,7 @@ public final class NativeReminderQueue {
 
     /** Ids of alerts this app posted in the last few minutes, i.e. ones whose sound may still be playing. */
     private static final String KEY_RINGING = "ringing";
-    private static final long RINGING_TTL_MS = 3L * 60 * 1000;
+    static final long RINGING_TTL_MS = 3L * 60 * 1000;
 
     private static JSONObject ringingMap(Context c) {
         try {
