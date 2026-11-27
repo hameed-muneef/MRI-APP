@@ -6,6 +6,7 @@ const mock = vi.hoisted(() => ({
   rules: [] as Array<Record<string, unknown>>,
   saved: [] as Array<{key: string; ext: string; len: number}>,
   saveOk: true,
+  pruned: [] as string[],
 }));
 vi.mock('@capacitor/local-notifications', () => ({LocalNotifications: {
   checkPermissions: async () => ({display: 'granted'}),
@@ -22,7 +23,7 @@ vi.mock('../lib/settings-opener', () => ({
   setNativeReminderRules: async (r: Array<Record<string, unknown>>) => { mock.rules = r; return true; },
   rebalanceNativeReminderQueue: async () => true,
   saveNativeCustomSound: async (key: string, b64: string, ext: string) => { if (mock.saveOk) mock.saved.push({key, ext, len: b64.length}); return mock.saveOk; },
-  pruneNativeCustomSounds: async () => true,
+  pruneNativeCustomSounds: async (keep: string[]) => { mock.pruned = keep; return true; },
 }));
 vi.mock('../sounds/custom-store', () => ({
   listAllCustomSounds: async () => [{slot: 'library:item:abc', name: 'نغمتي.MP3', type: 'audio/mpeg', data: new Uint8Array([1, 2, 3, 4]).buffer, updatedAt: 't1'}],
@@ -64,6 +65,7 @@ it('an imported sound is copied to the phone and its rows carry soundKey, in the
   await scheduleNativePersonalReminders([mk('imp', 'library:item:abc'), mk('impalarm', 'library:item:abc', true), mk('plain', 'builtin:soft')], prefs(), now);
   const key = nativeSoundKey('library:item:abc');
   expect(mock.saved).toEqual([{key, ext: 'mp3', len: 8}]);
+  expect(mock.pruned).toEqual([`${key}.mp3`]);
   const rows = (t: string) => mock.queue.filter(r => r.title === t);
   expect(rows('imp').length).toBeGreaterThan(0);
   expect(rows('imp').every(r => r.soundKey === `${key}.mp3` && !('alarmMode' in r))).toBe(true);

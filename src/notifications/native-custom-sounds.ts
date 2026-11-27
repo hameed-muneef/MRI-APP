@@ -70,10 +70,10 @@ export async function syncNativeCustomSounds(soundIds: Iterable<string | undefin
   const keep: string[] = [];
   for (const rec of records) {
     const key = nativeSoundKey(String(rec.slot));
-    keep.push(key);
+    const ext = nativeSoundExt(rec.name, rec.type);
+    keep.push(`${key}.${ext}`); // the phone prunes by stored file name, so keep the full "<key>.<ext>"
     const id = soundIdOfSlot(String(rec.slot));
     if (!wanted.has(id)) continue;
-    const ext = nativeSoundExt(rec.name, rec.type);
     const stamp = `${rec.data.byteLength}:${rec.updatedAt ?? ''}:${ext}`;
     if (sent.get(key) !== stamp) {
       const ok = await saveNativeCustomSound(key, toBase64(rec.data), ext);
