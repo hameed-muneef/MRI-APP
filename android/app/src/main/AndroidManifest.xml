@@ -32,6 +32,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- وضع المنبه: صوت متكرر لستين ثانية، بنفس نوع الخدمة الأمامية والنطاق المسموح به مسبقًا -->
+        <service
+            android:name=".ReminderAlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
         <receiver
             android:name=".AdhanAlarmReceiver"
             android:exported="false" />

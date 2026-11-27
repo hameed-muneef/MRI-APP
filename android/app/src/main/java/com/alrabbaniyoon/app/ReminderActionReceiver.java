@@ -46,17 +46,23 @@ public class ReminderActionReceiver extends BroadcastReceiver {
         }
         NativeReminderQueue.forgetRinging(context, id);
         NativeReminderQueue.cancelSnoozed(context, id);
+        // وضع المنبه يشغّل الصوت بنفسه: إلغاء الإشعار لا يكفي، فتُوقف الخدمة أيضًا.
+        ReminderAlarmService.stop(context);
         if (!ACTION_SNOOZE.equals(action)) return;
         String title = intent.getStringExtra(EXTRA_TITLE);
         if (title == null || title.isEmpty()) return;
         int minutes = intent.getIntExtra(EXTRA_SNOOZE_MINUTES, DEFAULT_SNOOZE_MINUTES);
+        String channelId = intent.getStringExtra(EXTRA_CHANNEL_ID);
+        // تأجيل منبّه يبقى منبّهًا: الوضع يُستنتج من قناة الإشعار الذي ضُغط زرّه.
+        boolean alarmMode = ReminderAlarmPolicy.CHANNEL_ID.equals(channelId);
         NativeReminderQueue.armSnoozed(
             context,
             id,
             title,
             intent.getStringExtra(EXTRA_BODY),
-            intent.getStringExtra(EXTRA_CHANNEL_ID),
-            minutes
+            channelId,
+            minutes,
+            alarmMode
         );
     }
 
