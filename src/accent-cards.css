@@ -1,30 +1,30 @@
 /* ألوان البطاقات: Home (لكل نوع لون) + قوائم القرآن (عائلة تيل واحدة). تغيير بصري فقط. */
 html:root:root:root[data-theme="light"] #root .app.app main.main .home-today-list,
 html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="day"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#4F8A72; --ac-ink:#3E7560; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#4F8A72; --ac-ink:#3E7560; --ac-bg:#EFF3EC; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-today-list,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="day"],
-html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#8CC5A8; --ac-ink:#8CC5A8; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#8CC5A8; --ac-ink:#8CC5A8; --ac-bg:#34586E; }
 html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-prayer,
 html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="week"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#2A7F86; --ac-ink:#1F6B72; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#2A7F86; --ac-ink:#1F6B72; --ac-bg:#ECF2EE; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-next-card-prayer,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="week"],
-html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#6CC4CB; --ac-ink:#6CC4CB; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#6CC4CB; --ac-ink:#6CC4CB; --ac-bg:#2F5874; }
 html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-reminders,
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#B5603C; --ac-ink:#9C4F2D; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#B5603C; --ac-ink:#9C4F2D; --ac-bg:#F8EFE7; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-next-card-reminders,
-html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#E59A78; --ac-ink:#E59A78; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#E59A78; --ac-ink:#E59A78; --ac-bg:#425166; }
 html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="month"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#4F78A8; --ac-ink:#3F6490; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#4F78A8; --ac-ink:#3F6490; --ac-bg:#EFF1F1; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="month"],
-html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#8FB0DA; --ac-ink:#8FB0DA; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#8FB0DA; --ac-ink:#8FB0DA; --ac-bg:#345476; }
 html:root:root:root[data-theme="light"] #root .app.app main.main .home-achievement-entry,
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#A9801F; --ac-ink:#8A6513; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#A9801F; --ac-ink:#8A6513; --ac-bg:#F7F2E4; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-achievement-entry,
-html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#E2C06E; --ac-ink:#E2C06E; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#8A5B94; --ac-ink:#744A7E; }
-html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#C9A0D0; --ac-ink:#C9A0D0; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#E2C06E; --ac-ink:#E2C06E; --ac-bg:#425765; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#8A5B94; --ac-ink:#744A7E; --ac-bg:#F4EEEF; }
+html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#C9A0D0; --ac-ink:#C9A0D0; --ac-bg:#3E5274; }
 html:root:root:root #root .app.app main.main .home-next-card-prayer,
 html:root:root:root #root .app.app main.main .feature-card[data-view="week"],
 html:root:root:root #root .app.app main.main .wide-card[data-section="quran"],
@@ -40,7 +40,7 @@ html:root:root:root #root .app.app main.main .feature-card[data-view="qibla"],
 html:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] {
   border:1.5px solid color-mix(in srgb,var(--ac) 55%,transparent) !important;
   border-inline-start:6px solid var(--ac) !important;
-  background:color-mix(in srgb,var(--ac) 9%,var(--hm-surface)) !important;
+  background:var(--ac-bg) !important;
 }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .home-next-card-prayer,
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="week"],
@@ -54,7 +54,7 @@ html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[da
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="mosques"],
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="month"],
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="qibla"],
-html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] { background:color-mix(in srgb,var(--ac) 16%,var(--hm-surface)) !important; }
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] { background:var(--ac-bg) !important; }
 html:root:root:root #root .app.app main.main .home-next-card-prayer :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
 html:root:root:root #root .app.app main.main .feature-card[data-view="week"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
 html:root:root:root #root .app.app main.main .wide-card[data-section="quran"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
@@ -69,13 +69,13 @@ html:root:root:root #root .app.app main.main .feature-card[data-view="month"] :i
 html:root:root:root #root .app.app main.main .feature-card[data-view="qibla"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
 html:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon) { color:var(--ac-ink) !important; border-color:color-mix(in srgb,var(--ac) 45%,transparent) !important; }
 /* قوائم القرآن: تيل واحد */
-html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#2A7F86; --qt-ink:#1F6B72; }
-html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#6CC4CB; --qt-ink:#6CC4CB; }
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#2A7F86; --qt-ink:#1F6B72; --qt-bg:#F2F5F1; }
+html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#6CC4CB; --qt-ink:#6CC4CB; --qt-bg:#2A4F6C; }
 html:root:root:root #root .app .quran-section-grid button:not(.active) {
   border:1.5px solid color-mix(in srgb,var(--qt) 45%,transparent) !important;
-  background:color-mix(in srgb,var(--qt) 6%,var(--hm-surface)) !important;
+  background:var(--qt-bg) !important;
 }
-html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { background:color-mix(in srgb,var(--qt) 9%,var(--hm-surface)) !important; }
+html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { background:var(--qt-bg) !important; }
 html:root:root:root #root .app .quran-section-grid button:not(.active) .quran-section-icon { color:var(--qt-ink) !important; }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .home-today-list .home-task-meta { color:#D3DEEA !important; }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card .inline-link { color:#F3EFE4 !important; }
