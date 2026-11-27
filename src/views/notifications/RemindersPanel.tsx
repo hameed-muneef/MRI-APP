@@ -21,6 +21,7 @@ import {uid} from '../../id';
 import {effectiveNextDueDate, formatTimeHM, WEEK_DAYS} from '../../notifications/scheduler';
 import {createReminder, deleteReminder, snoozeReminder, toggleReminder, updateReminder} from '../../notifications/service';
 import {loadPrefs, loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
+import {testAlertMessage} from '../../notifications/test-alert-copy';
 import {formatRemaining} from '../../notifications/upcoming';
 import {SoundSelectField} from './SoundPanel';
 import {RECURRENCE_LABELS, type Reminder, type ReminderRecurrence} from '../../notifications/types';
@@ -217,6 +218,7 @@ export default function RemindersPanel({
   const [busy, setBusy] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [globalEnabled, setGlobalEnabled] = useState(true);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -224,8 +226,11 @@ export default function RemindersPanel({
     const sync = () => {
       void (async () => {
         try {
-          const {reminders: loaded} = await loadReminders();
-          if (active) setReminders(loaded);
+          const [{reminders: loaded}, {prefs: currentPrefs}] = await Promise.all([loadReminders(), loadPrefs()]);
+          if (active) {
+            setReminders(loaded);
+            setGlobalEnabled(currentPrefs.global_enabled !== false);
+          }
         } catch {/* تجاهل — القائمة فارغة في البداية */}
       })();
     };
@@ -443,13 +448,18 @@ export default function RemindersPanel({
     }
     const label = title?.trim() || 'تذكير شخصي';
     await deliverNotification('reminder', `تنبيه تجريبي · ${label}`, 'هذا اختبار لصوت وظهور المنبه.', 'settings', effectiveSound);
-    notify(plan.mode === 'none' ? 'أُرسل التنبيه التجريبي (صامت).' : 'أُرسل التنبيه التجريبي وشُغِّل الصوت.');
+    notify(testAlertMessage(plan.mode, prefs.global_enabled !== false));
   };
 
   const editing = draft !== null;
 
   return (
     <div ref={rootRef} className="notif-reminders">
+      {!globalEnabled && (
+        <p className="notif-state" role="status">
+          <Bell size={17}/> التنبيهات متوقفة من «الهدوء والإشعارات»، فلن يرنّ أي منبه حتى تعيد تفعيلها.
+        </p>
+      )}
       {!editing && (
         <div className="notif-reminders-toolbar">
           <div className="notif-reminders-summary">

@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {Send} from 'lucide-react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
+import {testAlertMessage} from '../../notifications/test-alert-copy';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationChannel, type NotificationPreference} from '../../notifications/types';
 import {channelLabel, SoundSelectField} from './SoundPanel';
 import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
@@ -90,7 +91,7 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       'settings',
       soundId,
     );
-    notify(plan.mode === 'none' ? 'أُرسل التنبيه التجريبي (صامت).' : 'أُرسل التنبيه التجريبي وشُغِّل الصوت.');
+    notify(testAlertMessage(plan.mode, prefs.global_enabled !== false));
   };
 
   if (loading) return <p className="muted" role="status">جارٍ تحميل الإعدادات…</p>;
