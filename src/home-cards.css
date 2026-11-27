@@ -645,57 +645,57 @@ html[data-theme="dark"] #root .hf-sheet select,html[data-theme="dark"] #root .hf
 html[data-theme="dark"] #root .hf-sheet .hf-speeds button,html[data-theme="dark"] #root .hf-sheet .hf-stepper button{background:#26486b;color:#f1f7fc;border-color:#4c7aa6}
 html[data-theme="dark"] #root .hf-sheet .hf-speeds button.on{background:#3b82c4;color:#fff}
 html #root .hf-reciter{gap:6px}
-html #root .hf-rsearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid #9FC4E6;border-radius:12px;padding:8px 12px;font:inherit;background:#fff;color:#17324f}
+html #root .hf-rsearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid var(--hm-border);border-radius:12px;padding:8px 12px;font:inherit;background:#fff;color:#1F2A2A}
 html #root .hf-rnote{color:#5b6f82;font-size:.8rem;line-height:1.5}
 html[data-theme="dark"] #root .hf-rsearch{background:#0e1a24;color:#f1f7fc;border-color:#4c7aa6}
 html[data-theme="dark"] #root .hf-rnote{color:#a9c0d4}
 
 /* خطط الحفظ والمراجعة (منهج بالقرآن نحيا) داخل مصحف الحفظ والإتقان */
 html #root .hf-entry-body{width:100%;max-width:1060px;margin-inline:auto;box-sizing:border-box}
-html #root .hf-active-plan{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1.5px solid #9FC4E6;color:#17324f}
+html #root .hf-active-plan{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1.5px solid var(--hm-border);color:#1F2A2A}
 html #root .hf-active-plan-head{display:flex;flex-direction:column;gap:4px}
-html #root .hf-active-plan-head strong{font-size:18px;color:#12305a}
-html #root .hf-active-plan-meta{margin:0;font-size:13px;color:#496680;font-variant-numeric:tabular-nums}
-html #root .hf-plan-kicker{font-size:12.5px;font-weight:600;color:#20537A;opacity:.88}
-html #root .hf-plan-progress{height:7px;border-radius:6px;background:#EAF3FC;overflow:hidden}
-html #root .hf-plan-progress > div{height:100%;background:#2f6b3f;border-radius:6px;transition:width .2s ease}
-html #root .hf-active-plan-portion{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:#F4F8FC;border:1px solid #d4e6f7}
-html #root .hf-active-plan-portion small{font-size:12.5px;color:#496680}
+html #root .hf-active-plan-head strong{font-size:18px;color:#1F2A2A}
+html #root .hf-active-plan-meta{margin:0;font-size:13px;color:#566360;font-variant-numeric:tabular-nums}
+html #root .hf-plan-kicker{font-size:12.5px;font-weight:600;color:#1E6F5C;opacity:.88}
+html #root .hf-plan-progress{height:7px;border-radius:6px;background:var(--hm-surface-2);overflow:hidden}
+html #root .hf-plan-progress > div{height:100%;background:#1E6F5C;border-radius:6px;transition:width .2s ease}
+html #root .hf-active-plan-portion{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:var(--hm-surface-2);border:1px solid var(--hm-border)}
+html #root .hf-active-plan-portion small{font-size:12.5px;color:#566360}
 html #root .hf-active-plan-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 html #root .hf-active-plan-actions .hf-ok{flex:1 1 200px;padding:0 16px}
 html #root .hf-active-plan-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 html #root .hf-active-plan-nav button{min-height:44px}
-html #root .hf-plan-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:#fff;border:1.5px solid #9FC4E6;color:#17324f;text-align:right;min-height:68px;cursor:pointer}
+html #root .hf-plan-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:#fff;border:1.5px solid var(--hm-border);color:#1F2A2A;text-align:right;min-height:68px;cursor:pointer}
 html #root .hf-plan-launch div{display:flex;flex-direction:column;gap:4px;min-width:0}
-html #root .hf-plan-launch strong{font-size:15.5px;color:#12305a}
-html #root .hf-plan-launch small{font-size:12.5px;color:#496680;line-height:1.5}
-html #root .hf-plan-launch > span{flex:none;padding:8px 14px;border-radius:10px;background:#2f6b3f;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap}
+html #root .hf-plan-launch strong{font-size:15.5px;color:#1F2A2A}
+html #root .hf-plan-launch small{font-size:12.5px;color:#566360;line-height:1.5}
+html #root .hf-plan-launch > span{flex:none;padding:8px 14px;border-radius:10px;background:#1E6F5C;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap}
 html #root .hf-plans-wrap{display:flex;flex-direction:column;gap:16px;padding-bottom:24px}
 html #root .hf-plans-hero{display:flex;flex-direction:column;gap:6px;text-align:center;max-width:680px;margin-inline:auto}
-html #root .hf-plans-hero h2{margin:0;font-size:clamp(22px,3.2vw,30px);color:#12305a;text-wrap:balance}
-html #root .hf-plans-hero p{margin:0;font-size:14px;color:#496680;line-height:1.65}
-html #root .hf-dir-box{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#fff;border:1px solid #c5ddf3}
-html #root .hf-dir-head{display:flex;align-items:center;gap:8px;color:#174a8c;font-size:14.5px}
+html #root .hf-plans-hero h2{margin:0;font-size:clamp(22px,3.2vw,30px);color:#1F2A2A;text-wrap:balance}
+html #root .hf-plans-hero p{margin:0;font-size:14px;color:#566360;line-height:1.65}
+html #root .hf-dir-box{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#fff;border:1px solid var(--hm-border)}
+html #root .hf-dir-head{display:flex;align-items:center;gap:8px;color:#175A4A;font-size:14.5px}
 html #root .hf-dir-bar{display:flex;flex-direction:column;gap:8px}
-html #root .hf-dir-label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#20537A}
+html #root .hf-dir-label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#1E6F5C}
 html #root .hf-track-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-html #root .hf-track-tabs button{min-height:42px;padding:6px 12px;border-radius:10px;background:#fff;border:1px solid #9FC4E6;color:#20537A;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
-html #root .hf-track-tabs button.on{background:#12305a;border-color:#12305a;color:#fff}
+html #root .hf-track-tabs button{min-height:42px;padding:6px 12px;border-radius:10px;background:#fff;border:1px solid var(--hm-border);color:#1E6F5C;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+html #root .hf-track-tabs button.on{background:#1F2A2A;border-color:#1F2A2A;color:#fff}
 html #root .hf-plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px;align-items:stretch}
-html #root .hf-plan-card{display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid #c5ddf3;color:#17324f;min-width:0}
-html #root .hf-plan-card.is-active{border:2px solid #2f6b3f}
+html #root .hf-plan-card{display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid var(--hm-border);color:#1F2A2A;min-width:0}
+html #root .hf-plan-card.is-active{border:2px solid #1E6F5C}
 html #root .hf-plan-card-top{display:flex;flex-direction:column;gap:6px}
-html #root .hf-plan-duration{font-size:24px;font-weight:800;color:#12305a;font-variant-numeric:tabular-nums}
-html #root .hf-plan-card h3{margin:0;font-size:17px;color:#174a8c}
-html #root .hf-plan-sub{margin:0;font-size:13.5px;color:#496680}
-html #root .hf-plan-preview-line{display:flex;align-items:flex-start;gap:6px;padding:10px;border-radius:10px;background:#F4F8FC;font-size:12.5px;color:#20537A;line-height:1.55}
+html #root .hf-plan-duration{font-size:24px;font-weight:800;color:#1F2A2A;font-variant-numeric:tabular-nums}
+html #root .hf-plan-card h3{margin:0;font-size:17px;color:#175A4A}
+html #root .hf-plan-sub{margin:0;font-size:13.5px;color:#566360}
+html #root .hf-plan-preview-line{display:flex;align-items:flex-start;gap:6px;padding:10px;border-radius:10px;background:var(--hm-surface-2);font-size:12.5px;color:#1E6F5C;line-height:1.55}
 html #root .hf-plan-preview-line svg{flex:none;margin-top:2px}
 html #root .hf-plan-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 html #root .hf-plan-card-actions button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:13.5px;font-weight:700;padding:8px 10px;cursor:pointer}
-html #root .hf-plan-preview-head{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid #c5ddf3}
+html #root .hf-plan-preview-head{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid var(--hm-border)}
 html #root .hf-plan-preview-title{display:flex;flex-direction:column;gap:6px}
-html #root .hf-plan-preview-title h2{margin:0;font-size:21px;color:#12305a}
-html #root .hf-plan-preview-title p{margin:0;font-size:13.5px;color:#496680;line-height:1.6}
+html #root .hf-plan-preview-title h2{margin:0;font-size:21px;color:#1F2A2A}
+html #root .hf-plan-preview-title p{margin:0;font-size:13.5px;color:#566360;line-height:1.6}
 html #root .hf-plan-back{align-self:flex-start;padding:8px 14px;min-height:44px;cursor:pointer}
 html #root .hf-schedule-list{display:flex;flex-direction:column;gap:8px}
 html #root .hf-schedule-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #d4e6f7}

@@ -928,7 +928,7 @@
 .quran-verse-actions .icon-btn {
   font-size: 11px;
   font-weight: 700;
-  font-family: Tajawal, Arial, sans-serif;
+  font-family:Cairo,Tajawal, Arial, sans-serif;
 }
 
 .quran-reference {
@@ -938,7 +938,7 @@
   border-radius: 20px;
   background: #eef2e8;
   color: var(--color-gold-ink, var(--color-gold-ink));
-  font-family: Tajawal, Arial, sans-serif;
+  font-family:Cairo,Tajawal, Arial, sans-serif;
   font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -952,11 +952,11 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: #fbfaf5;
-  font-family: Tajawal, Arial, sans-serif;
+  font-family:Cairo,Tajawal, Arial, sans-serif;
 }
 
 .quran-inline-form textarea {
-  font-family: Tajawal, Arial, sans-serif;
+  font-family:Cairo,Tajawal, Arial, sans-serif;
   font-size: 13px;
   min-height: 74px;
 }

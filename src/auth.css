@@ -6,7 +6,7 @@
   --auth-radius-sm:8px;--auth-radius-md:12px;--auth-radius-lg:22px;
   --auth-shadow:0 18px 48px #18372b12;
   min-height:100vh;padding:clamp(16px,3vw,36px);background:#e7ebe4;color:#263c32;
-  font-family:Tajawal,Arial,sans-serif
+  font-family:Cairo,Tajawal,Arial,sans-serif
 }
 .auth-shell{width:min(1280px,100%);min-height:min(860px,calc(100vh - 72px));margin:auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);background:var(--auth-cream);border:1px solid var(--auth-border);border-radius:var(--auth-radius-lg);overflow:hidden;box-shadow:var(--auth-shadow)}
 .auth-form-side{min-width:0;display:flex;flex-direction:column;padding:clamp(28px,4vw,52px) clamp(26px,5vw,68px) 24px}
