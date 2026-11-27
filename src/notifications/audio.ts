@@ -2,12 +2,22 @@
 // مكتبة الأصوات المركزية، المعاينة، والتحميل الآمن للملفات المخصصة.
 
 import {authClient} from '../auth';
-import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
+import {
+  isBundledWebAssetUrl,
+  isNativeCapacitorWebView,
+  loadLocalAudioObjectUrlForWebView,
+  resolveAudioUrlForWeb,
+} from '../audio/url-resolver';
+import {unlockBuiltInAudioContext} from './builtin-sounds';
 import type {AudioResource} from './types';
 
 let audioEl: HTMLAudioElement | null = null;
 let activeObjectUrlRevoke: (() => void) | null = null;
 let playToken = 0;
+let audioElUnlocked = false;
+let unlockListenersInstalled = false;
+
+const SILENT_WAV_DATA_URL = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
 
 function revokeActiveBlob(): void {
   if (activeObjectUrlRevoke) {
@@ -21,14 +31,71 @@ export function getAudioElement(): HTMLAudioElement {
   return audioEl;
 }
 
+/**
+ * يفتح قفل تشغيل الصوت على المتصفح عند تفاعل المستخدم (ضغطة/لمسة/زر)،
+ * حتى تتمكن التنبيهات المجدولة لاحقًا (الأذان/التذكيرات/المهام) من إطلاق الصوت بدون حظر التشغيل التلقائي.
+ */
+export function unlockAudioPlayback(): void {
+  unlockBuiltInAudioContext();
+  if (typeof window === 'undefined' || typeof Audio === 'undefined' || audioElUnlocked) return;
+  const el = getAudioElement();
+  // لا تقاطع صوتًا يعمل حاليًا
+  if (!el.paused && el.currentSrc) {
+    audioElUnlocked = true;
+    return;
+  }
+  try {
+    el.muted = true;
+    el.src = SILENT_WAV_DATA_URL;
+    const promise = el.play();
+    if (promise && typeof promise.then === 'function') {
+      void promise.then(() => {
+        audioElUnlocked = true;
+        if (el.src === SILENT_WAV_DATA_URL) {
+          el.pause();
+          el.muted = false;
+        }
+      }).catch(() => {
+        el.muted = false;
+      });
+    } else {
+      audioElUnlocked = true;
+      el.muted = false;
+    }
+  } catch {
+    el.muted = false;
+  }
+}
+
+export function installAudioUnlockListeners(): () => void {
+  if (typeof window === 'undefined' || unlockListenersInstalled) return () => {};
+  unlockListenersInstalled = true;
+  const onGesture = () => {
+    unlockAudioPlayback();
+  };
+  const events: Array<keyof WindowEventMap> = ['pointerdown', 'touchstart', 'keydown', 'click'];
+  for (const ev of events) {
+    window.addEventListener(ev, onGesture, {capture: true, passive: true});
+  }
+  return () => {
+    unlockListenersInstalled = false;
+    for (const ev of events) {
+      window.removeEventListener(ev, onGesture, {capture: true});
+    }
+  };
+}
+
 export function stopAudio(): void {
   playToken += 1;
   if (audioEl) {
     audioEl.onerror = null;
     audioEl.onended = null;
-    audioEl.pause();
-    audioEl.removeAttribute('src');
-    audioEl.load();
+    try {
+      audioEl.pause();
+      if (audioEl.currentSrc && audioEl.currentSrc !== SILENT_WAV_DATA_URL) {
+        audioEl.currentTime = 0;
+      }
+    } catch { /* ignore */ }
   }
   revokeActiveBlob();
 }
@@ -50,32 +117,44 @@ export function playAudio(url: string, onFallback?: () => void): void {
     revokeActiveBlob();
     onFallback?.();
   };
+  el.muted = false;
+  el.volume = 1;
   el.onerror = onFallback ? triggerFallback : null;
   el.onended = () => {
     if (token === playToken) revokeActiveBlob();
   };
 
-  void loadLocalAudioObjectUrlForWebView(resolved).then(localBlob => {
-    if (token !== playToken) {
-      localBlob?.revoke();
-      return;
-    }
-    if (localBlob) {
-      activeObjectUrlRevoke = localBlob.revoke;
-      el.src = localBlob.url;
-    } else {
+  // في Android WebView المحلي فقط نحتاج تحميل الأصل عبر Blob لتفادي قيود 206 Range.
+  // أما على المتصفح، فيجب استدعاء el.play() فورًا وبشكل متزامن داخل حدث النقرة لحفظ صلاحية التشغيل.
+  if (isNativeCapacitorWebView() && isBundledWebAssetUrl(resolved)) {
+    void loadLocalAudioObjectUrlForWebView(resolved).then(localBlob => {
+      if (token !== playToken) {
+        localBlob?.revoke();
+        return;
+      }
+      if (localBlob) {
+        activeObjectUrlRevoke = localBlob.revoke;
+        el.src = localBlob.url;
+      } else {
+        el.src = resolved;
+      }
+      void el.play().then(() => { audioElUnlocked = true; }).catch(() => {
+        triggerFallback();
+      });
+    }).catch(() => {
+      if (token !== playToken) return;
       el.src = resolved;
-    }
-    void el.play().catch(() => {
-      // قد يُمنع التشغيل التلقائي أو يفشل تحميل الملف — فعّل البديل المدمج إن وُجد
-      triggerFallback();
+      void el.play().then(() => { audioElUnlocked = true; }).catch(() => {
+        triggerFallback();
+      });
     });
-  }).catch(() => {
-    if (token !== playToken) return;
-    el.src = resolved;
-    void el.play().catch(() => {
-      triggerFallback();
-    });
+    return;
+  }
+
+  el.src = resolved;
+  void el.play().then(() => { audioElUnlocked = true; }).catch(() => {
+    // قد يُمنع التشغيل التلقائي أو يفشل تحميل الملف — فعّل البديل المدمج إن وُجد
+    triggerFallback();
   });
 }
 
@@ -127,10 +206,10 @@ export async function deleteAudioResource(id: string): Promise<void> {
 
 export const DEFAULT_AUDIO_RESOURCES: AudioResource[] = [
   {id: 'system-default', title: 'صوت النظام الافتراضي', kind: 'system', url: '', is_default: true, is_uploaded: false, created_at: new Date().toISOString()},
-  {id: 'tone-short', title: 'نغمة إشعار قصيرة', kind: 'tone', url: '', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
-  {id: 'adhan-makkah', title: 'أذان مكة', kind: 'adhan', url: '', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
-  {id: 'adhan-madinah', title: 'أذان المدينة', kind: 'adhan', url: '', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
-  {id: 'silent', title: 'صامت', kind: 'system', url: '', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
+  {id: 'tone-short', title: 'نغمة إشعار قصيرة', kind: 'tone', url: 'builtin:soft', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
+  {id: 'adhan-makkah', title: 'أذان الحرم المكي (فاروق حضراوي)', kind: 'adhan', url: '/sounds/adhan/adhan_hadrawi.ogg', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
+  {id: 'adhan-madinah', title: 'أذان الحرم المدني', kind: 'adhan', url: '/sounds/adhan/adhan_madinah.ogg', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
+  {id: 'silent', title: 'صامت', kind: 'system', url: 'builtin:silent', is_default: false, is_uploaded: false, created_at: new Date().toISOString()},
 ];
 
 export function findAudioById(resources: AudioResource[], id: string): AudioResource | undefined {

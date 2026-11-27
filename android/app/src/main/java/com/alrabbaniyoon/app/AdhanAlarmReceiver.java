@@ -137,7 +137,7 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setDefaults(silent ? 0 : NotificationCompat.DEFAULT_ALL)
+            .setDefaults(silent ? 0 : (NotificationCompat.DEFAULT_VIBRATE | NotificationCompat.DEFAULT_LIGHTS))
             .setSilent(silent)
             .setAutoCancel(true)
             .setContentIntent(contentPi);

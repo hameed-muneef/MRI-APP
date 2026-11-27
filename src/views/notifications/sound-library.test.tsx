@@ -42,7 +42,7 @@ describe('custom sound classification & import validation', () => {
     });
   });
 
-  it('renders SoundPanel with classification tabs, Eid Takbeerat, bundled Adhan, general tones, and import controls', () => {
+  it('renders SoundPanel with classification tabs, Eid Takbeerat, bundled Adhan (12 muezzins), general tones, and import controls', () => {
     const html = renderToStaticMarkup(<SoundPanel notify={vi.fn()}/>);
     expect(html).toContain('الكل');
     expect(html).toContain('أذان');
@@ -50,16 +50,24 @@ describe('custom sound classification & import validation', () => {
     expect(html).toContain('نغمات عامة');
     expect(html).toContain('تكبيرات العيد');
     expect(html).toContain('أذان الحرم المدني');
+    expect(html).toContain('مشاري راشد العفاسي');
+    expect(html).toContain('ناصر القطامي');
+    expect(html).toContain('ماجد الهمثاني');
+    expect(html).toContain('فاروق حضراوي (الحرم المكي)');
+    expect(html).toContain('حسان زبيدي (الحرم المكي)');
+    expect(html).toContain('أذان المسجد الأقصى');
     expect(html).toContain('نغمة جرس هادئة');
     expect(html).toContain('تصنيف الصوت عند الاستيراد');
     expect(html).toContain('استيراد نغمة أو صوت');
   });
 
-  it('renders grouped sound options in SoundSelectField', () => {
+  it('renders grouped sound options in SoundSelectField including new muezzins', () => {
     const html = renderToStaticMarkup(<SoundSelectField value="" onChange={vi.fn()}/>);
     expect(html).toContain('<optgroup label="أذان">');
     expect(html).toContain('<optgroup label="تكبيرات">');
     expect(html).toContain('<optgroup label="نغمات عامة">');
     expect(html).toContain('تكبيرات العيد');
+    expect(html).toContain('مشاري راشد العفاسي');
+    expect(html).toContain('أذان المسجد الأقصى');
   });
 });

@@ -15,6 +15,14 @@ import {
 } from '../notifications/types';
 import CoachToday from '../coach/CoachToday';
 import type {CourseCoach} from '../coach/course';
+import type {CoachSettings} from '../coach/types';
+import type {SmartTodayItem} from '../coach/smart';
+import type {WirdWithCoach} from '../coach/habit';
+import type {AchievementEntry} from '../achievement/log';
+import type {DayPlan} from '../DayPlanner';
+import {timeLabel} from '../day-timing';
+import type {DayRecords} from '../day-tracking';
+import type {MemorizationPassage} from '../quran/types';
 
 type Filter = 'today' | 'tomorrow' | 'upcoming' | 'overdue' | 'unscheduled';
 
@@ -47,8 +55,19 @@ type Props = {
   notify?: (message: string) => void;
   onOpenNotificationSettings?: () => void;
   courseCoach?: CourseCoach;
+  coachSettings?: CoachSettings;
   wirds?: Wird[];
+  prayers?: Record<string, string>;
+  dayPlan?: DayPlan;
+  dayRecords?: DayRecords;
+  achievementLog?: AchievementEntry[];
+  quranPassages?: MemorizationPassage[];
   onCourseCoach?: (coach: CourseCoach) => void;
+  onCoachSettings?: (settings: CoachSettings) => void;
+  onCompleteWird?: (wirdId: string) => void;
+  onUpdateWird?: (wird: WirdWithCoach) => void;
+  onOpenQuran?: () => void;
+  onOpenWirds?: () => void;
 };
 
 export default function TodayTasksView({
@@ -64,8 +83,19 @@ export default function TodayTasksView({
   onBack,
   onOpenNotificationSettings,
   courseCoach,
+  coachSettings,
   onCourseCoach,
+  onCoachSettings,
   wirds,
+  prayers,
+  dayPlan,
+  dayRecords,
+  achievementLog,
+  quranPassages,
+  onCompleteWird,
+  onUpdateWird,
+  onOpenQuran,
+  onOpenWirds,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
@@ -340,7 +370,55 @@ export default function TodayTasksView({
         <p className="muted small">المهام الدورية بلا يوم محدد لا تظهر ضمن اليوم أو الغد أو المتأخرة حتى تُجدول.</p>
       </div>
 
-      {onCourseCoach&&<CoachToday goals={goals} tasks={tasks} wirds={wirds} coach={courseCoach} onCoach={onCourseCoach}/>}
+      {onCourseCoach&&(
+        <CoachToday
+          goals={goals}
+          tasks={tasks}
+          wirds={wirds}
+          coach={courseCoach}
+          coachSettings={coachSettings}
+          prayers={prayers}
+          dayPlan={dayPlan}
+          dayRecords={dayRecords}
+          taskSchedules={taskSchedules}
+          achievementLog={achievementLog}
+          quranPassages={quranPassages}
+          onCoach={onCourseCoach}
+          onCoachSettings={onCoachSettings}
+          onCompleteGoalStep={completeGoal}
+          onCompleteCourseTask={taskId=>{
+            const t=tasks.find(x=>x.id===taskId);
+            if(t)complete(t);
+          }}
+          onCompleteWird={onCompleteWird}
+          onUpdateGoal={nextGoal=>onGoals(goals.map(g=>g.id===nextGoal.id?nextGoal:g))}
+          onUpdateWird={onUpdateWird}
+          onScheduleSmartItem={(item:SmartTodayItem)=>{
+            if(!item.suggestedSlot)return;
+            const slot=item.suggestedSlot;
+            const existing=taskSchedules[item.taskId];
+            onTaskSchedules({
+              ...taskSchedules,
+              [item.taskId]:{
+                ...existing,
+                title:item.title,
+                sourceLabel:item.goalTitle,
+                initialDate:now,
+                initialTime:slot.startTime,
+                confirmedDate:now,
+                confirmedTime:slot.startTime,
+                notifyEnabled:existing?.notifyEnabled??true,
+              },
+            });
+            notifyNativePrefsChanged();
+            setNotice(`تمت جدولة «${item.title}» (${slot.label}) الساعة ${timeLabel(slot.startTime)}.`);
+          }}
+          onOpenPlanTask={onOpenPlanTask}
+          onOpenHifzTask={onOpenHifzTask}
+          onOpenQuran={onOpenQuran}
+          onOpenWirds={onOpenWirds}
+        />
+      )}
 
       <button type="button" className="soft-btn task-notif-link" onClick={() => onOpenNotificationSettings?.()} aria-label="ضبط تذكيرات المهام من التنبيهات">
         <BellRing size={16}/> {activeSummary} · ضبط التذكيرات من التنبيهات

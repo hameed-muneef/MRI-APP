@@ -198,29 +198,58 @@ public class BackgroundAudioPlugin extends Plugin {
         call.resolve(ret);
     }
 
-    /** إرسال إشعار أذان للتجربة (بعد محول حوافز شبكة موجودة). */
+    /** إرسال إشعار أذان للتجربة (مع اختيار المؤذن وإمكانية تشغيل الأذان الكامل). */
     @PluginMethod
     public void testAdhanNotification(PluginCall call) {
         Context context = getContext();
-        String raw = NativeAdhanStore.DEFAULT_ADHAN_RAW;
-        String channelId = NativeAdhanStore.ensureAdhanNotificationChannel(context, raw, null);
+        String requestedRaw = call.getString("rawSound");
+        String soundTitle = call.getString("soundTitle");
+        boolean full = Boolean.TRUE.equals(call.getBoolean("full", false));
+        int delayMs = Math.max(0, Math.min(15000, call.getInt("delayMs", 800)));
+
+        String raw = NativeAdhanStore.sanitizeAdhanRawName(requestedRaw);
+        String channelId = NativeAdhanStore.ensureAdhanNotificationChannel(context, raw, soundTitle);
         final Context appContext = context.getApplicationContext();
+        String title = "تجربة الأذان" + (soundTitle != null && !soundTitle.trim().isEmpty() ? " — " + soundTitle.trim() : "");
+        String body = "صوت تجريبي لاختبار تنبيه الأذان";
+
         new Thread(() -> {
-            try { Thread.sleep(800); } catch (InterruptedException ignored) {}
-            AdhanAlarmReceiver.postChannelNotification(
-                appContext, 9001, channelId, "تجربة الأذان", "صوت تجريبي لاختبار الإشعار");
+            if (delayMs > 0) {
+                try { Thread.sleep(delayMs); } catch (InterruptedException ignored) {}
+            }
+            if (full) {
+                try {
+                    Intent svc = new Intent(appContext, AdhanPlaybackService.class);
+                    svc.setAction(AdhanPlaybackService.ACTION_PLAY);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_ALARM_ID, 9001);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_TITLE, title);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_BODY, body);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_RAW_SOUND, raw);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_SOUND_TITLE, soundTitle);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_CHANNEL_ID, channelId);
+                    svc.putExtra(AdhanAlarmReceiver.EXTRA_PRAYER_KEY, "test:" + System.currentTimeMillis());
+                    ContextCompat.startForegroundService(appContext, svc);
+                    return;
+                } catch (Exception ignored) {
+                    // Fallback to channel notification below
+                }
+            }
+            AdhanAlarmReceiver.postChannelNotification(appContext, 9001, channelId, title, body);
         }).start();
-        call.resolve(new JSObject().put("scheduled", true));
+        call.resolve(new JSObject().put("scheduled", true).put("channelId", channelId));
     }
 
-    /** الحفر على إعدادات قناة الأذان — بكر تجريبي لزر on my phone. */
+    /** فتح إعدادات قناة الأذان في نظام أندرويد. */
     @PluginMethod
     public void openAdhanChannelSettings(PluginCall call) {
         JSObject ret = new JSObject();
         try {
             Context context = getContext();
+            String raw = NativeAdhanStore.sanitizeAdhanRawName(call.getString("rawSound"));
+            String channelId = NativeAdhanStore.ensureAdhanNotificationChannel(context, raw, null);
             Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                .setData(Uri.parse("package:" + context.getPackageName() + "/" + NativeAdhanStore.channelIdForRaw(NativeAdhanStore.DEFAULT_ADHAN_RAW)));
+                .putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName())
+                .putExtra(Settings.EXTRA_CHANNEL_ID, channelId);
             context.startActivity(intent);
             ret.put("opened", true);
         } catch (Exception e) {

@@ -1,8 +1,14 @@
 // بوابة أقسام التنبيهات: تصدير موجّهات التنقل الداخلي وعرض حالة الإذن وأقسام التنبيهات.
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import {AlarmClock, Bell, BellRing, CheckCircle2, Clock3, MoonStar} from 'lucide-react';
-import {ensureSystemNotificationPermission} from '../../notifications/delivery';
+import {
+  ensureSystemNotificationPermission,
+  getBrowserPermission,
+  isBrowserNotificationSupported,
+  requestBrowserPermission,
+} from '../../notifications/delivery';
+import {unlockAudioPlayback} from '../../notifications/audio';
 import {checkPermissions as checkNativePermissions, isNativePlatform} from '../../notifications/native-prayer-scheduler';
 import {openAppSettings} from '../../lib/settings-opener';
 import type {TaskScheduleContext} from '../../notifications/task-planner';
@@ -15,8 +21,14 @@ import type {PrayerLocation} from '../../prayer-location';
 export function PermissionStatus() {
   const nativeApp = isNativePlatform();
   const [nativeDisplay, setNativeDisplay] = useState<string>('prompt');
+  const [browserPerm, setBrowserPerm] = useState<NotificationPermission | null>(() => getBrowserPermission());
+  const browserSupported = !nativeApp && isBrowserNotificationSupported();
+
   useEffect(() => {
-    if (!nativeApp) return;
+    if (!nativeApp) {
+      setBrowserPerm(getBrowserPermission());
+      return;
+    }
     let active = true;
     void checkNativePermissions().then((p) => {
       if (active) setNativeDisplay(p.display);
@@ -27,7 +39,55 @@ export function PermissionStatus() {
   }, [nativeApp]);
 
   if (!nativeApp) {
-    return null;
+    if (!browserSupported) {
+      return (
+        <div className="task-push-permission-bar perm-default">
+          <div>
+            <strong>تنبيهات المتصفح:</strong>{' '}
+            <span>المتصفح الحالي لا يدعم إشعارات النظام؛ ستظهر التنبيهات والأصوات داخل التطبيق أثناء فتحه.</span>
+          </div>
+        </div>
+      );
+    }
+    if (browserPerm === 'granted') {
+      return (
+        <div className="task-push-permission-bar perm-granted">
+          <div>
+            <strong>إشعارات المتصفح:</strong>{' '}
+            <span>مفعّلة — ستصلك التنبيهات والأصوات عبر المتصفح وداخل التطبيق.</span>
+          </div>
+          <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
+        </div>
+      );
+    }
+    if (browserPerm === 'denied') {
+      return (
+        <div className="task-push-permission-bar perm-denied">
+          <div>
+            <strong>إشعارات المتصفح:</strong>{' '}
+            <span role="status">محظورة في المتصفح؛ فعّل الإذن من إعدادات الموقع (رمز القفل بجانب الرابط) لتصلك خارج التطبيق.</span>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="task-push-permission-bar perm-default">
+        <div>
+          <strong>إشعارات المتصفح:</strong>{' '}
+          <span role="status">الإذن غير مفعّل بعد — فعّله لتصلك التنبيهات والأذان خارج التطبيق أيضًا.</span>
+        </div>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => {
+            unlockAudioPlayback();
+            void requestBrowserPermission().then((next) => setBrowserPerm(next));
+          }}
+        >
+          <BellRing size={15}/> تفعيل إشعارات المتصفح
+        </button>
+      </div>
+    );
   }
 
   if (nativeDisplay === 'granted') {

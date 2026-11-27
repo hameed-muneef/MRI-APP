@@ -18,7 +18,7 @@ export default defineConfig({plugins:[react(),VitePWA({
       {urlPattern:({url})=>url.pathname.startsWith('/quran/'),handler:'StaleWhileRevalidate',options:{cacheName:'rabbani-quran-data',expiration:{maxEntries:8,maxAgeSeconds:60*60*24*30}}},
       {urlPattern:({url})=>url.pathname.startsWith('/hadith/'),handler:'StaleWhileRevalidate',options:{cacheName:'rabbani-hadith-data',expiration:{maxEntries:8,maxAgeSeconds:60*60*24*30}}},
       {urlPattern:({url})=>url.pathname.startsWith('/books/'),handler:'StaleWhileRevalidate',options:{cacheName:'rabbani-books-text',expiration:{maxEntries:16,maxAgeSeconds:60*60*24*30}}},
-      {urlPattern:({url})=>url.pathname.startsWith('/sounds/adhan/'),handler:'CacheFirst',options:{cacheName:'rabbani-adhan-audio',expiration:{maxEntries:12,maxAgeSeconds:60*60*24*365}}},
+      {urlPattern:({url})=>url.pathname.startsWith('/sounds/adhan/'),handler:'CacheFirst',options:{cacheName:'rabbani-adhan-audio',expiration:{maxEntries:24,maxAgeSeconds:60*60*24*365}}},
       {urlPattern:/\.(?:ttf|woff2?|otf)$/i,handler:'CacheFirst',options:{cacheName:'rabbani-fonts',expiration:{maxEntries:8,maxAgeSeconds:60*60*24*365}}},
     ],
   },

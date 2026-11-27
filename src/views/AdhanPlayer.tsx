@@ -16,7 +16,13 @@ import {
 } from '../sounds/adhan-catalog';
 import {NOTIFICATIONS_CHANGED_EVENT} from '../notifications/native-prayer-scheduler';
 import {playBuiltInTone} from '../notifications/builtin-sounds';
-import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
+import {unlockAudioPlayback} from '../notifications/audio';
+import {
+  isBundledWebAssetUrl,
+  isNativeCapacitorWebView,
+  loadLocalAudioObjectUrlForWebView,
+  resolveAudioUrlForWeb,
+} from '../audio/url-resolver';
 
 type ExternalAdhanItem = {slot: SoundSlot; name: string; url: string};
 
@@ -109,6 +115,7 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
   };
 
   const toggle = (overrideUrl?: string) => {
+    unlockAudioPlayback();
     if (playing && !overrideUrl) {
       stopPlayback();
       return;
@@ -148,23 +155,29 @@ export default function AdhanPlayer({notify}: {notify: (text: string) => void}) 
     }, {once: true});
     audio.addEventListener('error', onUnavailable, {once: true});
 
-    void loadLocalAudioObjectUrlForWebView(targetUrl).then(localBlob => {
-      if (token !== playTokenRef.current) {
-        localBlob?.revoke();
-        return;
-      }
-      if (localBlob) {
-        playBlobRevokeRef.current = localBlob.revoke;
-        audio.src = localBlob.url;
-      } else {
+    if (isNativeCapacitorWebView() && isBundledWebAssetUrl(targetUrl)) {
+      void loadLocalAudioObjectUrlForWebView(targetUrl).then(localBlob => {
+        if (token !== playTokenRef.current) {
+          localBlob?.revoke();
+          return;
+        }
+        if (localBlob) {
+          playBlobRevokeRef.current = localBlob.revoke;
+          audio.src = localBlob.url;
+        } else {
+          audio.src = targetUrl;
+        }
+        audio.play().catch(onUnavailable);
+      }).catch(() => {
+        if (token !== playTokenRef.current) return;
         audio.src = targetUrl;
-      }
-      audio.play().catch(onUnavailable);
-    }).catch(() => {
-      if (token !== playTokenRef.current) return;
-      audio.src = targetUrl;
-      audio.play().catch(onUnavailable);
-    });
+        audio.play().catch(onUnavailable);
+      });
+      return;
+    }
+
+    audio.src = targetUrl;
+    audio.play().catch(onUnavailable);
   };
 
   const onFile = async (file: File | null) => {

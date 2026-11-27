@@ -32,7 +32,13 @@ public class SettingsOpenerPlugin extends Plugin {
         "adhan_madinah",
         "adhan_madinah2",
         "adhan_mohammed",
-        "adhan_hamad"
+        "adhan_hamad",
+        "adhan_alafasy",
+        "adhan_qatami",
+        "adhan_hamathani",
+        "adhan_hadrawi",
+        "adhan_zubaidi",
+        "adhan_aqsa"
     };
 
     @Override

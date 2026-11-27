@@ -1,11 +1,21 @@
 // الإعدادات العامة للإشعارات: التفعيل العام، عدم الإزعاج، ساعات الهدوء، الفئات، والقناة والصوت الافتراضيان.
 
 import {useEffect, useState} from 'react';
+import {Send} from 'lucide-react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {DEFAULT_NOTIFICATION_PREFERENCE, type NotificationChannel, type NotificationPreference} from '../../notifications/types';
 import {channelLabel, SoundSelectField} from './SoundPanel';
-import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
-import {ensureSystemNotificationPermission} from '../../notifications/delivery';
+import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
+import {
+  deliverNotification,
+  ensureSystemNotificationPermission,
+  getBrowserPermission,
+  isBrowserNotificationSupported,
+  requestBrowserPermission,
+} from '../../notifications/delivery';
+import {playAudio, stopAudio, unlockAudioPlayback} from '../../notifications/audio';
+import {playBuiltInTone} from '../../notifications/builtin-sounds';
+import {soundPlanForReminder} from '../../notifications/sound-selection';
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const GENERAL_KEYS = ['global_enabled', 'dnd_enabled', 'quiet_hours', 'reminder_settings'] as const;
@@ -62,6 +72,27 @@ export default function GeneralNotifications({notify}: {notify: (message: string
     }
   };
 
+  const testDefaultAlert = async () => {
+    unlockAudioPlayback();
+    const soundId = prefs.reminder_settings?.default_sound_id;
+    const plan = soundPlanForReminder(soundId, prefs, []);
+    stopAudio();
+    if (plan.mode === 'tone') playBuiltInTone(plan.id);
+    else if (plan.mode === 'file') playAudio(plan.url, () => playBuiltInTone('builtin:soft'));
+
+    if (!isNativePlatform() && isBrowserNotificationSupported() && getBrowserPermission() === 'default') {
+      await requestBrowserPermission();
+    }
+    await deliverNotification(
+      'reminder',
+      'تنبيه تجريبي · التذكيرات العامة',
+      'هكذا يظهر ويُسمع التذكير بالصوت الافتراضي المختار.',
+      'settings',
+      soundId,
+    );
+    notify(plan.mode === 'none' ? 'أُرسل التنبيه التجريبي (صامت).' : 'أُرسل التنبيه التجريبي وشُغِّل الصوت.');
+  };
+
   if (loading) return <p className="muted" role="status">جارٍ تحميل الإعدادات…</p>;
   const quiet = prefs.quiet_hours;
 
@@ -105,6 +136,7 @@ export default function GeneralNotifications({notify}: {notify: (message: string
       </fieldset>
       <div className="notif-form-actions">
         <button type="button" className="primary" disabled={saving || !dirty} onClick={() => void save()}>{saving ? 'جارٍ الحفظ…' : dirty ? 'حفظ التغييرات' : 'تم الحفظ'}</button>
+        <button type="button" className="soft-btn" onClick={() => void testDefaultAlert()}><Send size={15}/> تجربة الصوت والتنبيه</button>
       </div>
     </div>
   );

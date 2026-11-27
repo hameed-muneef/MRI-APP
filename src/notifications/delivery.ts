@@ -116,14 +116,25 @@ export async function getSystemDeliveryContext(): Promise<SystemDeliveryContext>
 }
 
 /** تسليم فوري عبر إشعارات نظام الهاتف (يظهر حتى على شاشة القفل). */
-async function deliverNativeImmediate(title: string, body: string, tag: string): Promise<boolean> {
+async function deliverNativeImmediate(title: string, body: string, tag: string, soundId?: string): Promise<boolean> {
   try {
-    const [scheduler, mod, { prayerId }] = await Promise.all([
+    const [scheduler, mod, { prayerId }, catalog] = await Promise.all([
       import('./native-prayer-scheduler'),
       import('@capacitor/local-notifications'),
       import('../lib/prayer-schedule'),
+      import('../sounds/adhan-catalog'),
     ]);
     await scheduler.ensureChannels();
+    let channelId = scheduler.GENERAL_CHANNEL_ID;
+    if (soundId === 'builtin:silent') {
+      channelId = scheduler.SILENT_REMINDER_CHANNEL_ID;
+    } else if (soundId) {
+      const adhan = catalog.findOrdinaryAdhan(soundId);
+      if (adhan) {
+        const { ensureNativeAdhanChannel } = await import('../lib/settings-opener');
+        channelId = (await ensureNativeAdhanChannel(adhan.rawName, adhan.name)) ?? scheduler.channelIdForRawSound(adhan.rawName);
+      }
+    }
     const id = prayerId('instant', `${tag}:${Date.now()}`);
     await mod.LocalNotifications.schedule({
       notifications: [{
@@ -131,7 +142,7 @@ async function deliverNativeImmediate(title: string, body: string, tag: string):
         title: title.slice(0, 200),
         body: body.slice(0, 2000),
         schedule: { at: new Date(Date.now() + 1500), allowWhileIdle: true },
-        channelId: scheduler.GENERAL_CHANNEL_ID,
+        channelId,
         foreground: true,
         extra: { rabbaniKind: 'instant', tag },
       }] as never,
@@ -164,7 +175,7 @@ export async function requestBrowserPermission(): Promise<NotificationPermission
 
 export function showBrowserNotification(
   title: string,
-  opts: {body?: string; icon?: string; tag?: string; requireInteraction?: boolean; link?: string},
+  opts: {body?: string; icon?: string; tag?: string; requireInteraction?: boolean; link?: string; silent?: boolean},
 ): void {
   if (!isBrowserNotificationSupported()) return;
   if (Notification.permission !== 'granted') return;
@@ -179,7 +190,7 @@ export function showBrowserNotification(
         icon,
         tag: opts.tag,
         requireInteraction: opts.requireInteraction ?? false,
-        silent: false,
+        silent: opts.silent ?? false,
       });
       const TTL_MS = 30 * 60 * 1000;
       window.setTimeout(() => { try { notification.close(); } catch {} }, TTL_MS);
@@ -199,6 +210,7 @@ export function showBrowserNotification(
             badge,
             tag: opts.tag,
             requireInteraction: opts.requireInteraction ?? false,
+            silent: opts.silent ?? false,
             dir: 'rtl',
             lang: 'ar',
             data: opts.link ? {link: opts.link} : undefined,
@@ -244,17 +256,19 @@ export async function deliverReminder(reminder: Reminder, requested: Notificatio
   // 1. إشعار داخل التطبيق (يظهر في مركز الإشعارات)
   await recordNotification('reminder', title, body, 'settings');
 
-  // 2. إشعار نظامي خارج التطبيق: الهاتف أولًا (يصل والتطبيق مغلق)، ثم المتصفح على الويب
+  // 2. إشعار نظامي خارج التطبيق: الهاتف أولًا (يصل والتطبيق مغلق)، ثم المتصفح على الويب إذا كان الإذن ممنوحًا
   if (channel === 'system' || channel === 'both') {
     const ctx = await getSystemDeliveryContext();
     const route = chooseSystemDeliveryRoute(ctx);
     if (route === 'native') {
-      await deliverNativeImmediate(title, body, `reminder:${reminder.id}`);
-    } else if (!ctx.isNative && ctx.browserSupported) {
-      const perm = await requestBrowserPermission();
-      if (perm === 'granted') {
-        showBrowserNotification(title, {body, tag: `reminder:${reminder.id}`, requireInteraction: true});
-      }
+      await deliverNativeImmediate(title, body, `reminder:${reminder.id}`, reminder.sound_id);
+    } else if (route === 'browser') {
+      showBrowserNotification(title, {
+        body,
+        tag: `reminder:${reminder.id}`,
+        requireInteraction: true,
+        silent: reminder.sound_id === 'builtin:silent',
+      });
     }
   }
 }
@@ -262,17 +276,19 @@ export async function deliverReminder(reminder: Reminder, requested: Notificatio
 /**
  * يُظهر إشعارًا فوريًا (لأي وحدة) عبر القنوات المتاحة.
  */
-export async function deliverNotification(kind: string, title: string, body?: string, link?: string): Promise<void> {
+export async function deliverNotification(kind: string, title: string, body?: string, link?: string, soundId?: string): Promise<void> {
   await recordNotification(kind, title, body ?? '', link ?? '');
   const ctx = await getSystemDeliveryContext();
   const route = chooseSystemDeliveryRoute(ctx);
   if (route === 'native') {
-    await deliverNativeImmediate(title, body ?? '', `notification:${kind}:${Date.now()}`);
-  } else if (!ctx.isNative && ctx.browserSupported) {
-    const perm = await requestBrowserPermission();
-    if (perm === 'granted') {
-      showBrowserNotification(title, {body: body ?? '', tag: `notification:${kind}:${Date.now()}`});
-    }
+    await deliverNativeImmediate(title, body ?? '', `notification:${kind}:${Date.now()}`, soundId);
+  } else if (route === 'browser') {
+    showBrowserNotification(title, {
+      body: body ?? '',
+      tag: `notification:${kind}:${Date.now()}`,
+      link,
+      silent: soundId === 'builtin:silent',
+    });
   }
 }
 

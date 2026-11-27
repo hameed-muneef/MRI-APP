@@ -47,10 +47,10 @@ export interface BackgroundAudioPluginInterface {
   setSleepTimer(options: { minutes: number }): Promise<{ minutes: number }>;
   /** شاشة التشخيص — حالة المشغل (volume, status, error). */
   diagnosticInfo(): Promise<NativeAudioStateSnapshot & {volumeL?: number; volumeR?: number; hasFocus?: boolean; prepared?: boolean; audioVolumeMusic?: number; audioVolumeMaxMusic?: number; audioVolumeWeb?: number; error?: string | null; currentTrack: NativeAudioStateSnapshot['currentTrack']}>;
-  /** إرسال إشعار تجريبي للأذان (بعد 10 ثوانٍ). */
-  testAdhanNotification(): Promise<{scheduled: boolean}>;
+  /** إرسال إشعار تجريبي للأذان (مع دعم اختيار المؤذن والتشغيل الفوري/الكامل). */
+  testAdhanNotification(options?: { rawSound?: string; soundTitle?: string; full?: boolean; delayMs?: number }): Promise<{scheduled: boolean; channelId?: string}>;
   /** فتح إعدادات قناة الأذان (ACTION_CHANNEL_NOTIFICATION_SETTINGS). */
-  openAdhanChannelSettings(): Promise<{opened: boolean; error?: string}>;
+  openAdhanChannelSettings(options?: { rawSound?: string }): Promise<{opened: boolean; error?: string}>;
   downloadOfflineAudio?(options: {id: string; url: string}): Promise<{id: string; bytes: number; alreadyExists?: boolean}>;
   cancelOfflineDownloads?(): Promise<{cancelled: boolean}>;
   deleteOfflineAudio?(options: {id?: string; prefix?: string}): Promise<{deletedCount: number; freedBytes: number}>;

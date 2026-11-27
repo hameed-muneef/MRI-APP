@@ -1,7 +1,7 @@
 // إعداد إشعارات الصلاة لكل صلاة على حدة: التفعيل، نوع الأذان، القناة، الصوت، التذكير قبل/بعد، والتعديل اليدوي.
 
 import {useEffect, useState} from 'react';
-import {Check, ChevronDown, ChevronUp, RotateCcw} from 'lucide-react';
+import {BellRing, Check, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, Send, Square} from 'lucide-react';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
 import {clampAdjustment, MAX_PRAYER_ADJUSTMENT} from '../../notifications/prayer-planner';
 import {
@@ -18,7 +18,23 @@ import {channelLabel, SoundSelectField} from './SoundPanel';
 import PrayerLocationPicker from '../../PrayerLocationPicker';
 import {sanitizePrayerLocation, type PrayerLocation} from '../../prayer-location';
 import NativeAdhanPanel from './NativeAdhanPanel';
-import {NOTIFICATIONS_CHANGED_EVENT, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
+import {
+  NOTIFICATIONS_CHANGED_EVENT,
+  isNativePlatform,
+  notifyNativePrefsChanged,
+} from '../../notifications/native-prayer-scheduler';
+import {resolveSchedulingLocation} from '../../notifications/scheduling-location';
+import {
+  deliverNotification,
+  getBrowserPermission,
+  isBrowserNotificationSupported,
+  requestBrowserPermission,
+} from '../../notifications/delivery';
+import {playAudio, stopAudio, unlockAudioPlayback} from '../../notifications/audio';
+import {playBuiltInTone} from '../../notifications/builtin-sounds';
+import {getSelectedDefaultAdhanId, resolvePrayerAdhan} from '../../sounds/adhan-catalog';
+import {getNativeBackgroundAudioPlugin} from '../../audio/native-bridge';
+import {stopNativeAdhan} from '../../lib/settings-opener';
 
 type PrayerSetting = NotificationPreference['prayer_settings'][PrayerName];
 
@@ -50,6 +66,8 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerName | null>(null);
   // الحفظ لكل صلاة على حدة: تعديل صلاة لا يلمس إعدادات باقي الصلوات.
   const [dirtyPrayers, setDirtyPrayers] = useState<ReadonlySet<PrayerName>>(new Set());
+  const [browserPerm, setBrowserPerm] = useState<NotificationPermission | null>(() => getBrowserPermission());
+  const [testingAdhan, setTestingAdhan] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -103,14 +121,123 @@ export default function PrayerNotifications({notify, prayerLocation, onPrayerLoc
     setDirtyPrayers(old => new Set(old).add(prayer));
   };
 
+  const stopTestAdhan = async () => {
+    stopAudio();
+    setTestingAdhan(false);
+    if (isNativePlatform()) {
+      await stopNativeAdhan();
+    }
+    notify('تم إيقاف صوت الأذان التجريبي.');
+  };
+
+  const testAdhanAlert = async () => {
+    unlockAudioPlayback();
+    const defaultId = getSelectedDefaultAdhanId();
+    const adhan = resolvePrayerAdhan(prefs.prayer_settings?.['الفجر']?.sound_id, defaultId);
+    const title = `تجربة الأذان — ${adhan.name}`;
+    const body = 'هذا تنبيه تجريبي لصوت وإشعار الأذان.';
+
+    if (isNativePlatform()) {
+      const plugin = getNativeBackgroundAudioPlugin();
+      if (plugin) {
+        try {
+          setTestingAdhan(true);
+          await plugin.testAdhanNotification({
+            rawSound: adhan.rawName,
+            soundTitle: adhan.name,
+            full: true,
+            delayMs: 250,
+          });
+          notify(`جاري تشغيل إشعار الأذان التجريبي (${adhan.name}).`);
+          return;
+        } catch {
+          // Fallback to LocalNotifications/Web playback below
+        }
+      }
+      await deliverNotification('prayer', title, body, 'settings', adhan.soundId);
+      notify(`أُرسل تنبيه تجريبي (${adhan.name}).`);
+      return;
+    }
+
+    setTestingAdhan(true);
+    playAudio(adhan.url, () => {
+      playBuiltInTone('builtin:chime');
+      setTestingAdhan(false);
+    });
+    let perm = getBrowserPermission();
+    if (isBrowserNotificationSupported() && perm === 'default') {
+      perm = await requestBrowserPermission();
+      setBrowserPerm(perm);
+    }
+    await deliverNotification('prayer', title, body, 'settings', adhan.soundId);
+    notify(perm === 'denied'
+      ? `تم تشغيل الأذان داخل التطبيق فقط (${adhan.name}) لأن إشعارات المتصفح محظورة.`
+      : `تم تشغيل تجربة الأذان والإشعار (${adhan.name}).`);
+  };
+
   if (loading) return <p className="muted" role="status">جارٍ تحميل إعدادات الصلاة…</p>;
+
+  const nativeApp = isNativePlatform();
+  const hasWebLocation = Boolean(resolveSchedulingLocation(prayerLocation));
 
   return (
     <div className="notif-prayer-panel">
       <NativeAdhanPanel prayerLocation={prayerLocation} onNotify={notify}/>
+      {!nativeApp && !hasWebLocation && (
+        <div className="qibla-banner warn" role="alert">
+          اختر مدينتك أدناه أو اسمح بالموقع لتعمل مواقيت الصلاة وتنبيهات الأذان تلقائيًا.
+        </div>
+      )}
+      {!nativeApp && isBrowserNotificationSupported() && browserPerm !== 'granted' && (
+        <div className={`task-push-permission-bar perm-${browserPerm ?? 'default'}`}>
+          <div>
+            <strong>إشعارات الأذان في المتصفح:</strong>{' '}
+            <span>
+              {browserPerm === 'denied'
+                ? 'محظورة من المتصفح؛ فعّل الإذن من إعدادات الموقع ليظهر تنبيه الأذان خارج الصفحة.'
+                : 'فعّل إشعارات المتصفح ليصلك تنبيه الأذان بصوته المختار.'}
+            </span>
+          </div>
+          {browserPerm !== 'denied' && (
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                unlockAudioPlayback();
+                void requestBrowserPermission().then(next => {
+                  setBrowserPerm(next);
+                  if (next === 'granted') notify('تم تفعيل إشعارات المتصفح للأذان.');
+                });
+              }}
+            >
+              <BellRing size={15}/> تفعيل الإشعارات
+            </button>
+          )}
+        </div>
+      )}
+      {!nativeApp && isBrowserNotificationSupported() && browserPerm === 'granted' && (
+        <div className="task-push-permission-bar perm-granted">
+          <div>
+            <strong>إشعارات المتصفح للأذان:</strong>{' '}
+            <span>مفعّلة — ستصلك أثناء فتح التطبيق.</span>
+          </div>
+          <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>
+        </div>
+      )}
       {onPrayerLocation && (
         <PrayerLocationPicker location={sanitizePrayerLocation(prayerLocation)} onChange={onPrayerLocation}/>
       )}
+
+      <div className="notif-form-actions" style={{marginBottom: 8}}>
+        <button type="button" className="soft-btn" onClick={() => void testAdhanAlert()}>
+          <Send size={15}/> تجربة صوت وإشعار الأذان
+        </button>
+        {testingAdhan && (
+          <button type="button" className="soft-btn" onClick={() => void stopTestAdhan()}>
+            <Square size={15}/> إيقاف الأذان
+          </button>
+        )}
+      </div>
 
       <div className="notif-prayer-list-head">
         <h4>تخصيص كل صلاة</h4>

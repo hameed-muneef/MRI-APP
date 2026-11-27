@@ -35,6 +35,7 @@ import {AppearancePanel} from '../AppearanceToggle';
 import {InstallGuidePanel} from '../InstallApp';
 import {LOCAL_ONLY} from '../config';
 import {playBuiltInTone} from '../notifications/builtin-sounds';
+import {unlockAudioPlayback} from '../notifications/audio';
 import {notifyNativePrefsChanged} from '../notifications/native-prayer-scheduler';
 import {
   ADHAN_SELECTION_STORAGE_KEY,
@@ -46,7 +47,15 @@ import AdhanPlayer from './AdhanPlayer';
 import AudioDiagnostics from './AudioDiagnostics';
 import LocationPermissionPanel from './LocationPermissionPanel';
 import {useBackHandler} from '../navigation/useBackHandler';
-import {loadLocalAudioObjectUrlForWebView, resolveAudioUrlForWeb} from '../audio/url-resolver';
+import {
+  isBundledWebAssetUrl,
+  isNativeCapacitorWebView,
+  loadLocalAudioObjectUrlForWebView,
+  resolveAudioUrlForWeb,
+} from '../audio/url-resolver';
+import {useCentralLocation} from '../hooks/useCentralLocation';
+import usePrayerTimes from '../usePrayerTimes';
+import {sanitizePrayerLocation} from '../prayer-location';
 
 type Props = {
   state: State;
@@ -72,6 +81,13 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   const [storageSummary, setStorageSummary] = useState<LocalStorageSummary | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  const sharedLocation = useCentralLocation();
+  const locatedPrayers = usePrayerTimes(
+    Boolean(state.prayerLocation) || Boolean(sharedLocation.coords),
+    sanitizePrayerLocation(state.prayerLocation),
+  );
+  const mergedPrayers = {...locatedPrayers.prayers, ...state.prayers};
 
   const versionRef = useRef<HTMLSpanElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -136,6 +152,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   };
 
   const togglePreview = (idOrSoundId?: string) => {
+    unlockAudioPlayback();
     const resolved = resolvePrayerAdhan(idOrSoundId, defaultAdhanId);
     if (previewPlayingId === resolved.soundId) {
       stopPreview();
@@ -174,23 +191,30 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
       }
     }, {once: true});
     audio.addEventListener('error', onUnavailable, {once: true});
-    void loadLocalAudioObjectUrlForWebView(safeUrl).then(localBlob => {
-      if (token !== previewTokenRef.current) {
-        localBlob?.revoke();
-        return;
-      }
-      if (localBlob) {
-        previewBlobRevokeRef.current = localBlob.revoke;
-        audio.src = localBlob.url;
-      } else {
+
+    if (isNativeCapacitorWebView() && isBundledWebAssetUrl(safeUrl)) {
+      void loadLocalAudioObjectUrlForWebView(safeUrl).then(localBlob => {
+        if (token !== previewTokenRef.current) {
+          localBlob?.revoke();
+          return;
+        }
+        if (localBlob) {
+          previewBlobRevokeRef.current = localBlob.revoke;
+          audio.src = localBlob.url;
+        } else {
+          audio.src = safeUrl;
+        }
+        void audio.play().catch(onUnavailable);
+      }).catch(() => {
+        if (token !== previewTokenRef.current) return;
         audio.src = safeUrl;
-      }
-      void audio.play().catch(onUnavailable);
-    }).catch(() => {
-      if (token !== previewTokenRef.current) return;
-      audio.src = safeUrl;
-      void audio.play().catch(onUnavailable);
-    });
+        void audio.play().catch(onUnavailable);
+      });
+      return;
+    }
+
+    audio.src = safeUrl;
+    void audio.play().catch(onUnavailable);
   };
 
   const handleDefaultAdhanChange = (nextId: string) => {
@@ -256,8 +280,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
   const adhanAudioPanel = (
     <div className="settings-section-stack">
       <section className="panel adhan-player" dir="rtl" aria-labelledby="offline-adhan-select-title">
-        <h3 id="offline-adhan-select-title"><Volume2 size={18}/> أصوات الأذان والمؤذنين (بدون إنترنت)</h3>
-        <p className="muted">اختر المؤذن الافتراضي للصلوات من الملفات المدمجة محليًا. لتخصيص صوت صلاة بعينها، افتح «تخصيص» على بطاقتها في قائمة الصلوات بالأعلى.</p>
+        <h3 id="offline-adhan-select-title"><Volume2 size={18}/> أصوات الأذان والمؤذنين ({BUNDLED_ADHAN_SOUNDS.length} مؤذنًا بدون إنترنت)</h3>
+        <p className="muted">اختر المؤذن الافتراضي للصلوات من {BUNDLED_ADHAN_SOUNDS.length} تسجيلات مدمجة محليًا. لتخصيص صوت صلاة بعينها، افتح «تخصيص» على بطاقتها في قائمة الصلوات بالأعلى.</p>
         <div className="adhan-row adhan-default-row">
           <select
             className="adhan-select"
@@ -428,7 +452,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
             goals: state.goals,
             taskSchedules: state.taskSchedules ?? {},
             dayPlan: state.dayPlan,
-            prayers: state.prayers,
+            prayers: mergedPrayers,
           }}
         />
       )}

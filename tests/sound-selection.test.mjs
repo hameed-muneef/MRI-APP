@@ -40,9 +40,21 @@ test('bundled local Adhan IDs resolve offline to packaged /sounds/adhan/*.ogg fi
     id: 'adhan:almulla',
     url: '/sounds/adhan/adhan_almulla.ogg',
   });
-  assert.deepEqual(soundPlanForPrayer({prayer: 'الفجر', kind: 'at'}, prefs('full', 'adhan:madinah'), []), {
+  assert.deepEqual(planSound('adhan:madinah', [], 'builtin:chime'), {
     mode: 'file',
     id: 'adhan:madinah',
     url: '/sounds/adhan/adhan_madinah.ogg',
+  });
+  for (const id of ['alafasy', 'qatami', 'hamathani', 'hadrawi', 'zubaidi', 'aqsa']) {
+    assert.deepEqual(planSound(`adhan:${id}`, [], 'builtin:chime'), {
+      mode: 'file',
+      id: `adhan:${id}`,
+      url: `/sounds/adhan/adhan_${id}.ogg`,
+    });
+  }
+  assert.deepEqual(soundPlanForPrayer({prayer: 'الفجر', kind: 'at'}, prefs('full', 'adhan:hadrawi'), []), {
+    mode: 'file',
+    id: 'adhan:hadrawi',
+    url: '/sounds/adhan/adhan_hadrawi.ogg',
   });
 });

@@ -14,6 +14,12 @@ import {
   stopNativeAdhan,
   type AndroidEnvironmentStatus,
 } from '../../lib/settings-opener';
+import { getNativeBackgroundAudioPlugin } from '../../audio/native-bridge';
+import {
+  BUNDLED_ADHAN_SOUNDS,
+  getSelectedDefaultAdhanId,
+  resolvePrayerAdhan,
+} from '../../sounds/adhan-catalog';
 import {
   ensureChannels,
   checkPermissions,
@@ -218,6 +224,28 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
     onNotify('تم إيقاف صوت الأذان.');
   };
 
+  const handleTestAdhan = async () => {
+    const plugin = getNativeBackgroundAudioPlugin();
+    if (!plugin) {
+      onNotify('اختبار الأذان الأصلي متاح في تطبيق Android.');
+      return;
+    }
+    const { prefs } = await loadPrefs();
+    const active = resolvePrayerAdhan(prefs.prayer_settings?.['الفجر']?.sound_id, getSelectedDefaultAdhanId());
+    try {
+      await plugin.testAdhanNotification({
+        rawSound: active.rawName,
+        soundTitle: active.name,
+        full: true,
+        delayMs: 250,
+      });
+      setTimeout(() => { void refresh(); }, 600);
+      onNotify(`تم إرسال إشعار الأذان التجريبي بصوت ${active.name}.`);
+    } catch {
+      onNotify('تعذر تشغيل الأذان التجريبي.');
+    }
+  };
+
   if (!supported) {
     return null;
   }
@@ -322,6 +350,9 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
         <button className="soft-btn" disabled={busy} onClick={() => void handleReschedule()}>
           إعادة جدولة
         </button>
+        <button className="soft-btn" type="button" disabled={busy} onClick={() => void handleTestAdhan()}>
+          تجربة إشعار الأذان
+        </button>
         <button className="soft-btn" disabled={busy} onClick={() => void handleCancel()}>
           إلغاء الكل
         </button>
@@ -348,7 +379,7 @@ export default function NativeAdhanPanel({ prayerLocation, onNotify }: Props) {
       <details className="qibla-steps" style={{ marginTop: 8 }}>
         <summary><strong>معلومات تشغيل الأذان</strong></summary>
         <ol style={{ paddingInlineStart: 20, fontSize: 13 }}>
-          <li>التطبيق يضم 6 تسجيلات أذان كاملة مدمجة محليًا في `res/raw/adhan_*.ogg` (تعمل دون إنترنت)، إضافة إلى ملف `takbeerat_eid.ogg` المستقل لتكبيرات العيد.</li>
+          <li>التطبيق يضم {BUNDLED_ADHAN_SOUNDS.length} تسجيلات أذان كاملة مدمجة محليًا في `res/raw/adhan_*.ogg` (تعمل دون إنترنت)، إضافة إلى ملف `takbeerat_eid.ogg` المستقل لتكبيرات العيد.</li>
           <li>يُشغّل الأذان الكامل في الخلفية أو أثناء قفل الشاشة عبر خدمة `AdhanPlaybackService` (MediaPlayback Foreground Service) مع زر «إيقاف الأذان» وإغلاق تلقائي مضبوط، مع قناة إشعار مخصصة لكل مؤذن في Android 8+.</li>
           <li>لتبديل صوت الأذان، اختر المؤذن من قسم «الأذان» أو من «إعدادات الأصوات» لكل صلاة، وستُحدّث قناة ومنبهات الأذان تلقائيًا.</li>
         </ol>

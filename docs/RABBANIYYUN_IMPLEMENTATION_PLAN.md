@@ -101,3 +101,15 @@
 - **الملفات**: `src/quran-mastery/bilquran-plans.ts`, `src/views/quran/BilQuranPlansBrowser.tsx`, `src/views/quran/HifzMushafMode.tsx`, `src/views/quran/QuranPlansCard.tsx`, `src/home-cards.css`, `src/quran-mastery/bilquran-plans.test.tsx`.
 - **التحقق**: `npm run test:unit` (42 ملف / 313 اختبارًا ناجحًا)، `npm run quran:check` ناجح، `tsc --noEmit` ناجح، و`vite build` ناجح.
 
+### NOTIF-SOUND-AND-MUEZZINS-FIX — إصلاح التنبيهات الصوتية والأذان وإضافة 6 مؤذنين جدد (2026-11-26)
+- **المشكلة**:
+  1. فشل تشغيل الأصوات على متصفحات الويب والجوال بسبب استدعاء `.then()` قبل `audio.play()` (كسر صلاحية تفاعل المستخدم)، وتشغيل نغمات Web Audio قبل اكتمال `ctx.resume()`، واستدعاء `requestBrowserPermission()` من الخلفية أثناء إطلاق المنبهات.
+  2. افتقاد توجيه القنوات في المهام والتذكيرات الأصلية للأصوات الصامتة أو أصوات الأذان، وإرسال `NotificationCompat.DEFAULT_ALL` في `AdhanAlarmReceiver` وخطأ `ACTION_CHANNEL_NOTIFICATION_SETTINGS` في `BackgroundAudioPlugin`، وعدم دمج مواقيت الصلاة المحسوبة تلقائيًا في سياق مهام التنبيهات ومؤشر `LiveNotifications`.
+  3. الاقتصار على 6 مؤذنين فقط دون مؤذنين إضافيين مطلوبين في القائمة.
+- **الحل**:
+  - **إضافة 6 مؤذنين جدد مع الإبقاء على الستة الحاليين وتكبيرات العيد**: `مشاري راشد العفاسي` (`adhan_alafasy.ogg`)، `ناصر القطامي` (`adhan_qatami.ogg`)، `ماجد الهمثاني` (`adhan_hamathani.ogg`)، `فاروق حضراوي (الحرم المكي)` (`adhan_hadrawi.ogg`)، `حسان زبيدي (الحرم المكي)` (`adhan_zubaidi.ogg`)، و`أذان المسجد الأقصى` (`adhan_aqsa.ogg`) متطابقة بين `public/sounds/adhan/` و`android/app/src/main/res/raw/` ومُعرّفة في `adhan-catalog.ts`, `sound-selection.ts`, `NativeAdhanStore.java`, `SettingsOpenerPlugin.java`, و`vite.config.ts`.
+  - **إصلاح محرك الصوت والإشعارات**: فتح قفل الصوت (`installAudioUnlockListeners`/`unlockAudioPlayback`/`unlockBuiltInAudioContext`)، التشغيل المتزامن على الويب، إزالة طلب الإذن التلقائي غير الآمن في `delivery.ts`، توجيه القنوات عبر `resolveNativeReminderChannel` و`ensureChannelsForSounds`، تصحيح `AdhanAlarmReceiver` و`BackgroundAudioPlugin`، ودمج المواقيت المحسوبة في `App.tsx` و`SettingsView.tsx` و`LiveNotifications.tsx`.
+  - **تحسين واجهة الإشعارات وأزرار التجربة**: عرض حالة إذن المتصفح في `PermissionStatus` و`PrayerNotifications` مع أزرار تفعيل وتجربة وإيقاف مباشرة في لوحات الأذان والمهام والمنبهات الشخصية والإعدادات العامة.
+- **التحقق**: تحديث `adhan-catalog.test.ts`، `sound-selection.test.mjs`، `sound-library.test.tsx`، وإضافة `audio-playback.test.ts`؛ واجتياز `npm run test:unit`، `npm test`، `compile_applet`، و`lint_applet`.
+
+

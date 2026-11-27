@@ -24,9 +24,11 @@ import {
 import type { PrayerLocation } from '../prayer-location';
 import type { MemorizationPassage } from '../quran/types';
 import {
+  findOrdinaryAdhan,
   getSelectedDefaultAdhanId,
   resolvePrayerAdhan,
 } from '../sounds/adhan-catalog';
+import { SILENT_SOUND } from './sound-selection';
 import { buildNativeRecomputeSpec } from './native-recompute-spec';
 import { isReminderAllowed } from './rules';
 import { upcomingOccurrences } from './scheduler';
@@ -144,6 +146,37 @@ export interface NativeNotificationPayload {
 
 export function channelIdForRawSound(rawName: string): string {
   return `al-rabbani-adhan-${rawName}-v1`;
+}
+
+/**
+ * Pure helper: resolves the Android notification channel for reminders, tasks, and review alerts
+ * based on the chosen sound ID (`builtin:silent` -> silent channel, bundled Adhan -> voice channel, else general).
+ */
+export function resolveNativeReminderChannel(
+  soundId: string | undefined,
+  fallbackChannelId = GENERAL_CHANNEL_ID,
+): string {
+  if (soundId === SILENT_SOUND) return SILENT_REMINDER_CHANNEL_ID;
+  const adhan = findOrdinaryAdhan(soundId);
+  if (adhan) return channelIdForRawSound(adhan.rawName);
+  return fallbackChannelId;
+}
+
+async function ensureChannelsForSounds(soundIds: ReadonlyArray<string | undefined>): Promise<void> {
+  if (!isNative()) return;
+  const voices = new Map<string, string>();
+  for (const id of soundIds) {
+    const adhan = findOrdinaryAdhan(id);
+    if (adhan && !voices.has(adhan.rawName)) {
+      voices.set(adhan.rawName, adhan.name);
+    }
+  }
+  if (voices.size === 0) return;
+  await Promise.all(
+    [...voices.entries()].map(([rawSound, soundTitle]) =>
+      ensureNativeAdhanChannel(rawSound, soundTitle),
+    ),
+  );
 }
 
 let cachedChannelInfo: ActiveChannelInfo = {
@@ -449,6 +482,11 @@ export function buildNativeReminderPayloads(
     // Quiet hours are checked at each future occurrence, not at scheduling time.
     if (!isReminderAllowed(reminder, {...prefs,quiet_hours:{...prefs.quiet_hours,enabled:false}}, now)) continue;
 
+    const reminderChannelId = resolveNativeReminderChannel(
+      reminder.sound_id ?? prefs.reminder_settings?.default_sound_id,
+      generalChannelId,
+    );
+
     const snoozeAt = reminder.snooze_until ? new Date(reminder.snooze_until) : null;
     if (snoozeAt && !Number.isNaN(snoozeAt.getTime()) && snoozeAt.getTime() > nowMs + 1000 && !isQuietHoursActive(prefs, snoozeAt)) {
       payloads.push({
@@ -456,7 +494,7 @@ export function buildNativeReminderPayloads(
         title: reminder.title,
         body: reminder.description || 'تذكير مؤجل',
         schedule: { at: snoozeAt, allowWhileIdle: true },
-        channelId: generalChannelId,
+        channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
         extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
@@ -473,7 +511,7 @@ export function buildNativeReminderPayloads(
         title: reminder.title,
         body: reminder.description || 'تذكير مخصص',
         schedule: { at, allowWhileIdle: true },
-        channelId: generalChannelId,
+        channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
         extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
@@ -503,6 +541,10 @@ export function buildNativeTaskPayloads(
 
   const nowMs = now.getTime();
   const events = dailyTaskEvents(taskContext, prefs, now, ext ? FAR_QUEUE_DAYS : 7);
+  const taskChannelId = resolveNativeReminderChannel(
+    settings.sound_id ?? prefs.reminder_settings?.default_sound_id,
+    generalChannelId,
+  );
   const payloads: NativeNotificationPayload[] = [];
 
   for (const event of events) {
@@ -513,7 +555,7 @@ export function buildNativeTaskPayloads(
       title: event.title,
       body: event.body,
       schedule: { at: event.at, allowWhileIdle: true },
-      channelId: generalChannelId,
+      channelId: taskChannelId,
       foreground: true,
       isExactNotification: exactAlarm,
       extra: {
@@ -551,6 +593,10 @@ export function buildNativeReviewPayloads(
 
   const nowMs = now.getTime();
   const horizonMs = (ext ? FAR_QUEUE_DAYS : REVIEW_HORIZON_DAYS) * 24 * 60 * 60 * 1000;
+  const reviewChannelId = resolveNativeReminderChannel(
+    prefs.reminder_settings?.default_sound_id,
+    generalChannelId,
+  );
   const payloads: NativeNotificationPayload[] = [];
 
   for (const passage of passages) {
@@ -574,7 +620,7 @@ export function buildNativeReviewPayloads(
       title: `مراجعة حفظ — ${surahName}${ayahRange}`,
       body: 'حان وقت مراجعة مقطعك المحفوظ. «وَذَكِّرْ فَإِنَّ الذِّكْرَىٰ تَنفَعُ الْمُؤْمِنِينَ»',
       schedule: { at, allowWhileIdle: true },
-      channelId: generalChannelId,
+      channelId: reviewChannelId,
       foreground: true,
       isExactNotification: exactAlarm,
       extra: { rabbaniKind: 'review', passageId: passage.id, dueDate: passage.dueDate },
@@ -870,6 +916,10 @@ export async function scheduleNativePersonalReminders(
 
     const perms = await checkPermissions();
     await ensureChannels();
+    await ensureChannelsForSounds([
+      prefs.reminder_settings?.default_sound_id,
+      ...reminders.map((r) => r.sound_id),
+    ]);
     await cancelScopedNotifications(LN, 'reminder', REMINDER_IDS_STORAGE_KEY);
     if (perms.display !== 'granted') { await setNativeReminderRules([]); await setNativeReminderQueue('reminder', []); return 0; }
 
@@ -907,6 +957,10 @@ export async function scheduleNativeTaskNotifications(
 
     const perms = await checkPermissions();
     await ensureChannels();
+    await ensureChannelsForSounds([
+      getTaskNotificationSettings(prefs).sound_id,
+      prefs.reminder_settings?.default_sound_id,
+    ]);
     await cancelScopedNotifications(LN, 'task', TASK_IDS_STORAGE_KEY);
     if (perms.display !== 'granted') { await setNativeReminderQueue('task', []); return 0; }
 
@@ -942,6 +996,7 @@ export async function scheduleNativeReviewNotifications(
 
     const perms = await checkPermissions();
     await ensureChannels();
+    await ensureChannelsForSounds([prefs.reminder_settings?.default_sound_id]);
     await cancelScopedNotifications(LN, 'review', REVIEW_IDS_STORAGE_KEY);
     if (perms.display !== 'granted') { await setNativeReminderQueue('review', []); return 0; }
 

@@ -4,12 +4,12 @@
 import {useEffect, useMemo, useState} from 'react';
 import {BellRing, CheckCircle2, Clock3, Send} from 'lucide-react';
 import {
+  deliverNotification,
   getBrowserPermission,
   isBrowserNotificationSupported,
   requestBrowserPermission,
-  showBrowserNotification,
 } from '../../notifications/delivery';
-import {playAudio, stopAudio} from '../../notifications/audio';
+import {playAudio, stopAudio, unlockAudioPlayback} from '../../notifications/audio';
 import {playBuiltInTone} from '../../notifications/builtin-sounds';
 import {NOTIFICATIONS_CHANGED_EVENT, isNativePlatform, notifyNativePrefsChanged} from '../../notifications/native-prayer-scheduler';
 import {loadPrefs, savePrefs} from '../../notifications/prefs-store';
@@ -128,11 +128,7 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
   };
 
   const sendTestNotification = async () => {
-    let currentPerm = getBrowserPermission();
-    if (isBrowserNotificationSupported() && currentPerm === 'default') {
-      currentPerm = await requestBrowserPermission();
-      setPermission(currentPerm);
-    }
+    unlockAudioPlayback();
     const plan = soundPlanForTask(taskSettings.sound_id, prefs, library);
     stopAudio();
     if (plan.mode === 'tone') playBuiltInTone(plan.id);
@@ -142,14 +138,23 @@ export default function TaskNotificationsPanel({notify, taskContext}: Props) {
       ? `متبقي ${taskSettings.remind_before_minutes} دقيقة على موعد المهمة المجدولة`
       : 'حان وقت المهمة المجدولة';
 
+    if (isNativePlatform()) {
+      await deliverNotification('task', 'تنبيه تجريبي · مهمة مجدولة', leadText, 'tasks', taskSettings.sound_id);
+      notify('أُرسل إشعار تجريبي على الجهاز');
+      return;
+    }
+
+    let currentPerm = getBrowserPermission();
+    if (isBrowserNotificationSupported() && currentPerm === 'default') {
+      currentPerm = await requestBrowserPermission();
+      setPermission(currentPerm);
+    }
+
+    await deliverNotification('task', 'تنبيه تجريبي · مهمة مجدولة', leadText, 'tasks', taskSettings.sound_id);
     if (isBrowserNotificationSupported() && currentPerm === 'granted') {
-      showBrowserNotification('تنبيه تجريبي · مهمة مجدولة', {
-        body: leadText,
-        tag: `task-test:${Date.now()}`,
-        requireInteraction: false,
-        link: 'tasks',
-      });
       notify('أُرسل إشعار تجريبي');
+    } else if (currentPerm === 'denied') {
+      notify('شُغِّل الصوت داخل التطبيق فقط لأن إشعارات المتصفح محظورة');
     } else {
       notify(`تنبيه تجريبي: ${leadText}`);
     }

@@ -743,9 +743,9 @@ html[data-theme="dark"] #root .hf-schedule-row.is-milestone{background:#16332c;b
 html[data-theme="dark"] #root .hf-schedule-meta span{color:#9fd3f6}
 
 
-/* Achievement entry: the icon sits beside the title and subtitle, vertically centred like the other home cards.
+/* Achievement & Coach entries: the icon sits beside the title and subtitle, vertically centred like the other home cards.
    The generic `.home-today-entry span` grid rule used to stack the icon above the text, which left the title off-centre. */
-html #root .app main.main .home-achievement-entry .home-tasks-head {
+html #root .app main.main :is(.home-achievement-entry, .home-coach-entry) .home-tasks-head {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -754,14 +754,348 @@ html #root .app main.main .home-achievement-entry .home-tasks-head {
   flex: 1;
   min-width: 0;
 }
-html #root .app main.main .home-achievement-entry .home-tasks-head > span:not(.home-today-icon) {
+html #root .app main.main :is(.home-achievement-entry, .home-coach-entry) .home-tasks-head > span:not(.home-today-icon) {
   display: grid;
   gap: 3px;
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
-html #root .app main.main .home-achievement-entry .home-tasks-head .home-today-icon {
+html #root .app main.main :is(.home-achievement-entry, .home-coach-entry) .home-tasks-head .home-today-icon {
   flex: none;
+}
+
+/* Unified coach cards (CoachToday, CoachPanel, CoachWird) */
+html #root .app .goal-coach {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #C9DCEC;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html #root .app .goal-coach-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+html #root .app .goal-coach-card {
+  padding: 12px;
+  border-radius: 12px;
+  background: #EAF3FC;
+  border: 1px solid #B7D3EA;
+  overflow: hidden;
+}
+html #root .app .goal-coach-card p {
+  margin: 4px 0 10px;
+  line-height: 1.7;
+}
+html #root .app .goal-coach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html #root .app .coach-today {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+html #root .app .coach-today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+html #root .app .coach-today-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+html #root .app .coach-today-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: #DBEAF7;
+  color: #20537A;
+  border: 1px solid #A9CCE8;
+}
+html #root .app .coach-today-heading {
+  display: block;
+  font-size: 1.05rem;
+  color: #0F2C44;
+}
+html #root .app .coach-today-sub {
+  display: block;
+  font-size: 0.82rem;
+}
+html #root .app .coach-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+html #root .app .coach-howto-trigger {
+  min-height: 44px;
+}
+html #root .app .coach-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+html #root .app .coach-tabs button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+html #root .app .coach-empty-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+html #root .app .coach-activate-btn {
+  min-height: 44px;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+html #root .app .coach-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #F4F8FC;
+  border: 1px solid #D3E2F0;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  color: #20537A;
+}
+html #root .app .coach-callout-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #12305a;
+}
+html #root .app .coach-recovery-card {
+  background: #FEF8EA;
+  border-color: #E7C986;
+}
+html #root .app .coach-recovery-card .coach-callout-head {
+  color: #704908;
+}
+html #root .app .coach-quran-card {
+  background: #EDF7F0;
+  border-color: #A6D2B4;
+}
+html #root .app .coach-quran-card .coach-callout-head {
+  color: #1E5431;
+}
+html #root .app .coach-today-title {
+  font-size: 1rem;
+  margin: 4px 0 0;
+}
+html #root .app .coach-today-list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html #root .app .coach-today-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #F4F8FC;
+  border: 1px solid #D3E2F0;
+}
+html #root .app .coach-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html #root .app .coach-item-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html #root .app .coach-item-slot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #20537A;
+  font-variant-numeric: tabular-nums;
+}
+html #root .app .coach-item-slot.is-scheduled {
+  color: #1E5431;
+  font-weight: 600;
+}
+html #root .app .coach-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html #root .app .coach-action-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+html #root .app .coach-deferred-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html #root .app .coach-deferred-wrap > button {
+  min-height: 44px;
+  align-self: flex-start;
+}
+html #root .app .coach-slots-details {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #F4F8FC;
+  border: 1px solid #D3E2F0;
+}
+html #root .app .coach-slots-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+html #root .app .coach-slots-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+html #root .app .coach-slots-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding-top: 6px;
+  border-top: 1px solid #DCE8F4;
+}
+html #root .app .coach-weekly-report {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+html #root .app .coach-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 640px) {
+  html #root .app .coach-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+html #root .app .coach-kpi-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #EAF3FC;
+  border: 1px solid #B7D3EA;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+html #root .app .coach-kpi-card small {
+  font-size: 0.78rem;
+  color: #4E6E88;
+}
+html #root .app .coach-kpi-card strong {
+  font-size: 1.2rem;
+  color: #0F2C44;
+}
+html #root .app .coach-kpi-card span {
+  font-size: 0.78rem;
+  color: #20537A;
+}
+html #root .app .coach-weekly-recs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html[data-theme="dark"] #root .app .goal-coach {
+  border-color: #2B4A68;
+}
+html[data-theme="dark"] #root .app .goal-coach-card {
+  background: #1B3A56;
+  border-color: #3A5F81;
+  color: #F0F6FC;
+}
+html[data-theme="dark"] #root .app .coach-today-icon {
+  background: #26486B;
+  color: #AED3EE;
+  border-color: #3D6488;
+}
+html[data-theme="dark"] #root .app .coach-today-heading {
+  color: #F0F6FC;
+}
+html[data-theme="dark"] #root .app .coach-status-strip,
+html[data-theme="dark"] #root .app .coach-today-item,
+html[data-theme="dark"] #root .app .coach-slots-details {
+  background: #152B40;
+  border-color: #2B4A68;
+  color: #D7E7F5;
+}
+html[data-theme="dark"] #root .app .coach-item-slot {
+  color: #9CC8E8;
+}
+html[data-theme="dark"] #root .app .coach-item-slot.is-scheduled {
+  color: #8FD4A4;
+}
+html[data-theme="dark"] #root .app .coach-recovery-card {
+  background: #332711;
+  border-color: #6B5222;
+}
+html[data-theme="dark"] #root .app .coach-recovery-card .coach-callout-head {
+  color: #F7D78C;
+}
+html[data-theme="dark"] #root .app .coach-quran-card {
+  background: #143022;
+  border-color: #2F6849;
+}
+html[data-theme="dark"] #root .app .coach-quran-card .coach-callout-head {
+  color: #9CE0B2;
+}
+html[data-theme="dark"] #root .app .coach-slots-list li {
+  border-top-color: #26486B;
+}
+html[data-theme="dark"] #root .app .coach-kpi-card {
+  background: #1B3A56;
+  border-color: #3A5F81;
+}
+html[data-theme="dark"] #root .app .coach-kpi-card small {
+  color: #A9C3D8;
+}
+html[data-theme="dark"] #root .app .coach-kpi-card strong {
+  color: #F0F6FC;
+}
+html[data-theme="dark"] #root .app .coach-kpi-card span {
+  color: #9CC8E8;
 }
 
 /* مفاتيح الاختيار في مصحف الحفظ: الضغط أو التحويم لا يمسح لون المفتاح المختار (كان الأبيض يطغى على النص الأبيض). */

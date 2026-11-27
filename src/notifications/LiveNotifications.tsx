@@ -16,6 +16,7 @@ import {deliverReminder, isBrowserNotificationSupported, recordNotification, sho
 import {checkPermissions, isNativePlatform, scheduleNativePersonalReminders, NOTIFICATIONS_CHANGED_EVENT} from './native-prayer-scheduler';
 import {soundPlanForPrayer, soundPlanForReminder, soundPlanForTask, type SoundPlan} from './sound-selection';
 import {resolvePrayerAdhan} from '../sounds/adhan-catalog';
+import {resolveSchedulingLocation} from './scheduling-location';
 import {
   DEFAULT_NOTIFICATION_PREFERENCE,
   getTaskNotificationSettings,
@@ -177,6 +178,7 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
               tag: item.key,
               requireInteraction: true,
               link: 'tasks',
+              silent: taskSettings.sound_id === 'builtin:silent',
             });
           }
         }
@@ -192,11 +194,20 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
         const ayahRange = passage.ayahStart && passage.ayahEnd ? ` (آية ${passage.ayahStart}–${passage.ayahEnd})` : '';
         const title = `مراجعة حفظ — ${surahName}${ayahRange}`;
         const body = 'حان وقت مراجعة مقطعك المحفوظ. «وَذَكِّرْ فَإِنَّ الذِّكْرَىٰ تَنفَعُ الْمُؤْمِنِينَ»';
-        play(soundPlanForReminder(prefs.reminder_settings?.default_sound_id, prefs, library));
-        if (!nativeSystemActive && (prefs.reminder_settings?.default_channel === 'system' || prefs.reminder_settings?.default_channel === 'both') && isBrowserNotificationSupported()) {
-          showBrowserNotification(title, {body, tag: item.key, requireInteraction: true});
+        const channel = prefs.reminder_settings?.default_channel ?? 'both';
+        const handledNatively = nativeSystemActive && channel !== 'in_app';
+        if (!handledNatively) {
+          play(soundPlanForReminder(prefs.reminder_settings?.default_sound_id, prefs, library));
+          if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
+            showBrowserNotification(title, {
+              body,
+              tag: item.key,
+              requireInteraction: true,
+              silent: prefs.reminder_settings?.default_sound_id === 'builtin:silent',
+            });
+          }
         }
-        if (prefs.reminder_settings?.default_channel === 'in_app' || prefs.reminder_settings?.default_channel === 'both') {
+        if (channel === 'in_app' || channel === 'both') {
           onToast(title);
           void recordNotification('reminder', title, body, 'settings');
         }
@@ -206,7 +217,7 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
       if (!claimAudio(item.key)) return;
       const channel = prefs.prayer_settings?.[event.prayer]?.channel ?? 'both';
       const setting = prefs.prayer_settings?.[event.prayer];
-      const hasNativeSchedule = Boolean(sanitizePrayerLocation(prayerLocation));
+      const hasNativeSchedule = Boolean(resolveSchedulingLocation(prayerLocation));
       const handledNatively = nativeSystemActive && hasNativeSchedule && channel !== 'in_app' && Boolean(setting?.enabled) && setting?.adhan_type !== 'silent';
       if (!handledNatively) {
         let plan = soundPlanForPrayer(event, prefs, library);
@@ -217,7 +228,12 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
         }
         play(plan, event.kind === 'at' ? 'builtin:chime' : 'builtin:soft');
         if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
-          showBrowserNotification(event.title, {body: event.body, tag: event.key, requireInteraction: event.kind === 'at'});
+          showBrowserNotification(event.title, {
+            body: event.body,
+            tag: event.key,
+            requireInteraction: event.kind === 'at',
+            silent: item.silent || plan.mode === 'none',
+          });
         }
       }
       if (channel === 'in_app' || channel === 'both') {

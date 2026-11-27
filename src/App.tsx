@@ -29,6 +29,7 @@ import {requestPersistentStorage} from './local-backup';
 import {BILQURAN_PLAN_CHANGED_EVENT,buildBilQuranDailySteps,findBilQuranPlan,formatStepSummary,loadActiveBilQuranPlan} from './quran-mastery/bilquran-plans';
 import {recordCourseCompletions} from './coach/course';
 import {recordHabitCompletions} from './coach/habit';
+import {analyzePatterns,analyzeRecovery} from './coach/smart';
 import {clearPlanTasks,planTaskLaunch,reconcilePlanTasks} from './quran-mastery/plan-tasks';
 import {loadMasteryState} from './quran-mastery/storage';
 import {revisionQueue} from './quran-mastery/planning';
@@ -42,6 +43,10 @@ import type {User} from '@supabase/supabase-js';
 import {changeWirdCount, normalizeWirds} from './wird-periods';
 import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
 import {resolveSchedulingLocation} from './notifications/scheduling-location';
+import {installAudioUnlockListeners} from './notifications/audio';
+import {useCentralLocation} from './hooks/useCentralLocation';
+import usePrayerTimes from './usePrayerTimes';
+import {sanitizePrayerLocation} from './prayer-location';
 
 const AdminDashboard=lazy(()=>import('./AdminDashboard'));
 const DayPlanner=lazy(()=>import('./DayPlanner'));
@@ -128,6 +133,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   const isOnline=useOnline();
 
   useEffect(()=>{void requestPersistentStorage()},[]);
+  useEffect(()=>installAudioUnlockListeners(),[]);
   useEffect(()=>{
     const refreshPeriods=()=>{setCurrentDate(today());setState(current=>{
       const wirds=normalizeWirds(current.wirds);
@@ -185,9 +191,27 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>window.clearTimeout(timer);
   },[state,user,cloudReady,cloudWritable,pendingKey]);
   const update=(fn:(s:State)=>State)=>setState(fn);
-  // مدرّب المقرر يحتفظ بسجل فترات منجزة لأن مهام الخطة تُستبدل كل فترة.
-  useEffect(()=>{setState(s=>{const wirds=recordHabitCompletions(s.wirds);return wirds===s.wirds?s:{...s,wirds}})},[state.wirds]);
-  useEffect(()=>{setState(s=>{const next=recordCourseCompletions(s.courseCoach,s.tasks);return next===s.courseCoach?s:{...s,courseCoach:next}})},[state.tasks,state.courseCoach?.enabled]);
+  // مدرّب المقرر والأوراد يحتفظ بسجل فترات منجزة + تتبع التعافي الهادئ لثلاثة أيام عند التفعيل العام.
+  useEffect(()=>{setState(s=>{const wirds=recordHabitCompletions(s.wirds,new Date(),s.coachSettings);return wirds===s.wirds?s:{...s,wirds}})},[state.wirds,state.coachSettings]);
+  useEffect(()=>{setState(s=>{const next=recordCourseCompletions(s.courseCoach,s.tasks,new Date(),s.coachSettings);return next===s.courseCoach?s:{...s,courseCoach:next}})},[state.tasks,state.courseCoach?.enabled,state.coachSettings]);
+  useEffect(()=>{
+    if(!state.coachSettings?.globalEnabled)return;
+    const now=new Date();
+    const todayKey=today();
+    const rec=state.coachSettings.recovery;
+    if(rec?.startedAt&&!rec.completed){
+      const elapsed=Math.round((new Date(`${todayKey}T12:00:00Z`).getTime()-new Date(`${rec.startedAt}T12:00:00Z`).getTime())/86400000)+1;
+      if(elapsed>3){
+        setState(s=>s.coachSettings?.recovery?{...s,coachSettings:{...s.coachSettings,recovery:{...s.coachSettings.recovery,completed:true}}}:s);
+      }
+      return;
+    }
+    const patterns=analyzePatterns({goals:state.goals,wirds:state.wirds,courseCoach:state.courseCoach,dayRecords:state.dayRecords,achievementLog:state.achievementLog,coachSettings:state.coachSettings,now});
+    const status=analyzeRecovery({goals:state.goals,wirds:state.wirds,courseCoach:state.courseCoach,dayRecords:state.dayRecords,achievementLog:state.achievementLog,coachSettings:state.coachSettings,normalCapacity:patterns.estimatedCapacity,now});
+    if(status.active&&(!rec?.startedAt||rec.completed)){
+      setState(s=>s.coachSettings?{...s,coachSettings:{...s.coachSettings,recovery:{startedAt:todayKey}}}:s);
+    }
+  },[state.coachSettings?.globalEnabled,state.coachSettings?.recovery?.startedAt,state.coachSettings?.recovery?.completed,state.goals,state.wirds,state.dayRecords,state.achievementLog,state.courseCoach]);
   // خطة الحفظ الثابتة ← المهام: مقرر اليوم (يومي)، مراجعة الربط (أسبوعي)، مراجعة الشهر (شهري). معرّفات حتمية، وبلا تنبيهات جديدة.
   useEffect(()=>{
     if(!cloudReady)return;
@@ -314,6 +338,17 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>{active=false};
   },[user?.id]);
 
+  const sharedLocation = useCentralLocation();
+  const locatedPrayers = usePrayerTimes(
+    Boolean(state.prayerLocation) || Boolean(sharedLocation.coords),
+    sanitizePrayerLocation(state.prayerLocation),
+  );
+  const mergedTaskPrayers = {
+    ...((profile?.prayer_settings?.times as Record<string, string> | undefined) ?? {}),
+    ...locatedPrayers.prayers,
+    ...state.prayers,
+  };
+
   const latestPrayerLocationRef = useRef(state.prayerLocation);
   latestPrayerLocationRef.current = state.prayerLocation;
   const latestPassagesRef = useRef(state.quran?.passages ?? []);
@@ -323,14 +358,14 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     goals: state.goals,
     taskSchedules: state.taskSchedules ?? {},
     dayPlan: state.dayPlan,
-    prayers: state.prayers,
+    prayers: mergedTaskPrayers,
   });
   latestTaskContextRef.current = {
     tasks: state.tasks,
     goals: state.goals,
     taskSchedules: state.taskSchedules ?? {},
     dayPlan: state.dayPlan,
-    prayers: state.prayers,
+    prayers: mergedTaskPrayers,
   };
   const lastSyncContextRef = useRef<{ signature: string; atMs: number } | null>(null);
 
@@ -402,7 +437,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
       window.clearInterval(rolloverCheck);
       cleanupResume?.();
     };
-  }, [state.prayerLocation, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
+  }, [state.prayerLocation, state.prayers, locatedPrayers.prayers, state.taskSchedules, state.tasks, state.goals, state.dayPlan, state.quran?.passages, user?.id]);
 
   // الأذونات المركزية عند الإقلاع: على الهاتف طلب واحد لإذن الإشعارات حتى تصل
   // المنبهات والتطبيق مغلق، وعلى الهاتف والويب معًا طلب واحد للموقع تشترك فيه
@@ -451,12 +486,12 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {deniedFeature&&<section className="panel feature-access-required" dir="rtl"><h1>{featureAccess.title||'هذه الميزة مدفوعة'}</h1>{featureAccess.enabled===false?<p>هذه الميزة معطلة حاليًا من الإدارة. لا يمكن الاشتراك فيها حتى تُفعّل. تواصل مع إدارة المنصة.</p>:<><p>هذه الميزة غير مشمولة باستحقاق حسابك. {featureAccess.price_amount&&featureAccess.currency_code?`السعر: ${new Intl.NumberFormat('ar-EG',{style:'currency',currency:featureAccess.currency_code,maximumFractionDigits:3}).format(featureAccess.price_amount)} ${featureAccess.billing_interval==='monthly'?'شهريًا':featureAccess.billing_interval==='yearly'?'سنويًا':''}.`:''}</p><p>للوصول، اشترك عبر الدفع (الدفع (sandbox) حتى اعتماد المزود). تفعيل الوصول يتم بعد تحقق المزود (webhook)، وليس بمجرد إعادة التوجيه.</p></>}<div className="feature-access-actions"><button className="soft-btn" onClick={()=>navigate('home')}>العودة إلى الرئيسية</button>{featureAccess.enabled!==false&&requiredFeature&&<button className="primary" onClick={()=>{setPaymentFeature(requiredFeature);navigate('payment')}}>اشترك الآن</button>}{user&&<button className="soft-btn" onClick={()=>navigate('paymentHistory')}>سجل الدفع</button>}</div></section>}
     {featureCheckFailed&&<section className="panel feature-access-required" dir="rtl" role="alert"><h2>تعذّر التحقق من صلاحية الميزة</h2><p>لم نفتح القسم لأن خدمة الصلاحيات لم تُرجع نتيجة موثوقة. تحقق من الاتصال ثم أعد المحاولة.</p><button className="soft-btn" onClick={()=>setRetryFeatureAccess(value=>value+1)}>إعادة التحقق</button></section>}
     {canRenderView&&<ErrorBoundary key={`${view}:${viewRecovery}`} fallback={<section className="panel feature-access-required" dir="rtl" role="alert"><h2>{typeof navigator!=='undefined'&&!navigator.onLine?'هذا القسم غير متاح دون اتصال بالإنترنت':'تعذر فتح هذا القسم'}</h2><p>{typeof navigator!=='undefined'&&!navigator.onLine?'تحقق من اتصالك بالإنترنت ثم أعد المحاولة؛ بيانات حسابك محفوظة وبقية الأقسام المحلية تعمل بلا اتصال.':'حدث خلل أثناء عرض الصفحة. بيانات حسابك محفوظة؛ جرّب إعادة فتح القسم.'}</p><button className="soft-btn" onClick={()=>setViewRecovery(value=>value+1)}>إعادة المحاولة</button></section>}><Suspense fallback={loadingView}>
-    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} prayerLocation={state.prayerLocation} currentDate={currentDate} tasks={state.tasks} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} dayRecords={state.dayRecords}/>}
-    {view==='tasks'&&<TodayTasksView onOpenPlanTask={t=>{void openPlanTask(t)}} onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} onCourseCoach={courseCoach=>update(s=>({...s,courseCoach}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
+    {view==='home'&&<HomeView navigate={navigate} admin={admin} prayers={mergedTaskPrayers} prayerLocation={state.prayerLocation} currentDate={currentDate} tasks={state.tasks} taskSchedules={state.taskSchedules??{}} dayPlan={state.dayPlan} dayRecords={state.dayRecords} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} coachSettings={state.coachSettings}/>}
+    {view==='tasks'&&<TodayTasksView onOpenPlanTask={t=>{void openPlanTask(t)}} onOpenHifzTask={h=>{try{localStorage.setItem('rabbani-hifz-pending-task-v1',JSON.stringify(h))}catch{/* ignore */}setQuranSection('hifz');navigate('quran');setQuranSection('hifz')}} tasks={state.tasks} goals={state.goals} wirds={state.wirds} courseCoach={state.courseCoach} coachSettings={state.coachSettings} prayers={mergedTaskPrayers} dayPlan={state.dayPlan} dayRecords={state.dayRecords} achievementLog={state.achievementLog} quranPassages={state.quran?.passages??[]} onCourseCoach={courseCoach=>update(s=>({...s,courseCoach}))} onCoachSettings={coachSettings=>update(s=>({...s,coachSettings}))} onCompleteWird={id=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);if(!before)return s;const delta=Math.max(1,before.target-before.count);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onUpdateWird={nextWird=>update(s=>({...s,wirds:normalizeWirds(s.wirds.map(w=>w.id===nextWird.id?nextWird:w))}))} onOpenQuran={()=>{setQuranSection('hifz');navigate('quran')}} onOpenWirds={()=>navigate('wird')} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} onTasks={tasks=>update(s=>({...s,tasks}))} onGoals={goals=>update(s=>({...s,goals}))} onQuranTaskComplete={completeQuranTask} onBack={()=>navigate('day')} notify={notify} onOpenNotificationSettings={()=>{requestNotificationSection('tasks');navigate('settings')}}/>}
     {view==='day'&&<DayPlanner scheduledTasks={state.tasks.filter(task=>task.period==='weekly'||task.period==='monthly')} confirmedTasks={Object.entries(state.taskSchedules??{}).flatMap(([id,schedule])=>{const date=schedule.confirmedDate??schedule.initialDate;const time=schedule.confirmedTime??schedule.initialTime??slotClockTime(schedule.confirmedSlot??schedule.initialSlot,{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers});if(!date||!time)return [];return [{id,title:schedule.title,date,time,confirmed:Boolean(schedule.confirmedDate)}]})} onWeek={()=>navigate('week')} onMonth={()=>navigate('month')} records={state.dayRecords} dailyTasks={state.tasks.filter(task=>task.period==='daily')} onRecords={dayRecords=>update(s=>updateDayRecords(s,dayRecords))} plan={state.dayPlan} prayers={{...((profile?.prayer_settings?.times as Record<string,string>|undefined)??{}),...state.prayers}} onPlan={dayPlan=>update(s=>({...s,dayPlan}))} onPrayer={(name,time)=>update(s=>({...s,prayers:{...s.prayers,[name]:time}}))} prayerLocation={state.prayerLocation} onPrayerLocation={prayerLocation=>update(s=>({...s,prayerLocation}))} onReflect={()=>navigate('reflect')}/>}
     {view==='week'&&<WeeklyPlanner tasks={state.tasks.filter(t=>t.period==='weekly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'weekly',tasks))}/>}
     {view==='month'&&<MonthlyPlanner tasks={state.tasks.filter(t=>t.period==='monthly')} onTasks={tasks=>update(s=>replacePeriodTasks(s,'monthly',tasks))}/>}
-    {view==='goals'&&<StrongGoals goals={state.goals} onGoals={goals=>update(s=>({...s,goals}))}/>}
+    {view==='goals'&&<StrongGoals goals={state.goals} coachSettings={state.coachSettings} onGoals={goals=>update(s=>({...s,goals}))}/>}
     {view==='achievement'&&<AchievementView state={state} onQuran={quran=>update(s=>({...s,quran}))} notify={notify} onOpenQuranSection={section=>{setQuranSection(section);navigate('quran')}} onOpenView={target=>navigate(target)}/>}
     {view==='quran'&&<QuranSunnahView state={state.quran} onState={quran=>update(s=>({...s,quran}))} tasks={state.tasks} onTasks={tasks=>update(s=>({...s,tasks}))} taskSchedules={state.taskSchedules??{}} onTaskSchedules={taskSchedules=>update(s=>({...s,taskSchedules}))} notify={notify} onOpenTasks={()=>navigate('tasks')} initialSection={quranSection} onBackToPrevious={navigateBack}/>}
     {view==='haramain'&&<HaramainLive/>}
@@ -464,7 +499,7 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     {view==='mosques'&&<MosquesScreen notify={notify}/>}
     {view==='reflect'&&<ReflectionView reflections={state.reflections} onAdd={text=>{update(s=>({...s,reflections:[newReflection(text),...s.reflections]}));notify('حُفظت المراجعة')}} onDelete={id=>update(s=>({...s,reflections:s.reflections.filter(x=>x.id!==id)}))} navigate={navigate}/>}
 
-    {view==='wird'&&<WirdsView wirds={state.wirds} onCountChange={(id,delta)=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!before&&!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate} onAddTask={(task,schedule)=>update(s=>({...s,tasks:[...s.tasks,task],taskSchedules:schedule?{...(s.taskSchedules??{}),[task.id]:schedule}:s.taskSchedules}))}/>}
+    {view==='wird'&&<WirdsView wirds={state.wirds} coachSettings={state.coachSettings} onCountChange={(id,delta)=>update(s=>{const before=normalizeWirds(s.wirds).find(w=>w.id===id);const wirds=changeWirdCount(s.wirds,id,delta);const after=wirds.find(w=>w.id===id);const completed=!!before&&!!after&&after.target>0&&before.count<before.target&&after.count>=after.target;return {...s,wirds,achievementLog:completed?appendEntry(s.achievementLog,makeEntry('wird_complete',id,today(),after.title)):s.achievementLog}})} onWirds={wirds=>update(s=>({...s,wirds:normalizeWirds(wirds)}))} notify={notify} navigate={navigate} onAddTask={(task,schedule)=>update(s=>({...s,tasks:[...s.tasks,task],taskSchedules:schedule?{...(s.taskSchedules??{}),[task.id]:schedule}:s.taskSchedules}))}/>}
     {!LOCAL_ONLY&&view==='profile'&&<ProfileView user={user!} notify={notify} onProfileSaved={()=>{}}/>}
     {view==='settings'&&<SettingsView state={state} onReplace={setState} notify={notify} onOpenProfile={()=>navigate('profile')}/>}
     {!LOCAL_ONLY&&view==='payment'&&<PaymentCheckout user={user!} featureKey={paymentFeature} onBack={()=>navigate('home')}/>}

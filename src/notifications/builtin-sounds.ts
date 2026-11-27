@@ -44,14 +44,36 @@ export function soundTitle(id: string | undefined): string {
 }
 
 let context: AudioContext | null = null;
+let unlocked = false;
 
 function audioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   const Ctor = window.AudioContext ?? (window as {webkitAudioContext?: typeof AudioContext}).webkitAudioContext;
   if (!Ctor) return null;
   if (!context) context = new Ctor();
-  if (context.state === 'suspended') void context.resume();
   return context;
+}
+
+/** يفتح قفل Web Audio API عند أول تفاعل للمستخدم حتى تعمل النغمات المجدولة لاحقًا بدون كتم. */
+export function unlockBuiltInAudioContext(): void {
+  const ctx = audioContext();
+  if (!ctx) return;
+  const playSilentSample = () => {
+    if (unlocked || ctx.state !== 'running') return;
+    try {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+      unlocked = true;
+    } catch { /* ignore */ }
+  };
+  if (ctx.state === 'suspended') {
+    void ctx.resume().then(playSilentSample).catch(() => {});
+  } else {
+    playSilentSample();
+  }
 }
 
 type Tone = {frequency: number; start: number; duration: number};
@@ -71,25 +93,36 @@ const melodies: Record<string, Tone[]> = {
   ],
 };
 
-/** يشغّل نغمة مدمجة مُولَّدة. تعيد false إذا لم يكن الصوت مدمجًا بنغمة مُولَّدة */
-export function playBuiltInTone(id: string): boolean {
-  const melody = melodies[id];
-  const ctx = audioContext();
-  if (!melody || !ctx) return false;
-  let offset = 0;
+function scheduleMelody(ctx: AudioContext, melody: Tone[]): void {
+  const baseTime = ctx.currentTime;
   for (const tone of melody) {
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.type = 'sine';
     oscillator.frequency.value = tone.frequency;
-    gain.gain.setValueAtTime(0, ctx.currentTime + tone.start + offset);
-    gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + tone.start + offset + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + tone.start + offset + tone.duration);
+    gain.gain.setValueAtTime(0, baseTime + tone.start);
+    gain.gain.linearRampToValueAtTime(0.26, baseTime + tone.start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0008, baseTime + tone.start + tone.duration);
     oscillator.connect(gain).connect(ctx.destination);
-    oscillator.start(ctx.currentTime + tone.start + offset);
-    oscillator.stop(ctx.currentTime + tone.start + offset + tone.duration + 0.05);
-    offset = 0;
+    oscillator.start(baseTime + tone.start);
+    oscillator.stop(baseTime + tone.start + tone.duration + 0.05);
   }
+}
+
+/** يشغّل نغمة مدمجة مُولَّدة. تعيد false إذا لم يكن الصوت مدمجًا بنغمة مُولَّدة */
+export function playBuiltInTone(id: string): boolean {
+  const melody = melodies[id];
+  const ctx = audioContext();
+  if (!melody || !ctx) return false;
+  if (ctx.state === 'running') {
+    scheduleMelody(ctx, melody);
+    return true;
+  }
+  void ctx.resume().then(() => {
+    if (ctx.state === 'running') {
+      scheduleMelody(ctx, melody);
+    }
+  }).catch(() => {});
   return true;
 }
 

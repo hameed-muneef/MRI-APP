@@ -2,14 +2,15 @@ import type {Wird} from '../app-state';
 import {periodKey as wirdPeriodKey} from '../wird-periods';
 import {goalPeriodKey,type Goal} from '../goal-plan';
 import {coachEntitled,INCREASE_AT,LIGHTEN_BELOW,stepAdherence,type CoachablePeriod} from './engine';
+import {resolveCoachFlag,type CoachMode,type CoachSettings} from './types';
 
 /**
  * Phase 3: habits and wirds (أوراد). A template with no end date: it learns from regularity only.
  * The wird keeps count/target per period and resets, so the coach keeps its own log of period keys
- * where the target was reached (engine key format), only after the user switches it on for that wird.
+ * where the target was reached (engine key format), only after the user switches it on for that wird or globally.
  * Targets are the user's own organizational choice. The coach never says a number is better in itself.
  */
-export type HabitCoach={enabled:boolean;enabledAt:string;dismissed?:string[];log?:string[]};
+export type HabitCoach={enabled:boolean;enabledAt:string;dismissed?:string[];log?:string[];mode?:CoachMode};
 export type HabitKind='early-warning'|'lighten-target'|'raise-target';
 export type HabitSuggestion={id:string;kind:HabitKind;wirdId:string;target?:number};
 const LOG_CAP=120;
@@ -18,10 +19,10 @@ const warnRun={daily:3,weekly:2,monthly:2} as const;
 const windowSize={daily:14,weekly:4,monthly:3} as const;
 
 export type WirdWithCoach=Wird&{coach?:HabitCoach};
-export const habitOn=(w:WirdWithCoach)=>Boolean(w.coach?.enabled)&&coachEntitled();
+export const habitOn=(w:WirdWithCoach,settings?:CoachSettings)=>resolveCoachFlag(w.coach,settings)&&coachEntitled();
 
-export function setHabitCoach(w:WirdWithCoach,enabled:boolean,now=new Date()):WirdWithCoach{
-  return {...w,coach:{enabled,enabledAt:w.coach?.enabledAt??localDay(now),dismissed:w.coach?.dismissed??[],log:w.coach?.log??[]}};
+export function setHabitCoach(w:WirdWithCoach,enabled:boolean,now=new Date(),mode?:CoachMode):WirdWithCoach{
+  return {...w,coach:{enabled,enabledAt:w.coach?.enabledAt??localDay(now),dismissed:w.coach?.dismissed??[],log:w.coach?.log??[],...(mode?{mode}:{})}};
 }
 export function dismissHabit(w:WirdWithCoach,id:string):WirdWithCoach{
   const c=w.coach??{enabled:true,enabledAt:localDay(new Date())};
@@ -30,30 +31,32 @@ export function dismissHabit(w:WirdWithCoach,id:string):WirdWithCoach{
 export const applyHabitTarget=(w:WirdWithCoach,target:number):WirdWithCoach=>({...w,target:Math.max(1,Math.round(target))});
 
 /** Logs the current period when the target is reached. Returns the same array when nothing is new. */
-export function recordHabitCompletions(wirds:WirdWithCoach[],now=new Date()):WirdWithCoach[]{
+export function recordHabitCompletions(wirds:WirdWithCoach[],now=new Date(),settings?:CoachSettings):WirdWithCoach[]{
   let changed=false;
   const next=wirds.map(w=>{
     // A stored count that belongs to an earlier period is not today's progress.
-    if(!habitOn(w)||w.target<1||w.periodKey!==wirdPeriodKey(w.period,now))return w;
-    const key=goalPeriodKey(w.period,now);const log=w.coach?.log??[];
+    if(!habitOn(w,settings)||w.target<1||w.periodKey!==wirdPeriodKey(w.period,now))return w;
+    const key=goalPeriodKey(w.period,now);
+    const activeCoach:HabitCoach=w.coach??{enabled:true,mode:'inherit',enabledAt:settings?.enabledAt??localDay(now),dismissed:[],log:[]};
+    const log=activeCoach.log??[];
     const reached=w.count>=w.target;
     if(reached===log.includes(key))return w;
     changed=true;
     // Also undoes the key when the user corrects the count back below the target.
-    return {...w,coach:{...(w.coach as HabitCoach),log:(reached?[...log,key]:log.filter(k=>k!==key)).sort().slice(-LOG_CAP)}};
+    return {...w,coach:{...activeCoach,log:(reached?[...log,key]:log.filter(k=>k!==key)).sort().slice(-LOG_CAP)}};
   });
   return changed?next:wirds;
 }
 
 /** The wird as a pseudo goal with one step, so the goal engine judges its regularity. */
-export function habitGoal(w:WirdWithCoach):Goal{
-  const c=w.coach as HabitCoach;
-  return {id:w.id,title:w.title,benefit:'',createdAt:c.enabledAt,coach:{enabled:c.enabled,enabledAt:c.enabledAt},
+export function habitGoal(w:WirdWithCoach,settings?:CoachSettings):Goal{
+  const c=w.coach??{enabled:Boolean(settings?.globalEnabled),enabledAt:settings?.enabledAt??localDay(new Date()),log:[]};
+  return {id:w.id,title:w.title,benefit:'',createdAt:c.enabledAt,coach:{enabled:habitOn(w,settings),enabledAt:c.enabledAt,mode:c.mode},
     steps:[{id:`habit-${w.id}`,title:w.title,period:w.period as CoachablePeriod,done:Object.fromEntries((c.log??[]).map(k=>[k,true]))}]};
 }
-export function habitSuggestions(w:WirdWithCoach,now=new Date()):HabitSuggestion[]{
-  if(!habitOn(w))return [];
-  const goal=habitGoal(w);const a=stepAdherence(goal,goal.steps![0],now);
+export function habitSuggestions(w:WirdWithCoach,now=new Date(),settings?:CoachSettings):HabitSuggestion[]{
+  if(!habitOn(w,settings))return [];
+  const goal=habitGoal(w,settings);const a=stepAdherence(goal,goal.steps![0],now,settings);
   if(!a)return [];
   const stamp=goalPeriodKey(w.period,now);const out:HabitSuggestion[]=[];
   if(a.missedRun>=warnRun[a.period])out.push({id:`${w.id}:early-warning:${stamp}`,kind:'early-warning',wirdId:w.id});
@@ -61,4 +64,4 @@ export function habitSuggestions(w:WirdWithCoach,now=new Date()):HabitSuggestion
   else if(a.rate!==null&&a.rate>=INCREASE_AT&&a.expected>=windowSize[a.period]-1)out.push({id:`${w.id}:raise-target:${stamp}`,kind:'raise-target',wirdId:w.id,target:Math.ceil(w.target*1.25)===w.target?w.target+1:Math.ceil(w.target*1.25)});
   return out.filter(s=>!w.coach?.dismissed?.includes(s.id));
 }
-export const habitBehind=(w:WirdWithCoach,now=new Date())=>habitSuggestions(w,now).some(s=>s.kind==='early-warning');
+export const habitBehind=(w:WirdWithCoach,now=new Date(),settings?:CoachSettings)=>habitSuggestions(w,now,settings).some(s=>s.kind==='early-warning');

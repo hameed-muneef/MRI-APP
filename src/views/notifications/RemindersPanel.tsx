@@ -12,6 +12,7 @@ import {
   PencilLine,
   Plus,
   Power,
+  Send,
   Sparkles,
   Trash2,
   X,
@@ -19,15 +20,25 @@ import {
 import {uid} from '../../id';
 import {effectiveNextDueDate, formatTimeHM, WEEK_DAYS} from '../../notifications/scheduler';
 import {createReminder, deleteReminder, snoozeReminder, toggleReminder, updateReminder} from '../../notifications/service';
-import {loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
+import {loadPrefs, loadReminders, storeLocalReminder} from '../../notifications/prefs-store';
 import {formatRemaining} from '../../notifications/upcoming';
 import {SoundSelectField} from './SoundPanel';
 import {RECURRENCE_LABELS, type Reminder, type ReminderRecurrence} from '../../notifications/types';
 import {
   NATIVE_SCHEDULE_UPDATED_EVENT,
   NOTIFICATIONS_CHANGED_EVENT,
+  isNativePlatform,
   notifyNativePrefsChanged,
 } from '../../notifications/native-prayer-scheduler';
+import {
+  deliverNotification,
+  getBrowserPermission,
+  isBrowserNotificationSupported,
+  requestBrowserPermission,
+} from '../../notifications/delivery';
+import {playAudio, stopAudio, unlockAudioPlayback} from '../../notifications/audio';
+import {playBuiltInTone} from '../../notifications/builtin-sounds';
+import {soundPlanForReminder} from '../../notifications/sound-selection';
 
 type Draft = {
   id?: string;
@@ -418,6 +429,23 @@ export default function RemindersPanel({
     }
   };
 
+  const testReminderAlert = async (soundId?: string, title?: string) => {
+    unlockAudioPlayback();
+    const {prefs} = await loadPrefs();
+    const effectiveSound = soundId ?? prefs.reminder_settings?.default_sound_id;
+    const plan = soundPlanForReminder(effectiveSound, prefs, []);
+    stopAudio();
+    if (plan.mode === 'tone') playBuiltInTone(plan.id);
+    else if (plan.mode === 'file') playAudio(plan.url, () => playBuiltInTone('builtin:soft'));
+
+    if (!isNativePlatform() && isBrowserNotificationSupported() && getBrowserPermission() === 'default') {
+      await requestBrowserPermission();
+    }
+    const label = title?.trim() || 'تذكير شخصي';
+    await deliverNotification('reminder', `تنبيه تجريبي · ${label}`, 'هذا اختبار لصوت وظهور المنبه.', 'settings', effectiveSound);
+    notify(plan.mode === 'none' ? 'أُرسل التنبيه التجريبي (صامت).' : 'أُرسل التنبيه التجريبي وشُغِّل الصوت.');
+  };
+
   const editing = draft !== null;
 
   return (
@@ -432,13 +460,22 @@ export default function RemindersPanel({
                 : `${activeCount} مفعّل${pausedCount > 0 ? ` · ${pausedCount} متوقف` : ''}`}
             </span>
           </div>
-          <button
-            type="button"
-            className="primary notif-add-btn"
-            onClick={() => openDraft(emptyDraft())}
-          >
-            <Plus size={17}/> منبه جديد
-          </button>
+          <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+            <button
+              type="button"
+              className="soft-btn"
+              onClick={() => void testReminderAlert()}
+            >
+              <Send size={15}/> تجربة المنبه
+            </button>
+            <button
+              type="button"
+              className="primary notif-add-btn"
+              onClick={() => openDraft(emptyDraft())}
+            >
+              <Plus size={17}/> منبه جديد
+            </button>
+          </div>
         </div>
       )}
 
@@ -613,6 +650,13 @@ export default function RemindersPanel({
           <div className="notif-form-actions">
             <button type="submit" className="primary" disabled={busy}>
               {busy ? 'جارٍ الحفظ…' : draft.id ? 'حفظ التعديل' : 'إضافة المنبه'}
+            </button>
+            <button
+              type="button"
+              className="soft-btn"
+              onClick={() => void testReminderAlert(draft.soundId, draft.title)}
+            >
+              <Send size={15}/> تجربة الصوت والتنبيه
             </button>
             <button
               type="button"
