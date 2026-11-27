@@ -454,11 +454,12 @@ export default function RemindersPanel({
         <div className="notif-reminders-toolbar">
           <div className="notif-reminders-summary">
             <strong>المنبهات الشخصية</strong>
-            <span className="muted small">
-              {reminders.length === 0
-                ? 'لا توجد منبهات محفوظة بعد'
-                : `${activeCount} مفعّل${pausedCount > 0 ? ` · ${pausedCount} متوقف` : ''}`}
-            </span>
+            {/* الرسالة الفارغة تظهر مرة واحدة في بطاقة الحالة أدناه، فلا تتكرر هنا. */}
+            {reminders.length > 0 && (
+              <span className="muted small">
+                {`${activeCount} مفعّل${pausedCount > 0 ? ` · ${pausedCount} متوقف` : ''}`}
+              </span>
+            )}
           </div>
           <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
             <button

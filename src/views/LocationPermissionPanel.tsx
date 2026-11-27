@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { CheckCircle2, MapPin, RotateCcw, Search, Settings2 } from 'lucide-react';
 import { useCentralLocation } from '../hooks/useCentralLocation';
 import { searchCities } from '../lib/qibla-cities';
+import { shouldShowLocationError } from '../lib/location-status';
 
 const STATUS_TEXT: Record<string, string> = {
   idle: 'لم يُطلب الموقع بعد.',
@@ -51,7 +52,7 @@ export default function LocationPermissionPanel({ notify }: { notify?: (message:
             {central.source === 'manual' && central.manual ? ` المدينة المختارة: ${central.manual.label}.` : ''}
             {central.source === 'device' && central.coords ? ` (${central.coords.latitude.toFixed(3)}°, ${central.coords.longitude.toFixed(3)}°)` : ''}
           </span>
-          {central.error && central.status !== 'locating' && <span className="muted small"> {central.error}</span>}
+          {shouldShowLocationError(central.status, central.error) && <span className="muted small"> {central.error}</span>}
         </div>
         {central.status === 'ready' && <span className="task-push-ok"><CheckCircle2 size={15}/> نشط</span>}
       </div>

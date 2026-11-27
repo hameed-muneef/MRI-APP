@@ -374,7 +374,7 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
           <li key={sound.soundId}>
             <div className="notif-sound-main">
               <strong>{sound.name}</strong>
-              <small>أذان · مدمج (يعمل بدون إنترنت)</small>
+              <small>أذان · مدمج</small>
             </div>
             <button
               type="button"
@@ -391,7 +391,7 @@ export default function SoundPanel({notify}: {notify: (message: string) => void}
           <li key={EID_TAKBEERAT_SOUND.soundId}>
             <div className="notif-sound-main">
               <strong>{EID_TAKBEERAT_SOUND.name}</strong>
-              <small>تكبيرات · مدمج (يعمل بدون إنترنت)</small>
+              <small>تكبيرات · مدمج</small>
             </div>
             <button
               type="button"
