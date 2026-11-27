@@ -52,8 +52,8 @@ describe('next up: midnight rollover', () => {
 
 describe('next up: Cairo DST', () => {
   it('fall back 2026-10-29: after the clocks repeat 23:00, a 23:05 task is only a few minutes late', () => {
-    // 2026-10-29 21:10 UTC = 23:10 EET (after fallback). The first 23:05 was DST, 65 real minutes earlier.
-    const now = new Date('2026-10-29T21:10:00Z');
+    // Wall clock 23:10 on the fall-back day, built in local time so the test is timezone independent.
+    const now = new Date(2026, 9, 29, 23, 10, 0);
     const m = minutesUntil('23:05', now);
     expect(m).not.toBeNull();
     expect(Math.round(m!)).toBe(-5);

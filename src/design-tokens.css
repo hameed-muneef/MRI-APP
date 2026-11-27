@@ -1,0 +1,143 @@
+/* Premium Home tokens. Spec only, drop-in. Prefix --hm-. RTL Arabic.
+   Contrast ratios computed with WCAG 2.x relative luminance (script: /tmp/design/c.py).
+   Verified by script only; not rendered in a browser. */
+
+:root, :root[data-theme="light"] {
+  /* surfaces */
+  --hm-bg: #F6F2E9;            /* ivory page */
+  --hm-surface: #FFFFFF;       /* card */
+  --hm-surface-2: #FBF8F0;     /* inset / chip */
+  --hm-border: #DDD5C2;        /* decorative hairline only, 1.31:1, never the sole boundary of a control */
+  /* text */
+  --hm-text: #0F1D33;          /* 15.11 on bg, 16.88 on surface */
+  --hm-text-muted: #4B586B;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
+  /* brand */
+  --hm-navy: #14305A;          /* primary fill; white on it 13.12 */
+  --hm-on-navy: #FFFFFF;
+  --hm-gold: #C8A04A;          /* FILL/ornament only (2.19 on bg): never gold text or a lone icon on light */
+  --hm-on-gold: #1A1405;       /* 7.49 on gold */
+  --hm-gold-text: #6F5010;     /* gold as text/icon: 6.64 on bg, 7.42 on surface */
+  --hm-green: #1D6A50;         /* Islamic green, 5.82 on bg, 6.50 on surface; white on it 6.50 */
+  --hm-on-green: #FFFFFF;
+  --hm-danger: #A32A2A;        /* 7.19 on surface */
+  --hm-focus: #14305A;         /* 11.75 on bg */
+  /* verse hero */
+  --hm-hero-text: #FFFFFF;
+  --hm-scrim-top: rgba(11,26,48,.55);
+  --hm-scrim-text: rgba(11,26,48,.68);
+  --hm-scrim-bottom: rgba(11,26,48,.80);
+  /* elevation (cool navy shadows, no black) */
+  --hm-shadow-1: 0 1px 2px rgba(15,29,51,.06), 0 1px 1px rgba(15,29,51,.04);
+  --hm-shadow-2: 0 4px 12px rgba(15,29,51,.08), 0 1px 3px rgba(15,29,51,.06);
+  --hm-shadow-3: 0 12px 28px rgba(15,29,51,.12), 0 2px 6px rgba(15,29,51,.06);
+  --hm-nav-bg: rgba(255,255,255,.82);
+  --hm-nav-border: rgba(15,29,51,.10);
+}
+
+:root[data-theme="dark"] {
+  --hm-bg: #09131F;
+  --hm-surface: #111F33;
+  --hm-surface-2: #172846;
+  --hm-border: #2A3C5C;        /* 1.69 on bg, decorative */
+  --hm-text: #F3EFE4;          /* 16.25 on bg, 14.42 on surface, 12.80 on surface-2 */
+  --hm-text-muted: #B4BECC;    /* 9.94 on bg, 8.82 on surface, 7.83 on surface-2 */
+  --hm-navy: #9DB8E8;          /* in dark the "navy" role is a light blue accent; 9.30 on bg */
+  --hm-on-navy: #09131F;       /* 9.30 on it */
+  --hm-gold: #E2C06E;          /* 10.67 on bg, 9.47 on surface: usable as text, icon and fill */
+  --hm-on-gold: #1A1405;       /* 10.47 */
+  --hm-gold-text: #E2C06E;
+  --hm-green: #74C6A4;         /* 9.21 on bg, 8.17 on surface */
+  --hm-on-green: #06190F;      /* 8.98 */
+  --hm-danger: #FF9C9C;        /* 8.27 on surface */
+  --hm-focus: #E2C06E;
+  --hm-hero-text: #F3EFE4;
+  --hm-scrim-top: rgba(5,11,20,.55);
+  --hm-scrim-text: rgba(5,11,20,.68);
+  --hm-scrim-bottom: rgba(5,11,20,.82);
+  --hm-shadow-1: 0 1px 2px rgba(0,0,0,.30);
+  --hm-shadow-2: 0 4px 12px rgba(0,0,0,.32), 0 1px 3px rgba(0,0,0,.24);
+  --hm-shadow-3: 0 12px 28px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.28);
+  --hm-nav-bg: rgba(17,31,51,.84);
+  --hm-nav-border: rgba(243,239,228,.10);
+}
+
+:root {
+  /* shape and spacing (4pt grid) */
+  --hm-r-sm: 10px;   /* chips, inputs */
+  --hm-r-md: 16px;   /* cards */
+  --hm-r-lg: 24px;   /* hero, sheets */
+  --hm-r-pill: 999px;
+  --hm-s-1: 4px; --hm-s-2: 8px; --hm-s-3: 12px; --hm-s-4: 16px; --hm-s-5: 24px; --hm-s-6: 32px;
+  --hm-tap: 48px;    /* min touch target (Material 48dp, HIG 44pt) */
+  --hm-ease: cubic-bezier(.2,0,0,1);
+  --hm-dur: 180ms;
+
+  /* Arabic type scale. Use the app's existing Arabic font stack; Quran text keeps the mushaf font. */
+  --hm-font-ui: system-ui, -apple-system, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif;
+  --hm-font-verse: var(--font-quran, "Amiri Quran", "KFGQPC Uthmanic Script HAFS", "Noto Naskh Arabic", serif);
+  --hm-fs-verse: clamp(1.5rem, 1.1rem + 2vw, 2rem);   /* 24 to 32px */
+  --hm-lh-verse: 2.05;                                  /* tashkeel needs tall lines; never below 1.9 */
+  --hm-fs-h1: 1.625rem;  --hm-lh-h1: 1.5;  --hm-fw-h1: 700;   /* 26px */
+  --hm-fs-h2: 1.25rem;   --hm-lh-h2: 1.55; --hm-fw-h2: 700;   /* 20px */
+  --hm-fs-h3: 1.0625rem; --hm-lh-h3: 1.6;  --hm-fw-h3: 600;   /* 17px */
+  --hm-fs-body: 1rem;    --hm-lh-body: 1.75; --hm-fw-body: 400; /* 16px */
+  --hm-fs-caption: .8125rem; --hm-lh-caption: 1.6; --hm-fw-caption: 500; /* 13px, floor 12px; letter-spacing 0 for Arabic */
+}
+
+/* cards */
+.hm-card {
+  background: var(--hm-surface); color: var(--hm-text);
+  border-radius: var(--hm-r-md); padding: var(--hm-s-4);
+  box-shadow: var(--hm-shadow-1);
+  border: 1px solid var(--hm-border);
+}
+.hm-card--raised { box-shadow: var(--hm-shadow-2); }
+.hm-card--sheet  { box-shadow: var(--hm-shadow-3); border-radius: var(--hm-r-lg); }
+.hm-card--accent { border-inline-start: 4px solid var(--hm-gold); } /* ornament, not the only cue */
+
+/* buttons: min 48px tall, text never gold-on-light */
+.hm-btn {
+  min-height: var(--hm-tap); padding: 0 var(--hm-s-5); border-radius: var(--hm-r-pill);
+  font: var(--hm-fw-h3) var(--hm-fs-body)/1 var(--hm-font-ui); border: 1px solid transparent;
+  transition: background-color var(--hm-dur) var(--hm-ease), box-shadow var(--hm-dur) var(--hm-ease);
+}
+.hm-btn--primary   { background: var(--hm-navy); color: var(--hm-on-navy); }
+.hm-btn--gold      { background: var(--hm-gold); color: var(--hm-on-gold); border-color: var(--hm-gold-text); } /* border gives the 3:1 boundary on light */
+.hm-btn--green     { background: var(--hm-green); color: var(--hm-on-green); }
+.hm-btn--tonal     { background: var(--hm-surface-2); color: var(--hm-text); border-color: var(--hm-text-muted); }
+.hm-btn--text      { background: transparent; color: var(--hm-gold-text); }
+.hm-btn:active     { filter: brightness(.94); }
+.hm-btn:disabled   { opacity: .45; }
+.hm-btn:focus-visible, .hm-nav button:focus-visible { outline: 3px solid var(--hm-focus); outline-offset: 2px; }
+
+/* bottom nav: translucent surface, hairline top, active = gold-text label + pill indicator */
+.hm-nav {
+  background: var(--hm-nav-bg); border-top: 1px solid var(--hm-nav-border);
+  -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.hm-nav button { min-height: 56px; color: var(--hm-text-muted); font-size: var(--hm-fs-caption); }
+.hm-nav button[aria-current="page"] { color: var(--hm-text); font-weight: 700; }
+.hm-nav button[aria-current="page"]::before { /* M3 style indicator */
+  content: ""; position: absolute; inset-block-start: 6px; width: 56px; height: 28px;
+  border-radius: var(--hm-r-pill); background: color-mix(in srgb, var(--hm-gold) 28%, transparent); z-index: -1;
+}
+@supports not (backdrop-filter: blur(1px)) { .hm-nav { background: var(--hm-surface); } }
+
+/* verse hero: image/ornament behind, scrim guarantees text >= 4.5:1 on white, ivory-gold or green art */
+.hm-hero {
+  position: relative; isolation: isolate; border-radius: var(--hm-r-lg); overflow: hidden;
+  color: var(--hm-hero-text); padding: var(--hm-s-6) var(--hm-s-5);
+  background-color: var(--hm-navy-hero, #0B1A30);
+}
+.hm-hero__art { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; opacity: .9; }
+.hm-hero::after { /* scrim: flat floor of .68 behind the verse, a touch lighter at the top, denser at the bottom */
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(to bottom, var(--hm-scrim-top) 0%, var(--hm-scrim-text) 35%, var(--hm-scrim-text) 65%, var(--hm-scrim-bottom) 100%);
+}
+.hm-hero__verse { font: 400 var(--hm-fs-verse)/var(--hm-lh-verse) var(--hm-font-verse); text-align: center; text-wrap: balance; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.hm-hero__ref   { color: var(--hm-hero-text); opacity: .92; font-size: var(--hm-fs-caption); margin-top: var(--hm-s-3); text-align: center; }
+.hm-hero__ornament { color: var(--hm-gold); } /* decorative divider/ayah marker only; gold on scrim is >= 4.9:1 in dark, treat as ornament */
+
+@media (prefers-reduced-motion: reduce) { .hm-btn { transition: none; } }
+@media (prefers-contrast: more) { .hm-hero { --hm-scrim-text: rgba(5,11,20,.82); --hm-scrim-top: rgba(5,11,20,.7); } }

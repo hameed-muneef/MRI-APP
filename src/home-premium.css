@@ -1,111 +1,12 @@
-/* الرئيسية: هوية بصرية فاخرة هادئة. رموز تصميم (--rb-*) تعتمدها بقية الشاشات لاحقًا. بصري فقط. */
-:root {
-  /* palette: navy / gold / quiet green */
-  --rb-navy-900: #0B1B2D;
-  --rb-navy-800: #102A43;
-  --rb-navy-700: #173A5C;
-  --rb-gold-500: #C9A24B;
-  --rb-gold-300: #E6CF94;
-  --rb-gold-100: #F6EDD3;
-  --rb-green-600: #2F7D63;
-  --rb-green-100: #E3F0EA;
-  --rb-ivory: #F7F4EC;
-  --rb-card: #FFFFFF;
-  --rb-line: #E4DDCB;
-  --rb-ink: #10243A;
-  --rb-muted: #566B7E;
-  --rb-radius-lg: 22px;
-  --rb-radius-md: 16px;
-  --rb-shadow-1: 0 1px 2px rgba(16, 36, 58, .06), 0 6px 18px rgba(16, 36, 58, .07);
-  --rb-shadow-2: 0 2px 4px rgba(16, 36, 58, .08), 0 14px 32px rgba(16, 36, 58, .14);
-}
-[data-theme="dark"] {
-  --rb-ivory: #0B1624;
-  --rb-card: #12263B;
-  --rb-line: #26415C;
-  --rb-ink: #EEF3F8;
-  --rb-muted: #A8BBCB;
-  --rb-gold-100: rgba(230, 207, 148, .14);
-  --rb-green-100: rgba(70, 192, 159, .14);
-  --rb-shadow-1: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .3);
-  --rb-shadow-2: 0 2px 4px rgba(0, 0, 0, .4), 0 16px 34px rgba(0, 0, 0, .45);
-}
-
-/* ---------- Hero: verse over art, readable (WCAG AA) ---------- */
-html #root .app .hero {
-  position: relative;
-  overflow: hidden;
-  padding: 18px 16px 16px !important;
-  border-radius: var(--rb-radius-lg) !important;
-  border: 1px solid rgba(230, 207, 148, .35);
-  box-shadow: var(--rb-shadow-2);
-  background:
-    linear-gradient(180deg, rgba(11, 27, 45, .55) 0%, rgba(11, 27, 45, .86) 62%, rgba(11, 27, 45, .95) 100%),
-    var(--art-hero) center/cover no-repeat !important;
-}
-html #root .app .hero::before {
-  content: "";
-  position: absolute;
-  inset-inline: 18px;
-  top: 0;
-  height: 3px;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(90deg, transparent, var(--rb-gold-500), transparent);
-}
-html #root .app main .hero .hero-tag {
-  color: var(--rb-gold-300) !important;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  justify-content: center;
-}
-html #root .app .hero p.hero-ayah {
-  margin: 10px 0 0 !important;
-  padding: 14px 12px 12px;
-  border-radius: var(--rb-radius-md);
-  background: rgba(11, 27, 45, .58);
-  border: 1px solid rgba(230, 207, 148, .28);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  text-align: center;
-  text-shadow: none !important;
-}
-html #root .app .hero .hero-ayah-text {
-  font-size: clamp(19px, 5vw, 22px) !important;
-  line-height: 2.05 !important;
-  color: #FFFFFF !important;
-}
-html #root .app .hero .hero-ayah-ref {
-  margin-top: 6px !important;
-  padding: 2px 12px;
-  border-radius: 999px;
-  background: rgba(201, 162, 75, .22);
-  color: var(--rb-gold-300) !important;
-  font-size: 12.5px !important;
-}
-html #root .app .hero .hero-btn {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  margin-top: 14px !important;
-  min-height: 48px !important;
-  border: 0;
-  border-radius: 14px;
-  font-weight: 800;
-  background: linear-gradient(180deg, var(--rb-gold-300), var(--rb-gold-500)) !important;
-  color: #1B2A3A !important;
-  box-shadow: 0 6px 16px rgba(201, 162, 75, .35), inset 0 1px 0 rgba(255, 255, 255, .5);
-}
-
 /* ---------- Cards ---------- */
 html #root .app .home-today-entry,
 html #root .app .feature-card,
 html #root .app .wide-card {
-  background: var(--rb-card) !important;
-  border: 1px solid var(--rb-line) !important;
-  border-radius: var(--rb-radius-lg) !important;
-  box-shadow: var(--rb-shadow-1) !important;
-  color: var(--rb-ink) !important;
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
   transition: transform .18s ease, box-shadow .18s ease;
 }
 html #root .app .home-today-entry:active,
@@ -114,51 +15,91 @@ html #root .app .wide-card:active { transform: scale(.985); }
 html #root .app .home-today-icon,
 html #root .app .feature-icon,
 html #root .app .wide-icon {
-  background: var(--rb-gold-100) !important;
-  color: var(--rb-navy-700) !important;
-  border: 1px solid rgba(201, 162, 75, .4) !important;
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
   border-radius: 14px !important;
 }
-[data-theme="dark"] html #root .app .home-today-icon,
-[data-theme="dark"] #root .app .home-today-icon,
-[data-theme="dark"] #root .app .feature-icon,
-[data-theme="dark"] #root .app .wide-icon { color: var(--rb-gold-300) !important; }
 html #root .app .home-today-entry strong,
 html #root .app .feature-card strong,
-html #root .app .wide-card h3 { color: var(--rb-ink) !important; font-weight: 800; }
+html #root .app .wide-card h3 { color: var(--hm-text) !important; font-weight: 800; }
 html #root .app .home-today-entry small,
 html #root .app .feature-card p,
-html #root .app .wide-card p { color: var(--rb-muted) !important; }
-html #root .app .section-title h2 { color: var(--rb-ink) !important; font-weight: 800; }
-html #root .app .section-title .eyebrow { color: var(--rb-gold-500) !important; font-weight: 800; letter-spacing: .3px; }
+html #root .app .wide-card p { color: var(--hm-text-muted) !important; }
+html #root .app .section-title h2 { color: var(--hm-text) !important; font-weight: 800; }
+html #root .app .section-title .eyebrow { color: var(--hm-gold-text) !important; font-weight: 800; letter-spacing: .3px; }
 html #root .app .home-date-bar {
-  background: var(--rb-card) !important;
-  border: 1px solid var(--rb-line) !important;
-  border-radius: var(--rb-radius-md) !important;
-  box-shadow: var(--rb-shadow-1);
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-md) !important;
+  box-shadow: var(--hm-shadow-2);
 }
 
 /* today's tasks rows */
-html #root .app .home-task-dot { background: var(--rb-gold-500) !important; }
-html #root .app main.main .home-today-list .home-tasks-row { border-color: var(--rb-line) !important; }
-html #root .app .home-task-live { color: var(--rb-green-600); }
-[data-theme="dark"] #root .app .home-task-live { color: #7FD6B8; }
-html #root .app .home-tasks-all { color: var(--rb-navy-700) !important; font-weight: 800; }
-[data-theme="dark"] #root .app .home-tasks-all { color: var(--rb-gold-300) !important; }
+html #root .app .home-task-dot { background: var(--hm-gold) !important; }
+html #root .app main.main .home-today-list .home-tasks-row { border-color: var(--hm-border) !important; }
+html #root .app .home-task-live { color: var(--hm-green); }
+html #root .app .home-tasks-all { color: var(--hm-text) !important; font-weight: 800; }
 
 /* ---------- Bottom navigation ---------- */
 html #root .app .mobile-nav {
-  background: color-mix(in srgb, var(--rb-card) 92%, transparent) !important;
+  background: color-mix(in srgb, var(--hm-surface) 92%, transparent) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-  border-top: 1px solid var(--rb-line) !important;
+  border-top: 1px solid var(--hm-border) !important;
   box-shadow: 0 -8px 26px rgba(16, 36, 58, .1);
 }
-html #root .app .mobile-nav button { color: var(--rb-muted) !important; font-weight: 700; }
+html #root .app .mobile-nav button { color: var(--hm-text-muted) !important; font-weight: 700; }
 html #root .app .mobile-nav button.active {
-  background: var(--rb-navy-800) !important;
-  color: var(--rb-gold-300) !important;
+  background: color-mix(in srgb, var(--hm-gold) 28%, transparent) !important;
+  color: var(--hm-text) !important;
   border-radius: 16px;
-  box-shadow: 0 6px 14px rgba(11, 27, 45, .28);
+  box-shadow: none;
 }
-[data-theme="dark"] #root .app .mobile-nav button.active { background: #1B3A58 !important; }
+
+html #root .app { background-color: var(--hm-bg); }
+html #root .app .home-today-list .home-tasks-row { color: var(--hm-text); }
+
+/* بطاقات الصلاة / التذكيرات / الإنجاز */
+html:root #root .app.app main.main .home-dashboard .home-next-card,
+html:root #root .app.app main.main .home-dashboard .home-next-card:hover {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
+}
+html:root #root .app.app main.main .home-dashboard .home-next-card .home-next-icon {
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-md) !important;
+}
+html:root #root .app.app main.main .home-dashboard .home-next-headline,
+html:root #root .app.app main.main .home-dashboard .home-next-time { color: var(--hm-text) !important; }
+html:root #root .app.app main.main .home-dashboard .home-next-kicker small,
+html:root #root .app.app main.main .home-dashboard .home-next-card small,
+html:root #root .app.app main.main .home-dashboard .home-next-chevron { color: var(--hm-text-muted) !important; }
+
+html:root #root .app.app main.main .home-today-entry,
+html:root #root .app.app main.main .feature-card,
+html:root #root .app.app main.main .wide-card {
+  background: var(--hm-surface) !important;
+  border: 1px solid var(--hm-border) !important;
+  border-radius: var(--hm-r-lg) !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: var(--hm-text) !important;
+}
+html:root #root .app.app main.main .home-today-entry .home-today-icon,
+html:root #root .app.app main.main .feature-card .feature-icon,
+html:root #root .app.app main.main .wide-card .wide-icon {
+  background: var(--hm-surface-2) !important;
+  color: var(--hm-gold-text) !important;
+  border: 1px solid var(--hm-border) !important;
+}
+html:root #root .app.app main.main .home-today-entry strong,
+html:root #root .app.app main.main .feature-card strong,
+html:root #root .app.app main.main .wide-card h3 { color: var(--hm-text) !important; }
+html:root #root .app.app main.main .home-today-entry small,
+html:root #root .app.app main.main .feature-card .feature-copy span,
+html:root #root .app.app main.main .wide-card p { color: var(--hm-text-muted) !important; }
