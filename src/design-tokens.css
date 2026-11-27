@@ -141,3 +141,24 @@
 
 @media (prefers-reduced-motion: reduce) { .hm-btn { transition: none; } }
 @media (prefers-contrast: more) { .hm-hero { --hm-scrim-text: rgba(5,11,20,.82); --hm-scrim-top: rgba(5,11,20,.7); } }
+
+/* semantic status/gold tokens (theme-independent), used by tasks-nextup and mosques-redesign */
+:root{
+  --hm-ok-text:#175C45;
+  --hm-on-gold-dark:#3B2C07;
+  --hm-muted-green:#5E7A72;
+  --hm-warn-text-strong:#6B5316;
+  --hm-warn-text:#8A6A1F;
+  --hm-ok-soft:#8FE0C4;
+  --hm-danger-text:#9B3427;
+  --hm-ok-border:#B7D8C7;
+  --hm-ok-bg:#E4F1EA;
+  --hm-gold-soft:#E8CB8B;
+  --hm-danger-border:#F0C3BB;
+  --hm-gold-pale:#F6E3B0;
+  --hm-danger-bg:#FBE9E5;
+  --hm-danger-soft:#FFB3A6;
+  --hm-on-fill:#FFFFFF;
+}
+:root{--hm-gold-deep:#B8860B;}
+:root{--hm-emerald-deep:#175A4A;--hm-emerald-mid:#2A725E;--hm-emerald-soft:#7AD6B8;}

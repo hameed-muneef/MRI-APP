@@ -3,7 +3,7 @@
 #root .app .day-tracker {
   --day-ink: #193129;
   --day-green: #1e4b3b;
-  --day-gold: #8a6823;
+  --day-gold: #7A5A12;
   --day-muted: #55675f;
   --day-line: #d5dfd7;
   --day-ivory: #fffdf9;
@@ -77,7 +77,7 @@
 }
 
 #root .app .day-header-date .hijri-inline {
-  color: #60726a;
+  color: #4F5F5B;
   font-weight: 600;
 }
 
@@ -402,7 +402,7 @@
   width: fit-content;
   font-size: 10.5px;
   font-weight: 700;
-  color: #8a6823;
+  color: #7A5A12;
 }
 
 #root .app .day-plan-content .prayer-grid .prayer input[type=time] {
@@ -426,7 +426,7 @@
 
 #root .app .day-plan-content .prayer-grid .prayer-sunrise .prayer-name,
 #root .app .day-plan-content .prayer-grid .prayer-sunrise .prayer-time-text {
-  color: #8a6823;
+  color: #7A5A12;
 }
 
 #root .app .personal-times {
@@ -574,7 +574,7 @@
   margin: 0;
   padding: 9px 16px;
   background: #fbf6ea;
-  color: #8a6823;
+  color: #7A5A12;
   font-size: 12px;
   font-weight: 700;
   border-bottom: 1px solid #e9dfc6;
@@ -586,7 +586,7 @@
   border-radius: 9px;
   background: #fbf6ea;
   border: 1px solid #e8dcbe;
-  color: #8a6823;
+  color: #7A5A12;
   font-size: 12px;
   font-weight: 700;
 }
@@ -671,7 +671,7 @@
 }
 
 #root .app .day-plan-content .schedule-badge.initial {
-  color: #8a6823;
+  color: #7A5A12;
 }
 
 #root .app .day-plan-content .schedule-badge.initial::before {
@@ -1181,7 +1181,7 @@
   border-radius: 8px;
   font-size: 12.5px;
   font-weight: 700;
-  color: #8a6823;
+  color: #7A5A12;
   background: #faf4e6;
   border: 1px solid #e6d7b3;
 }
@@ -1203,7 +1203,7 @@
 
 #root .app .tracking-deferred .tracking-status {
   background: #faf1dc;
-  color: #8a6823;
+  color: #7A5A12;
 }
 
 #root .app .tracking-empty {
@@ -1259,7 +1259,7 @@
   background: #f4f7f4;
   border: 1px solid #d5dfd7;
   border-radius: 11px;
-  color: #8a6823;
+  color: #7A5A12;
   font-size: 24px;
   line-height: 1;
 }

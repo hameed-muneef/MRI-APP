@@ -192,3 +192,8 @@ html[data-theme="dark"]:root:root #root .app input:not([type="checkbox"]):not([t
   background-color: var(--hm-bg) !important; border-color: var(--hm-border) !important; color: var(--hm-text) !important;
 }
 html:root { --font-body: 'Cairo', Tajawal, Arial, sans-serif; --font-heading: 'Cairo', Tajawal, Arial, sans-serif; --font-ui: 'Cairo', Tajawal, Arial, sans-serif; }
+
+/* Audit fixes: contrast >= 4.5:1 on final surfaces */
+html[data-theme="dark"]:root:root .mf-marker { color: #E2C06E; }
+html[data-theme="dark"]:root:root #root .app .soft-btn { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; color: #F3EFE4 !important; }
+html[data-theme="dark"]:root:root #root .app .mf-btn { background: #2A725E !important; border-color: #2A725E !important; color: #F3EFE4 !important; }
