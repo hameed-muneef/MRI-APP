@@ -203,3 +203,10 @@ html:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=rang
 html:root:root select option, html:root:root select optgroup { color: var(--hm-text); background-color: var(--hm-surface); font-family: Cairo, Tajawal, Arial, sans-serif; }
 html[data-theme="dark"]:root:root #root input:not([type=checkbox]):not([type=radio]):not([type=range]), html[data-theme="dark"]:root:root #root select, html[data-theme="dark"]:root:root #root textarea { background-color: var(--hm-bg) !important; }
 html[data-theme="dark"]:root:root select option, html[data-theme="dark"]:root:root select optgroup { background-color: var(--hm-surface); color: #F3EFE4; }
+
+/* Tap targets: at least 44px without moving surrounding layout */
+html:root:root #root .app :is(.icon-btn, .notif-bell) { min-width: 44px; min-height: 44px; }
+html:root:root #root .app :is(button.back, .mf-btn, .mushaf-toolbar select, select) { min-height: 44px; }
+html:root:root #root .app a:is([href*="youtube"], [target="_blank"]) { min-height: 44px; display: inline-flex; align-items: center; }
+html:root:root #root .app .section-subnav button, html:root:root #root .app .scroll-top-fab { min-height: 44px; }
+html:root:root #root .app .scroll-top-fab { min-width: 44px; }
