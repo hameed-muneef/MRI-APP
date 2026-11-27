@@ -7,6 +7,7 @@ async function seedGoal(page:Page){
   await page.evaluate(async()=>{
     const {createSeed}=await import(/* @vite-ignore */ '/src/app-state.ts');
     const state=createSeed();
+    state.coachSettings={globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true};
     state.goals=[{id:'g1',title:'قراءة كتاب نافع',benefit:'العلم',createdAt:'2026-09-01',steps:[{id:'s1',title:'قراءة صفحة',period:'daily',done:{'2026-11-10':true}}]}];
     localStorage.setItem('rabbani-v1',JSON.stringify(state));
   });
@@ -20,7 +21,7 @@ const stored=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('rab
 test.describe('unified coach: goals',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
 
-  test('off by default, no suggestions, nothing stored',async({page})=>{
+  test('suggestions muted: no suggestions, nothing stored',async({page})=>{
     await seedGoal(page);
     await expect(page.getByRole('switch',{name:/تفعيل المدرّب/})).not.toBeChecked();
     await expect(page.getByRole('group',{name:'اقتراح المدرّب'})).toHaveCount(0);

@@ -28,8 +28,10 @@ async function prepare(page:Page){
 
 test.describe('unified coach: course tasks',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
-  test('off by default, nothing logged and no list',async({page})=>{
-    await prepare(page);await openTasks(page);
+  test('suggestions muted: nothing logged and no list',async({page})=>{
+    await prepare(page);
+    await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('rabbani-v1')!);s.coachSettings={globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true};localStorage.setItem('rabbani-v1',JSON.stringify(s))});
+    await page.reload();await openTasks(page);
     await expect(page.getByRole('switch',{name:'تفعيل المدرّب لمهام المقرر'})).not.toBeChecked();
     await expect(page.getByText('ابدأ من هنا')).toHaveCount(0);
     expect((await read(page)).courseCoach).toBeUndefined();

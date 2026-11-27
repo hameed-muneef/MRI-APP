@@ -6,7 +6,7 @@ async function open(page:Page,wird:string){
   await page.goto('/');
   await page.evaluate(async w=>{
     const {createSeed}=await import(/* @vite-ignore */ '/src/app-state.ts');
-    const state=createSeed();state.wirds=[JSON.parse(w)];
+    const state=createSeed();state.coachSettings={globalEnabled:false,enabledAt:'2026-11-01',suggestionsMuted:true};state.wirds=[JSON.parse(w)];
     localStorage.setItem('rabbani-v1',JSON.stringify(state));
   },wird);
   await page.reload();
@@ -18,7 +18,7 @@ const base={id:'w1',title:'استغفار',target:100,count:0,period:'daily',per
 
 test.describe('unified coach: habits and wirds',()=>{
   test.use({viewport:{width:400,height:850},timezoneId:'Africa/Cairo'});
-  test('off by default and stores nothing',async({page})=>{
+  test('suggestions muted: stores nothing',async({page})=>{
     await open(page,JSON.stringify(base));
     await expect(page.getByRole('switch',{name:/تفعيل المدرّب لورد/})).not.toBeChecked();
     await page.getByRole('button',{name:'+10'}).first().click();
