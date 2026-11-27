@@ -4,20 +4,20 @@
 
 :root, :root[data-theme="light"] {
   /* surfaces */
-  --hm-bg: #F6F2E9;            /* ivory page */
-  --hm-surface: #FFFFFF;       /* card */
-  --hm-surface-2: #FBF8F0;     /* inset / chip */
-  --hm-border: #DDD5C2;        /* decorative hairline only, 1.31:1, never the sole boundary of a control */
+  --hm-bg: #F4EEE1;            /* ivory page */
+  --hm-surface: #FFFDF8;       /* card */
+  --hm-surface-2: #F1E8D2;     /* inset / chip */
+  --hm-border: #E3D9C3;        /* decorative hairline only, 1.31:1, never the sole boundary of a control */
   /* text */
-  --hm-text: #0F1D33;          /* 15.11 on bg, 16.88 on surface */
-  --hm-text-muted: #4B586B;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
+  --hm-text: #1F2A2A;          /* 15.11 on bg, 16.88 on surface */
+  --hm-text-muted: #5E6A66;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
   /* brand */
   --hm-navy: #14305A;          /* primary fill; white on it 13.12 */
   --hm-on-navy: #FFFFFF;
   --hm-gold: #C8A04A;          /* FILL/ornament only (2.19 on bg): never gold text or a lone icon on light */
   --hm-on-gold: #1A1405;       /* 7.49 on gold */
-  --hm-gold-text: #6F5010;     /* gold as text/icon: 6.64 on bg, 7.42 on surface */
-  --hm-green: #1D6A50;         /* Islamic green, 5.82 on bg, 6.50 on surface; white on it 6.50 */
+  --hm-gold-text: #7A5A12;     /* gold as text/icon: 6.64 on bg, 7.42 on surface */
+  --hm-green: #1E6F5C;         /* Islamic green, 5.82 on bg, 6.50 on surface; white on it 6.50 */
   --hm-on-green: #FFFFFF;
   --hm-danger: #A32A2A;        /* 7.19 on surface */
   --hm-focus: #14305A;         /* 11.75 on bg */
@@ -30,15 +30,15 @@
   --hm-shadow-1: 0 1px 2px rgba(15,29,51,.06), 0 1px 1px rgba(15,29,51,.04);
   --hm-shadow-2: 0 4px 12px rgba(15,29,51,.08), 0 1px 3px rgba(15,29,51,.06);
   --hm-shadow-3: 0 12px 28px rgba(15,29,51,.12), 0 2px 6px rgba(15,29,51,.06);
-  --hm-nav-bg: rgba(255,255,255,.82);
+  --hm-nav-bg: rgba(255,253,248,.93);
   --hm-nav-border: rgba(15,29,51,.10);
 }
 
 :root[data-theme="dark"] {
-  --hm-bg: #112841;
-  --hm-surface: #1B3654;
-  --hm-surface-2: #234368;
-  --hm-border: #3A5C84;        /* 1.69 on bg, decorative */
+  --hm-bg: #16314D;
+  --hm-surface: #234363;
+  --hm-surface-2: #2D5276;
+  --hm-border: #54799F;        /* 1.69 on bg, decorative */
   --hm-text: #F3EFE4;          /* 16.25 on bg, 14.42 on surface, 12.80 on surface-2 */
   --hm-text-muted: #B4BECC;    /* 9.94 on bg, 8.82 on surface, 7.83 on surface-2 */
   --hm-navy: #9DB8E8;          /* in dark the "navy" role is a light blue accent; 9.30 on bg */
@@ -57,7 +57,7 @@
   --hm-shadow-1: 0 1px 2px rgba(0,0,0,.30);
   --hm-shadow-2: 0 4px 12px rgba(0,0,0,.32), 0 1px 3px rgba(0,0,0,.24);
   --hm-shadow-3: 0 12px 28px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.28);
-  --hm-nav-bg: rgba(22,45,72,.88);
+  --hm-nav-bg: rgba(26,52,82,.92);
   --hm-nav-border: rgba(243,239,228,.10);
 }
 
@@ -65,7 +65,7 @@
   /* shape and spacing (4pt grid) */
   --hm-r-sm: 10px;   /* chips, inputs */
   --hm-r-md: 16px;   /* cards */
-  --hm-r-lg: 24px;   /* hero, sheets */
+  --hm-r-lg: 16px;   /* hero, sheets */
   --hm-r-pill: 999px;
   --hm-s-1: 4px; --hm-s-2: 8px; --hm-s-3: 12px; --hm-s-4: 16px; --hm-s-5: 24px; --hm-s-6: 32px;
   --hm-tap: 48px;    /* min touch target (Material 48dp, HIG 44pt) */
@@ -73,7 +73,7 @@
   --hm-dur: 180ms;
 
   /* Arabic type scale. Use the app's existing Arabic font stack; Quran text keeps the mushaf font. */
-  --hm-font-ui: system-ui, -apple-system, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif;
+  --hm-font-ui: Cairo, system-ui, -apple-system, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif;
   --hm-font-verse: var(--font-quran, "Amiri Quran", "KFGQPC Uthmanic Script HAFS", "Noto Naskh Arabic", serif);
   --hm-fs-verse: clamp(1.5rem, 1.1rem + 2vw, 2rem);   /* 24 to 32px */
   --hm-lh-verse: 2.05;                                  /* tashkeel needs tall lines; never below 1.9 */

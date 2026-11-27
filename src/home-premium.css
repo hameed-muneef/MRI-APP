@@ -107,3 +107,41 @@ html:root #root .app.app main.main .wide-card p { color: var(--hm-text-muted) !i
 html[data-theme="dark"]:root #root .app.app,
 html[data-theme="dark"]:root body { background-color: var(--hm-bg) !important; background-image: none; }
 html[data-theme="dark"]:root #root .app.app .mobile-nav { background: var(--hm-nav-bg) !important; }
+
+/* Cairo (محلي، بدون اتصال) */
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-arabic-wght-normal.woff2') format('woff2-variations');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-latin-wght-normal.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:200 1000;font-display:swap;src:url('/fonts/cairo-latin-ext-wght-normal.woff2') format('woff2-variations');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+html body, html body button, html body input, html body select, html body textarea { font-family: 'Cairo', Tajawal, Arial, sans-serif; }
+
+/* زر البدء: ذهبي هادئ بنص كحلي */
+html #root .app.app .hero .hero-btn { background:#C99A45 !important; color:#0D1722 !important; border:0 !important; box-shadow:0 4px 12px rgba(0,0,0,.18) !important; }
+html[data-theme="dark"] #root .app.app .hero .hero-btn { background:#D4A349 !important; }
+/* الشريط الزمني: هجري | ميلادي */
+html #root .app .home-date-text { display:flex; align-items:center; }
+html #root .app .home-greg-date::before { content:"|"; margin-inline:10px; color: var(--hm-border); }
+html #root .app .home-date-bar { background: var(--hm-surface) !important; border-radius:999px !important; border:1px solid var(--hm-border) !important; }
+/* بطاقات: فصل واضح عن الصفحة */
+html:root #root .app.app main.main .home-today-entry,
+html:root #root .app.app main.main .home-dashboard .home-next-card,
+html:root #root .app.app main.main .feature-card,
+html:root #root .app.app main.main .wide-card { border-radius:16px !important; }
+html:root[data-theme="light"] #root .app.app main.main .home-today-entry,
+html:root[data-theme="light"] #root .app.app main.main .home-dashboard .home-next-card,
+html:root[data-theme="light"] #root .app.app main.main .feature-card,
+html:root[data-theme="light"] #root .app.app main.main .wide-card { box-shadow: 0 2px 10px rgba(28,37,44,.07) !important; }
+html:root[data-theme="dark"] #root .app.app main.main .home-today-entry,
+html:root[data-theme="dark"] #root .app.app main.main .home-dashboard .home-next-card,
+html:root[data-theme="dark"] #root .app.app main.main .feature-card,
+html:root[data-theme="dark"] #root .app.app main.main .wide-card { box-shadow: 0 6px 18px rgba(4,12,22,.35) !important; border-color: var(--hm-border) !important; }
+/* التنقل: اللون النشط زمردي */
+html:root { --hm-active: #1E6F5C; --hm-active-bg: rgba(30,111,92,.12); }
+html:root[data-theme="dark"] { --hm-active: #5BC4A5; --hm-active-bg: rgba(91,196,165,.18); }
+html #root .app.app .mobile-nav button.active { color: var(--hm-active) !important; background: var(--hm-active-bg) !important; }
+html #root .app.app .mobile-nav button.active svg, html #root .app.app .mobile-nav button.active span { color: var(--hm-active) !important; }
+html #root .app.app .section-title h2 { color: var(--hm-text) !important; }
+html:root #root .app.app, html:root body, html:root #root .app.app main.main { background-color: var(--hm-bg) !important; background-image: none !important; }
+html:root #root .app.app header, html:root #root .app.app .topbar { background-color: var(--hm-bg) !important; border-bottom: 1px solid var(--hm-border) !important; }
+html:root:root #root .topbar, html:root:root .topbar { background: var(--hm-bg) !important; border-bottom: 1px solid var(--hm-border) !important; box-shadow: none !important; }
+html:root:root #root .app.app .mobile-nav, html:root:root .mobile-nav { background: var(--hm-nav-bg) !important; border-top: 1px solid var(--hm-border) !important; }
+html[data-theme]:root:root #root .app.app .topbar, html[data-theme]:root:root #root .app.app main.main .topbar, html[data-theme]:root:root #root .app.app > .topbar { background: var(--hm-bg) !important; border-bottom-color: var(--hm-border) !important; }
