@@ -83,11 +83,11 @@ export const FAR_QUEUE_MAX_ITEMS = 400;
 export function farQueueItems(
   extended: readonly NativeNotificationPayload[],
   registered: readonly NativeNotificationPayload[],
-): Array<{ id: number; at: number; title: string; body: string; channelId: string }> {
+): Array<{ id: number; at: number; title: string; body: string; channelId: string; alarmMode?: boolean }> {
   const have = new Set(registered.map((p) => p.id));
   return extended
     .filter((p) => !have.has(p.id))
-    .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID }));
+    .map((p) => ({ id: p.id, at: p.schedule.at.getTime(), title: p.title, body: p.body, channelId: p.channelId ?? GENERAL_CHANNEL_ID, ...(isAlarmPayload(p) ? { alarmMode: true } : {}) }));
 }
 
 /**
@@ -105,6 +105,19 @@ export function splitSilentForLegacyAndroid<T extends { channelId?: string }>(
     registered: payloads.filter((p) => p.channelId !== SILENT_REMINDER_CHANNEL_ID),
     queued: payloads.filter((p) => p.channelId === SILENT_REMINDER_CHANNEL_ID),
   };
+}
+
+/** True for a payload that must ring as an alarm (per-reminder or per-task switch). */
+export function isAlarmPayload(p: { extra?: Record<string, unknown> }): boolean {
+  return p.extra?.alarmMode === true;
+}
+
+/**
+ * Alarm-mode items never go through LocalNotifications (it cannot loop a sound): they are handed to the native queue
+ * only, with alarmMode: true on the row. Pure split of what LocalNotifications may register.
+ */
+export function splitAlarmPayloads<T extends { extra?: Record<string, unknown> }>(payloads: readonly T[]): { registered: T[]; alarms: T[] } {
+  return { registered: payloads.filter((p) => !isAlarmPayload(p)), alarms: payloads.filter(isAlarmPayload) };
 }
 
 export interface NativeScheduleOptions {
@@ -497,7 +510,7 @@ export function buildNativeReminderPayloads(
         channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
-        extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
+        extra: { rabbaniKind: 'reminder', reminderId: reminder.id, ...(reminder.alarm_mode === true ? { alarmMode: true } : {}) },
       });
     }
 
@@ -514,7 +527,7 @@ export function buildNativeReminderPayloads(
         channelId: reminderChannelId,
         foreground: true,
         isExactNotification: exactAlarm,
-        extra: { rabbaniKind: 'reminder', reminderId: reminder.id },
+        extra: { rabbaniKind: 'reminder', reminderId: reminder.id, ...(reminder.alarm_mode === true ? { alarmMode: true } : {}) },
       });
     }
   }
@@ -563,6 +576,7 @@ export function buildNativeTaskPayloads(
         taskId: event.taskId,
         date: event.date,
         eventType: event.kind,
+        ...(event.alarmMode === true ? { alarmMode: true } : {}),
       },
     });
   }
@@ -924,7 +938,7 @@ export async function scheduleNativePersonalReminders(
     if (perms.display !== 'granted') { await setNativeReminderRules([]); await setNativeReminderQueue('reminder', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = splitAlarmPayloads(buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted)).registered;
     const extended = buildNativeReminderPayloads(nativeMasteryReminders(reminders,loadMasteryState(),now), prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
     const farItems = farQueueItems(extended, payloads);
     // Daily and weekly reminders keep renewing on the device past the planned window; replaced (or emptied) on every run, before the queue.
@@ -965,7 +979,7 @@ export async function scheduleNativeTaskNotifications(
     if (perms.display !== 'granted') { await setNativeReminderQueue('task', []); return 0; }
 
     const exactGranted = perms.exact === 'granted' || perms.exact === 'unsupported';
-    const payloads = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted);
+    const payloads = splitAlarmPayloads(buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted)).registered;
     const extended = buildNativeTaskPayloads(taskContext, prefs, now, GENERAL_CHANNEL_ID, exactGranted, FAR_QUEUE);
     const farItems = farQueueItems(extended, payloads);
     if (payloads.length === 0) { await setNativeReminderQueue('task', farItems); return 0; }

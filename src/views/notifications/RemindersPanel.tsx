@@ -56,6 +56,7 @@ type Draft = {
   category: string;
   soundId: string | undefined;
   linkedGoalId: string | undefined;
+  alarmMode: boolean;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -99,6 +100,7 @@ function emptyDraft(): Draft {
     category: 'reminder',
     soundId: undefined,
     linkedGoalId: undefined,
+    alarmMode: false,
   };
 }
 
@@ -119,6 +121,7 @@ function draftFromReminder(reminder: Reminder): Draft {
     category: reminder.category,
     soundId: reminder.sound_id,
     linkedGoalId: reminder.linked_goal_id,
+    alarmMode: reminder.alarm_mode === true,
   };
 }
 
@@ -144,6 +147,7 @@ function buildReminder(draft: Draft): Omit<Reminder, 'id' | 'user_id' | 'created
     sound_id: draft.soundId,
     category: draft.category,
     linked_goal_id: draft.linkedGoalId,
+    alarm_mode: draft.alarmMode ? true : undefined,
     snooze_until: undefined,
     enabled: true,
   };
@@ -298,7 +302,7 @@ export default function RemindersPanel({
         const editId = draft.id;
         try {
           const stored = await updateReminder(editId, {...values, snooze_until: undefined, enabled: true});
-          commitReminders(list => list.map(item => (item.id === stored.id ? stored : item)));
+          commitReminders(list => list.map(item => (item.id === stored.id ? {...stored, alarm_mode: values.alarm_mode} : item)));
           notify('حُدِّث المنبه');
         } catch {
           commitReminders(list =>
@@ -313,7 +317,7 @@ export default function RemindersPanel({
       } else {
         try {
           const stored = await createReminder(values);
-          commitReminders(list => [...list, stored]);
+          commitReminders(list => [...list, {...stored, alarm_mode: values.alarm_mode}]);
           notify('أُضيف المنبه');
         } catch {
           const stamp = new Date().toISOString();
@@ -387,8 +391,9 @@ export default function RemindersPanel({
           linked_goal_id: reminder.linked_goal_id,
           linked_task_id: reminder.linked_task_id,
           enabled: reminder.enabled,
+          alarm_mode: reminder.alarm_mode,
         });
-        commitReminders(list => [...list, stored]);
+        commitReminders(list => [...list, {...stored, alarm_mode: reminder.alarm_mode}]);
         notify('تم نسخ المنبه');
       } catch {
         const stamp = new Date().toISOString();
@@ -407,6 +412,7 @@ export default function RemindersPanel({
             linked_goal_id: reminder.linked_goal_id,
             linked_task_id: reminder.linked_task_id,
             enabled: reminder.enabled,
+            alarm_mode: reminder.alarm_mode,
             created_at: stamp,
             updated_at: stamp,
           },
@@ -424,7 +430,7 @@ export default function RemindersPanel({
     try {
       try {
         const stored = await snoozeReminder(reminder.id, 10);
-        commitReminders(list => list.map(item => (item.id === stored.id ? stored : item)));
+        commitReminders(list => list.map(item => (item.id === stored.id ? {...stored, alarm_mode: item.alarm_mode} : item)));
       } catch {
         const until = new Date(Date.now() + 10 * 60000).toISOString();
         commitReminders(list =>
@@ -651,6 +657,16 @@ export default function RemindersPanel({
             </label>
           </div>
 
+          <label className="notif-alarm-mode">
+            <input
+              type="checkbox"
+              checked={draft.alarmMode}
+              onChange={event => setDraft({...draft, alarmMode: event.target.checked})}
+            />
+            <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
+          </label>
+          {draft.alarmMode && <p className="muted notif-alarm-mode-hint">على الهاتف يرنّ المنبه نحو دقيقة، ويتوقف بزر الإيقاف أو التأجيل أو بزر الشاشة. مغلق افتراضيًا.</p>}
+
           {goals.length > 0 && (
             <label>ربط بهدف (اختياري)
               <select
@@ -715,6 +731,7 @@ export default function RemindersPanel({
                     </div>
                     <small className="notif-reminder-meta">
                       {recurrenceHint(reminder)} · {CATEGORY_LABELS[reminder.category] ?? reminder.category}
+                      {reminder.alarm_mode ? ' · نمط منبه' : ''}
                       {reminder.description ? ` · ${reminder.description}` : ''}
                     </small>
                     <small className={`notif-reminder-due${info.isSnoozed ? ' snoozed' : ''}`}>

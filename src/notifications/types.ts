@@ -64,6 +64,8 @@ export type Reminder = {
   linked_goal_id?: string;
   linked_task_id?: string;
   enabled: boolean;
+  /** نمط منبه: رنين متكرر نحو دقيقة على الهاتف حتى الإيقاف أو التأجيل. الافتراضي مغلق. */
+  alarm_mode?: boolean;
   snooze_until?: string | null;
   created_at: string;
   updated_at: string;

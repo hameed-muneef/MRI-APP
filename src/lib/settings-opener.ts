@@ -152,7 +152,7 @@ export function withSnoozeMinutes<T extends object>(items: ReadonlyArray<T>, min
 /** Stores reminders beyond the LocalNotifications window; native arms them as they come due (see NativeReminderQueue). */
 export async function setNativeReminderQueue(
   kind: 'reminder' | 'task' | 'review' | 'prayer',
-  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string; snoozeMinutes?: number }>,
+  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string; snoozeMinutes?: number; alarmMode?: boolean }>,
   snoozeMinutes?: number,
 ): Promise<boolean> {
   if (!isNative()) return false;

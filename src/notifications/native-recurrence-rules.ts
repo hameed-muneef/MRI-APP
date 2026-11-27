@@ -14,6 +14,8 @@ export interface NativeRecurrenceRule {
   title: string;
   body: string;
   channelId: string;
+  /** True when the reminder rings as an alarm; the device posts its occurrences on the alarm channel. */
+  alarmMode: boolean;
   kind: 'daily' | 'weekly';
   baseMs: number;
   /** YYYY-MM-DD or null. */
@@ -72,6 +74,7 @@ export function buildNativeRecurrenceRules(
       title: r.title,
       body: r.description || 'تذكير مخصص',
       channelId,
+      alarmMode: r.alarm_mode === true,
       kind: r.recurrence,
       baseMs,
       start,

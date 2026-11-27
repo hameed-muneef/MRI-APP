@@ -104,6 +104,7 @@ export default function TodayTasksView({
   const [dateByTask, setDateByTask] = useState<Record<string, string>>({});
   const [notifyDraftByTask, setNotifyDraftByTask] = useState<Record<string, boolean>>({});
   const [leadDraftByTask, setLeadDraftByTask] = useState<Record<string, number | undefined>>({});
+  const [alarmDraftByTask, setAlarmDraftByTask] = useState<Record<string, boolean>>({});
   const [notice, setNotice] = useState('');
   const [undo, setUndo] = useState<{label: string; before?: Task[]; beforeGoals?: Goal[]} | null>(null);
   const [confirmDone, setConfirmDone] = useState<Task | null>(null);
@@ -327,6 +328,7 @@ export default function TodayTasksView({
     const time = timeByTask[id] ?? (timeOfTask(existing) || currentTime());
     const notifyEnabled = notifyDraftByTask[id] ?? existing?.notifyEnabled ?? true;
     const remindBeforeMinutes = id in leadDraftByTask ? leadDraftByTask[id] : existing?.remindBeforeMinutes;
+    const alarmMode = alarmDraftByTask[id] ?? existing?.alarmMode === true;
     onTaskSchedules({
       ...taskSchedules,
       [id]: {
@@ -339,6 +341,7 @@ export default function TodayTasksView({
         confirmedSlot: undefined,
         notifyEnabled,
         remindBeforeMinutes,
+        alarmMode: alarmMode ? true : undefined,
       },
     });
     notifyNativePrefsChanged();
@@ -351,6 +354,7 @@ export default function TodayTasksView({
     const time = timeByTask[id] ?? (timeOfTask(existing) || currentTime());
     const notifyEnabled = notifyDraftByTask[id] ?? existing?.notifyEnabled ?? true;
     const remindBeforeMinutes = id in leadDraftByTask ? leadDraftByTask[id] : existing?.remindBeforeMinutes;
+    const alarmMode = alarmDraftByTask[id] ?? existing?.alarmMode === true;
     onTaskSchedules({
       ...taskSchedules,
       [id]: {
@@ -365,6 +369,7 @@ export default function TodayTasksView({
         confirmedSlot: undefined,
         notifyEnabled,
         remindBeforeMinutes,
+        alarmMode: alarmMode ? true : undefined,
       },
     });
     notifyNativePrefsChanged();
@@ -385,6 +390,19 @@ export default function TodayTasksView({
       setNotice(next ? `تم تفعيل تنبيه «${title}».` : `تم إيقاف تنبيه «${title}».`);
     } else {
       setNotice(next ? `سيُفعَّل تنبيه «${title}» عند حفظ موعده.` : `سيُوقَف تنبيه «${title}» عند حفظ موعده.`);
+    }
+  };
+
+  const toggleItemAlarm = (id: string, title: string) => {
+    const existing = taskSchedules[id];
+    const next = !(alarmDraftByTask[id] ?? existing?.alarmMode === true);
+    setAlarmDraftByTask(prev => ({...prev, [id]: next}));
+    if (existing) {
+      onTaskSchedules({...taskSchedules, [id]: {...existing, alarmMode: next ? true : undefined}});
+      notifyNativePrefsChanged();
+      setNotice(next ? `سيرنّ تنبيه «${title}» بنمط منبه على الهاتف.` : `عاد تنبيه «${title}» إلى الإشعار العادي.`);
+    } else {
+      setNotice(next ? `سيُفعَّل نمط المنبه لـ «${title}» عند حفظ موعده.` : `لن يُفعَّل نمط المنبه لـ «${title}».`);
     }
   };
 
@@ -527,6 +545,7 @@ export default function TodayTasksView({
               const schedule = taskSchedules[item.id];
               const itemNotifyEnabled = notifyDraftByTask[item.id] ?? schedule?.notifyEnabled ?? true;
               const itemLeadMinutes = item.id in leadDraftByTask ? leadDraftByTask[item.id] : schedule?.remindBeforeMinutes;
+              const itemAlarmMode = alarmDraftByTask[item.id] ?? schedule?.alarmMode === true;
               const effectiveLead = itemLeadMinutes ?? taskSettings.remind_before_minutes;
               const hasSchedule = Boolean(schedule?.confirmedDate || schedule?.initialDate);
               const showMeta = Boolean(
@@ -586,7 +605,7 @@ export default function TodayTasksView({
                               ? 'التنبيه موقوف'
                               : effectiveLead > 0
                                 ? `تنبيه قبل ${effectiveLead} د`
-                                : 'تنبيه عند الموعد'}
+                                : 'تنبيه عند الموعد'}{itemNotifyEnabled && itemAlarmMode ? ' · نمط منبه' : ''}
                           </span>
                         </span>
                       )}
@@ -643,6 +662,16 @@ export default function TodayTasksView({
                         </button>
                       </div>
                     </div>
+
+                    <label className="today-task-alarm-mode">
+                      <input
+                        type="checkbox"
+                        checked={itemAlarmMode}
+                        aria-label={`نمط منبه لـ ${item.title}`}
+                        onChange={() => toggleItemAlarm(item.id, item.title)}
+                      />
+                      <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
+                    </label>
 
                     <div className="today-task-footer">
                       <button

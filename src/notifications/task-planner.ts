@@ -27,6 +27,7 @@ export type TaskEvent = {
   sourceLabel: string;
   title: string;
   body: string;
+  alarmMode?: boolean;
 };
 
 export type TaskScheduleContext = {
@@ -45,6 +46,7 @@ export type ScheduledTaskEntry = {
   time: string;
   confirmed: boolean;
   beforeMinutes: number;
+  alarmMode?: boolean;
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -145,6 +147,7 @@ export function collectScheduledTasks(
       time,
       confirmed,
       beforeMinutes: clampLeadMinutes(schedule.remindBeforeMinutes, settings.remind_before_minutes),
+      alarmMode: schedule.alarmMode === true,
     });
   }
 
@@ -223,6 +226,7 @@ export function dailyTaskEvents(
         sourceLabel: entry.sourceLabel,
         title: `اقتراب موعد مهمة: ${entry.title}`,
         body: `متبقي ${beforeText} على الموعد (${clockLabel})${sourceSuffix}`,
+        alarmMode: entry.alarmMode === true,
       });
     }
 
@@ -239,6 +243,7 @@ export function dailyTaskEvents(
         sourceLabel: entry.sourceLabel,
         title: `حان وقت المهمة: ${entry.title}`,
         body: `موعد التنفيذ الآن (${clockLabel})${sourceSuffix}`,
+        alarmMode: entry.alarmMode === true,
       });
     }
   }

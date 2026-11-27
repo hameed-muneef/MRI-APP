@@ -7,7 +7,7 @@ export const reminderSchema=z.object({
  id:str.min(1),title:str.min(1),scheduled_at:str.refine(s=>Number.isFinite(Date.parse(s))),
  recurrence:z.enum(['none','daily','weekday','weekdays','weekly','monthly','custom','specific_dates']).optional(),
  recurrence_config:z.object({days_of_week:z.array(num.int().min(0).max(6)).optional(),start_date:date.optional(),end_date:date.optional(),specific_dates:z.array(date).optional(),interval_days:num.int().positive().optional()}).optional(),
- user_id:str.optional(),description:str.optional(),sound_id:str.optional(),category:str.optional(),linked_goal_id:str.optional(),linked_task_id:str.optional(),enabled:bool.optional(),snooze_until:str.nullable().optional(),created_at:str.optional(),updated_at:str.optional(),
+ user_id:str.optional(),description:str.optional(),sound_id:str.optional(),category:str.optional(),linked_goal_id:str.optional(),linked_task_id:str.optional(),enabled:bool.optional(),alarm_mode:bool.optional(),snooze_until:str.nullable().optional(),created_at:str.optional(),updated_at:str.optional(),
 });
 export const prefsSchema=z.object({
  user_id:str.optional(),global_enabled:bool.optional(),categories:z.record(str,bool).optional(),dnd_enabled:bool.optional(),updated_at:str.optional(),
