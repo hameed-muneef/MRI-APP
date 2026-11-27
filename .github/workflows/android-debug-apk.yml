@@ -1,0 +1,41 @@
+name: Android debug APK
+
+# Builds an unsigned-for-release DEBUG apk for phone testing. No release keys, no Google Play.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/smart-coach-enhancement]
+    paths:
+      - '.github/workflows/android-debug-apk.yml'
+      - 'src/**'
+      - 'android/**'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web assets and sync Capacitor (Local-Only)
+        env:
+          VITE_LOCAL_ONLY: 'true'
+        run: npm run build:android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build debug APK
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew -p android assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mastery-debug-apk-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
