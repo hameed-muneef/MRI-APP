@@ -29,6 +29,7 @@ import './mosques-redesign.css';
 import './tasks-nextup.css';
 import './design-tokens.css';
 import './home-premium.css';
+import './accent-cards.css';
 import {installSectionTheme} from './section-theme';
 import {installAppearance} from './appearance';
 // تسجيل service worker مع تحديث تلقائي (إعادة تحميل واحدة عند جاهزية نسخة جديدة).
