@@ -130,7 +130,13 @@ export function clearLocalData(): string[] {
 }
 
 export function importLocalBackup(rawJson: string, activeStateKey = 'rabbani-v1'): State | null {
-  const parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
+  let parsed: Partial<LocalBackupPayload> | null;
+  try {
+    parsed = JSON.parse(rawJson) as Partial<LocalBackupPayload> | null;
+  } catch {
+    // ملف ليس JSON أصلًا: رسالة عربية مفهومة بدل خطأ المحلل بالإنجليزية.
+    throw new Error('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
+  }
   if (!parsed || typeof parsed !== 'object' || parsed.app !== BACKUP_APP_ID || parsed.version !== BACKUP_FORMAT_VERSION || typeof parsed.storage !== 'object' || !parsed.storage || Array.isArray(parsed.storage)) {
     throw new Error('ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق الربانيون.');
   }

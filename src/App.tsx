@@ -47,6 +47,7 @@ import {getCentralLocationState, subscribeCentralLocation} from './lib/location-
 import {resolveSchedulingLocation} from './notifications/scheduling-location';
 import {installAudioUnlockListeners} from './notifications/audio';
 import {installAlertActionListener} from './notifications/alert-actions';
+import {createToastNotifier} from './lib/toast-queue';
 import {useCentralLocation} from './hooks/useCentralLocation';
 import usePrayerTimes from './usePrayerTimes';
 import {sanitizePrayerLocation} from './prayer-location';
@@ -325,7 +326,11 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
     return()=>{active=false};
   },[view,requiredFeature,user?.id,admin,retryFeatureAccess]);
 
-  const notify=(t:string)=>{setToast(t);setTimeout(()=>setToast(''),2600)};
+  // مُشعِر واحد للرسائل القصيرة: الرسالة الجديدة تلغي مؤقّت السابقة كي لا تُمحى قبل وقتها.
+  const toastNotifier=useRef<ReturnType<typeof createToastNotifier>|null>(null);
+  if(!toastNotifier.current)toastNotifier.current=createToastNotifier(setToast);
+  useEffect(()=>()=>toastNotifier.current?.dispose(),[]);
+  const notify=(t:string)=>toastNotifier.current?.notify(t);
   // زر/إيماءة الرجوع: إغلاق الطبقات ثم العودة للرئيسية ثم تأكيد الخروج بضغطتين.
   useAppBackButton({
     view,
