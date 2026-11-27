@@ -73,6 +73,20 @@ describe('clearLocalData', () => {
     expect(store.get('someone-else')).toBe('x');
   });
 
+  it('keeps native alarm ids and the offline audio index so nothing is orphaned', () => {
+    const store = installMockWindow({
+      'rabbani-v1': '{}',
+      'rabbani-native-reminder-ids-v1': '[1,2]',
+      'rabbani-native-prayer-ids-v1': '[3]',
+      'rabbani-quran-offline-audio-v1': '{}',
+    });
+    clearLocalData();
+    expect(store.has('rabbani-v1')).toBe(false);
+    expect(store.get('rabbani-native-reminder-ids-v1')).toBe('[1,2]');
+    expect(store.has('rabbani-native-prayer-ids-v1')).toBe(true);
+    expect(store.has('rabbani-quran-offline-audio-v1')).toBe(true);
+  });
+
   it('does nothing when there is no window storage', () => {
     delete (globalThis as unknown as { window?: unknown }).window;
     expect(clearLocalData()).toEqual([]);

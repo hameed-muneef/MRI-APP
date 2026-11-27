@@ -97,6 +97,16 @@ export function exportLocalBackup(): LocalBackupPayload {
  * ذاكرة محتوى القرآن (quran-content-cache-v1:) لا تُمسح: ليست بيانات شخصية، ومسحها يعطّل القراءة دون إنترنت.
  * يُعيد المفاتيح التي أُزيلت.
  */
+// تبقى هذه المفاتيح عمدًا: معرّفات المنبهات الأصلية يحتاجها المجدوِل لإلغاء المنبهات المجدولة فعلًا
+// (حذفها يترك منبهات يتيمة تدق بعد الحذف)، وفهرس التلاوات المحمّلة يرتبط بملفات صوت باقية.
+const KEEP_KEYS = new Set([
+  'rabbani-native-prayer-ids-v1',
+  'rabbani-native-reminder-ids-v1',
+  'rabbani-native-task-ids-v1',
+  'rabbani-native-review-ids-v1',
+  'rabbani-quran-offline-audio-v1',
+]);
+
 export function clearLocalData(): string[] {
   const removed: string[] = [];
   if (typeof window === 'undefined' || !window.localStorage) return removed;
@@ -104,7 +114,7 @@ export function clearLocalData(): string[] {
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i);
-      if (key && key.startsWith('rabbani-')) keys.push(key);
+      if (key && key.startsWith('rabbani-') && !KEEP_KEYS.has(key)) keys.push(key);
     }
     for (const key of keys) {
       window.localStorage.removeItem(key);
