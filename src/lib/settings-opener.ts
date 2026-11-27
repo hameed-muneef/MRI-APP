@@ -47,6 +47,8 @@ interface SettingsOpenerPlugin {
   setNativeRecomputeSpec(opts: { spec: string }): Promise<void>;
   clearNativeRecomputeSpec(): Promise<void>;
   setNativeReminderQueue(opts: { kind: string; items: string }): Promise<{ armed: number }>;
+  saveNativeCustomSound(opts: { key: string; base64: string; ext: string }): Promise<{ saved: boolean }>;
+  pruneNativeCustomSounds(opts: { keep: string[] }): Promise<{ removed: number }>;
   rebalanceNativeReminderQueue(): Promise<{ armed: number }>;
   setNativeReminderRules(opts: { rules: string }): Promise<void>;
   clearNativeReminderQueue(): Promise<void>;
@@ -152,13 +154,35 @@ export function withSnoozeMinutes<T extends object>(items: ReadonlyArray<T>, min
 /** Stores reminders beyond the LocalNotifications window; native arms them as they come due (see NativeReminderQueue). */
 export async function setNativeReminderQueue(
   kind: 'reminder' | 'task' | 'review' | 'prayer',
-  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string; snoozeMinutes?: number; alarmMode?: boolean }>,
+  items: ReadonlyArray<{ id: number; at: number; title: string; body: string; channelId: string; snoozeMinutes?: number; alarmMode?: boolean; soundKey?: string; rawSound?: string }>,
   snoozeMinutes?: number,
 ): Promise<boolean> {
   if (!isNative()) return false;
   try {
     const rows = withSnoozeMinutes(items, snoozeMinutes ?? localSnoozeMinutes());
     await SettingsOpener.setNativeReminderQueue({ kind, items: JSON.stringify(rows) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Copies an imported audio file to the phone so a reminder or alarm can play it. False when not native or the phone refuses it. */
+export async function saveNativeCustomSound(key: string, base64: string, ext: string): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    const res = await SettingsOpener.saveNativeCustomSound({ key, base64, ext });
+    return res?.saved === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Removes phone copies of imported sounds that are no longer in the library (not tied to "delete local data"). */
+export async function pruneNativeCustomSounds(keep: string[]): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    await SettingsOpener.pruneNativeCustomSounds({ keep });
     return true;
   } catch {
     return false;
