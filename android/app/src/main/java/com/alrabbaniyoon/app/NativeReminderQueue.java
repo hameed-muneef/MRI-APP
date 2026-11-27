@@ -439,8 +439,142 @@ public final class NativeReminderQueue {
                 b.setDefaults(android.app.Notification.DEFAULT_ALL);
             }
         }
+        // أزرار الإيقاف والتأجيل: تُغلق الإشعار فورًا، وتعيد جدولة نفسه بعد عشر دقائق عند التأجيل.
+        b.addAction(0, "إيقاف", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_STOP, id, title, body, channelId, 0));
+        b.addAction(0, "تأجيل ١٠ د", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
         try {
             androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
+            if (!silent) rememberRinging(c, id);
         } catch (SecurityException ignored) {}
+    }
+
+    /** Snooze alarms live in their own request-code space so they never overwrite a queued reminder. */
+    static int snoozeRequestCode(int id) { return 0x5A000000 ^ id; }
+
+    /**
+     * Re-arms one notification after a Snooze tap. Uses the same receiver and extras as a queued
+     * reminder, so the alert comes back even if the app is closed. The request code sits in its
+     * own range ({@link #snoozeRequestCode(int)}), so a later refresh of the queue never cancels a
+     * snooze and a snooze never cancels a queued reminder. Exact when the device allows it,
+     * inexact otherwise, exactly like {@link #promote(Context)}.
+     */
+    public static void armSnoozed(Context c, int id, String title, String body, String channelId, int minutes) {
+        long at = System.currentTimeMillis() + Math.max(1, minutes) * 60_000L;
+        Intent i = new Intent(c, QueuedReminderReceiver.class).setAction(ACTION);
+        i.putExtra("id", id);
+        i.putExtra("title", title);
+        i.putExtra("body", body == null ? "" : body);
+        i.putExtra("channelId", channelId == null || channelId.isEmpty() ? GENERAL_CHANNEL_ID : channelId);
+        PendingIntent pi = PendingIntent.getBroadcast(
+            c,
+            snoozeRequestCode(id),
+            i,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        try {
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            if (am == null) return;
+            if (NativeAdhanStore.canScheduleExact(c)) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            } else {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            }
+        } catch (SecurityException se) {
+            // Exact alarms revoked between the check and the call: an inexact alarm still fires, just later.
+            try {
+                AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+                if (am != null) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            // A failed snooze must never crash the receiver.
+        }
+    }
+
+    /** Drops a pending snooze for one notification, so "Stop" really ends it instead of leaving it armed. */
+    public static void cancelSnoozed(Context c, int id) {
+        try {
+            Intent i = new Intent(c, QueuedReminderReceiver.class).setAction(ACTION);
+            PendingIntent pi = PendingIntent.getBroadcast(
+                c,
+                snoozeRequestCode(id),
+                i,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
+            );
+            if (pi == null) return;
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            if (am != null) am.cancel(pi);
+            pi.cancel();
+        } catch (Throwable ignored) {
+            // Cancelling must never crash the receiver.
+        }
+    }
+
+    // ---------- ما يرنّ الآن: حتى يوقفه زر الإيقاف أو مفتاح الطاقة (شاشة تُطفأ) ----------
+
+    /** Ids of alerts this app posted in the last few minutes, i.e. ones whose sound may still be playing. */
+    private static final String KEY_RINGING = "ringing";
+    private static final long RINGING_TTL_MS = 3L * 60 * 1000;
+
+    private static JSONObject ringingMap(Context c) {
+        try {
+            String raw = prefs(c).getString(KEY_RINGING, null);
+            if (raw == null || raw.isEmpty()) return new JSONObject();
+            return new JSONObject(raw);
+        } catch (Throwable t) {
+            return new JSONObject();
+        }
+    }
+
+    static void rememberRinging(Context c, int id) {
+        try {
+            JSONObject map = ringingMap(c);
+            map.put(String.valueOf(id), System.currentTimeMillis());
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {
+            // Bookkeeping must never crash the notifier.
+        }
+    }
+
+    static void forgetRinging(Context c, int id) {
+        try {
+            JSONObject map = ringingMap(c);
+            map.remove(String.valueOf(id));
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Silences whatever this app may still be ringing: the screen-off / power-key case. Cancelling the
+     * notification is what stops a channel sound, and any snooze armed for the same id goes with it.
+     * Only ids posted in the last {@link #RINGING_TTL_MS} are touched, so older notifications in the
+     * shade are left alone.
+     */
+    public static synchronized void stopRinging(Context c) {
+        JSONObject map = ringingMap(c);
+        long now = System.currentTimeMillis();
+        List<String> keys = new ArrayList<>();
+        for (java.util.Iterator<String> it = map.keys(); it.hasNext(); ) keys.add(it.next());
+        for (String key : keys) {
+            long postedAt = map.optLong(key, 0L);
+            if (now - postedAt > RINGING_TTL_MS) {
+                map.remove(key);
+                continue;
+            }
+            int id;
+            try {
+                id = Integer.parseInt(key);
+            } catch (NumberFormatException bad) {
+                map.remove(key);
+                continue;
+            }
+            try {
+                androidx.core.app.NotificationManagerCompat.from(c).cancel(id);
+            } catch (Throwable ignored) {}
+            cancelSnoozed(c, id);
+            map.remove(key);
+        }
+        try {
+            prefs(c).edit().putString(KEY_RINGING, map.toString()).apply();
+        } catch (Throwable ignored) {}
     }
 }
