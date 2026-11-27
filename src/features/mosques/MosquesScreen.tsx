@@ -187,7 +187,6 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                   aria-label="المسافة بالكيلومتر، حتى 40 كم"
                   onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
                 />
-                <small>أي قيمة حتى 40 كم</small>
               </div>
 
               <div className="mosques-mode-group" role="group" aria-label="وسيلة التنقل في خرائط Google">

@@ -475,3 +475,21 @@
     font-size: 13px;
   }
 }
+
+/* Polish: calmer controls panel and compact cards */
+.mosques-controls{display:grid;gap:12px;padding:14px;border-radius:18px}
+.mosques-control-row{display:grid;gap:12px}
+.mosques-radius-group,.mosques-mode-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px}
+.mosques-chip-btn{justify-content:center;min-height:42px;border-radius:12px}
+.mosques-radius-custom{display:grid;grid-template-columns:1fr auto;grid-template-areas:"label label" "range num";align-items:center;gap:8px 12px}
+.mosques-radius-custom label{grid-area:label;font-size:.9rem;font-weight:600}
+.mosques-radius-custom input[type=range]{grid-area:range;width:100%;margin:0;accent-color:var(--primary,#1d4e72);height:28px;background:transparent;box-shadow:none;border:0;padding:0}
+.mosques-radius-custom input[type=number]{grid-area:num;width:84px;min-height:40px;text-align:center;border-radius:10px}
+.mosques-mode-group{grid-template-columns:1fr 1fr}
+.mosques-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mosques-action-row .soft-btn,.mosques-action-row .primary{justify-content:center;min-height:42px;width:100%}
+.mosque-card{padding:14px;border-radius:16px;gap:10px}
+.mosque-card-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mosque-card-actions .mosque-eta{display:flex;align-items:center;gap:6px;font-size:.88rem;color:var(--muted,#6b7280);margin:0}
+.mosque-card-actions .mosque-maps-btn{width:auto;min-height:40px;padding:0 16px;border-radius:12px;margin-inline-start:auto}
+.mosque-card-actions .mosque-offline-hint{flex-basis:100%}

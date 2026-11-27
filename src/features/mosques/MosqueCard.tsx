@@ -39,12 +39,11 @@ export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: M
           <small>خط مستقيم</small>
         </div>
       </div>
-      <div className="mosque-eta" aria-label="الزمن التقريبي">
-        {travelMode === 'walking' ? <Footprints size={15} aria-hidden="true" /> : <Car size={15} aria-hidden="true" />}
-        <span>≈ {timeLabel} {travelMode === 'walking' ? 'مشيًا' : 'بالسيارة'} <small>(تقدير)</small></span>
-      </div>
-
       <div className="mosque-card-actions">
+        <div className="mosque-eta" aria-label="الزمن التقريبي">
+          {travelMode === 'walking' ? <Footprints size={15} aria-hidden="true" /> : <Car size={15} aria-hidden="true" />}
+          <span>≈ {timeLabel} {travelMode === 'walking' ? 'مشيًا' : 'بالسيارة'} <small>(تقدير)</small></span>
+        </div>
         <button
           type="button"
           className="primary mosque-maps-btn"
