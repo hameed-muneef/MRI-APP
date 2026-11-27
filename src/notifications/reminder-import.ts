@@ -16,6 +16,9 @@ export type ImportedItem = {
   recurrence: ReminderRecurrence;
   /** النمط الذي طلبه الملف نفسه إن ذكره، وإلا undefined فيتبع اختيار المستخدم. */
   fileMode?: ImportMode;
+  /** أيام الأسبوع (0-6) وكل كم يوم، إن ذكرها الملف؛ وإلا تُشتقّ من التكرار. */
+  days?: number[];
+  intervalDays?: number;
   alarmMode: boolean;
   /** صفّ مكرّر: موجود في التطبيق أو مكرّر داخل الملف. يُتجاهل عند الإضافة. */
   duplicate: boolean;
@@ -139,6 +142,11 @@ export function parseReminderImport(
     const recurrence = normalizeRecurrence(row.recurrence ?? row.repeat ?? row['تكرار']);
     const description = (str(row.description) || str(row.body) || str(row['وصف'])).slice(0, MAX_DESCRIPTION);
     const fileMode = normalizeMode(row.mode ?? row.alarm_mode ?? row.alarmMode ?? row['نمط']);
+    const rawDays = Array.isArray(row.days_of_week) ? row.days_of_week : Array.isArray(row.days) ? row.days : [];
+    const days = rawDays
+      .map(day => Number(day))
+      .filter(day => Number.isInteger(day) && day >= 0 && day <= 6);
+    const intervalDays = Number(row.interval_days ?? row.intervalDays);
     const key = `import-${index}`;
     let problem: string | undefined;
     if (!title) problem = 'بلا عنوان.';
@@ -152,6 +160,8 @@ export function parseReminderImport(
       scheduled_at: scheduled_at ?? '',
       recurrence,
       fileMode,
+      days: days.length ? [...new Set(days)].sort((a, b) => a - b) : undefined,
+      intervalDays: Number.isFinite(intervalDays) && intervalDays > 0 ? Math.min(365, Math.round(intervalDays)) : undefined,
       alarmMode: (fileMode ?? options.defaultMode) === 'alarm',
       duplicate,
       problem,
@@ -197,7 +207,16 @@ export function importedToReminder(item: ImportedItem, id: string, now = new Dat
     description: item.description,
     scheduled_at: item.scheduled_at,
     recurrence: item.recurrence,
-    recurrence_config: {start_date: item.scheduled_at.slice(0, 10)},
+    recurrence_config: {
+      start_date: item.scheduled_at.slice(0, 10),
+      days_of_week: item.recurrence === 'weekdays'
+        ? (item.days?.length ? item.days : [1, 2, 3, 4, 5])
+        : item.recurrence === 'weekly'
+          ? [item.days?.[0] ?? new Date(item.scheduled_at).getDay()]
+          : undefined,
+      interval_days: item.recurrence === 'custom' ? (item.intervalDays ?? 2) : undefined,
+      specific_dates: item.recurrence === 'specific_dates' ? [item.scheduled_at.slice(0, 10)] : undefined,
+    },
     category: 'reminder',
     enabled: true,
     alarm_mode: item.alarmMode ? true : undefined,

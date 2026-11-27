@@ -111,6 +111,20 @@ describe('reminder import: choosing the mode', () => {
       .toEqual([false, false, false]);
   });
 
+  it('gives an imported recurring row the days it needs to fire', () => {
+    const parsed = parseReminderImport(JSON.stringify([
+      {title: 'أيام', time: '06:00', recurrence: 'weekdays'},
+      {title: 'أسبوعي', date: '2026-12-02', time: '07:00', recurrence: 'weekly'},
+      {title: 'كل ثلاثة', time: '08:00', recurrence: 'custom', interval_days: 3},
+      {title: 'أيام محددة', time: '09:00', recurrence: 'weekdays', days_of_week: [6, 0]},
+    ]), {defaultMode: 'reminder', now});
+    const [weekdays, weekly, custom, chosen] = parsed.items.map(item => importedToReminder(item, 'id', now));
+    expect(weekdays.recurrence_config?.days_of_week).toEqual([1, 2, 3, 4, 5]);
+    expect(weekly.recurrence_config?.days_of_week).toEqual([3]);
+    expect(custom.recurrence_config?.interval_days).toBe(3);
+    expect(chosen.recurrence_config?.days_of_week).toEqual([0, 6]);
+  });
+
   it('builds a reminder that carries the alarm flag only when it is on', () => {
     const [alarmRow] = parseReminderImport('[{"title":"ا","time":"07:00","mode":"alarm"}]', {defaultMode: 'reminder', now}).items;
     const reminder = importedToReminder(alarmRow, 'new-1', now);
