@@ -103,7 +103,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
   const quranStat: Stat = win && win.assigned > 0
     ? (() => { const tone = unsure ? 'none' as Tone : worse(dayTone, verseTone); return {headline: `${ar(win.doneVerses)} من ${ar(win.plannedVerses)} آية مقررة`, detail: `الأيام: ${ar(win.full)} من ${ar(win.assigned)} منجزة ${scope}${unsure ? ` · ${ar(win.noRecord)} بلا سجل` : ''} · حسب سجلات هذا الجهاز`, ratio: ratioOf(win.doneVerses, win.plannedVerses), tone, status: unsure ? `${UNSURE} · المسجل ${ar(win.doneVerses)} من ${ar(win.plannedVerses)}` : `الآيات: ${TONE_WORD[verseTone]} · الأيام: ${TONE_WORD[dayTone]}`}; })()
     : win ? {headline: 'لا أيام مقررة بعد', detail: `خطة «${win.plan.title}» ${scope}`, tone: 'none', status: 'ليس تقصيرًا'}
-    : bilSum && bilSum.total ? {headline: `${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`, detail: 'تقدم خطة بالقرآن نحيا (إجمالي، دون تقويم يومي)', ratio: bilSum.done / bilSum.total, tone: 'none', status: 'التقويم اليومي يبدأ من الآن'}
+    : bilSum && bilSum.total ? {headline: `${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`, detail: 'تقدم خطة الحفظ (إجمالي، دون تقويم يومي)', ratio: bilSum.done / bilSum.total, tone: 'none', status: 'التقويم اليومي يبدأ من الآن'}
     : {headline: reading.verses ? `${ar(reading.verses)} آية مقروءة` : 'لا نشاط مسجل', detail: reading.verses ? `قراءة ${scope}` : 'ابدأ خطة حفظ لتظهر المقارنة', tone: 'none', status: 'لا خطة نشطة'};
   const sunnahPlan = sunnah.plans[0];
   const sunnahStat: Stat = sunnahPlan && sunnahPlan.progress.total
@@ -157,7 +157,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
           <p>اليوم الحالي لا يُحسب تقصيرًا قبل أن ينتهي. اللون الأخضر لا يظهر إلا عند بلوغ المقرر كاملًا، و«قريب» يعني ٨٠٪ فأكثر. أيام الراحة لا تُحسب. المخطط بخطوط: قبل بدء الخطة فلا بيانات. الجدول المعتمد هو جدول الخطة الحالي، وتعديلاتها السابقة لا تُحفظ نسخًا.</p>
         </details></> : <Block title="الخطة">
         {bilSum && bilSum.total ? <>
-          <Row k="خطة بالقرآن نحيا" v={`${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`}/>
+          <Row k="خطة الحفظ" v={`${ar(bilSum.done)} من ${ar(bilSum.total)} مقررًا`}/>
           <Bar ratio={bilSum.done / bilSum.total} tone="none" label="تقدم الخطة"/>
           <Row k={`أيام الإنجاز المسجلة ${scope}`} v={ar(bilSum.daysLogged)}/>
           <Row k={`مقررات مسجلة بتاريخها ${scope}`} v={ar(bilSum.stepsLogged)}/>
