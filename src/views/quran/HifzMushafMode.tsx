@@ -593,7 +593,7 @@ export default function HifzMushafMode({asset, notify, onDetailed, onExit, tasks
 
         <button type="button" className="hf-plan-launch" onClick={() => setPhase('plans')}>
           <div>
-            <strong>خطط الحفظ والمراجعة (منهج بالقرآن نحيا)</strong>
+            <strong>خطط الحفظ والمراجعة</strong>
             <small>اختر من ١٢ خطة للمبتدئين ومن البقرة ومن الناس (٥ إلى ٤٨ شهرًا) بأي اتجاه</small>
           </div>
           <span>استعراض الخطط</span>
