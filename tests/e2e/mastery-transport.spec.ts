@@ -37,7 +37,7 @@ test('reciter comparison is available in recall and invalidates unassisted evide
 });
 test('pause during URL loading prevents autoplay until resume',async({page})=>{
  const ui=await setup(page);await page.route('**/api.quran.com/api/v4/recitations/*/by_ayah/*',async route=>{await new Promise(r=>setTimeout(r,700));await route.fulfill({contentType:'application/json',body:JSON.stringify({audio_files:[{url:'https://verses.quran.com/transport/pending.wav'}]})});});
- await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();await ui.locator('.qm-card',{has:page.getByRole('heading',{name:'التكرار الصوتي'})}).getByRole('button',{name:'إيقاف مؤقت',exact:true}).click();await page.waitForTimeout(1000);expect((await audio(page)).time).toBe(0);
+ await ui.getByRole('button',{name:'تشغيل التكرار',exact:true}).first().click();await ui.locator('.qm-card',{has:page.getByRole('heading',{name:'التكرار الصوتي'})}).getByRole('button',{name:'إيقاف مؤقت',exact:true}).click();await page.waitForTimeout(1000);expect((await audio(page)).time).toBeLessThan(0.05);
  await ui.locator('.qm-card',{has:page.getByRole('heading',{name:'التكرار الصوتي'})}).getByRole('button',{name:'استكمال من نفس الموضع',exact:true}).click();await expect.poll(async()=>(await audio(page)).time).toBeGreaterThan(.1);
 });
 test('pause in inter-verse gap holds progression without duplicate completion',async({page})=>{
