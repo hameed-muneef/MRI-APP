@@ -213,3 +213,5 @@ html:root:root #root .app .scroll-top-fab { min-width: 44px; }
 html[data-theme="dark"]:root:root .mf-sajda { color: #E2A964; }
 html:root:root #root .app :is(.mf-btn.sm, summary, .icon-btn.danger) { min-height: 44px; }
 html:root:root #root .app .mf-btn.sm { min-width: 44px; }
+html[data-theme="dark"]:root:root .mf-badge { background: var(--hm-surface-2); color: #F3EFE4; }
+html:root:root #root .app .section-subnav { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22px); mask-image: linear-gradient(to right, transparent 0, #000 22px); }

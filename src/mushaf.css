@@ -245,7 +245,7 @@
 .ol-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
 .ol-head h3{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .ol-head p{margin:0;line-height:1.9;max-width:72ch}
-.ol-usage{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--primary-soft);color:var(--muted);white-space:nowrap}
+.ol-usage{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--primary-soft);color:var(--hm-text-muted);white-space:nowrap}
 .ol-scope{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:var(--primary-soft)}
 .ol-scope label{display:flex;gap:6px;align-items:center;font-size:13px}
 .ol-scope select{padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit;font-size:13px;max-width:260px}
