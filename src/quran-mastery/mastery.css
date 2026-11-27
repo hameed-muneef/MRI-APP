@@ -58,3 +58,5 @@ body:has(.qm-steps) .quran-page>.quran-journey,body:has(.qm-steps) .quran-page>d
 
 .qm-workspace .qm-current-verse{outline:2px solid #1e5aa8;outline-offset:2px;background:#eaf3fb;color:#174a8c;border-color:#c5ddf3} [data-theme="dark"] #root .app .qm-workspace .qm-current-verse{outline-color:#a6ccff;background:#203c59;color:#d9e8fa;border-color:#3c5874}
 
+/* سطر نسبة المصدر: صغير وهادئ أسفل النص، لا يزاحم القراءة */
+.qm-sheet .qm-attribution{font-size:.72rem;line-height:1.6;margin:.5rem 0 0;padding-top:.45rem;border-top:1px dashed rgba(120,140,150,.35);color:inherit;opacity:.62}
