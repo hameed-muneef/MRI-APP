@@ -78,3 +78,4 @@ html:root:root:root #root .app .quran-section-grid button:not(.active) {
 html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { background:color-mix(in srgb,var(--qt) 9%,var(--hm-surface)) !important; }
 html:root:root:root #root .app .quran-section-grid button:not(.active) .quran-section-icon { color:var(--qt-ink) !important; }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .home-today-list .home-task-meta { color:#D3DEEA !important; }
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card .inline-link { color:#F3EFE4 !important; }
