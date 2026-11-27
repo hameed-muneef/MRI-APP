@@ -25,6 +25,7 @@ import {
   type SmartTodayItem,
   type WeeklyRecommendation,
 } from './smart';
+import {COACH_MESSAGES as M} from './messages';
 import type {CoachSettings} from './types';
 
 type Props={
@@ -292,7 +293,7 @@ export default function CoachToday({
     {tab==='today'&&<>
       {!plan.anyCoachOn&&(
         <div className="coach-empty-invite">
-          <p className="muted small">فعّل «المدرّب الذكي للكل» ليرتّب لك ما تبدأ به اليوم حسب أوقات فراغك بين الصلوات، ويكشف لك أيام التعثر في تقرير أسبوعي شامل.</p>
+          <p className="muted small">{M.uiInvite.text({})}</p>
           {onCoachSettings&&(
             <button type="button" className="primary coach-activate-btn" onClick={()=>toggleGlobal(true)}>
               <Sparkles size={16} aria-hidden="true"/>
@@ -315,7 +316,7 @@ export default function CoachToday({
               <Flame size={17} aria-hidden="true"/>
               <strong>عودة هادئة · اليوم {n(plan.recovery.dayNumber)} من ٣ (نصف الحمل المعتاد)</strong>
             </div>
-            <p>لاحظ المدرّب انقطاعًا منذ {n(plan.recovery.gapDays)} أيام؛ لذلك خفّف لك جدول اليوم إلى {n(plan.recovery.dailyLimit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.</p>
+            <p>{M.uiRecoveryNote.text({gap: plan.recovery.gapDays, limit: plan.recovery.dailyLimit})}</p>
             {onCoachSettings&&(
               <div className="goal-coach-actions">
                 <button type="button" className="soft-btn" onClick={dismissRecoveryToday}>عرض الحمل الكامل اليوم</button>
@@ -358,7 +359,7 @@ export default function CoachToday({
 
       {warnings.map(w=>(
         <div className="goal-coach-card" role="group" aria-label="اقتراح المدرّب" key={w.id}>
-          <p>{w.stepId==='course-month'?'مراجعة المقرر الشهرية':'مراجعة المقرر الأسبوعية'} تأخرت في الفترات الأخيرة. ابدأ بها اليوم قبل أن يتسع الفارق.</p>
+          <p>{M.uiCourseLate.text({title: w.stepId==='course-month'?M.courseMonthTitle.text({}):M.courseWeekTitle.text({})})}</p>
           <div className="goal-coach-actions">
             <button type="button" className="soft-btn" onClick={()=>coach&&onCoach(dismissCourse(coach,w.id))}>تمام</button>
           </div>
@@ -422,14 +423,14 @@ export default function CoachToday({
         <div className="goal-coach-card coach-rhythm-card">
           <strong>تحليل الإيقاع الشخصي</strong>
           <p>
-            {report.patterns.peakWindowLabel?`وقت ذروتك المعتاد: ${report.patterns.peakWindowLabel}. `: 'سيظهر وقت ذروتك بعد تسجيل بضعة إنجازات. '}
-            {report.patterns.weakestWeekdayLabel?`أكثر يوم يتراجع فيه الإنجاز: ${report.patterns.weakestWeekdayLabel}. `:''}
-            {`سعتك اليومية المعتادة نحو ${n(report.patterns.estimatedCapacity)} خطوات.`}
+            {report.patterns.peakWindowLabel?M.rhythmPeak.text({window: report.patterns.peakWindowLabel}):M.rhythmNoPeak.text({})}
+            {report.patterns.weakestWeekdayLabel?M.rhythmWeakDay.text({day: report.patterns.weakestWeekdayLabel}):''}
+            {M.rhythmCapacity.text({capacity: report.patterns.estimatedCapacity})}
           </p>
         </div>
 
         {report.recommendations.length===0?(
-          <p className="muted small">لا توجد توصيات تعديل معلّقة حاليًا. استمر على إيقاعك الهادئ!</p>
+          <p className="muted small">{M.noRecommendations.text({})}</p>
         ):(
           <div className="coach-weekly-recs">
             <h3 className="coach-today-title">توصيات الأسبوع القادم</h3>

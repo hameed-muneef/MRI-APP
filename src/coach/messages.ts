@@ -65,6 +65,17 @@ export const COACH_MESSAGES = {
   homeSuggested: define({count: 3, slot: 'بعد العصر' as string | null}, ({count, slot}: {count: number; slot: string | null}) =>
     `${n(count)} خطوات مقترحة اليوم${slot ? ` · الأنسب الآن ${slot}` : ''} · والتقرير الأسبوعي`),
   homeAllDone: define({}, () => 'خطوات اليوم المفعّلة منجزة · افتح التقرير الأسبوعي الذكي'),
+  // Coach screen
+  uiInvite: define({}, () => 'فعّل «المدرّب الذكي للكل» ليرتّب لك ما تبدأ به اليوم حسب أوقات فراغك بين الصلوات، ويكشف لك أيام التعثر في تقرير أسبوعي شامل.'),
+  uiRecoveryNote: define({gap: 4, limit: 2}, ({gap, limit}: {gap: number; limit: number}) =>
+    `لاحظ المدرّب انقطاعًا منذ ${n(gap)} أيام؛ لذلك خفّف لك جدول اليوم إلى ${n(limit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.`),
+  uiCourseLate: define({title: 'مراجعة المقرر الأسبوعية'}, ({title}: {title: string}) =>
+    `${title} تأخرت في الفترات الأخيرة. ابدأ بها اليوم قبل أن يتسع الفارق.`),
+  rhythmPeak: define({window: 'الصباح'}, ({window}: {window: string}) => `وقت ذروتك المعتاد: ${window}. `),
+  rhythmNoPeak: define({}, () => 'سيظهر وقت ذروتك بعد تسجيل بضعة إنجازات. '),
+  rhythmWeakDay: define({day: 'الخميس'}, ({day}: {day: string}) => `أكثر يوم يتراجع فيه الإنجاز: ${day}. `),
+  rhythmCapacity: define({capacity: 4}, ({capacity}: {capacity: number}) => `سعتك اليومية المعتادة نحو ${n(capacity)} خطوات.`),
+  noRecommendations: define({}, () => 'لا توجد توصيات تعديل معلّقة حاليًا. استمر على إيقاعك الهادئ!'),
 };
 
 export type CoachMessageId = keyof typeof COACH_MESSAGES;
