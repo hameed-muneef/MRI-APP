@@ -206,6 +206,7 @@ export default function CoachToday({
       <div className="coach-item-main">
         <div className="coach-item-copy">
           <strong>{item.title}</strong>
+          <span className="muted small"> · {M.minutesEstimate.text({minutes:item.estimatedMinutes})}</span>
           <span className="muted small"> · {item.goalTitle} · {period[item.period]} · {reason[item.reason]}</span>
           {item.scheduledTimeToday?(
             <div className="coach-item-slot is-scheduled"><Clock3 size={13} aria-hidden="true"/><span>مجدولة اليوم الساعة {timeLabel(item.scheduledTimeToday)}</span></div>
@@ -309,6 +310,19 @@ export default function CoachToday({
           <span>السعة المقترحة اليوم: <strong>{n(plan.budget)}</strong> خطوات</span>
           {plan.patterns.peakWindowLabel&&<span>وقت ذروتك: <strong>{plan.patterns.peakWindowLabel}</strong></span>}
         </div>
+
+        {(plan.workload.level!=='ok'||plan.workload.exceedsCapacity)&&(
+          <div className="goal-coach-card coach-workload-card" role="region" aria-label="تنبيه الحمل">
+            <div className="coach-callout-head">
+              <Clock3 size={17} aria-hidden="true"/>
+              <strong>تنبيه الحمل</strong>
+            </div>
+            {plan.workload.level==='over'&&<p>{M.workloadOver.text({planned:plan.workload.plannedMinutes,free:plan.workload.freeMinutes})}</p>}
+            {plan.workload.level==='tight'&&<p>{M.workloadTight.text({planned:plan.workload.plannedMinutes,free:plan.workload.freeMinutes})}</p>}
+            {plan.workload.exceedsCapacity&&<p>{M.workloadOverCapacity.text({})}</p>}
+            <p className="muted small">{M.workloadNoHistory.text({})}</p>
+          </div>
+        )}
 
         {plan.recovery.active&&(
           <div className="goal-coach-card coach-recovery-card" role="region" aria-label="عودة هادئة">

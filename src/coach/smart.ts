@@ -31,6 +31,7 @@ import {
   type WirdWithCoach,
 } from './habit';
 import {COACH_MESSAGES as M} from './messages';
+import {analyzeWorkload,defaultMinutes,type WorkloadStatus} from './workload';
 import type {CoachSettings} from './types';
 
 export type TimeWindow = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
@@ -94,6 +95,8 @@ export type SmartTodayItem = TodayItem & {
   scheduledDate?: string;
   priorityScore: number;
   priorityNote: string;
+  /** Default estimate in minutes (no history yet). */
+  estimatedMinutes: number;
 };
 
 export type SmartTodayPlan = {
@@ -110,6 +113,7 @@ export type SmartTodayPlan = {
   recommended: SmartTodayItem[];
   deferred: SmartTodayItem[];
   totalOpen: number;
+  workload: WorkloadStatus;
 };
 
 export type WeeklyPillarSummary = {
@@ -829,6 +833,7 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
       scheduledDate: upcomingScheduleDate,
       priorityScore: score,
       priorityNote,
+      estimatedMinutes: defaultMinutes(item),
     };
   });
 
@@ -875,6 +880,12 @@ export function buildSmartTodayPlan(input: SmartCoachInput): SmartTodayPlan {
     recommended,
     deferred,
     totalOpen: enriched.length,
+    workload: analyzeWorkload({
+      items: recommended,
+      freeMinutes: freeSlots.reduce((sum, slot) => sum + slot.freeMinutes, 0),
+      openCount: enriched.length,
+      capacity: patterns.estimatedCapacity,
+    }),
   };
 }
 

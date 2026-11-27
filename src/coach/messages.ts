@@ -76,6 +76,14 @@ export const COACH_MESSAGES = {
   rhythmWeakDay: define({day: 'الخميس'}, ({day}: {day: string}) => `أكثر يوم يتراجع فيه الإنجاز: ${day}. `),
   rhythmCapacity: define({capacity: 4}, ({capacity}: {capacity: number}) => `سعتك اليومية المعتادة نحو ${n(capacity)} خطوات.`),
   noRecommendations: define({}, () => 'لا توجد توصيات تعديل معلّقة حاليًا. استمر على إيقاعك الهادئ!'),
+  // Workload (minutes based, default durations)
+  workloadOver: define({planned: 90, free: 60}, ({planned, free}: {planned: number; free: number}) =>
+    `الوقت التقديري لخطوات اليوم (${n(planned)} د) أكبر من وقت الفراغ المتاح (${n(free)} د). أجّل بعض الخطوات أو جدولها في يوم آخر.`),
+  workloadTight: define({planned: 50, free: 60}, ({planned, free}: {planned: number; free: number}) =>
+    `الوقت التقديري لخطوات اليوم (${n(planned)} د) يقترب من وقت الفراغ المتاح (${n(free)} د).`),
+  workloadOverCapacity: define({}, () => 'عبء عملك الحالي يتجاوز طاقتك اليومية المعتادة.'),
+  workloadNoHistory: define({}, () => 'لا توجد بيانات كافية لتخصيص هذه التوصية بعد؛ التقدير مبني على مدد افتراضية.'),
+  minutesEstimate: define({minutes: 15}, ({minutes}: {minutes: number}) => `≈ ${n(minutes)} د (تقدير)`),
 };
 
 export type CoachMessageId = keyof typeof COACH_MESSAGES;
