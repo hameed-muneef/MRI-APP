@@ -1,0 +1,1 @@
+Amiri font family, Copyright 2010-2017 The Amiri Project Authors (https://github.com/alif-type/amiri). Licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org). Files are the unmodified woff2 files served by Google Fonts (v30).
