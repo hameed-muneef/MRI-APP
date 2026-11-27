@@ -59,27 +59,27 @@ const reason={behind:'تأخّرت عنها',deadline:'موعدها قريب',du
 const period={daily:'يومي',weekly:'أسبوعي',monthly:'شهري'} as const;
 const n=(v:number)=>v.toLocaleString('ar-EG');
 
-const HOWTO_KEY='rabbani-coach-howto-v1';
-const howTo=[
-  {title:'ما هو المدرّب الذكي؟',text:'محرك محلي يعمل بلا إنترنت يرتّب خطواتك اليومية حسب أولويتك وأوقات فراغك بين الصلوات، دون أي تدخل قسري في خطتك.'},
-  {title:'كيف أفعّله؟',text:'مفتاح «تفعيل للكل» يشغّل المدرّب على أهدافك وأورادك ومقررك دفعة واحدة، ويمكنك استثناء أي هدف أو ورد من بطاقته الخاصة.'},
-  {title:'عودة هادئة وتقرير أسبوعي',text:'عند الانقطاع ٣ أيام أو أكثر يقترح عليك نصف الحمل المعتاد لثلاثة أيام حتى تعود بثبات، ويعرض لك تقريرًا أسبوعيًا واقتراحات موازنة.'},
-] as const;
+const HOWTO_KEY='rabbani-coach-howto-v2';
+const aboutNote=[
+  {title:M.howtoAboutTitle.text({}),text:M.howtoAboutBody.text({})},
+  {title:M.howtoPlanTitle.text({}),text:M.howtoPlanBody.text({})},
+  {title:M.howtoRecoveryTitle.text({}),text:M.howtoRecoveryBody.text({})},
+  {title:M.howtoAboutTitle.text({}),text:M.howtoTurnOff.text({})},
+];
 
-function CoachHowTo(){
+/** Static note about the suggestions. Shown once, then reachable from a small link. No questions, no steps to activate. */
+function CoachAboutNote(){
   const [open,setOpen]=useState(()=>{try{return localStorage.getItem(HOWTO_KEY)!=='1'}catch{return false}});
-  const [i,setI]=useState(0);
-  if(!open)return <button type="button" className="soft-btn coach-howto-trigger" onClick={()=>{setI(0);setOpen(true)}}>كيف أستفيد من المدرّب؟</button>;
+  if(!open)return <button type="button" className="soft-btn coach-howto-trigger" onClick={()=>setOpen(true)}>{M.howtoAboutTitle.text({})}</button>;
   const close=()=>{try{localStorage.setItem(HOWTO_KEY,'1')}catch{/* ignore */}setOpen(false)};
-  const step=howTo[i];
-  return <div className="goal-coach-card" role="group" aria-label="شرح المدرّب">
-    <button type="button" className="icon-btn" aria-label="إغلاق الشرح" onClick={close} style={{float:'left'}}>✕</button>
-    <strong>{step.title} ({n(i+1)}/{n(howTo.length)})</strong>
-    <p>{step.text}</p>
-    <div className="counter-actions">
-      <button type="button" className="soft-btn" disabled={i===0} onClick={()=>setI(i-1)}>السابق</button>
-      {i<howTo.length-1?<button type="button" className="primary" onClick={()=>setI(i+1)}>التالي</button>:<button type="button" className="primary" onClick={close}>فهمت</button>}
-    </div>
+  return <div className="goal-coach-card" role="note" aria-label={M.howtoAboutTitle.text({})}>
+    <button type="button" className="icon-btn" aria-label="إغلاق" onClick={close} style={{float:'left'}}>✕</button>
+    <strong>{aboutNote[0].title}</strong>
+    <p>{aboutNote[0].text}</p>
+    <p>{aboutNote[1].text}</p>
+    <p>{aboutNote[2].text}</p>
+    <p className="muted small">{aboutNote[3].text}</p>
+    <div className="counter-actions"><button type="button" className="primary" onClick={close}>تم</button></div>
   </div>;
 }
 
@@ -144,15 +144,6 @@ export default function CoachToday({
   const report=tab==='weekly'?buildWeeklyReport(smartInput):null;
   const warnings=courseSuggestions(coach,now,coachSettings);
   const topQuranTask=plan.quran.topDueTaskId?tasks.find(t=>t.id===plan.quran.topDueTaskId):undefined;
-
-  const toggleGlobal=(checked:boolean)=>{
-    if(!onCoachSettings)return;
-    onCoachSettings({
-      ...(coachSettings??{globalEnabled:false}),
-      globalEnabled:checked,
-      enabledAt:coachSettings?.enabledAt??todayKey,
-    });
-  };
 
   const toggleCourse=(checked:boolean)=>{
     if(globalOn)onCoach(setCourseCoach(coach,checked,now,checked?'inherit':'off'));
@@ -260,16 +251,10 @@ export default function CoachToday({
       <div className="coach-today-brand">
         <span className="coach-today-icon" aria-hidden="true"><Sparkles size={18}/></span>
         <div>
-          <strong className="coach-today-heading">المدرّب الذكي</strong>
-          <small className="muted coach-today-sub">محرك محلي بلا إنترنت · يقترح ولا يفرض</small>
+          <strong className="coach-today-heading">اقتراحات اليوم</strong>
+          <small className="muted coach-today-sub">تعمل دون اتصال · اقتراحات فقط</small>
         </div>
       </div>
-      {onCoachSettings&&(
-        <label className="goal-coach-switch coach-global-switch">
-          <input type="checkbox" role="switch" aria-label="تفعيل المدرّب الذكي للكل" checked={globalOn} onChange={e=>toggleGlobal(e.target.checked)}/>
-          <span>تفعيل للكل</span>
-        </label>
-      )}
     </div>
 
     <div className="coach-controls-row">
@@ -278,7 +263,7 @@ export default function CoachToday({
         <Sparkles size={15}/>
         <span>المدرّب لمهام المقرر</span>
       </label>
-      <CoachHowTo/>
+      <CoachAboutNote/>
     </div>
 
     <div className="coach-tabs" role="tablist" aria-label="عرض المدرّب الذكي">
@@ -295,12 +280,6 @@ export default function CoachToday({
       {!plan.anyCoachOn&&(
         <div className="coach-empty-invite">
           <p className="muted small">{M.uiInvite.text({})}</p>
-          {onCoachSettings&&(
-            <button type="button" className="primary coach-activate-btn" onClick={()=>toggleGlobal(true)}>
-              <Sparkles size={16} aria-hidden="true"/>
-              <span>تفعيل المدرّب الذكي الآن</span>
-            </button>
-          )}
         </div>
       )}
 

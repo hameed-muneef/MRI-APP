@@ -59,14 +59,13 @@ export const COACH_MESSAGES = {
     `لاحظ المدرّب أن يوم ${day} هو الأقل إنجازًا في سجلك${peak ? `، بينما وقت ذروتك المعتاد هو ${peak}` : ''}. خفّف جدول ${day} مسبقًا لتحافظ على سلسلتك.`),
 
   // Home card subtitle
-  homeInvite: define({}, () => 'يرتّب يومك بين الصلوات ويقترح الخطوة الأنسب بلا اتصال · اضغط للتفعيل'),
   homeRecovery: define({day: 1, count: 3, slot: 'بعد العصر' as string | null}, ({day, count, slot}: {day: number; count: number; slot: string | null}) =>
     `عودة هادئة (اليوم ${n(day)} من ٣ · نصف الحمل) · ${n(count)} خطوات مقترحة${slot ? ` · الأنسب ${slot}` : ''}`),
   homeSuggested: define({count: 3, slot: 'بعد العصر' as string | null}, ({count, slot}: {count: number; slot: string | null}) =>
     `${n(count)} خطوات مقترحة اليوم${slot ? ` · الأنسب الآن ${slot}` : ''} · والتقرير الأسبوعي`),
   homeAllDone: define({}, () => 'خطوات اليوم المفعّلة منجزة · افتح التقرير الأسبوعي الذكي'),
   // Coach screen
-  uiInvite: define({}, () => 'فعّل «المدرّب الذكي للكل» ليرتّب لك ما تبدأ به اليوم حسب أوقات فراغك بين الصلوات، ويكشف لك أيام التعثر في تقرير أسبوعي شامل.'),
+  uiInvite: define({}, () => 'الاقتراحات متوقفة. يمكن تفعيلها من الإعدادات لترتيب اليوم حسب أوقات فراغك بين الصلوات.'),
   uiRecoveryNote: define({gap: 4, limit: 2}, ({gap, limit}: {gap: number; limit: number}) =>
     `لاحظ المدرّب انقطاعًا منذ ${n(gap)} أيام؛ لذلك خفّف لك جدول اليوم إلى ${n(limit)} خطوات بدلًا من التراكم حتى تستعيد إيقاعك بهدوء.`),
   uiCourseLate: define({title: 'مراجعة المقرر الأسبوعية'}, ({title}: {title: string}) =>
@@ -103,7 +102,17 @@ export const COACH_MESSAGES = {
   // settings.* (Part A)
   settingsSuggestionsTitle: define({}, () => 'اقتراحات التطبيق الذكية'),
   settingsSuggestionsAbout: define({}, () => 'اقتراحات ثابتة تظهر في شاشاتك وتعمل دون اتصال. هي اقتراحات فقط ولا تغيّر جدولك أو أهدافك دون موافقتك.'),
-  settingsSuggestionsMute: define({}, () => 'إيقاف الاقتراحات'),
+  settingsSuggestionsOn: define({}, () => 'الاقتراحات مفعّلة'),
+  settingsSuggestionsOff: define({}, () => 'الاقتراحات متوقفة'),
+  // how-to note (static, shown once on first visit)
+  howtoAboutTitle: define({}, () => 'عن الاقتراحات'),
+  howtoAboutBody: define({}, () => 'تظهر اقتراحات التطبيق داخل شاشاتك: اليوم والمهام والأهداف والأوراد. تعمل دون اتصال وبقواعد ثابتة، وهي اقتراحات فقط؛ لا يتغيّر جدول أو هدف إلا بضغطتك.'),
+  howtoPlanTitle: define({}, () => 'ترتيب اليوم بين الصلوات'),
+  howtoPlanBody: define({}, () => 'يُرتّب التطبيق خطواتك حسب أولويتها وأوقات فراغك بين الصلوات، ويقدّر مدة كل خطوة بمدد افتراضية.'),
+  howtoRecoveryTitle: define({}, () => 'عودة هادئة وتقرير أسبوعي'),
+  howtoRecoveryBody: define({}, () => 'عند الانقطاع ثلاثة أيام أو أكثر يُقترح نصف الحمل المعتاد لثلاثة أيام، ويظهر تقرير أسبوعي بما يمكن تخفيفه أو رفعه.'),
+  howtoTurnOff: define({}, () => 'يمكن إيقاف الاقتراحات كلها من الإعدادات، أو لهدف أو ورد بعينه من بطاقته.'),
+  homeMuted: define({}, () => 'الاقتراحات متوقفة · يمكن تفعيلها من الإعدادات'),
 };
 
 export type CoachMessageId = keyof typeof COACH_MESSAGES;

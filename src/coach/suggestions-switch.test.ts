@@ -19,3 +19,22 @@ describe('suggestionsMuted survives stored-state parsing',()=>{
     expect(parseStoredState(raw).coachSettings?.suggestionsMuted).toBe(true);
   });
 });
+
+import {migrateSuggestionsDefault,setSuggestionsEnabled} from './types';
+describe('default-on migration and switch',()=>{
+  it('turns never-touched settings on from today',()=>{
+    expect(migrateSuggestionsDefault(undefined,'2026-11-27')).toEqual({globalEnabled:true,enabledAt:'2026-11-27',suggestionsMuted:false});
+  });
+  it('does not change a legacy opt-out or an explicit choice',()=>{
+    const legacy={globalEnabled:false,enabledAt:'2026-11-01'};
+    expect(migrateSuggestionsDefault(legacy,'2026-11-27')).toBe(legacy);
+    const muted={globalEnabled:false,suggestionsMuted:true};
+    expect(migrateSuggestionsDefault(muted,'2026-11-27')).toBe(muted);
+  });
+  it('keeps unrelated settings when switching',()=>{
+    const s=setSuggestionsEnabled({globalEnabled:true,enabledAt:'2026-11-01',dismissedWeekly:['w1'],preferredCapacity:5},false,'2026-11-27');
+    expect(s).toMatchObject({globalEnabled:false,suggestionsMuted:true,enabledAt:'2026-11-01',dismissedWeekly:['w1'],preferredCapacity:5});
+    expect(suggestionsEnabled(s)).toBe(false);
+    expect(suggestionsEnabled(setSuggestionsEnabled(s,true,'2026-11-27'))).toBe(true);
+  });
+});

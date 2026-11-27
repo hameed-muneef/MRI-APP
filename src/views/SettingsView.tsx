@@ -17,6 +17,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import {type State, createSeed} from '../app-state';
+import CoachSettingsSection from '../coach/CoachSettingsSection';
 import {
   exportLocalBackup,
   formatStorageBytes,
@@ -361,6 +362,7 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
 
       {activeTab === 'general' && (
         <div className="settings-section-stack">
+          <CoachSettingsSection coachSettings={state.coachSettings} onCoachSettings={coachSettings => onReplace({...state, coachSettings})}/>
           {!LOCAL_ONLY && onOpenProfile && (
             <section className="panel">
               <h3><UserRound size={18}/> الملف الشخصي وإعدادات الحساب</h3>

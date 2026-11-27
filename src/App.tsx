@@ -30,6 +30,7 @@ import {BILQURAN_PLAN_CHANGED_EVENT,buildBilQuranDailySteps,findBilQuranPlan,for
 import {recordCourseCompletions} from './coach/course';
 import {recordHabitCompletions} from './coach/habit';
 import {analyzePatterns,analyzeRecovery} from './coach/smart';
+import {migrateSuggestionsDefault} from './coach/types';
 import {clearPlanTasks,planTaskLaunch,reconcilePlanTasks} from './quran-mastery/plan-tasks';
 import {loadMasteryState} from './quran-mastery/storage';
 import {revisionQueue} from './quran-mastery/planning';
@@ -194,6 +195,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
   // مدرّب المقرر والأوراد يحتفظ بسجل فترات منجزة + تتبع التعافي الهادئ لثلاثة أيام عند التفعيل العام.
   useEffect(()=>{setState(s=>{const wirds=recordHabitCompletions(s.wirds,new Date(),s.coachSettings);return wirds===s.wirds?s:{...s,wirds}})},[state.wirds,state.coachSettings]);
   useEffect(()=>{setState(s=>{const next=recordCourseCompletions(s.courseCoach,s.tasks,new Date(),s.coachSettings);return next===s.courseCoach?s:{...s,courseCoach:next}})},[state.tasks,state.courseCoach?.enabled,state.coachSettings]);
+  // اقتراحات التطبيق الذكية مفعّلة افتراضيًا لمن لم يختر بنفسه؛ من أوقفها صراحةً تبقى متوقفة.
+  useEffect(()=>{setState(s=>{const next=migrateSuggestionsDefault(s.coachSettings,today());return next===s.coachSettings?s:{...s,coachSettings:next}})},[state.coachSettings]);
   useEffect(()=>{
     if(!state.coachSettings?.globalEnabled)return;
     const now=new Date();

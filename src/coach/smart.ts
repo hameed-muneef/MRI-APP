@@ -1071,7 +1071,7 @@ export function buildCoachHomeSummary(input: SmartCoachInput): CoachHomeSummary 
   const overdueCount = plan.recommended.filter(i => i.reason === 'behind').length + plan.deferred.filter(i => i.reason === 'behind').length;
   const nextSlot = plan.freeSlots.find(s => !s.inWorkHours) ?? plan.freeSlots[0] ?? null;
 
-  let subtitle = M.homeInvite.text({});
+  let subtitle = M.homeMuted.text({});
   if (plan.anyCoachOn) {
     if (plan.recovery.active) {
       subtitle = M.homeRecovery.text({day: plan.recovery.dayNumber, count: plan.recommended.length, slot: nextSlot ? nextSlot.label : null});
