@@ -48,15 +48,6 @@
             android:name=".ReminderActionReceiver"
             android:exported="false" />
 
-        <!-- مفتاح الطاقة (إطفاء الشاشة) يُسكت أي تنبيه أو منبه ما زال يرنّ -->
-        <receiver
-            android:name=".ScreenOffStopReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.SCREEN_OFF" />
-            </intent-filter>
-        </receiver>
-
         <receiver
             android:name=".AlarmRestoreReceiver"
             android:exported="false">

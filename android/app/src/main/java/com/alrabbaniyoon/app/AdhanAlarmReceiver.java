@@ -151,6 +151,10 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
 
         try {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build());
+            if (!silent) {
+                NativeReminderQueue.rememberRinging(context, notificationId);
+                ScreenOffStopReceiver.arm(context);
+            }
         } catch (SecurityException ignored) {}
     }
 }

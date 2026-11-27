@@ -444,7 +444,7 @@ public final class NativeReminderQueue {
         b.addAction(0, "تأجيل ١٠ د", ReminderActionReceiver.actionIntent(c, ReminderActionReceiver.ACTION_SNOOZE, id, title, body, channelId, ReminderActionReceiver.DEFAULT_SNOOZE_MINUTES));
         try {
             androidx.core.app.NotificationManagerCompat.from(c).notify(id, b.build());
-            if (!silent) rememberRinging(c, id);
+            if (!silent) { rememberRinging(c, id); ScreenOffStopReceiver.arm(c); }
         } catch (SecurityException ignored) {}
     }
 
