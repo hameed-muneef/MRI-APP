@@ -103,3 +103,7 @@ html:root #root .app.app main.main .wide-card h3 { color: var(--hm-text) !import
 html:root #root .app.app main.main .home-today-entry small,
 html:root #root .app.app main.main .feature-card .feature-copy span,
 html:root #root .app.app main.main .wide-card p { color: var(--hm-text-muted) !important; }
+
+html[data-theme="dark"]:root #root .app.app,
+html[data-theme="dark"]:root body { background-color: var(--hm-bg) !important; background-image: none; }
+html[data-theme="dark"]:root #root .app.app .mobile-nav { background: var(--hm-nav-bg) !important; }

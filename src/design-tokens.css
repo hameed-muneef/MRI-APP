@@ -35,10 +35,10 @@
 }
 
 :root[data-theme="dark"] {
-  --hm-bg: #09131F;
-  --hm-surface: #111F33;
-  --hm-surface-2: #172846;
-  --hm-border: #2A3C5C;        /* 1.69 on bg, decorative */
+  --hm-bg: #112841;
+  --hm-surface: #1B3654;
+  --hm-surface-2: #234368;
+  --hm-border: #3A5C84;        /* 1.69 on bg, decorative */
   --hm-text: #F3EFE4;          /* 16.25 on bg, 14.42 on surface, 12.80 on surface-2 */
   --hm-text-muted: #B4BECC;    /* 9.94 on bg, 8.82 on surface, 7.83 on surface-2 */
   --hm-navy: #9DB8E8;          /* in dark the "navy" role is a light blue accent; 9.30 on bg */
@@ -57,7 +57,7 @@
   --hm-shadow-1: 0 1px 2px rgba(0,0,0,.30);
   --hm-shadow-2: 0 4px 12px rgba(0,0,0,.32), 0 1px 3px rgba(0,0,0,.24);
   --hm-shadow-3: 0 12px 28px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.28);
-  --hm-nav-bg: rgba(17,31,51,.84);
+  --hm-nav-bg: rgba(22,45,72,.88);
   --hm-nav-border: rgba(243,239,228,.10);
 }
 
