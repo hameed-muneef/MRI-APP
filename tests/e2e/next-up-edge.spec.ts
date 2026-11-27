@@ -13,10 +13,9 @@ const seedRows = (rows: Row[]) => {
 
 async function open(page: import('@playwright/test').Page, at: string, rows: Row[]) {
   await page.clock.install({ time: new Date(at) });
+  // Seed before the app boots: seeding after load and reloading raced with the app's own state flush on unload.
+  await page.addInitScript(seedRows, rows);
   await page.goto('/');
-  await expect.poll(() => page.evaluate(() => Boolean(localStorage.getItem('rabbani-v1')))).toBe(true);
-  await page.evaluate(seedRows, rows);
-  await page.reload();
   await page.locator('.home-today-list').click();
   await expect(page.locator('.today-task-card').first()).toBeVisible();
 }
