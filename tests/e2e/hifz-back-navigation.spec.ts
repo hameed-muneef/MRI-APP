@@ -81,8 +81,13 @@ test.describe('hifz hardware back navigation', () => {
     // أول رجوع يغلق جلسة التسميع المفتوحة (تُحفظ كمتوقفة)، والثاني يغادر مصحف الحفظ إلى المهام.
     // الانتظار هنا إلزامي: الفحص الفوري كان يتخطى الرجوع الأول إن لم تكن طبقة القراءة قد ظهرت بعد.
     await expect(page.locator('.hf-reading')).toBeVisible();
-    await back(page);
+    // كل رجوع يغلق أعلى طبقة (نافذة الإعدادات والتلميح أولًا ثم الجلسة) حتى تظهر شاشة الدخول، دون مغادرة مصحف الحفظ.
+    for (let i = 0; i < 4 && !(await page.locator('.hf-entry').count()); i++) {
+      await expect(page.locator('.hf-screen').first()).toBeVisible();
+      await back(page);
+    }
     await expect(page.locator('.hf-entry')).toBeVisible();
+    await expect(page.getByText('مركز المهام')).toHaveCount(0);
     await back(page);
     await expect(page.locator('.hf-screen')).toHaveCount(0);
     await expect(page.getByText('مركز المهام').first()).toBeVisible();
