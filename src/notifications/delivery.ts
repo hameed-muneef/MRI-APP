@@ -8,6 +8,7 @@ import type {Reminder, NotificationChannel, NotificationCategory} from './types'
 import {resolveAudioUrlForWeb} from '../audio/url-resolver';
 import {isNativePlatform} from '../lib/device-location';
 import {shouldRequestPermission} from './permission-ask';
+import {ALERT_ACTION_TYPE_ID, registerAlertActions} from './alert-actions';
 
 let permissionState: NotificationPermission | null = null;
 
@@ -126,6 +127,7 @@ async function deliverNativeImmediate(title: string, body: string, tag: string, 
       import('../sounds/adhan-catalog'),
     ]);
     await scheduler.ensureChannels();
+    await registerAlertActions();
     let channelId = scheduler.GENERAL_CHANNEL_ID;
     if (soundId === 'builtin:silent') {
       channelId = scheduler.SILENT_REMINDER_CHANNEL_ID;
@@ -146,6 +148,7 @@ async function deliverNativeImmediate(title: string, body: string, tag: string, 
         channelId,
         foreground: true,
         extra: { rabbaniKind: 'instant', tag },
+        actionTypeId: ALERT_ACTION_TYPE_ID,
       }] as never,
     });
     return true;

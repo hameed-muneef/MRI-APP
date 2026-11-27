@@ -45,6 +45,7 @@ import {changeWirdCount, normalizeWirds} from './wird-periods';
 import {getCentralLocationState, subscribeCentralLocation} from './lib/location-store';
 import {resolveSchedulingLocation} from './notifications/scheduling-location';
 import {installAudioUnlockListeners} from './notifications/audio';
+import {installAlertActionListener} from './notifications/alert-actions';
 import {useCentralLocation} from './hooks/useCentralLocation';
 import usePrayerTimes from './usePrayerTimes';
 import {sanitizePrayerLocation} from './prayer-location';
@@ -135,6 +136,8 @@ function Workspace({user,admin}:{user:User|null;admin:boolean}){
 
   useEffect(()=>{void requestPersistentStorage()},[]);
   useEffect(()=>installAudioUnlockListeners(),[]);
+  // أزرار «إيقاف» و«تأجيل» على التنبيهات الفورية (أندرويد): تُركَّب مرة واحدة مع بدء التطبيق.
+  useEffect(()=>installAlertActionListener(),[]);
   useEffect(()=>{
     const refreshPeriods=()=>{setCurrentDate(today());setState(current=>{
       const wirds=normalizeWirds(current.wirds);
