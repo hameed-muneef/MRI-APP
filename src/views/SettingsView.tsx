@@ -79,6 +79,12 @@ function tabForOpenSection(section: OpenSection | null): SettingsTab {
 export default function SettingsView({state, onReplace, notify, onOpenProfile}: Props) {
   const [initialTarget] = useState<OpenSection | null>(() => consumeOpenSection());
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => tabForOpenSection(initialTarget));
+  // لوحتا الأذان وساعات الهدوء تحملان تعديلات لم تُحفظ بعد: بعد أول زيارة نُبقيهما مُحمَّلتين ومخفيتين
+  // بدل إلغائهما، كي لا تضيع التعديلات عند التنقل بين التبويبات.
+  const [keptTabs, setKeptTabs] = useState<ReadonlySet<SettingsTab>>(() => new Set([tabForOpenSection(initialTarget)]));
+  useEffect(() => {
+    setKeptTabs(old => (old.has(activeTab) ? old : new Set(old).add(activeTab)));
+  }, [activeTab]);
   const [focusTarget, setFocusTarget] = useState<OpenSection | null>(initialTarget);
   const [defaultAdhanId, setDefaultAdhanId] = useState<string>(() => getSelectedDefaultAdhanId());
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
@@ -473,7 +479,8 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
         />
       )}
 
-      {activeTab === 'adhan' && (
+      {(activeTab === 'adhan' || keptTabs.has('adhan')) && (
+        <div hidden={activeTab !== 'adhan'}>
         <NotificationSettings
           mode="adhan"
           focusTarget={focusTarget}
@@ -482,14 +489,17 @@ export default function SettingsView({state, onReplace, notify, onOpenProfile}: 
           onPrayerLocation={prayerLocation => onReplace({...state, prayerLocation})}
           extraAdhanContent={adhanAudioPanel}
         />
+        </div>
       )}
 
-      {activeTab === 'quiet' && (
+      {(activeTab === 'quiet' || keptTabs.has('quiet')) && (
+        <div hidden={activeTab !== 'quiet'}>
         <NotificationSettings
           mode="quiet"
           focusTarget={focusTarget}
           notify={notify}
         />
+        </div>
       )}
 
       {showDiagnostics && <AudioDiagnostics/>}
