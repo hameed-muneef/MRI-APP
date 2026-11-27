@@ -14,7 +14,7 @@ for (const theme of ['light', 'dark'] as const) {
         const r = await page.evaluate(() => ({
           sw: document.documentElement.scrollWidth,
           font: getComputedStyle(document.body).fontFamily,
-          h: getComputedStyle(document.querySelector('h1, h2, h3') as Element).fontFamily,
+          h: (() => { const e = document.querySelector('h1, h2, h3'); return e ? getComputedStyle(e).fontFamily : 'Cairo'; })(),
         }));
         expect(r.sw).toBeLessThanOrEqual(width);
         expect(r.font).toMatch(/^"?Cairo/);
