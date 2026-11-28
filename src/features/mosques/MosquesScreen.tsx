@@ -49,6 +49,9 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
   } = useNearbyMosques();
 
   const [showManualPicker, setShowManualPicker] = useState(false);
+  const [showCustomRadius, setShowCustomRadius] = useState(
+    () => !(RADIUS_OPTIONS as readonly number[]).includes(radiusMeters),
+  );
   useBackHandler(() => setShowManualPicker(false), showManualPicker);
   const [cityQuery, setCityQuery] = useState('');
   const isNative = Capacitor.isNativePlatform();
@@ -82,10 +85,10 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
       <header className="mosques-header">
         <div>
           <h1>
-            <MapPin size={24} aria-hidden="true" />
+            <MapPin size={22} aria-hidden="true" />
             <span>المساجد القريبة</span>
           </h1>
-          <p className="muted">أقرب المساجد إلى موقعك مع المسافة التقريبية وفتح الاتجاهات في خرائط Google.</p>
+          <p className="muted">أقرب المساجد لموقعك مع المسافة والاتجاهات الفورية.</p>
         </div>
         <span className="mosques-privacy-pill">
           <ShieldCheck size={15} aria-hidden="true" />
@@ -96,7 +99,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
       {!online && (
         <div className="mosques-offline-banner" role="status">
           <WifiOff size={18} aria-hidden="true" />
-          <span>أنت غير متصل بالإنترنت: قائمة المساجد والمسافات تعمل محليًا، لكن خرائط Google تحتاج اتصالًا لعرض المسار.</span>
+          <span>تعمل قائمة المساجد دون اتصال، وتحتاج خرائط Google إلى الإنترنت لعرض المسار.</span>
         </div>
       )}
 
@@ -164,32 +167,6 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                 ))}
               </div>
 
-              <div className="mosques-radius-custom">
-                <label htmlFor="mosque-radius-km">المسافة المطلوبة (كم)</label>
-                <input
-                  id="mosque-radius-km"
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={sliderFromRadius(radiusMeters)}
-                  style={{ '--mq-fill': `${sliderFromRadius(radiusMeters)}%` } as CSSProperties}
-                  aria-valuetext={formatArabicDistance(radiusMeters)}
-                  onChange={(e) => setRadiusMeters(radiusFromSlider(Number(e.target.value)))}
-                />
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  dir="ltr"
-                  min={MIN_RADIUS_METERS / 1000}
-                  max={MAX_RADIUS_METERS / 1000}
-                  step={0.1}
-                  value={Number((radiusMeters / 1000).toFixed(1))}
-                  aria-label="المسافة بالكيلومتر، حتى 40 كم"
-                  onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
-                />
-              </div>
-
               <div className="mosques-mode-group" role="group" aria-label="وسيلة التنقل في خرائط Google">
                 <button
                   type="button"
@@ -210,6 +187,44 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
                   <span>سيارة</span>
                 </button>
               </div>
+
+              <button
+                type="button"
+                className="mosques-custom-toggle"
+                aria-expanded={showCustomRadius}
+                onClick={() => setShowCustomRadius((v) => !v)}
+              >
+                <SlidersHorizontal size={14} aria-hidden="true" />
+                <span>{showCustomRadius ? 'إخفاء المسافة المخصصة' : `مسافة مخصصة (${formatArabicDistance(radiusMeters)})`}</span>
+              </button>
+
+              {showCustomRadius && (
+                <div className="mosques-radius-custom">
+                  <label htmlFor="mosque-radius-km">المسافة المطلوبة (كم)</label>
+                  <input
+                    id="mosque-radius-km"
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={sliderFromRadius(radiusMeters)}
+                    style={{ '--mq-fill': `${sliderFromRadius(radiusMeters)}%` } as CSSProperties}
+                    aria-valuetext={formatArabicDistance(radiusMeters)}
+                    onChange={(e) => setRadiusMeters(radiusFromSlider(Number(e.target.value)))}
+                  />
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    dir="ltr"
+                    min={MIN_RADIUS_METERS / 1000}
+                    max={MAX_RADIUS_METERS / 1000}
+                    step={0.1}
+                    value={Number((radiusMeters / 1000).toFixed(1))}
+                    aria-label="المسافة بالكيلومتر، حتى 40 كم"
+                    onChange={(e) => setRadiusMeters(Number(e.target.value) * 1000)}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="mosques-action-row">
@@ -252,7 +267,7 @@ export default function MosquesScreen({ notify }: MosquesScreenProps) {
               {!loadingData && !outsideRegion && !dataError && (
                 <span>
                   {mosques.length > 0
-                    ? `عُثر على ${mosques.length} مسجدًا ضمن ${formatArabicDistance(radiusMeters)} · الأبعد ${formatArabicDistance(Math.max(...mosques.map((m) => m.distanceMeters)))} (مسافة تقريبية في خط مستقيم)`
+                    ? `${mosques.length} مسجدًا ضمن ${formatArabicDistance(radiusMeters)} (مسافات تقريبية)`
                     : `لا توجد نتائج ضمن ${formatArabicDistance(radiusMeters)}`}
                 </span>
               )}

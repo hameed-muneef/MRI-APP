@@ -1,5 +1,5 @@
 import {Fragment, useEffect, useMemo, useRef, useState} from 'react';
-import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3} from 'lucide-react';
+import {Bell, BellOff, BellRing, CalendarClock, CheckCircle2, Clock3, Pencil} from 'lucide-react';
 import {type Task, type TaskSchedule, type Wird, today} from '../app-state';
 import type {Goal} from '../goal-plan';
 import {goalStepCompletionKey, goalStepDueDate, goalStepOccurrence, goalSteps, isGoalDateInRange} from '../goal-plan';
@@ -84,6 +84,7 @@ export default function TodayTasksView({
   onCompletePlanDay,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('today');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [timeByTask, setTimeByTask] = useState<Record<string, string>>({});
   const [dateByTask, setDateByTask] = useState<Record<string, string>>({});
   const [notifyDraftByTask, setNotifyDraftByTask] = useState<Record<string, boolean>>({});
@@ -353,6 +354,7 @@ export default function TodayTasksView({
       },
     });
     notifyNativePrefsChanged();
+    setEditingTaskId(null);
     setNotice(`حُفظ الموعد المبدئي لـ «${title}» بتاريخ ${date} الساعة ${timeOfDayClock12(time)}. لم يُعتمد بعد.`);
   };
 
@@ -381,6 +383,7 @@ export default function TodayTasksView({
       },
     });
     notifyNativePrefsChanged();
+    setEditingTaskId(null);
     setNotice(`تم تأكيد «${title}» ليوم ${date} الساعة ${timeOfDayClock12(time)}.`);
   };
 
@@ -452,11 +455,11 @@ export default function TodayTasksView({
 
       <section className="panel">
         <div className="today-task-filters" role="tablist" aria-label="تصفية المهام">
-          <button role="tab" aria-selected={filter === 'today'} className={filter === 'today' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('today'); setNotice('')}}>اليوم</button>
-          <button role="tab" aria-selected={filter === 'tomorrow'} className={filter === 'tomorrow' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('tomorrow'); setNotice('')}}>غدًا</button>
-          <button role="tab" aria-selected={filter === 'upcoming'} className={filter === 'upcoming' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('upcoming'); setNotice('')}}>القادمة</button>
-          <button role="tab" aria-selected={filter === 'overdue'} className={filter === 'overdue' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('overdue'); setNotice('')}}>متأخرة</button>
-          <button role="tab" aria-selected={filter === 'unscheduled'} className={filter === 'unscheduled' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('unscheduled'); setNotice('')}}>بلا موعد</button>
+          <button role="tab" aria-selected={filter === 'today'} className={filter === 'today' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('today'); setEditingTaskId(null); setNotice('')}}>اليوم</button>
+          <button role="tab" aria-selected={filter === 'tomorrow'} className={filter === 'tomorrow' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('tomorrow'); setEditingTaskId(null); setNotice('')}}>غدًا</button>
+          <button role="tab" aria-selected={filter === 'upcoming'} className={filter === 'upcoming' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('upcoming'); setEditingTaskId(null); setNotice('')}}>القادمة</button>
+          <button role="tab" aria-selected={filter === 'overdue'} className={filter === 'overdue' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('overdue'); setEditingTaskId(null); setNotice('')}}>متأخرة</button>
+          <button role="tab" aria-selected={filter === 'unscheduled'} className={filter === 'unscheduled' ? 'primary' : 'soft-btn'} onClick={() => {setFilter('unscheduled'); setEditingTaskId(null); setNotice('')}}>بلا موعد</button>
         </div>
         {undo && (
           <p className="hint" role="status">
@@ -505,150 +508,198 @@ export default function TodayTasksView({
                   schedule?.initialDate ||
                   hasSchedule,
               );
+              const isEditing = editingTaskId === item.id;
+              const isConfirmed = Boolean(schedule?.confirmedDate || schedule?.confirmedTime);
+              const reportTimeText = schedule?.confirmedTime
+                ? timeOfDayClock12(schedule.confirmedTime)
+                : schedule?.initialTime
+                  ? timeOfDayClock12(schedule.initialTime)
+                  : schedule?.confirmedDate ?? schedule?.initialDate ?? '';
               return (
                 <Fragment key={item.id}>
                 {nextUpIds.length > 0 && index === 0 && <li className="today-task-heading" aria-hidden="true">الأقرب الآن</li>}
                 {nextUpIds.length > 0 && index === nextUpIds.length && <li className="today-task-heading" aria-hidden="true">باقي مهام اليوم</li>}
-                <li className="today-task-card">
+                <li className={`today-task-card${isEditing ? ' is-editing' : ''}`}>
                   <div className="today-task-head">
                     <div className="today-task-info">
                       <strong className="today-task-title">{item.title}</strong>
+                      <div className="today-task-report-meta">
+                        {reportTimeText ? (
+                          <span className={`today-task-time-chip${isConfirmed ? ' is-confirmed' : ''}`}>
+                            <Clock3 size={12} aria-hidden="true"/>
+                            <span>{reportTimeText} · {isConfirmed ? 'مؤكد' : 'مبدئي'}</span>
+                          </span>
+                        ) : (
+                          <span className="today-task-time-chip is-empty">
+                            <Clock3 size={12} aria-hidden="true"/>
+                            <span>بلا وقت محدد</span>
+                          </span>
+                        )}
+                        {hasSchedule && itemNotifyEnabled && itemAlarmMode && (
+                          <span className="today-task-alarm-tag">
+                            <BellRing size={12} aria-hidden="true"/>
+                            <span>نمط منبه</span>
+                          </span>
+                        )}
+                        {hasSchedule && !itemNotifyEnabled && (
+                          <span className="today-task-notify-tag is-off">
+                            <BellOff size={12} aria-hidden="true"/>
+                            <span>صامت</span>
+                          </span>
+                        )}
+                        {nextUpById.has(item.id) && (
+                          <span className={`today-task-nextup is-${nextUpById.get(item.id)!.state}`} data-nextup={nextUpById.get(item.id)!.state}>
+                            <Clock3 size={12} aria-hidden="true"/> {nextUpById.get(item.id)!.label}
+                          </span>
+                        )}
+                      </div>
                       <span className="today-task-source">
                         <span>{isGoal ? 'خطوة هدف' : `مهمة ${item.period === 'daily' ? 'يومية' : item.period === 'weekly' ? 'أسبوعية' : 'شهرية'}`}</span>
                         <span aria-hidden="true">·</span>
                         <span>{itemSource}</span>
                       </span>
-                      {nextUpById.has(item.id) && (
-                        <span className={`today-task-nextup is-${nextUpById.get(item.id)!.state}`} data-nextup={nextUpById.get(item.id)!.state}>
-                          <Clock3 size={12} aria-hidden="true"/> {nextUpById.get(item.id)!.label}
-                        </span>
-                      )}
                     </div>
-                    {(item as Task).plan && onOpenPlanTask && <button type="button" className="soft-btn" onClick={() => onOpenPlanTask(item as Task)}>{(item as Task).plan!.kind === 'day' ? 'ابدأ مقرر اليوم' : 'ابدأ المراجعة'}</button>}
-                    {(item as Task).hifz && onOpenHifzTask && <button type="button" className="soft-btn" onClick={() => onOpenHifzTask((item as Task).hifz!)}>ابدأ التسميع</button>}
-                    <button
-                      type="button"
-                      className="today-task-complete-btn"
-                      onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : requestComplete(item as Task))}
-                    >
-                      <CheckCircle2 size={16} aria-hidden="true"/>
-                      <span>إنجاز</span>
-                    </button>
+                    <div className="today-task-actions">
+                      {(item as Task).plan && onOpenPlanTask && <button type="button" className="soft-btn" onClick={() => onOpenPlanTask(item as Task)}>{(item as Task).plan!.kind === 'day' ? 'ابدأ مقرر اليوم' : 'ابدأ المراجعة'}</button>}
+                      {(item as Task).hifz && onOpenHifzTask && <button type="button" className="soft-btn" onClick={() => onOpenHifzTask((item as Task).hifz!)}>ابدأ التسميع</button>}
+                      <button
+                        type="button"
+                        className={`today-task-edit-btn${isEditing ? ' is-open' : ''}`}
+                        aria-expanded={isEditing}
+                        aria-label={isEditing ? `إغلاق تعديل ${item.title}` : `تعديل ${item.title}`}
+                        title={isEditing ? 'إغلاق التعديل' : 'تعديل الجدولة والتنبيه'}
+                        onClick={() => setEditingTaskId(current => (current === item.id ? null : item.id))}
+                      >
+                        <Pencil size={16} aria-hidden="true"/>
+                      </button>
+                      <button
+                        type="button"
+                        className="today-task-complete-btn"
+                        onClick={() => (isGoal ? completeGoal(item.goalId, item.stepId) : requestComplete(item as Task))}
+                      >
+                        <CheckCircle2 size={16} aria-hidden="true"/>
+                        <span>إنجاز</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {showMeta && (
-                    <div className="today-task-meta">
-                      {'scheduledDate' in item && item.scheduledDate && (
-                        <span className="today-task-meta-item">
-                          <Clock3 size={13} aria-hidden="true"/>
-                          <span>الاستحقاق: {item.scheduledDate}</span>
-                        </span>
+                  {isEditing && (
+                    <>
+                      {showMeta && (
+                        <div className="today-task-meta">
+                          {'scheduledDate' in item && item.scheduledDate && (
+                            <span className="today-task-meta-item">
+                              <Clock3 size={13} aria-hidden="true"/>
+                              <span>الاستحقاق: {item.scheduledDate}</span>
+                            </span>
+                          )}
+                          {schedule?.confirmedDate && (
+                            <span className="today-task-meta-item is-confirmed">
+                              <CalendarClock size={13} aria-hidden="true"/>
+                              <span>مؤكد: {schedule.confirmedDate}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</span>
+                            </span>
+                          )}
+                          {!schedule?.confirmedDate && schedule?.initialDate && (
+                            <span className="today-task-meta-item">
+                              <CalendarClock size={13} aria-hidden="true"/>
+                              <span>مبدئي: {schedule.initialDate}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</span>
+                            </span>
+                          )}
+                          {hasSchedule && (
+                            <span className={`today-task-meta-item task-notify-meta ${itemNotifyEnabled ? 'active' : 'muted'}`}>
+                              {itemNotifyEnabled ? <Bell size={13} aria-hidden="true"/> : <BellOff size={13} aria-hidden="true"/>}
+                              <span>
+                                {!itemNotifyEnabled
+                                  ? 'التنبيه موقوف'
+                                  : effectiveLead > 0
+                                    ? `تنبيه قبل ${effectiveLead} د`
+                                    : 'تنبيه عند الموعد'}{itemNotifyEnabled && itemAlarmMode ? ' · نمط منبه' : ''}
+                              </span>
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {schedule?.confirmedDate && (
-                        <span className="today-task-meta-item is-confirmed">
-                          <CalendarClock size={13} aria-hidden="true"/>
-                          <span>مؤكد: {schedule.confirmedDate}{schedule.confirmedTime ? ` · ${timeOfDayClock12(schedule.confirmedTime)}` : ''}</span>
-                        </span>
-                      )}
-                      {!schedule?.confirmedDate && schedule?.initialDate && (
-                        <span className="today-task-meta-item">
-                          <CalendarClock size={13} aria-hidden="true"/>
-                          <span>مبدئي: {schedule.initialDate}{schedule.initialTime ? ` · ${timeOfDayClock12(schedule.initialTime)}` : ''}</span>
-                        </span>
-                      )}
-                      {hasSchedule && (
-                        <span className={`today-task-meta-item task-notify-meta ${itemNotifyEnabled ? 'active' : 'muted'}`}>
-                          {itemNotifyEnabled ? <Bell size={13} aria-hidden="true"/> : <BellOff size={13} aria-hidden="true"/>}
-                          <span>
-                            {!itemNotifyEnabled
-                              ? 'التنبيه موقوف'
-                              : effectiveLead > 0
-                                ? `تنبيه قبل ${effectiveLead} د`
-                                : 'تنبيه عند الموعد'}{itemNotifyEnabled && itemAlarmMode ? ' · نمط منبه' : ''}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  )}
 
-                  <div className="today-task-schedule">
-                    <div className="today-task-fields">
-                      <label className="today-task-field today-task-field-date">
-                        <span>اليوم المقترح</span>
-                        <input
-                          type="date"
-                          aria-label={`اليوم المقترح لـ ${item.title}`}
-                          min={now}
-                          value={dateByTask[item.id] ?? schedule?.initialDate ?? schedule?.confirmedDate ?? (filter === 'tomorrow' ? tomorrow : now)}
-                          onChange={event => setDateByTask(current => ({...current, [item.id]: event.target.value}))}
-                        />
-                      </label>
+                      <div className="today-task-schedule">
+                        <div className="today-task-fields">
+                          <label className="today-task-field today-task-field-date">
+                            <span>اليوم المقترح</span>
+                            <input
+                              type="date"
+                              aria-label={`اليوم المقترح لـ ${item.title}`}
+                              min={now}
+                              value={dateByTask[item.id] ?? schedule?.initialDate ?? schedule?.confirmedDate ?? (filter === 'tomorrow' ? tomorrow : now)}
+                              onChange={event => setDateByTask(current => ({...current, [item.id]: event.target.value}))}
+                            />
+                          </label>
 
-                      <label className="today-task-field today-task-field-time">
-                        <span>الوقت</span>
-                        <TaskTimeSelect
-                          value={timeByTask[item.id] ?? (timeOfTask(taskSchedules[item.id]) || currentTime())}
-                          label={`الوقت المختار لـ ${item.title}`}
-                          onChange={value => setTimeByTask(current => ({...current, [item.id]: value}))}
-                        />
-                      </label>
+                          <label className="today-task-field today-task-field-time">
+                            <span>الوقت</span>
+                            <TaskTimeSelect
+                              value={timeByTask[item.id] ?? (timeOfTask(taskSchedules[item.id]) || currentTime())}
+                              label={`الوقت المختار لـ ${item.title}`}
+                              onChange={value => setTimeByTask(current => ({...current, [item.id]: value}))}
+                            />
+                          </label>
 
-                      <div className="today-task-alert-row">
-                        <label className="today-task-field today-task-field-lead">
-                          <span>تنبيه قبل الموعد</span>
-                          <select
-                            aria-label={`تنبيه قبل الموعد لـ ${item.title}`}
-                            value={itemLeadMinutes === undefined ? '' : String(itemLeadMinutes)}
-                            onChange={event => changeItemLeadMinutes(item.id, item.title, event.target.value)}
-                          >
-                            <option value="">الافتراضي ({taskSettings.remind_before_minutes} د)</option>
-                            {LEAD_OPTIONS.map(opt => (
-                              <option key={opt.value} value={String(opt.value)}>{opt.fullLabel}</option>
-                            ))}
-                          </select>
+                          <div className="today-task-alert-row">
+                            <label className="today-task-field today-task-field-lead">
+                              <span>تنبيه قبل الموعد</span>
+                              <select
+                                aria-label={`تنبيه قبل الموعد لـ ${item.title}`}
+                                value={itemLeadMinutes === undefined ? '' : String(itemLeadMinutes)}
+                                onChange={event => changeItemLeadMinutes(item.id, item.title, event.target.value)}
+                              >
+                                <option value="">الافتراضي ({taskSettings.remind_before_minutes} د)</option>
+                                {LEAD_OPTIONS.map(opt => (
+                                  <option key={opt.value} value={String(opt.value)}>{opt.fullLabel}</option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <button
+                              type="button"
+                              className={`today-task-notify-btn${itemNotifyEnabled ? ' is-on' : ''}`}
+                              aria-pressed={itemNotifyEnabled}
+                              aria-label={itemNotifyEnabled ? `إيقاف التنبيه لـ ${item.title}` : `تفعيل التنبيه لـ ${item.title}`}
+                              title={itemNotifyEnabled ? 'إيقاف التنبيه لهذه المهمة' : 'تفعيل التنبيه لهذه المهمة'}
+                              onClick={() => toggleItemNotify(item.id, item.title)}
+                            >
+                              {itemNotifyEnabled ? <Bell size={16} aria-hidden="true"/> : <BellOff size={16} aria-hidden="true"/>}
+                              <span>{itemNotifyEnabled ? 'مفعّل' : 'موقوف'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <label className="today-task-alarm-mode">
+                          <input
+                            type="checkbox"
+                            checked={itemAlarmMode}
+                            aria-label={`نمط منبه لـ ${item.title}`}
+                            onChange={() => toggleItemAlarm(item.id, item.title)}
+                          />
+                          <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
                         </label>
 
-                        <button
-                          type="button"
-                          className={`today-task-notify-btn${itemNotifyEnabled ? ' is-on' : ''}`}
-                          aria-pressed={itemNotifyEnabled}
-                          aria-label={itemNotifyEnabled ? `إيقاف التنبيه لـ ${item.title}` : `تفعيل التنبيه لـ ${item.title}`}
-                          title={itemNotifyEnabled ? 'إيقاف التنبيه لهذه المهمة' : 'تفعيل التنبيه لهذه المهمة'}
-                          onClick={() => toggleItemNotify(item.id, item.title)}
-                        >
-                          {itemNotifyEnabled ? <Bell size={16} aria-hidden="true"/> : <BellOff size={16} aria-hidden="true"/>}
-                          <span>{itemNotifyEnabled ? 'مفعّل' : 'موقوف'}</span>
-                        </button>
+                        <div className="today-task-footer">
+                          <button
+                            type="button"
+                            className="today-task-draft-btn"
+                            onClick={() => saveInitial(item.id, item.title, itemSource)}
+                          >
+                            حفظ مبدئي
+                          </button>
+                          <button
+                            type="button"
+                            className="primary today-task-confirm-btn"
+                            onClick={() => confirmSchedule(item.id, item.title, itemSource)}
+                          >
+                            تأكيد الجدولة
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    <label className="today-task-alarm-mode">
-                      <input
-                        type="checkbox"
-                        checked={itemAlarmMode}
-                        aria-label={`نمط منبه لـ ${item.title}`}
-                        onChange={() => toggleItemAlarm(item.id, item.title)}
-                      />
-                      <span>نمط منبه (رنين متكرر نحو دقيقة)</span>
-                    </label>
-
-                    <div className="today-task-footer">
-                      <button
-                        type="button"
-                        className="today-task-draft-btn"
-                        onClick={() => saveInitial(item.id, item.title, itemSource)}
-                      >
-                        حفظ مبدئي
-                      </button>
-                      <button
-                        type="button"
-                        className="primary today-task-confirm-btn"
-                        onClick={() => confirmSchedule(item.id, item.title, itemSource)}
-                      >
-                        تأكيد الجدولة
-                      </button>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </li>
                 </Fragment>
               );

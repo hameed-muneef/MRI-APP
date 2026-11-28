@@ -16,6 +16,7 @@ test.describe('نمط منبه للمهام', () => {
     await page.locator('.home-today-list').click();
     const card = page.locator('.today-task-card').filter({hasText: 'مهمة اختبار المنبه'});
     await expect(card).toBeVisible();
+    await card.getByRole('button', {name: /تعديل/}).click();
     const box = card.getByLabel(/نمط منبه/);
     await expect(box).not.toBeChecked();
     await box.check();
@@ -26,6 +27,8 @@ test.describe('نمط منبه للمهام', () => {
     await page.reload();
     await page.locator('.home-today-list').click();
     const again = page.locator('.today-task-card').filter({hasText: 'مهمة اختبار المنبه'});
+    await expect(again).toContainText('نمط منبه');
+    await again.getByRole('button', {name: /تعديل/}).click();
     await expect(again.getByLabel(/نمط منبه/)).toBeChecked();
 
     await again.getByLabel(/نمط منبه/).uncheck();

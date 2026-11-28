@@ -2,7 +2,6 @@ import {useEffect,useState} from 'react';
 import {CalendarDays,Check,ChevronDown,Pencil,Plus,Search,Target,Trash2} from 'lucide-react';
 import {daysToGoal,goalPeriodKey,goalStepCompleted,goalStepCompletionKey,goalSteps,isGoalDateInRange,localGoalDate,type Goal,type GoalPeriod} from './goal-plan';
 import GoalPeriodCards from './GoalPeriodCards';
-import GoalHistory from './GoalHistory';
 import {goalPaceText} from './coach/CoachPanel';
 import {coachOn,goalPace} from './coach/engine';
 import SuggestionLine from './coach/SuggestionLine';
@@ -12,48 +11,315 @@ import type {CoachSettings} from './coach/types';
 
 type Props={goals:Goal[];coachSettings?:CoachSettings;onGoals:(goals:Goal[])=>void};
 const periodLabel:Record<GoalPeriod,string>={daily:'يوميًا',weekly:'أسبوعيًا',monthly:'شهريًا',yearly:'سنويًا',custom:'تاريخ مخصص'};
+
 export default function StrongGoals({goals,coachSettings,onGoals}:Props){
   const [title,setTitle]=useState('');const [intention,setIntention]=useState('');const [targetDate,setTargetDate]=useState('');
   const [drafts,setDrafts]=useState<Record<string,string>>({});const [periods,setPeriods]=useState<Record<string,GoalPeriod>>({});
   const [editing,setEditing]=useState<string|null>(null);const [editTitle,setEditTitle]=useState('');const [editIntention,setEditIntention]=useState('');const [editTarget,setEditTarget]=useState('');
   const [editingStep,setEditingStep]=useState<string|null>(null);const [hintGoal,setHintGoal]=useState<string|null>(null);const [stepTitle,setStepTitle]=useState('');const [stepPeriod,setStepPeriod]=useState<GoalPeriod>('daily');const [stepDate,setStepDate]=useState('');const [addDates,setAddDates]=useState<Record<string,string>>({});
   const [today,setToday]=useState(localGoalDate);
+  const [showCreateForm,setShowCreateForm]=useState(()=>goals.length===0);
   const [expandedGoalId,setExpandedGoalId]=useState<string|null>(null);
   const [confirmDeleteGoalId,setConfirmDeleteGoalId]=useState<string|null>(null);
   const [goalError,setGoalError]=useState<string>('');
   const [goalQuery,setGoalQuery]=useState('');
-  // الرجوع يتراجع عن الطبقة الأعلى داخل الهدف: تأكيد الحذف ← التعديل ← إضافة خطوة ← طي البطاقة.
+
+  // الرجوع يتراجع عن الطبقة الأعلى داخل الهدف: تأكيد الحذف ← التعديل ← إضافة خطوة ← طي البطاقة ← إغلاق نموذج الإنشاء.
+  useBackHandler(()=>setShowCreateForm(false),showCreateForm&&goals.length>0);
   useBackHandler(()=>setExpandedGoalId(null),Boolean(expandedGoalId));
   useBackHandler(()=>setEditingStep(null),Boolean(editingStep));
   useBackHandler(()=>setEditing(null),Boolean(editing));
   useBackHandler(()=>setConfirmDeleteGoalId(null),Boolean(confirmDeleteGoalId));
-  useEffect(()=>{const check=()=>setToday(localGoalDate());const timer=window.setInterval(check,30000);window.addEventListener('focus',check);return ()=>{clearInterval(timer);window.removeEventListener('focus',check)}},[]);
+
+  useEffect(()=>{
+    const check=()=>setToday(localGoalDate());
+    const timer=window.setInterval(check,30000);
+    window.addEventListener('focus',check);
+    return ()=>{clearInterval(timer);window.removeEventListener('focus',check)};
+  },[]);
+
   const update=(goalId:string,change:(goal:Goal)=>Goal)=>onGoals(goals.map(goal=>goal.id===goalId?change(goal):goal));
-  const create=(event:React.FormEvent)=>{event.preventDefault();if(!title.trim()||!intention.trim()||!targetDate||targetDate<today)return;const id=crypto.randomUUID();onGoals([...goals,{id,title:title.trim(),benefit:intention.trim(),targetDate,createdAt:today,steps:[]}]);setExpandedGoalId(id);setGoalError('');setGoalQuery('');setTitle('');setIntention('');setTargetDate('')};
+  const create=(event:React.FormEvent)=>{
+    event.preventDefault();
+    if(!title.trim()||!intention.trim()||!targetDate||targetDate<today)return;
+    const id=crypto.randomUUID();
+    onGoals([...goals,{id,title:title.trim(),benefit:intention.trim(),targetDate,createdAt:today,steps:[]}]);
+    setExpandedGoalId(id);
+    setShowCreateForm(false);
+    setGoalError('');
+    setGoalQuery('');
+    setTitle('');
+    setIntention('');
+    setTargetDate('');
+  };
+
   const visibleGoals=goals.filter(goal=>`${goal.title} ${goal.benefit}`.toLocaleLowerCase('ar').includes(goalQuery.trim().toLocaleLowerCase('ar')));
-  return <div className="strong-goals"><div className="page-intro"><span className="eyebrow">حياتي مع الله · المؤمن القوي</span><h1>أهداف بنية واضحة وخطوات ثابتة</h1><p>حدّد ما تسعى إليه، ولماذا، ومتى تريد بلوغه؛ ثم ابنِ له خطة تتابعها على قدر استطاعتك.</p></div>
-    <div className="strong-goals-layout">
-    <div className="strong-goals-main">
-    <section className="panel goal-create"><div className="goal-section-heading"><span className="goal-step-number">١</span><div><h2>حدّد هدفك</h2><p>ابدأ بالغاية والنية والمدة، ثم أضف خطوات التنفيذ.</p></div></div><form className="goal-create-form" onSubmit={create}><label>الهدف<input required maxLength={120} value={title} onChange={e=>setTitle(e.target.value)} placeholder="مثلًا: قراءة كتاب نافع"/></label><label>النية والمنفعة التي ترجوها<textarea required rows={2} maxLength={500} value={intention} onChange={e=>setIntention(e.target.value)} placeholder="مثلًا: تعلّم ما ينفعني والعمل به"/></label><label>أريد بلوغه بحلول<input required type="date" min={today} value={targetDate} onChange={e=>setTargetDate(e.target.value)}/></label><button className="primary"><Plus size={17}/> إضافة الهدف</button></form></section>
-    <div className="goal-section-heading goal-list-heading"><span className="goal-step-number">٢</span><div><h2>أهدافك وخططها</h2><p>افتح هدفًا لإضافة خطواته أو تعديلها، وتابع التنفيذ في البطاقات المقابلة.</p></div></div>
-    {goalError&&<p className="notif-error" role="alert">{goalError}</p>}
-    {goals.length>0&&<label className="goal-search"><Search size={17}/><input type="search" value={goalQuery} onChange={event=>setGoalQuery(event.target.value)} placeholder="ابحث عن هدف" aria-label="ابحث عن هدف"/><span>{visibleGoals.length.toLocaleString('ar-EG')} من {goals.length.toLocaleString('ar-EG')}</span></label>}
-    {goals.length===0&&<div className="goal-empty"><Target size={28}/><strong>لا توجد أهداف بعد</strong><p>ضع هدفًا واحدًا واضحًا، ثم أضف إليه خطوة صغيرة قابلة للمتابعة.</p></div>}
-      {goals.length>0&&visibleGoals.length===0&&<div className="goal-empty"><Search size={26}/><strong>لا توجد أهداف مطابقة</strong><p>جرّب كلمة أخرى من اسم الهدف أو النية.</p></div>}
-    <div className="goal-cards">{visibleGoals.map(goal=>{const steps=goalSteps(goal);const completed=steps.filter(step=>goalStepCompleted(step)||step.done[goalPeriodKey(step.period,new Date(),step.customDate)]).length;const remaining=goal.targetDate?daysToGoal(goal.targetDate):null;const expanded=expandedGoalId===goal.id;const pace=coachOn(goal,coachSettings)?goalPace(goal,new Date(),coachSettings):null;return <section className={`goal-plan-card${expanded?' is-expanded':''}`} key={goal.id}><div className="goal-plan-head"><div className="goal-plan-identity"><span className="eyebrow">هدف</span><h3>{goal.title}</h3><p><strong>النية:</strong> {goal.benefit||'أضف نيتك والمنفعة التي ترجوها.'}</p><span className="goal-summary-count">{completed.toLocaleString('ar-EG')} من {steps.length.toLocaleString('ar-EG')} خطوات هذه الفترة</span></div><div className="goal-head-actions"><button className="soft-btn goal-expand-btn" aria-expanded={expanded} aria-controls={`goal-details-${goal.id}`} onClick={()=>{setExpandedGoalId(expanded?null:goal.id);setConfirmDeleteGoalId(null);setGoalError('')}}>{expanded?'طي الخطة':'عرض الخطة'}<ChevronDown size={16}/></button></div></div>
-      {pace&&<SuggestionLine text={goalPaceText(pace)}/>}
-      {expanded&&<div id={`goal-details-${goal.id}`} className="goal-details"><div className="goal-detail-actions"><button type="button" className="soft-btn" onClick={()=>{setEditing(goal.id);setEditTitle(goal.title);setEditIntention(goal.benefit);setEditTarget(goal.targetDate??'');setGoalError('')}}>تعديل الهدف</button><button type="button" className="icon-btn danger" aria-label={`حذف هدف ${goal.title}`} onClick={()=>setConfirmDeleteGoalId(goal.id)}><Trash2 size={16}/></button></div>
-      {confirmDeleteGoalId===goal.id&&<div className="notif-confirm" role="alertdialog" aria-label={`تأكيد حذف هدف ${goal.title}`}><p className="small">حذف هدف «{goal.title}» وخطواته نهائيًا؟</p><div className="goal-delete-confirm-actions"><button type="button" className="outline-danger" onClick={()=>{onGoals(goals.filter(item=>item.id!==goal.id));setConfirmDeleteGoalId(null)}}>تأكيد الحذف</button><button type="button" className="soft-btn" onClick={()=>setConfirmDeleteGoalId(null)}>إلغاء</button></div></div>}
-      {editing===goal.id&&<form className="goal-edit-form" onSubmit={e=>{e.preventDefault();if(!editTitle.trim()||!editIntention.trim())return;const next={...goal,targetDate:editTarget||undefined};if(editTarget&&!isGoalDateInRange({...goal,targetDate:undefined},editTarget)){setGoalError('يجب أن يكون موعد انتهاء الهدف في أو بعد تاريخ بدء الهدف.');return}if(goalSteps(goal).some(step=>step.period==='custom'&&step.customDate&&!isGoalDateInRange(next,step.customDate))){setGoalError('يجب أن تبقى مواعيد الخطوات ضمن مدة الهدف. عدّل موعد الخطوة أولًا أو اختر موعد انتهاء يشملها.');return}setGoalError('');update(goal.id,item=>({...item,title:editTitle.trim(),benefit:editIntention.trim(),targetDate:editTarget||undefined,steps:goalSteps(item)}));setEditing(null)}}><label>الهدف<input required value={editTitle} onChange={e=>setEditTitle(e.target.value)}/></label><label>النية والمنفعة<textarea required rows={2} value={editIntention} onChange={e=>setEditIntention(e.target.value)}/></label><label>موعد الوصول<input type="date" min={goal.createdAt} value={editTarget} onChange={e=>setEditTarget(e.target.value)}/></label><div className="goal-edit-actions"><button className="primary">حفظ التعديل</button><button type="button" className="soft-btn" onClick={()=>{setEditing(null);setGoalError('')}}>إلغاء</button></div></form>}
-      <div className="goal-meta"><span><CalendarDays size={15}/>{goal.targetDate?new Intl.DateTimeFormat('ar-EG',{day:'numeric',month:'long',year:'numeric'}).format(new Date(`${goal.targetDate}T12:00:00`)):'لم يحدد موعد بعد'}</span>{remaining!==null&&<span>{remaining>0?`باقي ${remaining.toLocaleString('ar-EG')} يوم`:remaining===0?'موعد الهدف اليوم':`مرّ الموعد منذ ${Math.abs(remaining).toLocaleString('ar-EG')} يوم`}</span>}<span>{completed.toLocaleString('ar-EG')} من {steps.length.toLocaleString('ar-EG')} خطوات هذه الفترة</span></div>
-      <div className="goal-plan-body"><h4>خطة المتابعة</h4>{steps.length===0&&<p className="muted small">أضف أول خطوة تجعل الهدف قابلًا للتنفيذ.</p>}{steps.map(step=>{const key=goalPeriodKey(step.period,new Date(),step.customDate);const checked=goalStepCompleted(step)||!!step.done[key];return <div className="goal-step-wrap" key={step.id}><div className="goal-action-row"><div className="goal-step-top"><label><input type="checkbox" aria-label={`إنجاز ${step.title}`} checked={checked} disabled={(step.period==='daily'||step.period==='custom')&&checked} onChange={e=>update(goal.id,item=>({...item,steps:goalSteps(item).map(s=>s.id===step.id?{...s,done:{...s.done,[goalStepCompletionKey(s)]:e.target.checked}}:s)}))}/><span className={checked?'completed':''}>{step.title}</span></label><div className="goal-step-actions"><button type="button" className="icon-btn" aria-label={`تعديل خطوة ${step.title}`} title="تعديل الخطوة" onClick={()=>{setEditingStep(step.id);setStepTitle(step.title);setStepPeriod(step.period);setStepDate(step.customDate??'');setGoalError('')}}><Pencil size={15}/></button><button type="button" className="icon-btn danger" aria-label={`حذف خطوة ${step.title}`} title="حذف الخطوة" onClick={()=>update(goal.id,item=>({...item,steps:goalSteps(item).filter(s=>s.id!==step.id)}))}><Trash2 size={15}/></button></div></div><span className="goal-period-badge">{step.period==='custom'?`موعد التنفيذ: ${new Intl.DateTimeFormat('ar-EG',{calendar:'gregory',day:'numeric',month:'long',year:'numeric'}).format(new Date(`${step.customDate}T12:00:00`))}`:periodLabel[step.period]}</span></div>{Object.values(step.done).some(Boolean)&&<details className="goal-step-history"><summary>سجل الإنجاز ({Object.values(step.done).filter(Boolean).length.toLocaleString('ar-EG')})</summary><ul>{Object.entries(step.done).filter(([,done])=>done).sort(([a],[b])=>b.localeCompare(a)).map(([key])=><li key={key}>{step.period==='monthly'?`شهر ${key}`:step.period==='weekly'?`أسبوع يبدأ ${key}`:step.period==='custom'?new Intl.DateTimeFormat('ar-EG',{calendar:'gregory',day:'numeric',month:'long',year:'numeric'}).format(new Date(`${key}T12:00:00`)):key}</li>)}</ul></details>}{editingStep===step.id&&<form className="goal-step-edit" onSubmit={e=>{e.preventDefault();if(!stepTitle.trim())return;if(stepPeriod==='custom'&&!isGoalDateInRange(goal,stepDate)){setGoalError(!goal.createdAt||stepDate>=goal.createdAt?'يجب أن يكون موعد تنفيذ الخطوة ضمن المدة المحددة للهدف.':'لا يمكن تحديد موعد قبل تاريخ بدء الهدف');return}setGoalError('');update(goal.id,item=>({...item,steps:goalSteps(item).map(s=>s.id===step.id?{...s,title:stepTitle.trim(),period:stepPeriod,...(stepPeriod==='custom'?{customDate:stepDate}:{customDate:undefined})}:s)}));setEditingStep(null)}}><input aria-label="اسم الخطوة" required value={stepTitle} onChange={e=>setStepTitle(e.target.value)}/><select aria-label="تكرار الخطوة" value={stepPeriod} onChange={e=>setStepPeriod(e.target.value as GoalPeriod)}><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option><option value="custom">تاريخ مخصص</option></select>{stepPeriod==='custom'&&<label>اختر التاريخ<input required type="date" aria-label="موعد التنفيذ" min={goal.createdAt} max={goal.targetDate} value={stepDate} onChange={e=>setStepDate(e.target.value)}/></label>}<div className="goal-step-edit-actions"><button className="soft-btn">حفظ</button><button type="button" className="soft-btn" onClick={()=>{setEditingStep(null);setGoalError('')}}>إلغاء</button></div></form>}</div>})}
-      <form className="goal-add-step" onSubmit={e=>{e.preventDefault();const text=drafts[goal.id]?.trim();const period=periods[goal.id]??'daily';const customDate=addDates[goal.id]??'';if(!text||(period==='custom'&&!customDate))return;if(period==='custom'&&!isGoalDateInRange(goal,customDate)){setGoalError(!goal.createdAt||customDate>=goal.createdAt?'يجب أن يكون موعد تنفيذ الخطوة ضمن المدة المحددة للهدف.':'لا يمكن تحديد موعد قبل تاريخ بدء الهدف');return}setGoalError('');update(goal.id,item=>({...item,steps:[...goalSteps(item),{id:crypto.randomUUID(),title:text,period,done:{},...(period==='custom'?{customDate}:{})}]}));setDrafts({...drafts,[goal.id]:''});setAddDates({...addDates,[goal.id]:''});setHintGoal(goal.id)}}><input aria-label={`خطوة جديدة لهدف ${goal.title}`} placeholder="خطوة عملية لهذا الهدف" value={drafts[goal.id]??''} onChange={e=>setDrafts({...drafts,[goal.id]:e.target.value})}/><select aria-label={`تكرار خطوة هدف ${goal.title}`} value={periods[goal.id]??'daily'} onChange={e=>setPeriods({...periods,[goal.id]:e.target.value as GoalPeriod})}><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option><option value="custom">تاريخ مخصص</option></select>{(periods[goal.id]??'daily')==='custom'&&<label className="goal-custom-date">اختر التاريخ<input required type="date" aria-label="موعد التنفيذ" min={goal.createdAt} max={goal.targetDate} value={addDates[goal.id]??''} onChange={e=>setAddDates({...addDates,[goal.id]:e.target.value})}/></label>}<button className="soft-btn"><Plus size={16}/> إضافة خطوة</button></form>{hintGoal===goal.id&&<p className="muted small goal-next-hint" role="status">تمت إضافة الخطوة. التالي: اضغط «مهام اليوم» من الرئيسية لتنفيذها، أو راجع اقتراحات اليوم في مهام اليوم لتعرف الخطوة القادمة. <button type="button" className="icon-btn" aria-label="إغلاق" onClick={()=>setHintGoal(null)}>✕</button></p>}</div></div>}</section>})}</div>
+  const allStepsCount=goals.reduce((sum,goal)=>sum+goalSteps(goal).length,0);
+  const completedStepsCount=goals.reduce((sum,goal)=>sum+goalSteps(goal).filter(step=>goalStepCompleted(step)||step.done[goalPeriodKey(step.period,new Date(),step.customDate)]).length,0);
+
+  return (
+    <div className="strong-goals">
+      <header className="strong-goals-overview">
+        <div className="strong-goals-overview-text">
+          <span className="eyebrow">حياتي مع الله · المؤمن القوي</span>
+          <h1>أهداف بنية واضحة وخطوات ثابتة</h1>
+          <p className="strong-goals-summary-line">
+            {goals.length===0
+              ?'حدّد ما تسعى إليه ولماذا ومتى تريد بلوغه؛ ثم ابنِ له خطة ثابتة.'
+              :`${goals.length.toLocaleString('ar-EG')} ${goals.length===1?'هدف':'أهداف'}${allStepsCount>0?` · ${completedStepsCount.toLocaleString('ar-EG')} من ${allStepsCount.toLocaleString('ar-EG')} خطوة منجزة هذه الفترة`:' · أضف خطوات عملية لمتابعتها'}`}
+          </p>
+        </div>
+        {goals.length>0&&(
+          <button
+            type="button"
+            className={`primary strong-goals-add-toggle${showCreateForm?' is-open':''}`}
+            aria-expanded={showCreateForm}
+            onClick={()=>setShowCreateForm(prev=>!prev)}
+          >
+            <Plus size={17}/>
+            <span>{showCreateForm?'إغلاق النموذج':'إضافة الهدف'}</span>
+          </button>
+        )}
+      </header>
+
+      <div className="strong-goals-layout">
+        <div className="strong-goals-main">
+          {showCreateForm&&(
+            <section className="panel goal-create">
+              <div className="goal-section-heading">
+                <span className="goal-step-number"><Target size={17}/></span>
+                <div>
+                  <h2>حدّد هدفك الجديد</h2>
+                  <p>ابدأ بالغاية والنية والمدة، ثم أضف خطوات التنفيذ.</p>
+                </div>
+              </div>
+              <form className="goal-create-form" onSubmit={create}>
+                <label>الهدف<input required maxLength={120} value={title} onChange={e=>setTitle(e.target.value)} placeholder="مثلًا: قراءة كتاب نافع"/></label>
+                <label>النية والمنفعة التي ترجوها<textarea required rows={2} maxLength={500} value={intention} onChange={e=>setIntention(e.target.value)} placeholder="مثلًا: تعلّم ما ينفعني والعمل به"/></label>
+                <label>أريد بلوغه بحلول<input required type="date" min={today} value={targetDate} onChange={e=>setTargetDate(e.target.value)}/></label>
+                <button className="primary"><Plus size={17}/> إضافة الهدف</button>
+              </form>
+            </section>
+          )}
+
+          {goals.length>0&&(
+            <div className="goal-section-heading goal-list-heading">
+              <span className="goal-step-number"><Target size={17}/></span>
+              <div>
+                <h2>أهدافك وخططها</h2>
+                <p>افتح هدفًا لإضافة خطواته أو تعديلها، وتابع التنفيذ في بطاقات الفترات.</p>
+              </div>
+            </div>
+          )}
+
+          {goalError&&<p className="notif-error" role="alert">{goalError}</p>}
+
+          {goals.length>0&&(
+            <label className="goal-search">
+              <Search size={17}/>
+              <input type="search" value={goalQuery} onChange={event=>setGoalQuery(event.target.value)} placeholder="ابحث عن هدف" aria-label="ابحث عن هدف"/>
+              <span>{visibleGoals.length.toLocaleString('ar-EG')} من {goals.length.toLocaleString('ar-EG')}</span>
+            </label>
+          )}
+
+          {goals.length===0&&!showCreateForm&&(
+            <div className="goal-empty">
+              <Target size={28}/>
+              <strong>لا توجد أهداف بعد</strong>
+              <p>ضع هدفًا واحدًا واضحًا، ثم أضف إليه خطوة صغيرة قابلة للمتابعة.</p>
+            </div>
+          )}
+
+          {goals.length>0&&visibleGoals.length===0&&(
+            <div className="goal-empty">
+              <Search size={26}/>
+              <strong>لا توجد أهداف مطابقة</strong>
+              <p>جرّب كلمة أخرى من اسم الهدف أو النية.</p>
+            </div>
+          )}
+
+          <div className="goal-cards">
+            {visibleGoals.map(goal=>{
+              const steps=goalSteps(goal);
+              const completed=steps.filter(step=>goalStepCompleted(step)||step.done[goalPeriodKey(step.period,new Date(),step.customDate)]).length;
+              const pct=steps.length>0?Math.round((completed/steps.length)*100):0;
+              const isComplete=steps.length>0&&completed===steps.length;
+              const remaining=goal.targetDate?daysToGoal(goal.targetDate):null;
+              const expanded=expandedGoalId===goal.id;
+              const pace=coachOn(goal,coachSettings)?goalPace(goal,new Date(),coachSettings):null;
+              const remainingText=remaining===null
+                ?null
+                :remaining>0
+                  ?`باقي ${remaining.toLocaleString('ar-EG')} يوم`
+                  :remaining===0
+                    ?'موعده اليوم'
+                    :`مرّ منذ ${Math.abs(remaining).toLocaleString('ar-EG')} يوم`;
+
+              return (
+                <section className={`goal-plan-card${expanded?' is-expanded':''}${isComplete?' is-complete':''}`} key={goal.id}>
+                  <div className="goal-plan-head">
+                    <div className="goal-plan-identity">
+                      <div className="goal-plan-kicker-row">
+                        <span>هدف</span>
+                        {remainingText&&<>
+                          <span aria-hidden="true">·</span>
+                          <span className={remaining!==null&&remaining<0?'is-overdue':''}>{remainingText}</span>
+                        </>}
+                      </div>
+                      <h3>{goal.title}</h3>
+                      <p><strong>النية:</strong> {goal.benefit||'أضف نيتك والمنفعة التي ترجوها.'}</p>
+
+                      {steps.length>0?(
+                        <div className="goal-progress-wrap">
+                          <div className="goal-progress-meta">
+                            <span className="goal-summary-count">{completed.toLocaleString('ar-EG')} من {steps.length.toLocaleString('ar-EG')} خطوات هذه الفترة</span>
+                            <span className="goal-progress-pct">{pct.toLocaleString('ar-EG')}٪</span>
+                          </div>
+                          <div className="goal-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={`تقدم هدف ${goal.title}`}>
+                            <div className="goal-progress-fill" style={{width:`${pct}%`}}/>
+                          </div>
+                        </div>
+                      ):(
+                        <span className="goal-summary-count">لا توجد خطوات بعد — افتح الخطة لإضافة أول خطوة</span>
+                      )}
+                    </div>
+
+                    <div className="goal-head-actions">
+                      <button className="soft-btn goal-expand-btn" aria-expanded={expanded} aria-controls={`goal-details-${goal.id}`} onClick={()=>{setExpandedGoalId(expanded?null:goal.id);setConfirmDeleteGoalId(null);setGoalError('')}}>
+                        {expanded?'طي الخطة':'عرض الخطة'}
+                        <ChevronDown size={16}/>
+                      </button>
+                    </div>
+                  </div>
+
+                  {pace&&<SuggestionLine text={goalPaceText(pace)}/>}
+
+                  {expanded&&(
+                    <div id={`goal-details-${goal.id}`} className="goal-details">
+                      <div className="goal-detail-actions">
+                        <button type="button" className="soft-btn" onClick={()=>{setEditing(goal.id);setEditTitle(goal.title);setEditIntention(goal.benefit);setEditTarget(goal.targetDate??'');setGoalError('')}}>تعديل الهدف</button>
+                        <button type="button" className="icon-btn danger" aria-label={`حذف هدف ${goal.title}`} onClick={()=>setConfirmDeleteGoalId(goal.id)}><Trash2 size={16}/></button>
+                      </div>
+
+                      {confirmDeleteGoalId===goal.id&&(
+                        <div className="notif-confirm" role="alertdialog" aria-label={`تأكيد حذف هدف ${goal.title}`}>
+                          <p className="small">حذف هدف «{goal.title}» وخطواته نهائيًا؟</p>
+                          <div className="goal-delete-confirm-actions">
+                            <button type="button" className="outline-danger" onClick={()=>{onGoals(goals.filter(item=>item.id!==goal.id));setConfirmDeleteGoalId(null)}}>تأكيد الحذف</button>
+                            <button type="button" className="soft-btn" onClick={()=>setConfirmDeleteGoalId(null)}>إلغاء</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {editing===goal.id&&(
+                        <form className="goal-edit-form" onSubmit={e=>{e.preventDefault();if(!editTitle.trim()||!editIntention.trim())return;const next={...goal,targetDate:editTarget||undefined};if(editTarget&&!isGoalDateInRange({...goal,targetDate:undefined},editTarget)){setGoalError('يجب أن يكون موعد انتهاء الهدف في أو بعد تاريخ بدء الهدف.');return}if(goalSteps(goal).some(step=>step.period==='custom'&&step.customDate&&!isGoalDateInRange(next,step.customDate))){setGoalError('يجب أن تبقى مواعيد الخطوات ضمن مدة الهدف. عدّل موعد الخطوة أولًا أو اختر موعد انتهاء يشملها.');return}setGoalError('');update(goal.id,item=>({...item,title:editTitle.trim(),benefit:editIntention.trim(),targetDate:editTarget||undefined,steps:goalSteps(item)}));setEditing(null)}}>
+                          <label>الهدف<input required value={editTitle} onChange={e=>setEditTitle(e.target.value)}/></label>
+                          <label>النية والمنفعة<textarea required rows={2} value={editIntention} onChange={e=>setEditIntention(e.target.value)}/></label>
+                          <label>موعد الوصول<input type="date" min={goal.createdAt} value={editTarget} onChange={e=>setEditTarget(e.target.value)}/></label>
+                          <div className="goal-edit-actions">
+                            <button className="primary">حفظ التعديل</button>
+                            <button type="button" className="soft-btn" onClick={()=>{setEditing(null);setGoalError('')}}>إلغاء</button>
+                          </div>
+                        </form>
+                      )}
+
+                      <div className="goal-meta">
+                        <span><CalendarDays size={15}/>{goal.targetDate?new Intl.DateTimeFormat('ar-EG',{day:'numeric',month:'long',year:'numeric'}).format(new Date(`${goal.targetDate}T12:00:00`)):'لم يحدد موعد بعد'}</span>
+                        {remaining!==null&&<span>{remaining>0?`باقي ${remaining.toLocaleString('ar-EG')} يوم`:remaining===0?'موعد الهدف اليوم':`مرّ الموعد منذ ${Math.abs(remaining).toLocaleString('ar-EG')} يوم`}</span>}
+                        <span>{completed.toLocaleString('ar-EG')} من {steps.length.toLocaleString('ar-EG')} خطوات هذه الفترة</span>
+                      </div>
+
+                      <div className="goal-plan-body">
+                        <h4>خطة المتابعة</h4>
+                        {steps.length===0&&<p className="muted small">أضف أول خطوة تجعل الهدف قابلًا للتنفيذ.</p>}
+                        {steps.map(step=>{
+                          const key=goalPeriodKey(step.period,new Date(),step.customDate);
+                          const checked=goalStepCompleted(step)||!!step.done[key];
+                          return (
+                            <div className="goal-step-wrap" key={step.id}>
+                              <div className="goal-action-row">
+                                <div className="goal-step-top">
+                                  <label>
+                                    <input type="checkbox" aria-label={`إنجاز ${step.title}`} checked={checked} disabled={(step.period==='daily'||step.period==='custom')&&checked} onChange={e=>update(goal.id,item=>({...item,steps:goalSteps(item).map(s=>s.id===step.id?{...s,done:{...s.done,[goalStepCompletionKey(s)]:e.target.checked}}:s)}))}/>
+                                    <span className={checked?'completed':''}>{step.title}</span>
+                                  </label>
+                                  <div className="goal-step-actions">
+                                    <button type="button" className="icon-btn" aria-label={`تعديل خطوة ${step.title}`} title="تعديل الخطوة" onClick={()=>{setEditingStep(step.id);setStepTitle(step.title);setStepPeriod(step.period);setStepDate(step.customDate??'');setGoalError('')}}><Pencil size={15}/></button>
+                                    <button type="button" className="icon-btn danger" aria-label={`حذف خطوة ${step.title}`} title="حذف الخطوة" onClick={()=>update(goal.id,item=>({...item,steps:goalSteps(item).filter(s=>s.id!==step.id)}))}><Trash2 size={15}/></button>
+                                  </div>
+                                </div>
+                                <span className="goal-period-badge">{step.period==='custom'?`موعد التنفيذ: ${new Intl.DateTimeFormat('ar-EG',{calendar:'gregory',day:'numeric',month:'long',year:'numeric'}).format(new Date(`${step.customDate}T12:00:00`))}`:periodLabel[step.period]}</span>
+                              </div>
+
+                              {Object.values(step.done).some(Boolean)&&(
+                                <details className="goal-step-history">
+                                  <summary>سجل هذه الخطوة ({Object.values(step.done).filter(Boolean).length.toLocaleString('ar-EG')})</summary>
+                                  <ul>
+                                    {Object.entries(step.done).filter(([,done])=>done).sort(([a],[b])=>b.localeCompare(a)).map(([doneKey])=>(
+                                      <li key={doneKey}>{step.period==='monthly'?`شهر ${doneKey}`:step.period==='weekly'?`أسبوع يبدأ ${doneKey}`:step.period==='custom'?new Intl.DateTimeFormat('ar-EG',{calendar:'gregory',day:'numeric',month:'long',year:'numeric'}).format(new Date(`${doneKey}T12:00:00`)):doneKey}</li>
+                                    ))}
+                                  </ul>
+                                </details>
+                              )}
+
+                              {editingStep===step.id&&(
+                                <form className="goal-step-edit" onSubmit={e=>{e.preventDefault();if(!stepTitle.trim())return;if(stepPeriod==='custom'&&!isGoalDateInRange(goal,stepDate)){setGoalError(!goal.createdAt||stepDate>=goal.createdAt?'يجب أن يكون موعد تنفيذ الخطوة ضمن المدة المحددة للهدف.':'لا يمكن تحديد موعد قبل تاريخ بدء الهدف');return}setGoalError('');update(goal.id,item=>({...item,steps:goalSteps(item).map(s=>s.id===step.id?{...s,title:stepTitle.trim(),period:stepPeriod,...(stepPeriod==='custom'?{customDate:stepDate}:{customDate:undefined})}:s)}));setEditingStep(null)}}>
+                                  <input aria-label="اسم الخطوة" required value={stepTitle} onChange={e=>setStepTitle(e.target.value)}/>
+                                  <select aria-label="تكرار الخطوة" value={stepPeriod} onChange={e=>setStepPeriod(e.target.value as GoalPeriod)}>
+                                    <option value="daily">يومي</option>
+                                    <option value="weekly">أسبوعي</option>
+                                    <option value="monthly">شهري</option>
+                                    <option value="yearly">سنوي</option>
+                                    <option value="custom">تاريخ مخصص</option>
+                                  </select>
+                                  {stepPeriod==='custom'&&(
+                                    <label>اختر التاريخ<input required type="date" aria-label="موعد التنفيذ" min={goal.createdAt} max={goal.targetDate} value={stepDate} onChange={e=>setStepDate(e.target.value)}/></label>
+                                  )}
+                                  <div className="goal-step-edit-actions">
+                                    <button className="soft-btn">حفظ</button>
+                                    <button type="button" className="soft-btn" onClick={()=>{setEditingStep(null);setGoalError('')}}>إلغاء</button>
+                                  </div>
+                                </form>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        <form className="goal-add-step" onSubmit={e=>{e.preventDefault();const text=drafts[goal.id]?.trim();const period=periods[goal.id]??'daily';const customDate=addDates[goal.id]??'';if(!text||(period==='custom'&&!customDate))return;if(period==='custom'&&!isGoalDateInRange(goal,customDate)){setGoalError(!goal.createdAt||customDate>=goal.createdAt?'يجب أن يكون موعد تنفيذ الخطوة ضمن المدة المحددة للهدف.':'لا يمكن تحديد موعد قبل تاريخ بدء الهدف');return}setGoalError('');update(goal.id,item=>({...item,steps:[...goalSteps(item),{id:crypto.randomUUID(),title:text,period,done:{},...(period==='custom'?{customDate}:{})}]}));setDrafts({...drafts,[goal.id]:''});setAddDates({...addDates,[goal.id]:''});setHintGoal(goal.id)}}>
+                          <input aria-label={`خطوة جديدة لهدف ${goal.title}`} placeholder="خطوة عملية لهذا الهدف" value={drafts[goal.id]??''} onChange={e=>setDrafts({...drafts,[goal.id]:e.target.value})}/>
+                          <select aria-label={`تكرار خطوة هدف ${goal.title}`} value={periods[goal.id]??'daily'} onChange={e=>setPeriods({...periods,[goal.id]:e.target.value as GoalPeriod})}>
+                            <option value="daily">يومي</option>
+                            <option value="weekly">أسبوعي</option>
+                            <option value="monthly">شهري</option>
+                            <option value="yearly">سنوي</option>
+                            <option value="custom">تاريخ مخصص</option>
+                          </select>
+                          {(periods[goal.id]??'daily')==='custom'&&(
+                            <label className="goal-custom-date">اختر التاريخ<input required type="date" aria-label="موعد التنفيذ" min={goal.createdAt} max={goal.targetDate} value={addDates[goal.id]??''} onChange={e=>setAddDates({...addDates,[goal.id]:e.target.value})}/></label>
+                          )}
+                          <button className="soft-btn"><Plus size={16}/> إضافة خطوة</button>
+                        </form>
+
+                        {hintGoal===goal.id&&(
+                          <p className="muted small goal-next-hint" role="status">
+                            تمت إضافة الخطوة. التالي: اضغط «مهام اليوم» من الرئيسية لتنفيذها، أو راجع متابعتها هنا. <button type="button" className="icon-btn" aria-label="إغلاق" onClick={()=>setHintGoal(null)}>✕</button>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="strong-goals-aside" aria-label="خطوات الأهداف حسب الفترة">
+          <GoalPeriodCards goals={goals} onGoals={onGoals}/>
+        </aside>
+      </div>
+
+      <div className="hint"><Check size={17}/> التقدم هنا لتنظيم الخطوات التي اخترتها، ولا يقيّم النية أو العبادة؛ ويبدأ تأشير الخطوات المتكررة من جديد مع كل فترة.</div>
     </div>
-    <aside className="strong-goals-aside" aria-label="خطوات الأهداف حسب الفترة"><GoalPeriodCards goals={goals} onGoals={onGoals}/></aside>
-    </div>
-    <GoalHistory goals={goals}/>
-    <div className="hint"><Check size={17}/> التقدم هنا لتنظيم الخطوات التي اخترتها، ولا يقيّم النية أو العبادة. يبدأ تأشير الخطوات من جديد مع فترتها التالية، ويبقى سجل الفترات السابقة محفوظًا على هذا الجهاز.</div>
-  </div>
+  );
 }
-
-

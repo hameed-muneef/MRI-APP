@@ -33,10 +33,7 @@ test.describe('الأهداف', () => {
     await page.waitForTimeout(900);
     await openGoals(page);
     await expect(page.getByText('هدف اختبار آلي').first()).toBeVisible({timeout: 8000});
-
-    await page.getByRole('button', {name: /كل السجل/}).first().click({force: true});
-    await page.waitForTimeout(1400);
-    await expect(page.getByText('هدف اختبار آلي').first()).toBeVisible({timeout: 8000});
+    await expect(page.getByRole('tab', {name: /خطوات يومية/})).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

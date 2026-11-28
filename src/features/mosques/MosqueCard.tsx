@@ -1,5 +1,6 @@
 import { Car, ExternalLink, Footprints, MapPin } from 'lucide-react';
 import { formatArabicDistance, type TravelMode } from '../../lib/geo';
+import { formatMosqueLocation } from './location-format';
 import type { NearbyMosque } from './types';
 
 interface MosqueCardProps {
@@ -9,8 +10,9 @@ interface MosqueCardProps {
   onOpenMaps: (mosque: NearbyMosque) => void;
 }
 
-export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: MosqueCardProps) {
+export default function MosqueCard({ mosque, travelMode, online: _online, onOpenMaps }: MosqueCardProps) {
   const displayName = mosque.name.trim() || 'مسجد';
+  const cleanLocation = formatMosqueLocation(mosque.locationText);
   const distanceLabel = formatArabicDistance(mosque.distanceMeters);
   // تقدير تقريبي للزمن: مشي ٥ كم/س على طريق أطول ١.٣ من الخط المستقيم، وسيارة ٣٥ كم/س داخل المدن بعامل ١.٤.
   const minutes = travelMode === 'walking'
@@ -30,19 +32,19 @@ export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: M
           </span>
           <div className="mosque-card-text">
             <h3>{displayName}</h3>
-            {mosque.locationText && <p className="mosque-card-loc">{mosque.locationText}</p>}
+            {cleanLocation && <p className="mosque-card-loc">{cleanLocation}</p>}
           </div>
         </div>
 
-        <div className="mosque-distance-badge" title="مسافة تقريبية في خط مستقيم">
+        <div className="mosque-distance-badge" title="مسافة تقريبية">
           <strong>{distanceLabel}</strong>
-          <small>خط مستقيم</small>
+          <small>تقريبًا</small>
         </div>
       </div>
       <div className="mosque-card-actions">
         <div className="mosque-eta" aria-label="الزمن التقريبي">
           {travelMode === 'walking' ? <Footprints size={15} aria-hidden="true" /> : <Car size={15} aria-hidden="true" />}
-          <span>≈ {timeLabel} {travelMode === 'walking' ? 'مشيًا' : 'بالسيارة'} <small>(تقدير)</small></span>
+          <span>≈ {timeLabel} {travelMode === 'walking' ? 'مشيًا' : 'بالسيارة'}</span>
         </div>
         <button
           type="button"
@@ -53,9 +55,6 @@ export default function MosqueCard({ mosque, travelMode, online, onOpenMaps }: M
           <ExternalLink size={16} aria-hidden="true" />
           <span>افتح في خرائط Google</span>
         </button>
-        {!online && (
-          <span className="mosque-offline-hint">يتطلب خرائط Google اتصالًا بالإنترنت</span>
-        )}
       </div>
     </article>
   );

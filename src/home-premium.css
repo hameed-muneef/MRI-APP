@@ -140,8 +140,8 @@ html:root[data-theme="dark"] #root .app.app main.main .home-today-entry,
 html:root[data-theme="dark"] #root .app.app main.main .home-dashboard .home-next-card,
 html:root[data-theme="dark"] #root .app.app main.main .feature-card,
 html:root[data-theme="dark"] #root .app.app main.main .wide-card { box-shadow: 0 6px 18px rgba(4,12,22,.35) !important; border-color: var(--hm-border) !important; }
-/* التنقل: اللون النشط زمردي */
-html:root { --hm-active: #1E6F5C; --hm-active-bg: rgba(30,111,92,.12); }
+/* التنقل: اللون النشط أزرق في النهاري وزمردي في الليلي */
+html:root { --hm-active: #1B5694; --hm-active-bg: rgba(27,86,148,.10); }
 html:root[data-theme="dark"] { --hm-active: #7AD6B8; --hm-active-bg: rgba(122,214,184,.18); }
 html #root .app.app .mobile-nav button.active { color: var(--hm-active) !important; background: var(--hm-active-bg) !important; }
 html #root .app.app .mobile-nav button.active svg, html #root .app.app .mobile-nav button.active span { color: var(--hm-active) !important; }
@@ -181,10 +181,10 @@ html[data-theme="dark"]:root {
   --grad-surface: linear-gradient(165deg, var(--hm-surface-2) 0%, var(--hm-surface) 100%);
 }
 html[data-theme="light"]:root {
-  --section-accent: #1E6F5C; --section-soft: var(--hm-surface-2); --section-strong: #1E6F5C; --section-strong-hover: #175A4A; --section-on-strong: #FFFFFF;
+  --section-accent: #1B5694; --section-soft: var(--hm-surface-2); --section-strong: #1B5694; --section-strong-hover: #144273; --section-on-strong: #FFFFFF;
 }
 html[data-theme="light"]:root #root .app main.main[data-section] {
-  --section-accent: #1E6F5C !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #1E6F5C !important; --section-strong-hover: #175A4A !important;
+  --section-accent: #1B5694 !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #1B5694 !important; --section-strong-hover: #144273 !important;
 }
 html[data-theme="dark"]:root #root .app main.main[data-section] {
   --section-accent: #7AD6B8 !important; --section-soft: var(--hm-surface-2) !important; --section-strong: #7AD6B8 !important; --section-strong-hover: #A6E6D0 !important; --section-on-strong: #0D1722 !important;
@@ -228,12 +228,12 @@ html[data-theme="dark"]:root:root #root .hf-screen :is(p, small, .qm-muted, .hf-
 html[data-theme="dark"]:root:root #root .hf-choice small { color: #CBD5E1; opacity: 1; }
 html[data-theme="dark"]:root:root .qm-workspace .qm-muted { color: #CBD5E1; }
 
-/* Light mode: remaining blue borders and icon strokes found in the audit (tafsir library list, icon buttons, active chips) */
-html[data-theme="light"]:root:root #root .app .ol-row { border-color: var(--hm-border) !important; }
-html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) { border-color: var(--hm-border) !important; }
-html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) svg { color: #1E6F5C; stroke: currentColor; }
+/* Light mode: crisp blue borders & icons (reading surfaces stay paper) */
+html[data-theme="light"]:root:root #root .app .ol-row { border: 1.5px solid #528AC7 !important; background: #FFFFFF !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) { border-color: var(--hm-border) !important; background: #FFFFFF !important; }
+html[data-theme="light"]:root:root #root .app :is(.icon-btn, .notif-bell) svg { color: #1B5694; stroke: currentColor; }
 html[data-theme="light"]:root:root #root .app button.active:not(.mobile-nav button) { border-color: var(--hm-border); }
-html[data-theme="light"]:root:root #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2) { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
+html[data-theme="light"]:root:root #root .app main[data-section="quran"] .ol-list:not(.reciters-list) .ol-row:nth-child(3n+2) { background: #F4F8FE !important; border: 1.5px solid #528AC7 !important; }
 html[data-theme="light"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface-2) !important; border-color: var(--hm-border) !important; }
 html[data-theme="dark"]:root:root #root .app main[data-section="quran"] .mf-sec-audio { background: var(--hm-surface) !important; border-color: var(--hm-border) !important; }
 html[data-theme="light"]:root:root #root .app .mobile-nav button.active, html[data-theme="light"]:root:root #root .app .mobile-nav button[data-section].active { border-color: var(--hm-border) !important; }

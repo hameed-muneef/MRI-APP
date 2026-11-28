@@ -4,34 +4,35 @@
 
 :root, :root[data-theme="light"] {
   /* surfaces */
-  --hm-bg: #F4EEE1;            /* ivory page */
-  --hm-surface: #FFFDF8;       /* card */
-  --hm-surface-2: #F1E8D2;     /* inset / chip */
-  --hm-border: #E3D9C3;        /* decorative hairline only, 1.31:1, never the sole boundary of a control */
+  --hm-bg: #F8FAFE;            /* soft white-blue canvas */
+  --hm-surface: #FFFFFF;       /* crisp white card */
+  --hm-surface-2: #EEF5FC;     /* ice-blue inset / chip */
+  --hm-border: #C4D9F0;        /* clean soft blue hairline */
+  --hm-frame: #528AC7;         /* uniform 1.5px blue card frame (3.61:1 on white) */
   /* text */
-  --hm-text: #1F2A2A;          /* 15.11 on bg, 16.88 on surface */
-  --hm-text-muted: #566360;    /* 6.46 on bg, 7.22 on surface, 6.81 on surface-2 */
+  --hm-text: #0F2942;          /* 14.83 on white */
+  --hm-text-muted: #46607A;    /* 6.53 on white, 5.94 on surface-2 */
   /* brand */
-  --hm-navy: #14305A;          /* primary fill; white on it 13.12 */
+  --hm-navy: #1B5694;          /* primary royal blue fill; white on it 7.49 */
   --hm-on-navy: #FFFFFF;
-  --hm-gold: #C8A04A;          /* FILL/ornament only (2.19 on bg): never gold text or a lone icon on light */
-  --hm-on-gold: #1A1405;       /* 7.49 on gold */
-  --hm-gold-text: #7A5A12;     /* gold as text/icon: 6.64 on bg, 7.42 on surface */
-  --hm-green: #1E6F5C;         /* Islamic green, 5.82 on bg, 6.50 on surface; white on it 6.50 */
+  --hm-gold: #C8A04A;          /* ornament / hero button */
+  --hm-on-gold: #1A1405;
+  --hm-gold-text: #1B5694;     /* clean royal blue text/icon: 7.49 on white */
+  --hm-green: #1E6F5C;         /* semantic success/live indicator */
   --hm-on-green: #FFFFFF;
-  --hm-danger: #A32A2A;        /* 7.19 on surface */
-  --hm-focus: #14305A;         /* 11.75 on bg */
+  --hm-danger: #A32A2A;
+  --hm-focus: #1B5694;
   /* verse hero */
   --hm-hero-text: #FFFFFF;
   --hm-scrim-top: rgba(11,26,48,.55);
   --hm-scrim-text: rgba(11,26,48,.68);
   --hm-scrim-bottom: rgba(11,26,48,.80);
   /* elevation (cool navy shadows, no black) */
-  --hm-shadow-1: 0 1px 2px rgba(15,29,51,.06), 0 1px 1px rgba(15,29,51,.04);
-  --hm-shadow-2: 0 4px 12px rgba(15,29,51,.08), 0 1px 3px rgba(15,29,51,.06);
-  --hm-shadow-3: 0 12px 28px rgba(15,29,51,.12), 0 2px 6px rgba(15,29,51,.06);
-  --hm-nav-bg: rgba(255,253,248,.93);
-  --hm-nav-border: rgba(15,29,51,.10);
+  --hm-shadow-1: 0 1px 2px rgba(15,29,51,.05), 0 1px 1px rgba(15,29,51,.03);
+  --hm-shadow-2: 0 4px 12px rgba(20,48,90,.06), 0 1px 3px rgba(20,48,90,.04);
+  --hm-shadow-3: 0 12px 28px rgba(20,48,90,.10), 0 2px 6px rgba(20,48,90,.05);
+  --hm-nav-bg: rgba(255,255,255,.94);
+  --hm-nav-border: rgba(27,86,148,.16);
 }
 
 :root[data-theme="dark"] {
@@ -144,19 +145,19 @@
 
 /* semantic status/gold tokens (theme-independent), used by tasks-nextup and mosques-redesign */
 :root{
-  --hm-ok-text:#175C45;
+  --hm-ok-text:#1E6F5C;
   --hm-on-gold-dark:#3B2C07;
-  --hm-muted-green:#5E7A72;
-  --hm-warn-text-strong:#6B5316;
-  --hm-warn-text:#8A6A1F;
+  --hm-muted-green:#46607A;
+  --hm-warn-text-strong:#8F6210;
+  --hm-warn-text:#8F6210;
   --hm-ok-soft:#8FE0C4;
-  --hm-danger-text:#9B3427;
-  --hm-ok-border:#B7D8C7;
-  --hm-ok-bg:#E4F1EA;
+  --hm-danger-text:#B8423B;
+  --hm-ok-border:#A8D5C2;
+  --hm-ok-bg:#E9F5F0;
   --hm-gold-soft:#E8CB8B;
-  --hm-danger-border:#F0C3BB;
-  --hm-gold-pale:#F6E3B0;
-  --hm-danger-bg:#FBE9E5;
+  --hm-danger-border:#EBBAB5;
+  --hm-gold-pale:#FEF7E6;
+  --hm-danger-bg:#FDF0EE;
   --hm-danger-soft:#FFB3A6;
   --hm-on-fill:#FFFFFF;
 }

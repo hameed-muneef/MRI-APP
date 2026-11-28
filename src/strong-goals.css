@@ -843,3 +843,200 @@
   line-height: 1.7;
   margin: 12px 0 0;
 }
+
+/* شريط الملخص العلوي + شريط التقدم + ملخص الفترات الفارغة + زر طي الأرشيف */
+#root .app .strong-goals-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  background: #fffdf9;
+  border: 1px solid #d5dfd7;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+#root .app .strong-goals-overview-text {
+  min-width: 0;
+  flex: 1 1 240px;
+}
+#root .app .strong-goals-overview h1 {
+  margin: 4px 0 4px;
+  font-size: clamp(20px, 3vw, 25px);
+  line-height: 1.35;
+  color: #193129;
+}
+#root .app .strong-goals-summary-line {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #55675f;
+}
+#root .app .strong-goals-add-toggle {
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+#root .app .goal-plan-kicker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #55675f;
+}
+#root .app .goal-plan-kicker-row .is-overdue {
+  color: #a64638;
+}
+#root .app .goal-progress-wrap {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+#root .app .goal-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#root .app .goal-progress-meta .goal-summary-count {
+  margin-top: 0;
+}
+#root .app .goal-progress-pct {
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #233b6b;
+}
+#root .app .goal-progress-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: #e4eae5;
+  overflow: hidden;
+}
+#root .app .goal-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #233b6b;
+  transition: width 0.25s ease;
+}
+#root .app .goal-plan-card.is-complete .goal-progress-fill {
+  background: #1e6f5c;
+}
+#root .app .goal-period-empty-summary {
+  margin: 10px 0 0;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #f6f8f5;
+  border: 1px dashed #d5dfd7;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #55675f;
+}
+#root .app .goal-history-title-wrap {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+#root .app .goal-history-toggle {
+  margin-inline-start: auto;
+  min-height: 40px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+#root .app .goal-history-toggle svg {
+  transition: transform 0.2s ease;
+}
+#root .app .goal-history.is-open .goal-history-toggle svg {
+  transform: rotate(180deg);
+}
+
+[data-theme="dark"] #root .app .strong-goals-overview {
+  background: #213640;
+  border-color: #476572;
+}
+[data-theme="dark"] #root .app .strong-goals-overview h1 {
+  color: #F1F6F2;
+}
+[data-theme="dark"] #root .app .strong-goals-summary-line,
+[data-theme="dark"] #root .app .goal-plan-kicker-row,
+[data-theme="dark"] #root .app .goal-period-empty-summary {
+  color: #C8D6DF;
+}
+[data-theme="dark"] #root .app .goal-plan-kicker-row .is-overdue {
+  color: #F4A599;
+}
+[data-theme="dark"] #root .app .goal-progress-pct {
+  color: #B5D0F2;
+}
+[data-theme="dark"] #root .app .goal-progress-track {
+  background: #182831;
+}
+[data-theme="dark"] #root .app .goal-progress-fill {
+  background: #749CD1;
+}
+[data-theme="dark"] #root .app .goal-plan-card.is-complete .goal-progress-fill {
+  background: #7AD6B8;
+}
+[data-theme="dark"] #root .app .goal-period-empty-summary {
+  background: #1B2D36;
+  border-color: #42606E;
+}
+
+/* تبويبات فترات خطوات الأهداف */
+#root .app .goal-period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+#root .app .goal-period-tab {
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid #ccd7e3;
+  background: #f5f7fa;
+  color: #364964;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+#root .app .goal-period-tab small {
+  font-size: 11.5px;
+  font-weight: 800;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+#root .app .goal-period-tab.active {
+  background: #233b6b;
+  border-color: #233b6b;
+  color: #ffffff;
+}
+[data-theme="dark"] #root .app .goal-period-tab {
+  background: #1D303A;
+  border-color: #476572;
+  color: #C8D6DF;
+}
+[data-theme="dark"] #root .app .goal-period-tab.active {
+  background: #35598B;
+  border-color: #749CD1;
+  color: #FFFFFF;
+}
+
+

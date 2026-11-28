@@ -11,16 +11,16 @@
    ========================================================================== */
 
 html[data-theme="light"] {
-  /* Background hierarchy: warm paper -> clean white / cool tints */
-  --bg-app: #FFFFFF;
-  --bg-page: #FFFFFF;
+  /* Background hierarchy: crisp cool white */
+  --bg-app: #F8FAFE;
+  --bg-page: #F8FAFE;
   --bg-secondary: var(--hm-surface-2);
   --bg-elevated: #FFFFFF;
   --bg-sidebar: var(--hm-surface);
   --bg-header: var(--hm-surface-2);
-  --bg-image-overlay: linear-gradient(135deg, rgba(255, 255, 255, .84), rgba(234, 243, 252, .72));
+  --bg-image-overlay: linear-gradient(135deg, rgba(255, 255, 255, .86), rgba(238, 245, 252, .74));
 
-  /* Surfaces: warm cream -> white and pale blue (one step above the cards) */
+  /* Surfaces: crisp white cards and soft ice-blue nested chips */
   --surface-card: var(--hm-surface);
   --surface-card-elevated: #FFFFFF;
   --surface-nested: var(--hm-surface-2);
@@ -29,84 +29,78 @@ html[data-theme="light"] {
   --surface-dropdown: #FFFFFF;
   --surface-input: #FFFFFF;
 
-  /* Typography: existing values already cool; link and on-accent go blue/white */
-  --text-link: #1E6F5C;
+  /* Typography: deep navy + royal blue links */
+  --text-link: #1B5694;
   --text-inverse: #FFFFFF;
   --text-on-accent: #FFFFFF;
 
-  /* Accents: dark teal -> navy blue; gold (--accent-cream) stays as accent */
-  --accent-primary: #1E6F5C;
-  --accent-primary-hover: #175A4A;
-  --accent-secondary: #566360;
-  --accent-blue: #2A7B67;
-  --accent-hero-start: #1E3A56;
-  --accent-hero-end: #2F5B85;
+  /* Accents: unified royal blue */
+  --accent-primary: #1B5694;
+  --accent-primary-hover: #144273;
+  --accent-secondary: #46607A;
+  --accent-blue: #1B5694;
+  --accent-hero-start: #14305A;
+  --accent-hero-end: #1E4D84;
 
-  /* Borders and states: warm grays -> blue-grays */
+  /* Borders and states: blue family */
   --border-subtle: var(--hm-border);
   --border-default: var(--hm-border);
-  --border-strong: #CDBE98;
-  --border-focus: #2A7B67;
-  --state-hover: rgba(31, 86, 117, .08);
-  --state-active: rgba(31, 86, 117, .14);
+  --border-strong: #528AC7;
+  --border-focus: #1B5694;
+  --state-hover: rgba(27, 86, 148, .08);
+  --state-active: rgba(27, 86, 148, .14);
   --state-selected: var(--hm-surface-2);
-  --state-focus: rgba(32, 83, 122, .24);
-  --state-disabled: #ECE5D6;
+  --state-focus: rgba(27, 86, 148, .24);
+  --state-disabled: #DCE8F5;
   --state-pressed: var(--hm-border);
 
   /* Legacy brand tokens consumed by older components */
-  --color-canvas: #FFFFFF;
+  --color-canvas: #F8FAFE;
   --color-surface: var(--hm-surface);
   --color-surface-warm: var(--hm-surface-2);
   --color-ivory: var(--hm-surface);
-  --color-primary: #1E6F5C;
-  --color-primary-hover: #175A4A;
-  --color-accent: #566360;
+  --color-primary: #1B5694;
+  --color-primary-hover: #144273;
+  --color-accent: #46607A;
   --color-border: var(--hm-border);
-  --color-border-strong: #CDBE98;
+  --color-border-strong: #528AC7;
   --color-selected: var(--hm-surface-2);
   --surface-glass: rgba(255, 255, 255, .94);
   --line-soft: var(--hm-border);
-  --grad-canvas: linear-gradient(180deg, #FFFFFF 0%, var(--hm-surface-2) 100%);
+  --grad-canvas: linear-gradient(180deg, #F8FAFE 0%, #FFFFFF 100%);
 }
 
-/* The mobile shell pins literal warm backgrounds (#EFEAE0) that token changes
-   cannot reach; pin them to white in light mode. */
 html[data-theme="light"] #root .app,
 html[data-theme="light"] #root .app .main {
-  background: #FFFFFF !important;
+  background: #F8FAFE !important;
 }
 
 html[data-theme="light"] #root .app {
   border-inline-color: var(--hm-border) !important;
 }
 
-/* ---------- Literal pins: legacy warm/green component colors -> white/blue ----------
-   Older components hard-code warm ivories and deep greens that tokens cannot
-   reach. These pins recolor the high-visibility ones only (color, never
-   geometry). Progress/success indicators keep their green as a semantic cue. */
 html[data-theme="light"] #root .app .panel {
-  background: var(--hm-surface) !important;
-  border-color: var(--hm-border) !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
 }
 
 html[data-theme="light"] #root .app .settings-tabs button.active,
 html[data-theme="light"] #root .app .notif-subtabs button.active,
 html[data-theme="light"] #root .app .switch-row button.selected,
 html[data-theme="light"] #root .app .primary {
-  background: #1E6F5C !important;
-  border-color: #1E6F5C !important;
+  background: #1B5694 !important;
+  border-color: #1B5694 !important;
   color: #FFFFFF !important;
 }
 
 html[data-theme="light"] #root .app .primary:hover {
-  background: #175A4A !important;
+  background: #144273 !important;
 }
 
 html[data-theme="light"] #root .app .notif-subtabs button {
   background: var(--hm-surface-2) !important;
   border-color: var(--hm-border) !important;
-  color: #3F4A47 !important;
+  color: #365069 !important;
 }
 
 html[data-theme="light"] #root .app .settings-inner-details {
@@ -114,18 +108,18 @@ html[data-theme="light"] #root .app .settings-inner-details {
 }
 
 html[data-theme="light"] #root .app .settings-inner-details summary {
-  color: #1E6F5C !important;
+  color: #1B5694 !important;
 }
 
 html[data-theme="light"] #root .app .notif-empty {
   border-color: var(--hm-border) !important;
   background: var(--hm-surface-2) !important;
-  color: #566360 !important;
+  color: #46607A !important;
 }
 
 html[data-theme="light"] #root .app .notif-reminder-form {
-  border-color: var(--hm-border) !important;
-  background: var(--hm-surface) !important;
+  border-color: #528AC7 !important;
+  background: #FFFFFF !important;
 }
 
 html[data-theme="light"] #root .app input:not([type="checkbox"]),
@@ -138,75 +132,71 @@ html[data-theme="light"] #root .app textarea {
 html[data-theme="light"] #root .app .hint {
   background: var(--hm-surface-2) !important;
   border-color: var(--hm-border) !important;
-  color: #566360 !important;
+  color: #46607A !important;
 }
 
 html[data-theme="light"] #root .app .soft-btn {
   background: var(--hm-surface-2) !important;
-  color: #1E6F5C !important;
+  color: #1B5694 !important;
 }
 
 html[data-theme="light"] #root .app .lesson-banner,
 html[data-theme="light"] #root .app .toast {
-  background: #1E3A56 !important;
+  background: #14305A !important;
 }
 
-/* Hero: keep the original zakhareph artwork, swap only the green tint to navy */
+/* Hero: keep the original zakhareph artwork, swap only the tint to navy */
 html[data-theme="light"] #root .app .hero {
   background:
     linear-gradient(115deg, rgba(16,38,58,.92) 0%, rgba(20,46,70,.78) 55%, rgba(24,52,78,.55) 100%),
     var(--art-hero) center/cover no-repeat !important;
 }
 
-/* ---------- Section accents -> one blue family (light mode) ----------
-   Per-section accent colors (green quran, gold haramain, etc.) are injected at
-   runtime by section-theme.ts; these pins unify them into the approved blue
-   family for daytime coherence. !important beats the injected custom-property
-   declarations. Dark section palettes are untouched. */
+/* ---------- Section accents -> one blue family (light mode) ---------- */
 html[data-theme="light"] {
-  --section-accent: #1E6F5C;
+  --section-accent: #1B5694;
   --section-soft: var(--hm-surface-2);
-  --section-strong: #1E6F5C;
-  --section-strong-hover: #175A4A;
+  --section-strong: #1B5694;
+  --section-strong-hover: #144273;
   --section-on-strong: #FFFFFF;
 }
 
 html[data-theme="light"] #root .app main.main[data-section] {
-  --section-accent: #1E6F5C !important;
+  --section-accent: #1B5694 !important;
   --section-soft: var(--hm-surface-2) !important;
-  --section-strong: #1E6F5C !important;
-  --section-strong-hover: #175A4A !important;
+  --section-strong: #1B5694 !important;
+  --section-strong-hover: #144273 !important;
   --section-on-strong: #FFFFFF !important;
 }
 
-/* Quran index navigation tabs: green -> blue (reading surfaces stay paper) */
+/* Quran index navigation tabs: white + uniform blue frame (reading surfaces stay paper) */
 html[data-theme="light"] body #root .app main.main[data-section="quran"] .quran-section-grid [data-quran-tab],
 html[data-theme="light"] body #root .app main.main[data-section="quran"] [data-quran-tab] {
-  --qtab-bg: var(--hm-surface-2) !important;
-  --qtab-border: #CDBE98 !important;
+  --qtab-bg: #FFFFFF !important;
+  --qtab-border: #528AC7 !important;
   --qtab-icon-bg: var(--hm-surface-2) !important;
-  --qtab-icon-fg: #1E6F5C !important;
+  --qtab-icon-fg: #1B5694 !important;
   --qtab-active-bg: var(--hm-surface-2) !important;
 }
 
-/* Quran index intro panel: warm gradient -> pale blue-white */
+/* Quran index intro panel: white with subtle blue accent */
 html[data-theme="light"] body #root .app main.main[data-section="quran"] .quran-intro,
 html[data-theme="light"] body #root .app .quran-intro {
-  background: linear-gradient(135deg, #FFFFFF 0%, var(--hm-surface-2) 100%) !important;
-  border-color: var(--hm-border) !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
 }
 
-/* Quran journey card on the index: warm ivory -> pale blue, gold accent kept */
+/* Quran journey card on the index: white + blue */
 html[data-theme="light"] #root .app .quran-journey {
-  --q-emerald: #1E6F5C;
-  --q-forest: #1E6F5C;
+  --q-emerald: #1B5694;
+  --q-forest: #1B5694;
   --q-ivory: var(--hm-surface-2);
-  --q-sand: var(--hm-border);
-  --q-charcoal: #0F2C44;
-  --q-pale: #566360;
+  --q-sand: #528AC7;
+  --q-charcoal: #0F2942;
+  --q-pale: #46607A;
 }
 
-/* ---------- Segmented controls: tan containers -> pale blue ---------- */
+/* ---------- Segmented controls: soft ice blue + active white/blue ---------- */
 html[data-theme="light"] #root .app .section-subnav,
 html[data-theme="light"] #root .app .switch-row,
 html[data-theme="light"] #root .app .settings-tabs {
@@ -217,30 +207,30 @@ html[data-theme="light"] #root .app .settings-tabs {
 html[data-theme="light"] #root .app .section-subnav button,
 html[data-theme="light"] #root .app .switch-row button,
 html[data-theme="light"] #root .app .settings-tabs button {
-  color: #566360 !important;
+  color: #46607A !important;
 }
 
 html[data-theme="light"] #root .app .section-subnav button.active,
 html[data-theme="light"] #root .app .switch-row button.selected {
   background: #FFFFFF !important;
-  color: #1E6F5C !important;
+  color: #1B5694 !important;
 }
 
-/* ---------- Feature banners: deep green -> navy blue ---------- */
+/* ---------- Feature banners: deep navy ---------- */
 html[data-theme="light"] #root .app .intention-card {
   background: linear-gradient(155deg, #24486B 0%, #1B3A56 100%) !important;
   border-color: #3A5F81 !important;
 }
 
-/* ---------- Mosques page leftovers ---------- */
+/* ---------- Mosques page ---------- */
 html[data-theme="light"] #root .app .mosques-attribution {
-  background: var(--hm-surface) !important;
-  border-color: var(--hm-border) !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
 }
 
 html[data-theme="light"] #root .app .mosque-state-icon {
   background: var(--hm-surface-2) !important;
-  color: #1E6F5C !important;
+  color: #1B5694 !important;
 }
 
 /* ---------- Prayer chips: warm pastels -> blue family ---------- */
@@ -382,29 +372,29 @@ html[data-theme="light"] #root .app :is(.task-notif-quick-save, .notif-form-acti
   color: #4A6A86 !important;
 }
 
-/* Topbar settings chip + user avatar: teal -> blue */
+/* Topbar settings chip + user avatar: unified white & royal blue */
 html[data-theme="light"] #root .app .topbar .topbar-settings {
-  border-color: #C9DEF0 !important;
-  color: #20537A !important;
+  border-color: #6095CE !important;
+  color: #1B5694 !important;
 }
 
 html[data-theme="light"] #root .app .topbar .topbar-settings:hover {
-  border-color: #9FC4E6 !important;
+  border-color: #528AC7 !important;
 }
 
 html[data-theme="light"] #root .app .topbar .topbar-settings.active {
-  background: #20537A !important;
-  border-color: #1A4265 !important;
+  background: #1B5694 !important;
+  border-color: #144273 !important;
   color: #FFFFFF !important;
 }
 
 html[data-theme="light"] #root .app .topbar .user-chip {
-  border-color: #C9DEF0 !important;
-  color: #1A4265 !important;
+  border-color: #6095CE !important;
+  color: #0F2942 !important;
 }
 
 html[data-theme="light"] #root .app .topbar .user-chip-avatar {
-  background: #20537A !important;
+  background: #1B5694 !important;
 }
 
 /* Dark mode: align the same surfaces to the navy palette */

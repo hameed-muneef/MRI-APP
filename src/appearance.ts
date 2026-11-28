@@ -41,7 +41,7 @@ export function applyTheme(mode: Appearance, doc: Document = document): void {
   root.setAttribute('data-theme', dark ? 'dark' : 'light');
   root.style.colorScheme = dark ? 'dark' : 'light';
   const meta = doc.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', dark ? '#0E1A24' : '#F4F8FC');
+  if (meta) meta.setAttribute('content', dark ? '#0E1A24' : '#F8FAFE');
 }
 
 export function installAppearance(doc: Document = document, win: Window = window): void {

@@ -192,7 +192,7 @@ export default function AchievementView({state, onQuran, notify, onOpenQuranSect
         <Bar ratio={ratioOf(goals.done, goals.planned)} tone={goalTone} label="خطوات الأهداف"/>
         <p className="ach-note">تُعدّ الخطوات اليومية والأسبوعية والشهرية والسنوية والمخصصة ضمن مدة كل هدف، حتى اليوم فقط.</p>
       </Block>
-      <div className="ach-actions"><button className="soft-btn" onClick={() => onOpenView('goals')}>افتح المؤمن القوي وسجله</button></div>
+      <div className="ach-actions"><button className="soft-btn" onClick={() => onOpenView('goals')}>افتح المؤمن القوي</button></div>
     </>}
 
     {cat === 'adhkar' && <>

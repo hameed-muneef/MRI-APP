@@ -493,3 +493,5 @@
 .mosque-card-actions .mosque-eta{display:flex;align-items:center;gap:6px;font-size:.88rem;color:var(--muted,#6b7280);margin:0}
 .mosque-card-actions .mosque-maps-btn{width:auto;min-height:40px;padding:0 16px;border-radius:12px;margin-inline-start:auto}
 .mosque-card-actions .mosque-offline-hint{flex-basis:100%}
+.mosques-custom-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:10px;border:1px solid var(--color-border-strong,#B9CBBE);background:transparent;color:var(--color-muted,#6b7280);font:inherit;font-size:13px;font-weight:700;cursor:pointer;justify-self:start}
+[data-theme="dark"] .mosques-custom-toggle{border-color:#34526A;color:#AED3EE;background:#172B3C}

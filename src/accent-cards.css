@@ -1,43 +1,59 @@
-/* ألوان البطاقات: Home (لكل نوع لون) + قوائم القرآن (عائلة تيل واحدة). تغيير بصري فقط. */
+/* ألوان البطاقات: في النهاري موحّدة (أبيض مع إطار أزرق موحّد 1.5px حول البطاقة فقط)، وفي الليلي تبقى كما هي دون تغيير. */
 html:root:root:root[data-theme="light"] #root .app.app main.main .home-today-list,
 html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="day"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#4F8A72; --ac-ink:#3E7560; --ac-bg:#EFF3EC; }
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="mosques"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-prayer,
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="week"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="quran"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-reminders,
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="goals"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="month"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="qibla"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .home-achievement-entry,
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="haramain"],
+html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#528AC7; --ac-ink:#1B5694; --ac-bg:#FFFFFF; }
+
+html:root:root:root[data-theme="light"] #root .app.app main.main :is(.home-next-card, .feature-card, .wide-card, .home-achievement-entry, .home-today-list, .home-today-entry, .home-admin-entry, .home-date-bar, .panel, .coach-today, .goal-coach-card, .goal-card, .wird-card, .today-task-card, .weekly-task, .weekly-unscheduled-card, .mosque-card, .qibla-card, .qibla-steps, .qm-card):not(.quran-mushaf):not(.quran-search):not(.quran-reader-toolbar) {
+  border: 1.5px solid #528AC7 !important;
+  border-inline-start: 1.5px solid #528AC7 !important;
+  background: #FFFFFF !important;
+}
+
+html:root:root:root[data-theme="light"] #root .app.app main.main :is(.coach-today, .goal-coach-card, .home-date-bar) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FE 100%) !important;
+}
+
+html:root:root:root[data-theme="light"] #root .app.app main.main :is(.home-next-card, .feature-card, .wide-card, .home-achievement-entry, .home-today-list, .home-today-entry, .home-admin-entry, .today-task-card):hover {
+  background: #F4F8FE !important;
+  border-color: #2B6CB0 !important;
+}
+
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-today-list,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="day"],
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="mosques"] { --ac:#8CC5A8; --ac-ink:#8CC5A8; --ac-bg:#34586E; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-prayer,
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="week"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#2A7F86; --ac-ink:#1F6B72; --ac-bg:#ECF2EE; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-next-card-prayer,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="week"],
 html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="quran"] { --ac:#6CC4CB; --ac-ink:#6CC4CB; --ac-bg:#2F5874; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .home-next-card-reminders,
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#B5603C; --ac-ink:#9C4F2D; --ac-bg:#F8EFE7; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-next-card-reminders,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="goals"] { --ac:#E59A78; --ac-ink:#E59A78; --ac-bg:#425166; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="month"],
-html:root:root:root[data-theme="light"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#4F78A8; --ac-ink:#3F6490; --ac-bg:#EFF1F1; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="month"],
 html:root:root:root[data-theme="dark"] #root .app.app main.main .feature-card[data-view="qibla"] { --ac:#8FB0DA; --ac-ink:#8FB0DA; --ac-bg:#345476; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .home-achievement-entry,
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#A9801F; --ac-ink:#8A6513; --ac-bg:#F7F2E4; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .home-achievement-entry,
 html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="haramain"] { --ac:#E2C06E; --ac-ink:#E2C06E; --ac-bg:#425765; }
-html:root:root:root[data-theme="light"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#8A5B94; --ac-ink:#744A7E; --ac-bg:#F4EEEF; }
 html:root:root:root[data-theme="dark"] #root .app.app main.main .wide-card[data-section="accountability"] { --ac:#C9A0D0; --ac-ink:#C9A0D0; --ac-bg:#3E5274; }
-html:root:root:root #root .app.app main.main .home-next-card-prayer,
-html:root:root:root #root .app.app main.main .feature-card[data-view="week"],
-html:root:root:root #root .app.app main.main .wide-card[data-section="quran"],
-html:root:root:root #root .app.app main.main .home-next-card-reminders,
-html:root:root:root #root .app.app main.main .feature-card[data-view="goals"],
-html:root:root:root #root .app.app main.main .home-achievement-entry,
-html:root:root:root #root .app.app main.main .wide-card[data-section="haramain"],
-html:root:root:root #root .app.app main.main .home-today-list,
-html:root:root:root #root .app.app main.main .feature-card[data-view="day"],
-html:root:root:root #root .app.app main.main .feature-card[data-view="mosques"],
-html:root:root:root #root .app.app main.main .feature-card[data-view="month"],
-html:root:root:root #root .app.app main.main .feature-card[data-view="qibla"],
-html:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] {
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-next-card-prayer,
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="week"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="quran"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-next-card-reminders,
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="goals"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-achievement-entry,
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="haramain"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-today-list,
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="day"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="mosques"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="month"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="qibla"],
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] {
   border:1.5px solid color-mix(in srgb,var(--ac) 55%,transparent) !important;
   border-inline-start:6px solid var(--ac) !important;
   background:var(--ac-bg) !important;
@@ -55,27 +71,922 @@ html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[da
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="month"],
 html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="qibla"],
 html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] { background:var(--ac-bg) !important; }
-html:root:root:root #root .app.app main.main .home-next-card-prayer :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="week"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .wide-card[data-section="quran"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .home-next-card-reminders :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="goals"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .home-achievement-entry :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .wide-card[data-section="haramain"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .home-today-list :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="day"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="mosques"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="month"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .feature-card[data-view="qibla"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
-html:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon) { color:var(--ac-ink) !important; border-color:color-mix(in srgb,var(--ac) 45%,transparent) !important; }
-/* قوائم القرآن: تيل واحد */
-html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#2A7F86; --qt-ink:#1F6B72; --qt-bg:#F2F5F1; }
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-next-card-prayer :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="week"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="quran"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-next-card-reminders :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="goals"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-achievement-entry :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="haramain"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .home-today-list :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="day"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="mosques"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="month"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .feature-card[data-view="qibla"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon),
+html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card[data-section="accountability"] :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon) { color:var(--ac-ink) !important; border-color:color-mix(in srgb,var(--ac) 45%,transparent) !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.home-next-card, .feature-card, .wide-card, .home-achievement-entry, .home-today-list, .home-today-entry, .home-admin-entry) :is(.home-next-icon,.feature-icon,.wide-icon,.home-today-icon,.home-admin-icon) {
+  background:#EEF5FC !important;
+  color:#1B5694 !important;
+  border:1px solid #B5D1EE !important;
+}
+/* الثلاثية المتناسقة للأيقونات في الوضع النهاري (أزرق ملكي + تيل بحري للقرآن والعبادة + ذهبي دافئ للإنجاز والحرمين والتنبيهات) */
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.home-next-card-prayer, .wide-card[data-section="quran"], .feature-card[data-view="mosques"]) :is(.home-next-icon,.feature-icon,.wide-icon),
+html[data-theme="light"]:root:root:root #root .app.app main.main .wird-flower {
+  background:#EAF6F6 !important;
+  color:#136F75 !important;
+  border:1px solid #B2DCDE !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.home-next-card-reminders, .home-achievement-entry, .wide-card[data-section="haramain"]) :is(.home-next-icon,.wide-icon,.home-today-icon),
+html[data-theme="light"]:root:root:root #root .app.app main.main .coach-today-icon {
+  background:#FBF5E6 !important;
+  color:#8F6210 !important;
+  border:1px solid #E4CFA0 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-date-bar svg { color:#1B5694 !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-greg-date::before { color:#C8A04A !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-task-dot { background:#1B5694 !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-tasks-row-overdue .home-task-dot { background:#B8423B !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-task-overdue { color:#B8423B !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .progress-track { background:#E6EFF9 !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .progress-track > div { background:#2B6CB0 !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.wird-card.is-complete, .goal-card.is-complete) .progress-track > div { background:#1E6F5C !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .wird-done-label { color:#1E6F5C !important; font-weight:700; background:transparent !important; border:0 !important; padding:0; }
+/* قوائم القرآن: في النهاري أبيض مع إطار أزرق 1.5px، وأيقونات من الثلاثية المتناسقة، وفي الليلي تيل كما هو */
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#528AC7; --qt-ink:#1B5694; --qt-bg:#FFFFFF; }
 html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { --qt:#6CC4CB; --qt-ink:#6CC4CB; --qt-bg:#2A4F6C; }
-html:root:root:root #root .app .quran-section-grid button:not(.active) {
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) {
+  border:1.5px solid #528AC7 !important;
+  border-inline-start:1.5px solid #528AC7 !important;
+  background:var(--qt-bg) !important;
+}
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active):hover {
+  background:#F4F8FE !important;
+  border-color:#2B6CB0 !important;
+}
+html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) {
   border:1.5px solid color-mix(in srgb,var(--qt) 45%,transparent) !important;
   background:var(--qt-bg) !important;
 }
-html[data-theme="dark"]:root:root:root #root .app .quran-section-grid button:not(.active) { background:var(--qt-bg) !important; }
 html:root:root:root #root .app .quran-section-grid button:not(.active) .quran-section-icon { color:var(--qt-ink) !important; }
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:not(.active) .quran-section-icon {
+  background:#EEF5FC !important;
+  border:1px solid #B5D1EE !important;
+}
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:is([data-quran-tab="mushaf"],[data-quran-tab="reciters"],[data-quran-tab="hifz"],[data-quran-tab="revision"],[data-quran-tab="routine"]):not(.active) .quran-section-icon {
+  background:#EAF6F6 !important;
+  color:#136F75 !important;
+  border-color:#B2DCDE !important;
+}
+html[data-theme="light"]:root:root:root #root .app .quran-section-grid button:is([data-quran-tab="tafsir"],[data-quran-tab="bukhari"],[data-quran-tab="muslim"],[data-quran-tab="azkar"]):not(.active) .quran-section-icon {
+  background:#FBF5E6 !important;
+  color:#8F6210 !important;
+  border-color:#E4CFA0 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .home-today-list .home-task-meta { color:#46607A !important; }
+html[data-theme="light"]:root:root:root #root .app.app main.main .wide-card .inline-link { color:#1B5694 !important; }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .home-today-list .home-task-meta { color:#D3DEEA !important; }
 html[data-theme="dark"]:root:root:root #root .app.app main.main .wide-card .inline-link { color:#F3EFE4 !important; }
+
+/* البار العلوي والبار السفلي في الوضع النهاري فقط: خلفية بيضاء ناصعة مع إطار أزرق 1.5px متناسق مع البطاقات (دون المساس بالوضع الليلي) */
+html[data-theme="light"]:root:root:root #root .app.app .topbar,
+html[data-theme="light"]:root:root:root #root .app.app main.main .topbar,
+html[data-theme="light"]:root:root:root #root .app.app > .topbar {
+  background: rgba(255, 255, 255, 0.96) !important;
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+  backdrop-filter: saturate(150%) blur(14px);
+  border-bottom: 1.5px solid #528AC7 !important;
+  box-shadow: 0 3px 12px rgba(20, 48, 90, 0.06) !important;
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar > .crumb,
+html[data-theme="light"]:root:root:root #root .app.app .topbar > .crumb strong {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar > .crumb .crumb-home {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar > .crumb .crumb-home:hover {
+  background: #EEF5FC !important;
+  color: #144273 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .top-actions .top-date {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .top-date .hijri-inline {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .top-actions .top-clock {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar :is(.icon-btn, .notif-bell, .topbar-settings) {
+  background: #FFFFFF !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar :is(.icon-btn, .notif-bell, .topbar-settings) svg {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar :is(.icon-btn, .notif-bell, .topbar-settings):hover {
+  background: #EEF5FC !important;
+  border-color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .topbar-settings.active {
+  background: #1B5694 !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .topbar-settings.active svg {
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .notif-badge {
+  background: #B8423B !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .user-chip {
+  background: #FFFFFF !important;
+  border: 1.5px solid #6095CE !important;
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .user-chip:hover {
+  background: #EEF5FC !important;
+  border-color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .user-chip-avatar {
+  background: #1B5694 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .admin-entry {
+  background: #EEF5FC !important;
+  border: 1px solid #B5D1EE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .topbar .top-date .cloud-status.offline {
+  background: #FDF0EE !important;
+  border: 1px solid #EBBAB5 !important;
+  color: #B8423B !important;
+}
+
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav {
+  background: rgba(255, 255, 255, 0.96) !important;
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+  backdrop-filter: saturate(150%) blur(14px);
+  border-top: 1.5px solid #528AC7 !important;
+  box-shadow: 0 -4px 18px rgba(20, 48, 90, 0.08) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button {
+  color: #46607A !important;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button svg,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button span {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button:hover {
+  background: #F4F8FE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button:hover svg,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button:hover span {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button.active,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button[data-section].active {
+  background: #EEF5FC !important;
+  border: 1.5px solid #528AC7 !important;
+  color: #1B5694 !important;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(27, 86, 148, 0.08) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button.active svg,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button.active span,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button[data-section].active svg,
+html[data-theme="light"]:root:root:root #root .app.app .mobile-nav button[data-section].active span {
+  color: #1B5694 !important;
+}
+
+/* مهام اليوم (وضع التقرير + التعديل) في الوضع النهاري فقط بالأبيض والأزرق */
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-card.is-editing,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-card.is-editing:hover {
+  background: #FFFFFF !important;
+  border-color: #1B5694 !important;
+  box-shadow: 0 6px 18px rgba(27, 86, 148, 0.10) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-title {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-source,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-meta,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-time-chip.is-empty,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-notify-tag.is-off {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-time-chip {
+  color: #2B5480 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-time-chip.is-confirmed,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-meta-item.is-confirmed {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .task-notify-meta.active {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-alarm-tag {
+  color: #8F6210 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-edit-btn {
+  background: #EEF5FC !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-edit-btn:hover {
+  background: #DFECFA !important;
+  border-color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-edit-btn.is-open {
+  background: #1B5694 !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-complete-btn {
+  background: #E9F5F0 !important;
+  border: 1.5px solid #4D997C !important;
+  color: #1E6F5C !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-complete-btn:hover {
+  background: #D9EFE6 !important;
+  border-color: #1E6F5C !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-meta,
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-schedule {
+  border-top-color: #D7E6F5 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-field {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-field :is(input[type=date], select) {
+  border: 1.5px solid #6095CE !important;
+  background: #FFFFFF !important;
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-notify-btn {
+  background: #F4F8FE !important;
+  border: 1.5px solid #B5D1EE !important;
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-notify-btn.is-on {
+  background: #EEF5FC !important;
+  border-color: #528AC7 !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-draft-btn {
+  background: #EEF5FC !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-task-draft-btn:hover {
+  background: #DFECFA !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-tasks-view .soft-btn {
+  background: #EEF5FC !important;
+  border: 1.5px solid #B5D1EE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .today-tasks-view .task-notif-link.soft-btn {
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
+  color: #1B5694 !important;
+}
+
+/* تبويب المساجد القريبة في الوضع النهاري فقط: توحيد بالأبيض والأزرق وإطار 1.5px دون شريط جانبي أو أخضر قديم */
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-page {
+  --mq-ink: #0F2942;
+  --mq-deep: #144273;
+  --mq-mid: #1B5694;
+  --mq-bright: #528AC7;
+  --mq-gold: #C8A04A;
+  --mq-gold-ink: #8F6210;
+  --mq-card: #FFFFFF;
+  --mq-card-edge: #528AC7;
+  --mq-soft: #EEF5FC;
+  --mq-text: #0F2942;
+  --mq-muted: #46607A;
+  --mq-shadow: var(--hm-shadow-2);
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FE 100%) !important;
+  border: 1.5px solid #528AC7 !important;
+  border-radius: 16px !important;
+  padding: 15px 16px !important;
+  gap: 8px !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header::before,
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header::after {
+  display: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header h1 {
+  color: #0F2942 !important;
+  font-size: 21px !important;
+  font-weight: 700 !important;
+  margin: 0 0 4px !important;
+  gap: 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header h1 svg {
+  padding: 7px !important;
+  border-radius: 12px !important;
+  background: #EAF6F6 !important;
+  color: #136F75 !important;
+  border: 1px solid #B2DCDE !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-header p {
+  color: #46607A !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  font-weight: 500 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-privacy-pill {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  color: #136F75 !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  backdrop-filter: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-offline-banner {
+  background: #FEF7E6 !important;
+  border: 1.5px solid #E5C787 !important;
+  color: #8F6210 !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.mosques-controls, .mosque-manual-picker, .mosque-state-card, .mosque-skeleton-card, .mosques-attribution) {
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
+  border-radius: 16px !important;
+  box-shadow: var(--hm-shadow-2) !important;
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-controls {
+  padding: 13px !important;
+  gap: 11px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-control-row {
+  gap: 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-chip-btn {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #B5D1EE !important;
+  background: #EEF5FC !important;
+  color: #1B5694 !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-chip-btn:hover {
+  background: #DFECFA !important;
+  border-color: #528AC7 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-chip-btn.active,
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-mode-group .mosques-chip-btn.active {
+  background: #1B5694 !important;
+  background-image: none !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 10px rgba(27, 86, 148, 0.20) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-chip-btn.active *,
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-mode-group .mosques-chip-btn.active * {
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-mode-group {
+  background: #EEF5FC !important;
+  border: 1.5px solid #B5D1EE !important;
+  border-radius: 14px !important;
+  padding: 3px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-mode-group .mosques-chip-btn:not(.active) {
+  background: transparent !important;
+  border: 0 !important;
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-custom-toggle {
+  background: #FFFFFF !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+  border-radius: 10px !important;
+  min-height: 44px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-custom-toggle:hover {
+  background: #EEF5FC !important;
+  border-color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom {
+  background: #F4F8FE !important;
+  border: 1px dashed #6095CE !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom label {
+  color: #0F2942 !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom input[type=range] {
+  accent-color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(to left, #2B6CB0 0, #1B5694 var(--mq-fill, 0%), #D4E3F3 var(--mq-fill, 0%)) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom input[type=range]::-webkit-slider-thumb {
+  background: #FFFFFF !important;
+  border: 3px solid #1B5694 !important;
+  box-shadow: 0 2px 6px rgba(27, 86, 148, 0.28) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-radius-custom input[type=number] {
+  border: 1.5px solid #6095CE !important;
+  background: #FFFFFF !important;
+  color: #0F2942 !important;
+  border-radius: 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-action-row .soft-btn {
+  border-radius: 12px !important;
+  background: #EEF5FC !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-action-row .soft-btn svg {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-action-row .soft-btn:first-child {
+  background: #1B5694 !important;
+  background-image: none !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-action-row .soft-btn:first-child svg {
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-location-bar {
+  background: #F4F8FE !important;
+  border: 1px solid #C4D9F0 !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+  color: #46607A !important;
+  font-size: 13px !important;
+  gap: 4px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-location-bar strong,
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-location-bar > span:last-child {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-controls > p[role="status"] {
+  background: #FEF7E6 !important;
+  border: 1px solid #E5C787 !important;
+  color: #8F6210 !important;
+}
+
+/* بطاقة المسجد الواحدة: إطار أزرق 1.5px دون شريط جانبي + أيقونة تيل بحري + شارة مسافة ثلجية */
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card {
+  border-radius: 16px !important;
+  padding: 14px !important;
+  gap: 11px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card::before {
+  display: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background: #EAF6F6 !important;
+  color: #136F75 !important;
+  border: 1px solid #B2DCDE !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card-icon::after {
+  display: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card-text h3 {
+  color: #0F2942 !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  display: block !important;
+  line-height: 1.5 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card-text h3::before {
+  content: counter(mq) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin-inline-end: 7px !important;
+  min-width: 22px !important;
+  height: 20px !important;
+  padding: 0 6px !important;
+  border-radius: 6px !important;
+  background: #EEF5FC !important;
+  border: 1px solid #B5D1EE !important;
+  color: #1B5694 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card-loc {
+  color: #46607A !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-distance-badge {
+  background: #EEF5FC !important;
+  border: 1.5px solid #B5D1EE !important;
+  border-radius: 12px !important;
+  color: #1B5694 !important;
+  box-shadow: none !important;
+  padding: 6px 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-distance-badge strong {
+  color: #1B5694 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-distance-badge small {
+  color: #46607A !important;
+  font-weight: 600 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-eta {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  color: #46607A !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-eta svg {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card .mosque-maps-btn,
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card .mosque-maps-btn.primary {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  background: #1B5694 !important;
+  background-image: none !important;
+  border: 1.5px solid #144273 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 10px rgba(27, 86, 148, 0.18) !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card .mosque-maps-btn:hover {
+  background: #144273 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-card .mosque-maps-btn svg {
+  color: #FFFFFF !important;
+}
+
+/* بطاقات الإذن / خارج النطاق / الاختيار اليدوي / الإسناد */
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-card {
+  background: #FFFFFF !important;
+  padding: 24px 18px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-card h2 {
+  color: #0F2942 !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-card p {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-icon {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 18px !important;
+  background: #EAF6F6 !important;
+  color: #136F75 !important;
+  border: 1.5px solid #B2DCDE !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-card.warn .mosque-state-icon {
+  background: #FEF7E6 !important;
+  color: #8F6210 !important;
+  border-color: #E5C787 !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-actions .primary {
+  background: #1B5694 !important;
+  background-image: none !important;
+  border: 1.5px solid #144273 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-state-actions .soft-btn {
+  background: #EEF5FC !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-manual-block label {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-manual-block :is(input, select) {
+  border: 1.5px solid #6095CE !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-city-list li button {
+  background: #EEF5FC !important;
+  border: 1px solid #B5D1EE !important;
+  color: #0F2942 !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-city-list li button:hover {
+  background: #DFECFA !important;
+  border-color: #528AC7 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosque-city-list li button small {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.mosque-skel-line, .mosque-skel-btn) {
+  background: linear-gradient(90deg, #EEF5FC, #DCEBFA, #EEF5FC) !important;
+  background-size: 200% 100% !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-attribution {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .mosques-list > .soft-btn {
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
+  color: #1B5694 !important;
+  border-radius: 12px !important;
+  min-height: 44px !important;
+  font-weight: 700 !important;
+}
+
+/* ===== المؤمن القوي (الوضع النهاري فقط): أبيض نقي + إطار أزرق 1.5px + تدرج لوني هادئ ===== */
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-overview,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-create,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-search,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-empty,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-card,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history {
+  background: #FFFFFF !important;
+  border: 1.5px solid #528AC7 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 3px 12px rgba(27, 86, 148, 0.06) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-overview {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FE 100%) !important;
+  margin-bottom: 16px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-overview .eyebrow {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-overview h1 {
+  color: #0F2942 !important;
+  font-size: 21px !important;
+  font-weight: 800 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-summary-line {
+  color: #46607A !important;
+  font-weight: 500 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-add-toggle {
+  background: #1B5694 !important;
+  border: 1.5px solid #144273 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals-add-toggle.is-open {
+  background: #EEF5FC !important;
+  border-color: #6095CE !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals .soft-btn {
+  background: #EEF5FC !important;
+  border: 1.5px solid #6095CE !important;
+  color: #1B5694 !important;
+  border-radius: 11px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals .soft-btn:hover {
+  background: #DFECFA !important;
+  border-color: #528AC7 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals button.primary {
+  background: #1B5694 !important;
+  background-image: none !important;
+  border: 1.5px solid #144273 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .strong-goals button.primary:hover {
+  background: #144273 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-step-number {
+  background: #EAF6F6 !important;
+  border: 1px solid #B2DCDE !important;
+  color: #136F75 !important;
+  border-radius: 11px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-section-heading h2,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-heading h2,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-heading h2 {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-section-heading p,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-heading p,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-heading p {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-heading .eyebrow {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.goal-create-form, .goal-edit-form, .goal-add-step, .goal-step-edit, .goal-history-period-picker) :is(input, textarea, select) {
+  background: #FFFFFF !important;
+  border: 1.5px solid #9AC0E7 !important;
+  color: #0F2942 !important;
+  border-radius: 11px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main :is(.goal-create-form, .goal-edit-form, .goal-add-step, .goal-step-edit, .goal-history-period-picker) label {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-search {
+  border-radius: 12px !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-search span {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-card.is-expanded {
+  border-color: #1B5694 !important;
+  box-shadow: 0 6px 18px rgba(27, 86, 148, 0.1) !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-kicker-row {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-kicker-row .is-overdue {
+  color: #A83B2A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-head h3 {
+  color: #0F2942 !important;
+  font-weight: 700 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-head p {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-head p strong,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-summary-count,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-progress-pct {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-progress-track {
+  background: #E3EEF9 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-progress-fill {
+  background: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-card.is-complete .goal-progress-fill {
+  background: #1E6F5C !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-card.is-complete .goal-progress-pct {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-details,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-meta,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-step-wrap {
+  border-color: #DFECFA !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-meta span {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-meta span:last-child {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-body,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-edit-form,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-period-picker,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-list li {
+  background: #F4F8FE !important;
+  border: 1px solid #C4D9F0 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-plan-body h4,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-step-top label {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-badge,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-step-history {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-step-top input[type="checkbox"],
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-item input[type="checkbox"] {
+  accent-color: #1B5694 !important;
+}
+
+/* بطاقات الفترات (الوضع النهاري): نفس الإطار الأزرق الموحد 1.5px مع تمييز أيقونة كل فترة */
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-head {
+  border-bottom-color: #E3EEF9 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-head h3,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-item strong {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-head small,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-item small,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-count span {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-item {
+  border-bottom-color: #EEF5FC !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-daily .goal-period-icon {
+  background: #EEF5FC !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-daily .goal-period-count {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-weekly .goal-period-icon {
+  background: #EAF6F6 !important;
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-weekly .goal-period-count {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-monthly .goal-period-icon {
+  background: #FEF7E6 !important;
+  color: #8F6210 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-monthly .goal-period-count {
+  color: #8F6210 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-yearly .goal-period-icon,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-custom .goal-period-icon {
+  background: #EFF3FB !important;
+  color: #2E4D8D !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-yearly .goal-period-count,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-card-custom .goal-period-count {
+  color: #2E4D8D !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-empty-summary,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-empty {
+  background: #F4F8FE !important;
+  border: 1px dashed #9AC0E7 !important;
+  color: #46607A !important;
+}
+
+/* أرشيف خطوات الأهداف */
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-icon {
+  background: #EEF5FC !important;
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-filters button {
+  background: #F4F8FE !important;
+  border: 1.5px solid #B5D1EE !important;
+  color: #0F2942 !important;
+  border-radius: 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-filters button.active {
+  background: #1B5694 !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-selected,
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-list li > span {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-list strong {
+  color: #0F2942 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-list small {
+  color: #46607A !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-history-list li > svg {
+  color: #136F75 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-tab {
+  background: #F4F8FE !important;
+  border: 1.5px solid #B5D1EE !important;
+  color: #0F2942 !important;
+  border-radius: 10px !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-tab:hover {
+  background: #EEF5FC !important;
+  border-color: #528AC7 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-tab.active {
+  background: #1B5694 !important;
+  border-color: #144273 !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-tab small {
+  color: #1B5694 !important;
+}
+html[data-theme="light"]:root:root:root #root .app.app main.main .goal-period-tab.active small {
+  color: #DCEBFA !important;
+}
+
