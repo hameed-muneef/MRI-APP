@@ -479,14 +479,7 @@ html #root .hifz-page .qm-page-nav button{min-width:40px;min-height:36px}
 html #root .hifz-actions{position:sticky;bottom:78px;z-index:30;padding:8px;border-radius:14px;background:#EAF3FC;border:1px solid #9FC4E6}
 html[data-theme="dark"] #root .hifz-actions,html #root[data-theme="dark"] .hifz-actions{background:#1B3A56;border-color:#26486B}
 
-/* جدول التخطيط اليومي (المستعاد): لوحة الألوان الزرقاء المعتمدة في الوضع النهاري، دون تغيير الأشكال */
-html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval{background:#F3EFE4!important;border-color:#7AD6B8!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-interval-heading{background:#F4F8FC!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .planned-activity-card{background:#F4F8FC!important;border-color:#7AD6B8!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .fixed-prayer-bar{background:linear-gradient(115deg,var(--hm-border) 0%,var(--hm-border) 100%)!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .prayer-note.sunrise-marker,html:not([data-theme="dark"]) #root .app .day-plan-content .sunrise-in-slot{background:#F4F8FC!important;border-color:#7AD6B8!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .group-add-trigger{background:#F4F8FC!important;border-color:#7AD6B8!important}
-html:not([data-theme="dark"]) #root .app .day-plan-content .task-time-selects select,html:not([data-theme="dark"]) #root .app .day-plan-content .rename-activity input{border-color:#7AD6B8!important}
+/* ألوان جدول التخطيط اليومي النهاري مُدارة بالكامل في accent-cards.css */
 
 /* الوضع الليلي: إزالة بقايا الأخضر في أزرار المخطط */
 html[data-theme="dark"] #root .app .day-plan-content .soft-btn,html[data-theme="dark"] #root .app .day-plan-content input[type="date"],html[data-theme="dark"] #root .app .day-plan-content .tabs button.active,html[data-theme="dark"] #root .app .day-plan-content [aria-pressed="true"],html[data-theme="dark"] #root .app .day-plan-content [aria-selected="true"]{background:var(--hm-border)!important;border-color:var(--hm-border)!important;color:#F3EFE4!important}

@@ -278,22 +278,47 @@ export async function deliverReminder(reminder: Reminder, requested: Notificatio
 }
 
 /**
+ * يرسل إشعارًا مباشرًا على مستوى الجهاز (إشعارات النظام على الهاتف أو المتصفح على الويب)
+ * دون تكرار التسجيل داخل صندوق الإشعارات.
+ */
+export async function deliverDeviceNotification(
+  title: string,
+  opts: {body?: string; tag?: string; link?: string; soundId?: string; requireInteraction?: boolean; silent?: boolean} = {},
+): Promise<boolean> {
+  const ctx = await getSystemDeliveryContext();
+  const route = chooseSystemDeliveryRoute(ctx);
+  if (route === 'native') {
+    return deliverNativeImmediate(
+      title,
+      opts.body ?? '',
+      opts.tag ?? `notification:${Date.now()}`,
+      opts.silent ? 'builtin:silent' : opts.soundId,
+    );
+  }
+  if (route === 'browser') {
+    showBrowserNotification(title, {
+      body: opts.body ?? '',
+      tag: opts.tag ?? `notification:${Date.now()}`,
+      link: opts.link,
+      requireInteraction: opts.requireInteraction,
+      silent: opts.silent ?? opts.soundId === 'builtin:silent',
+    });
+    return true;
+  }
+  return false;
+}
+
+/**
  * يُظهر إشعارًا فوريًا (لأي وحدة) عبر القنوات المتاحة.
  */
 export async function deliverNotification(kind: string, title: string, body?: string, link?: string, soundId?: string): Promise<void> {
   await recordNotification(kind, title, body ?? '', link ?? '');
-  const ctx = await getSystemDeliveryContext();
-  const route = chooseSystemDeliveryRoute(ctx);
-  if (route === 'native') {
-    await deliverNativeImmediate(title, body ?? '', `notification:${kind}:${Date.now()}`, soundId);
-  } else if (route === 'browser') {
-    showBrowserNotification(title, {
-      body: body ?? '',
-      tag: `notification:${kind}:${Date.now()}`,
-      link,
-      silent: soundId === 'builtin:silent',
-    });
-  }
+  await deliverDeviceNotification(title, {
+    body: body ?? '',
+    tag: `notification:${kind}:${Date.now()}`,
+    link,
+    soundId,
+  });
 }
 
 // ---------- إدارة الصوت ----------

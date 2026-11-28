@@ -14,7 +14,7 @@ import {sanitizePrayerLocation,type PrayerLocation} from './prayer-location';
 import {offsetTime,timeLabel,activitySchedule,type ActivityTiming,slotClockTime} from './day-timing';
 export {offsetTime} from './day-timing';
 import {TaskTimeSelect} from './TaskTimeSelect';
-import {CalendarDays, Check, Clock, Heart, Pencil, Plus, Sun, Trash2} from 'lucide-react';
+import {CalendarDays, Check, ChevronUp, Clock, Heart, Moon, MoonStar, Pencil, Plus, Sun, Sunrise, Sunset, Trash2} from 'lucide-react';
 
 type Activity = {id: string; title: string; timing?: ActivityTiming; duration?:number; scheduleStatus?:'initial'|'confirmed'};
 export type DayPlan = {activities: Record<string, Activity[]>; completed: Record<string, string>; workStart: string; sleep: string; defaultsVersion?:number};
@@ -32,6 +32,14 @@ const oldDefaultTitles:Record<string,string>={'before-0':'قيام وذكر ود
 const slotFromClock=(time:string,prayers:Record<string,string>)=>{const minutes=(Number(time.slice(0,2))*60+Number(time.slice(3,5)));const fajr=prayers['الفجر'];if(fajr){const fajrMinutes=Number(fajr.slice(0,2))*60+Number(fajr.slice(3,5));if(minutes>=fajrMinutes-30&&minutes<fajrMinutes)return beforeFajr.id}let chosen:{id:string;gap:number}|undefined;for(const group of makePrayerGroups(prayers)){const anchor=prayers[group.name];const anchorMinutes=Number(anchor.slice(0,2))*60+Number(anchor.slice(3,5));const elapsed=minutes-anchorMinutes;if(elapsed>=30){const offset=Math.floor((elapsed-30)/30)*30;if(group.slots.some(slot=>slot.offset===offset)){const gap=minutes-(anchorMinutes+30+offset);if(!chosen||gap<chosen.gap)chosen={id:`${group.id}-${offset}`,gap}}}}return chosen?.id};
 const normalizePlan=(source:DayPlan,prayers:Record<string,string>,slots:HalfHourSlot[]):DayPlan=>{const activities={...source.activities};const targets=new Set([...slots.map(slot=>slot.id),beforeFajr.id]);for(const [oldSlot,start] of Object.entries(legacySlotStart)){const legacy=activities[oldSlot];if(!legacy?.length)continue;const userItems=legacy.filter(activity=>oldDefaultTitles[activity.id]!==activity.title);if(!userItems.length){delete activities[oldSlot];continue}let target=oldSlot==='before'?beforeFajr.id:slotFromClock(start,prayers)??'after-fajr-0';for(const activity of userItems){activities[target]=[...(activities[target]??[]),activity]}delete activities[oldSlot]}for(const id of Object.keys(activities)){const match=/^time-(\d{2})-(\d{2})$/.exec(id);if(match&&activities[id].length){const userItems=activities[id].filter(activity=>oldDefaultTitles[activity.id]!==activity.title);if(userItems.length){const target=slotFromClock(`${match[1]}:${match[2]}`,prayers)??'after-fajr-0';activities[target]=[...(activities[target]??[]),...userItems]}delete activities[id]}}const beforeItems=activities[beforeFajr.id]??[];const oldBefore=beforeItems.find(item=>item.id===`${beforeFajr.id}-default`&&['قيام وذكر ودعاء بحسب الاستطاعة','قيام الليل وذكر ودعاء بحسب الاستطاعة'].includes(item.title));if(oldBefore)activities[beforeFajr.id]=[...beforeItems.filter(item=>item!==oldBefore),{id:`${beforeFajr.id}-witr`,title:'صلاة الوتر (إن لم تُصلّها)',timing:{anchor:'الفجر',offset:-25},scheduleStatus:'initial'},{id:`${beforeFajr.id}-istighfar`,title:'استغفار ودعاء قبل الفجر',timing:{anchor:'الفجر',offset:-10},scheduleStatus:'initial'}];const duhaTime=prayers['الشروق']?offsetTime(prayers['الشروق'],20):'';const duhaTarget=duhaTime?slotFromClock(duhaTime,prayers):undefined;for(const [id,items] of Object.entries(activities)){const index=items.findIndex(item=>['after-fajr-90-default','after-fajr-duha-default'].includes(item.id)&&item.title==='صلاة الضحى بعد ارتفاع الشمس');if(index>=0){const duha={...items[index],timing:duhaTime?{anchor:'الشروق',offset:20}:{anchor:'الفجر',offset:120}};if(duhaTarget&&duhaTarget!==id){activities[id]=items.filter((_,itemIndex)=>itemIndex!==index);activities[duhaTarget]=[...(activities[duhaTarget]??[]),duha]}else activities[id]=items.map((item,itemIndex)=>itemIndex===index?duha:item)}}for(const id of Object.keys(activities))if(!targets.has(id)&&!dayPlanSlots.some(slot=>slot.id===id))delete activities[id];return {...source,activities}};
 const seedDefaultActivities=(source:DayPlan,prayers:Record<string,string>):DayPlan=>{if((source.defaultsVersion??0)>=1)return source;const defaults=initialDayPlan(prayers);const activities={...source.activities};const existing=Object.values(activities).flat();const titles=new Set(existing.map(item=>item.title));for(const [slot,items] of Object.entries(defaults.activities)){const missing=items.filter(item=>!titles.has(item.title)&&!existing.some(current=>current.id===item.id));if(missing.length)activities[slot]=[...(activities[slot]??[]),...missing]}return {...source,activities,defaultsVersion:1}};
+const prayerIcon=(groupId:string,size=20)=>{
+  if(groupId==='before-fajr')return <MoonStar size={size} aria-hidden="true"/>;
+  if(groupId==='after-fajr')return <Sunrise size={size} aria-hidden="true"/>;
+  if(groupId==='after-maghrib')return <Sunset size={size} aria-hidden="true"/>;
+  if(groupId==='after-isha')return <Moon size={size} aria-hidden="true"/>;
+  return <Sun size={size} aria-hidden="true"/>;
+};
+const countLabel=(count:number)=>count===0?'لا أعمال بعد':count===1?'عمل واحد':count===2?'عملان':count<=10?`${count} أعمال`:`${count} عملًا`;
 export default function DayPlanner({scheduledTasks,confirmedTasks=[],onWeek,onMonth,plan,records={},dailyTasks,onRecords,prayers:manualPrayers,onPlan,onPrayer,prayerLocation,onPrayerLocation}:Props) {
   const [today,setToday]=useState(localDateKey);
   const [selectedDate,setSelectedDate]=useState(localDateKey);
@@ -66,20 +74,91 @@ export default function DayPlanner({scheduledTasks,confirmedTasks=[],onWeek,onMo
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [draftTimes,setDraftTimes]=useState<Record<string,string>>({});
   const [addingToSlot,setAddingToSlot]=useState<string|null>(null);
-  const [editingActivity,setEditingActivity]=useState<string|null>(null);
+  const [expandedActivity,setExpandedActivity]=useState<string|null>(null);
   const [activityTitleDraft,setActivityTitleDraft]=useState('');
+  const [activeJumpGroup,setActiveJumpGroup]=useState<string|null>(null);
   const [scheduleNotice,setScheduleNotice]=useState('');
   const ordered=['الفجر','الشروق','الظهر','العصر','المغرب','العشاء'].map(n=>prayers[n]);
   const invalidOrder=ordered.some((t,i)=>t && ordered.slice(0,i).some(prev=>prev && prev>=t));
   const workConflict=day.workStart && ((prayers['الشروق'] && day.workStart<prayers['الشروق']) || (prayers['الظهر'] && day.workStart>=prayers['الظهر']));
   const setActivities=(id:string,items:Activity[])=>onPlan({...day,activities:{...day.activities,[id]:items}});
-  const saveActivity=(slot:HalfHourSlot,activity:Activity,time:string,status:'initial'|'confirmed')=>setActivities(slot.id,(day.activities[slot.id]??[]).map(item=>item.id===activity.id?{...item,timing:fixedTiming(time),scheduleStatus:status}:item));
-   const updateActivityTime=(slot:HalfHourSlot,activity:Activity,time:string)=>{const targetId=slotFromClock(time,prayers);const target=slots.find(candidate=>candidate.id===targetId);setScheduleNotice('');const updated={...activity,timing:fixedTiming(time),scheduleStatus:'initial' as const};if(!target||target.id===slot.id){saveActivity(slot,activity,time,'initial');return}onPlan({...day,activities:{...day.activities,[slot.id]:(day.activities[slot.id]??[]).filter(item=>item.id!==activity.id),[target.id]:[...(day.activities[target.id]??[]),updated]}})};
-    const addGroupActivity=(group:PrayerGroup,status:'initial'|'confirmed')=>{const title=drafts[group.id]?.trim(),time=draftTimes[group.id]||group.slots[0]?.start;if(!title||!time)return;const targetId=slotFromClock(time,prayers);const target=slots.find(slot=>slot.id===targetId)??group.slots[0];if(!target){setScheduleNotice('تعذر تحديد الفترة المناسبة لهذا الوقت.');return}setScheduleNotice('');setActivities(target.id,[...(day.activities[target.id]??[]),{id:crypto.randomUUID(),title,timing:fixedTiming(time),scheduleStatus:status}]);setDrafts(current=>({...current,[group.id]:''}));setAddingToSlot(null)};
+  const saveActivity=(slot:HalfHourSlot,activity:Activity,time:string,status:'initial'|'confirmed',nextTitle?:string)=>{
+    const cleanTitle=nextTitle?.trim()||activity.title;
+    const targetId=slotFromClock(time,prayers);
+    const target=slots.find(candidate=>candidate.id===targetId);
+    const updated:Activity={...activity,title:cleanTitle,timing:fixedTiming(time),scheduleStatus:status};
+    setScheduleNotice('');
+    if(!target||target.id===slot.id){
+      setActivities(slot.id,(day.activities[slot.id]??[]).map(item=>item.id===activity.id?updated:item));
+    }else{
+      onPlan({...day,activities:{...day.activities,[slot.id]:(day.activities[slot.id]??[]).filter(item=>item.id!==activity.id),[target.id]:[...(day.activities[target.id]??[]),updated]}});
+    }
+    setExpandedActivity(null);
+  };
+  const toggleActivityEditor=(item:Activity,currentTime:string)=>{
+    if(expandedActivity===item.id){
+      setExpandedActivity(null);
+      return;
+    }
+    setAddingToSlot(null);
+    setExpandedActivity(item.id);
+    setActivityTitleDraft(item.title);
+    setDraftTimes(current=>({...current,[item.id]:current[item.id]??currentTime}));
+  };
+  const addGroupActivity=(group:PrayerGroup,status:'initial'|'confirmed')=>{const title=drafts[group.id]?.trim(),time=draftTimes[group.id]||group.slots[0]?.start;if(!title||!time)return;const targetId=slotFromClock(time,prayers);const target=slots.find(slot=>slot.id===targetId)??group.slots[0];if(!target){setScheduleNotice('تعذر تحديد الفترة المناسبة لهذا الوقت.');return}setScheduleNotice('');setActivities(target.id,[...(day.activities[target.id]??[]),{id:crypto.randomUUID(),title,timing:fixedTiming(time),scheduleStatus:status}]);setDrafts(current=>({...current,[group.id]:''}));setAddingToSlot(null)};
+  const jumpToGroup=(groupId:string)=>{
+    setActiveJumpGroup(groupId);
+    document.getElementById(`prayer-interval-${groupId}`)?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
   const anchors={...prayers,'بداية العمل':day.workStart,'موعد النوم':day.sleep,'منتصف الليل':'00:00',...Object.fromEntries(slots.map(slot=>[slot.id,slot.start]))};
-  // وقت بنظام ٢٤ ساعة بالعربية، لتطابق ما هو معروض في شريط الصلاة.
-const clock24=(time?:string)=>{if(!time)return '';const [h,m]=time.split(':').map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return '';const period=h<12?'ص':'م';const hour12=h%12===0?12:h%12;return `${hour12}:${String(m).padStart(2,'0')} ${period}`;};
- const renderSlot=(slot:HalfHourSlot)=>{const items=plannedDay.activities[slot.id]??[];const schedule=activitySchedule(slot.id,items,anchors);return <div key={slot.id} className="half-hour-row"><div className="half-hour-content">{items.map((item,itemIndex)=>{const startTime=schedule[itemIndex]?.start.time??slot.start;const confirmed=item.scheduleStatus!=='initial';return <div className="planned-activity-card" key={item.id}><div className="planned-activity-main">{editingActivity===item.id?<form className="rename-activity" onSubmit={event=>{event.preventDefault();const title=activityTitleDraft.trim();if(title){setActivities(slot.id,(day.activities[slot.id]??[]).map(activity=>activity.id===item.id?{...activity,title,scheduleStatus:'initial'}:activity));setEditingActivity(null)}}}><input autoFocus aria-label="اسم العمل" value={activityTitleDraft} onChange={event=>setActivityTitleDraft(event.target.value)}/><button type="submit" className="soft-btn">حفظ</button><button type="button" className="icon-btn" onClick={()=>setEditingActivity(null)}>إلغاء</button></form>:<div className="planned-activity-title-wrap"><strong>{item.title}</strong><span className={`schedule-badge ${confirmed?'confirmed':'initial'}`}>{confirmed?'مؤكد':'مبدئي'}</span></div>}{!item.id.startsWith('confirmed:')&&editingActivity!==item.id&&<div className="planned-activity-head-actions"><button type="button" className="icon-btn" aria-label={`تعديل اسم ${item.title}`} title="تعديل الاسم" onClick={()=>{setEditingActivity(item.id);setActivityTitleDraft(item.title)}}><Pencil size={15}/></button><button type="button" className="icon-btn danger" aria-label={`حذف ${item.title}`} title="حذف" onClick={()=>setActivities(slot.id,(day.activities[slot.id]??[]).filter(activity=>activity.id!==item.id))}><Trash2 size={15}/></button></div>}</div>{item.id.startsWith('confirmed:')?<small className="muted">{item.scheduleStatus==='confirmed'?'موعد مؤكد':'مرتّب مبدئيًا'} من مركز المهام · {clock24(schedule[itemIndex]?.start.time)}</small>:<div className="planned-activity-controls"><label><span>وقت النشاط · <strong className="time-text">{clock24(draftTimes[item.id]??startTime)}</strong></span><TaskTimeSelect value={draftTimes[item.id]??startTime} label={`وقت ${item.title}`} onChange={value=>{setDraftTimes(current=>({...current,[item.id]:value}));updateActivityTime(slot,item,value)}}/></label><div className="activity-actions"><button type="button" className="soft-btn" onClick={()=>saveActivity(slot,item,draftTimes[item.id]??startTime,'initial')}>حفظ مبدئي</button><button type="button" className="primary" onClick={()=>saveActivity(slot,item,draftTimes[item.id]??startTime,'confirmed')}>{confirmed?'تأكيد التوقيت':'تأكيد الجدولة'}</button></div></div>}</div>})}</div></div>};
+  // وقت بنظام ١٢ ساعة بالعربية (ص/م)، لتطابق ما هو معروض في شريط الصلاة.
+  const clock24=(time?:string)=>{if(!time)return '';const [h,m]=time.split(':').map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return '';const period=h<12?'ص':'م';const hour12=h%12===0?12:h%12;return `${hour12}:${String(m).padStart(2,'0')} ${period}`;};
+  const renderSlot=(slot:HalfHourSlot)=>{
+    const items=plannedDay.activities[slot.id]??[];
+    const schedule=activitySchedule(slot.id,items,anchors);
+    return <div key={slot.id} className="half-hour-row"><div className="half-hour-content">{items.map((item,itemIndex)=>{
+      const startTime=schedule[itemIndex]?.start.time??slot.start;
+      const shownTime=draftTimes[item.id]??startTime;
+      const confirmed=item.scheduleStatus!=='initial';
+      const isFromTasks=item.id.startsWith('confirmed:');
+      const isExpanded=!isFromTasks&&expandedActivity===item.id;
+      return <div className={`planned-activity-card ${isExpanded?'is-expanded':'is-compact'}`} key={item.id}>
+        <div className="planned-activity-main">
+          {isFromTasks?<div className="planned-activity-summary">
+            <span className="planned-activity-time">{clock24(schedule[itemIndex]?.start.time)}</span>
+            <div className="planned-activity-title-wrap">
+              <strong>{item.title}</strong>
+              <div className="planned-activity-meta">
+                <span className={`schedule-badge ${confirmed?'confirmed':'initial'}`}>{confirmed?'مؤكد':'مبدئي'}</span>
+                <span aria-hidden="true">·</span>
+                <small className="muted">من مركز المهام</small>
+              </div>
+            </div>
+          </div>:<button type="button" className="planned-activity-trigger" aria-expanded={isExpanded} onClick={()=>toggleActivityEditor(item,startTime)}>
+            <span className="planned-activity-time">{clock24(shownTime)}</span>
+            <div className="planned-activity-title-wrap">
+              <strong>{item.title}</strong>
+              <div className="planned-activity-meta">
+                <span className={`schedule-badge ${confirmed?'confirmed':'initial'}`}>{confirmed?'مؤكد':'مبدئي'}</span>
+              </div>
+            </div>
+          </button>}
+          {!isFromTasks&&<div className="planned-activity-head-actions">
+            <button type="button" className={`icon-btn planned-activity-edit-btn ${isExpanded?'is-open':''}`} aria-expanded={isExpanded} aria-label={isExpanded?`إغلاق تعديل ${item.title}`:`تعديل ${item.title}`} title={isExpanded?'إغلاق التعديل':'تعديل الوقت والاسم'} onClick={()=>toggleActivityEditor(item,startTime)}>{isExpanded?<ChevronUp size={16}/>:<Pencil size={15}/>}</button>
+            <button type="button" className="icon-btn danger" aria-label={`حذف ${item.title}`} title="حذف" onClick={()=>{if(expandedActivity===item.id)setExpandedActivity(null);setActivities(slot.id,(day.activities[slot.id]??[]).filter(activity=>activity.id!==item.id))}}><Trash2 size={15}/></button>
+          </div>}
+        </div>
+        {isExpanded&&<form className="planned-activity-controls" onSubmit={event=>{event.preventDefault();saveActivity(slot,item,shownTime,'confirmed',activityTitleDraft)}}>
+          <label><span>اسم العمل</span><input aria-label="اسم العمل" value={activityTitleDraft} onChange={event=>setActivityTitleDraft(event.target.value)}/></label>
+          <label><span>وقت النشاط · <strong className="time-text">{clock24(shownTime)}</strong></span><TaskTimeSelect value={shownTime} label={`وقت ${item.title}`} onChange={value=>setDraftTimes(current=>({...current,[item.id]:value}))}/></label>
+          <div className="activity-actions">
+            <button type="button" className="soft-btn" onClick={()=>saveActivity(slot,item,shownTime,'initial',activityTitleDraft)}>حفظ مبدئي</button>
+            <button type="submit" className="primary">{confirmed?'تأكيد التوقيت':'تأكيد الجدولة'}</button>
+          </div>
+        </form>}
+      </div>;
+    })}</div></div>;
+  };
   const dueTasks=scheduledTasksForDate(scheduledTasks,planDate);
   const startTracking=()=>{
     const date=planDate;
@@ -112,12 +191,45 @@ const clock24=(time?:string)=>{if(!time)return '';const [h,m]=time.split(':').ma
       {invalidOrder && <p role="alert" className="schedule-warning">راجع ترتيب المواقيت: الفجر، ثم الشروق، ثم الظهر والعصر والمغرب والعشاء.</p>}
       {workConflict && <p role="alert" className="schedule-warning">هذا القالب يقترح العمل بين الشروق والظهر. يمكنك تعديل الأنشطة بما يناسب مناوبتك؛ راجع موعد البداية لتتوافق حدود الفترات.</p>}
     </details>
-    <div className="section-title" id="day-timeline"><span className="eyebrow">من قبل الفجر إلى نهاية اليوم</span><h2>خطة مرتبة حول الصلاة</h2><p>تظهر الأعمال المقترحة تحت بطاقة الفترة بين الصلوات. يمكنك تعديل العمل وحذفِه أو إضافة عمل جديد وتحديد وقته.</p></div>
-    {prayerGroups.length===0?<p className="schedule-warning" role="status">اضبط مواقيت الصلاة أو انتظر تحميلها لعرض الجدول اليومي.</p>:<div className="prayer-timeline">{displayGroups.map(group=><section className="prayer-interval" key={group.id}>
-      {group.id==='before-fajr'?<header className="prayer-interval-heading"><Sun size={18}/><div><h3>قبل الفجر</h3><span>{timeLabel(group.time)} – {timeLabel(prayers['الفجر'])} · نصف ساعة</span></div></header>:<><div className="fixed-prayer-bar" aria-label={`موعد صلاة ${group.name} من ${group.time} حتى ${offsetTime(group.time,30)}`}><span className="prayer-bar-kicker">موعد الصلاة</span><Sun size={21}/><strong>صلاة {group.name}</strong><time>{timeLabel(group.time)} – {timeLabel(offsetTime(group.time,30))}</time><span className="prayer-bar-duration">٣٠ دقيقة</span></div><header className="prayer-interval-heading"><div><h3>بعد {group.name}</h3><span>حتى صلاة {group.next} · الأعمال المقترحة وأوقاتها</span></div></header>{group.id==='after-fajr'&&prayers['الشروق']&&<p className="prayer-note sunrise-marker">الشروق · {timeLabel(prayers['الشروق'])} · يمكن جدولة الضحى بعد ارتفاع الشمس</p>}</>}
-      <div className="half-hour-list">{group.slots.map(slot=>{const items=plannedDay.activities[slot.id]??[];if(!items.length)return null;return <Fragment key={slot.id}>{group.id==='after-fajr'&&prayers['الشروق']&&prayers['الشروق']>=slot.start&&prayers['الشروق']<slot.end&&<p className="sunrise-in-slot">الشروق · {timeLabel(prayers['الشروق'])}</p>}{renderSlot(slot)}</Fragment>})}</div>
-      {addingToSlot===group.id?<form className="planned-activity-add group-activity-add" onSubmit={event=>{event.preventDefault();addGroupActivity(group,'initial')}}><label>العمل<input autoFocus required value={drafts[group.id]??''} onChange={event=>setDrafts(current=>({...current,[group.id]:event.target.value}))} placeholder="أضف عملًا مناسبًا لهذه الفترة"/></label><label>الوقت<TaskTimeSelect value={draftTimes[group.id]??group.slots[0]?.start??''} label="وقت العمل" onChange={value=>setDraftTimes(current=>({...current,[group.id]:value}))}/></label><div className="group-add-actions"><button type="submit" className="soft-btn">إضافة مبدئية</button><button type="button" className="primary" onClick={()=>{addGroupActivity(group,'confirmed')}}>إضافة وتأكيد</button><button type="button" className="soft-btn" onClick={()=>setAddingToSlot(null)}>إلغاء</button></div></form>:<button type="button" className="add-half-hour group-add-trigger" onClick={()=>{setAddingToSlot(group.id);setDraftTimes(current=>({...current,[group.id]:group.slots[0]?.start??''}))}}><Plus size={16}/> إضافة عمل للفترة</button>}
-    </section>)}</div>}
+    <div className="section-title" id="day-timeline"><span className="eyebrow">من قبل الفجر إلى نهاية اليوم</span><h2>خطة مرتبة حول الصلاة</h2><p>اضغط على أي عمل لتعديل وقته أو تأكيد جدولته، أو انتقل مباشرة للفترة المطلوبة.</p></div>
+    {prayerGroups.length===0?<p className="schedule-warning" role="status">اضبط مواقيت الصلاة أو انتظر تحميلها لعرض الجدول اليومي.</p>:<>
+      <nav className="prayer-jump-bar" aria-label="الانتقال السريع إلى فترات اليوم">
+        {displayGroups.map(group=>{
+          const groupCount=group.slots.reduce((total,slot)=>total+(plannedDay.activities[slot.id]?.length??0),0);
+          return <button key={group.id} type="button" className={`prayer-jump-btn ${activeJumpGroup===group.id?'active':''}`} onClick={()=>jumpToGroup(group.id)}>
+            <span>{group.id==='before-fajr'?'قبل الفجر':group.name}</span>
+            <small>{groupCount}</small>
+          </button>;
+        })}
+      </nav>
+      <div className="prayer-timeline">{displayGroups.map(group=>{
+        const groupCount=group.slots.reduce((total,slot)=>total+(plannedDay.activities[slot.id]?.length??0),0);
+        return <section className={`prayer-interval ${group.id==='before-fajr'?'is-before-fajr':''}`} id={`prayer-interval-${group.id}`} key={group.id}>
+          {group.id==='before-fajr'?<header className="prayer-interval-heading is-standalone">
+            <div className="prayer-interval-title-row">
+              {prayerIcon(group.id,19)}
+              <div><h3>قبل الفجر</h3><span>{timeLabel(group.time)} – {timeLabel(prayers['الفجر'])} · نصف ساعة</span></div>
+            </div>
+            <span className="prayer-interval-count">{countLabel(groupCount)}</span>
+          </header>:<>
+            <div className="fixed-prayer-bar" aria-label={`موعد صلاة ${group.name} من ${group.time} حتى ${offsetTime(group.time,30)}`}>
+              <span className="prayer-bar-kicker">موعد الصلاة</span>
+              {prayerIcon(group.id,20)}
+              <strong>صلاة {group.name}</strong>
+              <time>{timeLabel(group.time)} – {timeLabel(offsetTime(group.time,30))}</time>
+              <span className="prayer-bar-duration">٣٠ دقيقة</span>
+            </div>
+            <header className="prayer-interval-heading">
+              <div><h3>بعد {group.name}</h3><span>حتى صلاة {group.next}</span></div>
+              <span className="prayer-interval-count">{countLabel(groupCount)}</span>
+            </header>
+            {group.id==='after-fajr'&&prayers['الشروق']&&<p className="prayer-note sunrise-marker">الشروق · {timeLabel(prayers['الشروق'])} · يمكن جدولة الضحى بعد ارتفاع الشمس</p>}
+          </>}
+          <div className="half-hour-list">{group.slots.map(slot=>{const items=plannedDay.activities[slot.id]??[];if(!items.length)return null;return <Fragment key={slot.id}>{group.id==='after-fajr'&&prayers['الشروق']&&prayers['الشروق']>=slot.start&&prayers['الشروق']<slot.end&&<p className="sunrise-in-slot">الشروق · {timeLabel(prayers['الشروق'])}</p>}{renderSlot(slot)}</Fragment>})}</div>
+          {addingToSlot===group.id?<form className="planned-activity-add group-activity-add" onSubmit={event=>{event.preventDefault();addGroupActivity(group,'initial')}}><label>العمل<input autoFocus required value={drafts[group.id]??''} onChange={event=>setDrafts(current=>({...current,[group.id]:event.target.value}))} placeholder="أضف عملًا مناسبًا لهذه الفترة"/></label><label>الوقت<TaskTimeSelect value={draftTimes[group.id]??group.slots[0]?.start??''} label="وقت العمل" onChange={value=>setDraftTimes(current=>({...current,[group.id]:value}))}/></label><div className="group-add-actions"><button type="submit" className="soft-btn">إضافة مبدئية</button><button type="button" className="primary" onClick={()=>{addGroupActivity(group,'confirmed')}}>إضافة وتأكيد</button><button type="button" className="soft-btn" onClick={()=>setAddingToSlot(null)}>إلغاء</button></div></form>:<button type="button" className="add-half-hour group-add-trigger" onClick={()=>{setExpandedActivity(null);setAddingToSlot(group.id);setDraftTimes(current=>({...current,[group.id]:group.slots[0]?.start??''}))}}><Plus size={16}/> إضافة عمل للفترة</button>}
+        </section>;
+      })}</div>
+    </>}
     {scheduleNotice&&<p className="schedule-warning" role="alert">{scheduleNotice}</p>}
     <div className="hint"><Check size={17}/> تعديلات الخطة تُطبّق على المتابعة عند الحفظ، مع الاحتفاظ بحالة الأعمال الموجودة. سجلات الأيام السابقة تبقى كما هي.</div>
     </div> : null}

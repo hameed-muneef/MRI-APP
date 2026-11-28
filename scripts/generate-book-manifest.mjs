@@ -1,11 +1,15 @@
 // يولّد public/books/manifest.json بعدد صفحات كل PDF في public/books،
 // ويقارن النتيجة بالقيم المعروفة terminًا يظل الرجل محدثًا عند تبديل أي ملف.
 // التشغيل: npm run manifest
-import {readdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {existsSync,readdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const booksDir=join(dirname(fileURLToPath(import.meta.url)),'..','public','books');
+if(!existsSync(booksDir)){
+  console.log('لا يوجد مجلد public/books؛ تم تخطي توليد manifest.json.');
+  process.exit(0);
+}
 const pdfFiles=readdirSync(booksDir).filter(f=>f.toLowerCase().endsWith('.pdf'));
 const temporaryPdfs=pdfFiles.filter(f=>/-(smaller|compressed|optimized)\.pdf$/i.test(f));
 if(temporaryPdfs.length){

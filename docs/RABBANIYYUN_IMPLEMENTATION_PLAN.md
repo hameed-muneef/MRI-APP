@@ -154,4 +154,30 @@
 - **الملفات**: `src/StrongGoals.tsx`, `src/GoalPeriodCards.tsx`, `src/views/AchievementView.tsx`, `src/strong-goals.css`, `src/accent-cards.css`, `tests/e2e/goals-flow.spec.ts`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
 - **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npm run test:unit`, و`npm test`.
 
+### HOME-QURAN-COPY-CLEANUP — تنقيح وصف بطاقة «القرآن والسنة» في الرئيسية (2026-11-27)
+- **التحديث**:
+  - حذف عبارة «عند اعتماد مصدرها» من وصف بطاقة «القرآن والسنة» في `src/views/HomeView.tsx` لتصبح: «المصحف الشريف، حفظ القرآن ومراجعته، ومكتبة الصحيحين.».
+- **الملفات**: `src/views/HomeView.tsx`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`) و`vite build` (`compile_applet`).
 
+### NOTIFICATIONS-UNIFIED-DEVICE-LEVEL — تنبيه موحد بلا فلترة وتفعيل الإشعارات على مستوى الجهاز مع زر إغلاق (2026-11-27)
+- **التحديث**:
+  - إضافة زر إغلاق مدمج (`×`) أعلى نافذة مركز الإشعارات (`NotificationCenter.tsx`) بتصميم متناسق مع الوضعين النهاري والليلي.
+  - إزالة أزرار التصفية (`الكل`، `الصلاة والتذكيرات`، `النظام`) وخيار «عرض غير المقروء فقط» لعرض جميع الإشعارات في قائمة موحدة واحدة دون فلترة.
+  - فرض توصيل التنبيهات على مستوى الجهاز (Capacitor `LocalNotifications` على الجوال و`Notification`/ServiceWorker على المتصفح) عبر تصدير `deliverDeviceNotification` في `src/notifications/delivery.ts` وتوحيد قنوات البث الحي في `src/notifications/LiveNotifications.tsx` (الصلوات، التذكيرات، المهام، المراجعة) دون أي مسار يقتصر على داخل التطبيق، مع شريط تفعيل سريع لإذن إشعارات الجهاز داخل مركز الإشعارات عند عدم منحه بعد.
+- **الملفات**: `src/views/NotificationCenter.tsx`, `src/notifications.css`, `src/notifications/delivery.ts`, `src/notifications/LiveNotifications.tsx`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npx vitest run src/notifications`, `npm run test:unit`, و`npm test`.
+
+### DAY-PLANNER-PRAYER-CLARITY — إبراز شريط الصلاة ومنع تداخل بطاقات التخطيط اليومي (2026-11-27)
+- **التحديث**:
+  - إزالة قواعد التجاوز التالفة في `src/home-cards.css` التي كانت تغطّي شريط الصلاة (`.fixed-prayer-bar`) بخلفية زرقاء باهتة تُخفي النص الأبيض والوقت وتفرض حدودًا خضراء وبيج قديمة.
+  - اعتماد شريط صلاة أزرق ملكي عالي التباين (`#1B5694` → `#144273`) مع نص أبيض واضح ووقت بإطار شفاف وأيقونات مميزة لكل وقت (قبل الفجر/فجر/ظهر/عصر/مغرب/عشاء) وبطاقات فترات بيضاء بإطار أزرق موحّد `1.5px` ومسافة فاصلة `22px` بين الفترات في الوضع النهاري، **مع إبقاء الوضع الليلي كما هو**.
+  - تحويل أعمال كل فترة في `src/DayPlanner.tsx` إلى صفوف مختصرة واضحة مفصولة بخطوط خفيفة (الوقت + الاسم + الحالة + زر تعديل وحذف) مع فتح محرر الاسم والوقت والتأكيد عند الضغط على العمل أو زر القلم فقط (Accordion)، وإضافة شريط انتقال سريع بين فترات اليوم مع عدد الأعمال في كل فترة.
+- **الملفات**: `src/DayPlanner.tsx`, `src/day-planner.css`, `src/home-cards.css`, `src/accent-cards.css`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npm run test:unit`, و`npm test`.
+
+### JOURNEY-BOOKS-CLEANUP — حذف كتب «السير إلى الله» (١٦ ملفًا) من `public/books` (2026-11-27)
+- **التحديث**:
+  - حذف مجلد `public/books` بالكامل (١٤ ملف PDF + `book-text.json` + `manifest.json`، قرابة ١٢٥ ميجابايت) بناءً على طلب المستخدم، مع حماية سكربتي `scripts/generate-book-manifest.mjs` و`scripts/prepare-cloudflare-pages.mjs` لتخطي المجلد عند عدم وجوده حتى لا يتعطل البناء.
+- **الملفات**: حذف `public/books/*`، تعديل `scripts/generate-book-manifest.mjs`, `scripts/prepare-cloudflare-pages.mjs`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npm run test:unit`, و`npm test`.

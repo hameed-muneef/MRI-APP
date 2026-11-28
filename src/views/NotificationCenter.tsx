@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {Bell,CheckCheck,Inbox,LoaderCircle,RefreshCw,ShieldCheck,Trash2} from 'lucide-react';
+import {Bell,BellRing,CheckCheck,Inbox,LoaderCircle,RefreshCw,ShieldCheck,Trash2,X} from 'lucide-react';
 import {authClient} from '../auth';
 import {LOCAL_ONLY} from '../config';
 import type {View} from '../app-state';
@@ -13,6 +13,9 @@ import {
 } from '../notifications/local-inbox';
 import {syncDeliveredNativeNotifications} from '../notifications/native-history';
 import {notificationCenterVisibility} from '../notifications/center-visibility';
+import {ensureSystemNotificationPermission} from '../notifications/delivery';
+import {isNativePlatform} from '../lib/device-location';
+import {openAppSettings} from '../lib/settings-opener';
 import '../notifications.css';
 import {useBackHandler} from '../navigation/useBackHandler';
 import {useScrollLock} from '../navigation/useScrollLock';
@@ -32,11 +35,6 @@ type NotificationRow={
 const PAGE_SIZE=20;
 const NOTIFICATION_TTL_MS=30*60*1000;
 const isExpired=(row:NotificationRow,nowMs:number)=>!row.read_at&&(nowMs-Date.parse(row.created_at)>NOTIFICATION_TTL_MS);
-const categories:[NotificationCategory|'all',string][] = [
-  ['all','الكل'],
-  ['reminder','الصلاة والتذكيرات'],
-  ['system','النظام'],
-];
 
 const viewLabels:Record<string,string>={
   home:'الرئيسية',day:'حياتي مع الله',tasks:'مركز المهام',week:'أسبوعي مع الله',month:'شهري مع الله',
@@ -71,14 +69,14 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
   const [open,setOpen]=useState(false);
   const [items,setItems]=useState<NotificationRow[]>([]);
   const [unread,setUnread]=useState(0);
-  const [category,setCategory]=useState<NotificationCategory|'all'>('all');
-  const [unreadOnly,setUnreadOnly]=useState(false);
   const [loading,setLoading]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [hasMore,setHasMore]=useState(false);
   const [legacy,setLegacy]=useState(false);
   const [confirmClear,setConfirmClear]=useState(false);
+  const [devicePerm,setDevicePerm]=useState<'granted'|'denied'|'prompt'|'unsupported'>('granted');
+  const [permHint,setPermHint]=useState('');
   const rootRef=useRef<HTMLDivElement>(null);
   const [nowMs,setNowMs]=useState(()=>Date.now());
   const visibility=notificationCenterVisibility(profile?.notification_preferences);
@@ -104,7 +102,12 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     document.addEventListener('visibilitychange',onVisible);
     return()=>document.removeEventListener('visibilitychange',onVisible);
   },[loadLocal]);
-  useEffect(()=>{if(open)void syncDeliveredNativeNotifications().then(added=>{if(added>0)loadLocal()})},[open,loadLocal]);
+
+  useEffect(()=>{
+    if(!open)return;
+    void syncDeliveredNativeNotifications().then(added=>{if(added>0)loadLocal()});
+    void ensureSystemNotificationPermission({ask:false}).then(status=>setDevicePerm(status));
+  },[open,loadLocal]);
 
   const legacyFallback=useCallback(async()=>{
     if(!authClient)return;
@@ -127,16 +130,13 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     setLoading(true);setError('');
     try{
       const {data,error:listError}=await authClient.rpc('list_notifications',{
-        p_limit:PAGE_SIZE,p_offset:0,p_category:category==='all'?null:category,p_unread_only:unreadOnly,
+        p_limit:PAGE_SIZE,p_offset:0,p_category:null,p_unread_only:false,
       });
       if(listError){
-        if(category==='all'&&!unreadOnly){
-          await legacyFallback();
-          const {data:count}=await authClient.rpc('unread_notification_count');
-          setUnread(Number(count??0));
-          return;
-        }
-        throw listError;
+        await legacyFallback();
+        const {data:count}=await authClient.rpc('unread_notification_count');
+        setUnread(Number(count??0));
+        return;
       }
       setLegacy(false);
       setItems((data??[]) as NotificationRow[]);
@@ -146,14 +146,14 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     }catch(caught){
       setError(caught instanceof Error?caught.message:'تعذر تحميل الإشعارات.');
     }finally{setLoading(false)}
-  },[localMode,loadLocal,user,preferencesOff,category,unreadOnly,legacy,legacyFallback]);
+  },[localMode,loadLocal,user,preferencesOff,legacy,legacyFallback]);
 
   const loadMore=useCallback(async()=>{
     if(localMode||!authClient||loading||legacy)return;
     setLoading(true);setError('');
     try{
       const {data,error:listError}=await authClient.rpc('list_notifications',{
-        p_limit:PAGE_SIZE,p_offset:items.length,p_category:category==='all'?null:category,p_unread_only:unreadOnly,
+        p_limit:PAGE_SIZE,p_offset:items.length,p_category:null,p_unread_only:false,
       });
       if(listError)throw listError;
       const next=(data??[]) as NotificationRow[];
@@ -161,7 +161,7 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
       setHasMore(next.length===PAGE_SIZE);
     }catch(caught){setError(caught instanceof Error?caught.message:'تعذر تحميل المزيد.')}
     finally{setLoading(false)}
-  },[localMode,category,unreadOnly,items.length,loading,legacy]);
+  },[localMode,items.length,loading,legacy]);
 
   useEffect(()=>{void loadFirst()},[loadFirst]);
 
@@ -227,24 +227,24 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     return()=>{document.removeEventListener('mousedown',onPointer);document.removeEventListener('keydown',onKey)};
   },[open]);
 
-  const visibleItems=useMemo(()=>{
-    if(!legacy)return items.map(row=>isExpired(row,nowMs)?{...row,read_at:row.read_at??new Date(nowMs).toISOString()}:row);
-    return items.filter(row=>
-      (category==='all'||(row.notification_category??categoryOf(row.notification_kind))===category)
-      &&(!unreadOnly||!row.read_at)
-    );
-  },[items,legacy,category,unreadOnly,nowMs]);
+  const visibleItems=useMemo(
+    ()=>items.map(row=>isExpired(row,nowMs)?{...row,read_at:row.read_at??new Date(nowMs).toISOString()}:row),
+    [items,nowMs],
+  );
 
-  const pickCategory=(next:NotificationCategory|'all')=>{
-    if(next===category)return;
-    setError('');
-    if(!legacy){setItems([]);setHasMore(false)}
-    setCategory(next);
-  };
-  const toggleUnreadOnly=(next:boolean)=>{
-    setError('');
-    if(!legacy){setItems([]);setHasMore(false)}
-    setUnreadOnly(next);
+  const enableDeviceNotifications=async()=>{
+    setPermHint('');
+    const result=await ensureSystemNotificationPermission({force:true});
+    setDevicePerm(result);
+    if(result==='granted')return;
+    if(isNativePlatform()){
+      const opened=await openAppSettings();
+      if(!opened.opened){
+        setPermHint('افتح إعدادات الجهاز ← التطبيقات ← الربانيون ← الإشعارات وفعّلها.');
+      }
+      return;
+    }
+    setPermHint('فعّل الإشعارات من إعدادات المتصفح (رمز القفل بجانب العنوان) لتصلك على الجهاز.');
   };
 
   const markRead=async(id:string)=>{
@@ -308,15 +308,37 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
     </button>
     {open&&<div className="notif-panel" role="dialog" aria-label="مركز الإشعارات" aria-live="polite">
       <header className="notif-head">
-        <div><h3>الإشعارات</h3><p className="muted small">{unread>0?`${unread} غير مقروءة`:'كل الإشعارات مقروءة'}</p></div>
-        <button type="button" className="soft-btn notif-mark-all" disabled={busy||unread===0} onClick={()=>void markAll()}><CheckCheck size={15}/> تعليم الكل كمقروء</button>
-        <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> مسح التنبيهات</button>
+        <div className="notif-head-top">
+          <div><h3>الإشعارات</h3><p className="muted small">{unread>0?`${unread} غير مقروءة`:'كل الإشعارات مقروءة'}</p></div>
+          <button
+            type="button"
+            className="notif-close-btn"
+            aria-label="إغلاق الإشعارات"
+            title="إغلاق"
+            onClick={()=>{setOpen(false);setConfirmClear(false)}}
+          >
+            <X size={16} aria-hidden="true"/>
+          </button>
+        </div>
+        <div className="notif-head-actions">
+          <button type="button" className="soft-btn notif-mark-all" disabled={busy||unread===0} onClick={()=>void markAll()}><CheckCheck size={15}/> تعليم الكل كمقروء</button>
+          <button type="button" className="soft-btn notif-clear-all" disabled={busy||items.length===0} onClick={()=>setConfirmClear(true)}><Trash2 size={15}/> مسح التنبيهات</button>
+        </div>
       </header>
       {preferencesOff?<div className="notif-state" role="status">
         <Bell size={18}/>
         <span>الإشعارات متوقفة من الإعدادات، فلا تصل تنبيهات جديدة. يمكنك تفعيلها من إعدادات الإشعارات.</span>
         <button type="button" className="soft-btn" onClick={()=>{setOpen(false);onNavigate('settings')}}>فتح إعدادات الإشعارات</button>
       </div>:<>
+      {(devicePerm==='prompt'||devicePerm==='denied')&&(
+        <div className={`notif-device-banner${devicePerm==='denied'?' is-denied':''}`} role="status">
+          <span>{devicePerm==='denied'?'إشعارات الجهاز محظورة حاليًا؛ فعّلها لتصلك التنبيهات خارج التطبيق.':'فعّل إشعارات الجهاز لتصلك التنبيهات حتى خارج التطبيق.'}</span>
+          <button type="button" className="soft-btn" onClick={()=>void enableDeviceNotifications()}>
+            <BellRing size={14} aria-hidden="true"/> تفعيل إشعارات الجهاز
+          </button>
+          {permHint&&<p className="small notif-device-hint">{permHint}</p>}
+        </div>
+      )}
       {confirmClear&&(
         <div className="notif-confirm" role="alertdialog" aria-label="تأكيد حذف جميع الإشعارات">
           <p className="small">سيتم حذف جميع الإشعارات من هذا الجهاز. متابعة؟</p>
@@ -326,13 +348,9 @@ export default function NotificationCenter({user,profile,onNavigate}:Props){
           </div>
         </div>
       )}
-      <div className="notif-filters" role="tablist" aria-label="تصنيفات الإشعارات">
-        {categories.map(([id,label])=><button key={id} type="button" role="tab" aria-selected={category===id} className={category===id?'active':''} onClick={()=>pickCategory(id)}>{label}</button>)}
-      </div>
-      <label className="notif-unread-toggle"><input type="checkbox" checked={unreadOnly} onChange={event=>toggleUnreadOnly(event.target.checked)}/> عرض غير المقروء فقط</label>
       {error&&<p className="notif-error" role="alert">{error} <button type="button" className="soft-btn" onClick={()=>void loadFirst()}><RefreshCw size={14}/> إعادة المحاولة</button></p>}
       {loading&&items.length===0?<p className="notif-state" role="status"><LoaderCircle size={17} className="spin"/> جارٍ تحميل الإشعارات…</p>
-        :visibleItems.length===0?<p className="notif-state"><Inbox size={18}/> {unreadOnly?'لا إشعارات غير مقروءة في هذا التصنيف.':'لا إشعارات في هذا التصنيف بعد.'}</p>
+        :visibleItems.length===0?<p className="notif-state"><Inbox size={18}/> لا إشعارات بعد.</p>
         :<ul className="notif-list">
           {visibleItems.map(row=>{
             const categoryValue=row.notification_category??categoryOf(row.notification_kind);

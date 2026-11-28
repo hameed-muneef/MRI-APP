@@ -12,7 +12,7 @@ import {loadPrefs, loadReminders} from './prefs-store';
 import {listAudioResources} from './service';
 import {playAudio, stopAudio} from './audio';
 import {playBuiltInTone} from './builtin-sounds';
-import {deliverReminder, isBrowserNotificationSupported, recordNotification, showBrowserNotification} from './delivery';
+import {deliverDeviceNotification, deliverReminder, recordNotification} from './delivery';
 import {checkPermissions, isNativePlatform, scheduleNativePersonalReminders, NOTIFICATIONS_CHANGED_EVENT} from './native-prayer-scheduler';
 import {soundPlanForPrayer, soundPlanForReminder, soundPlanForTask, type SoundPlan} from './sound-selection';
 import {resolvePrayerAdhan} from '../sounds/adhan-catalog';
@@ -155,35 +155,36 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
     (item: DueItem) => {
       const {prefs, library, nativeSystemActive} = state.current;
       if (item.kind === 'reminder') {
-        const channel = prefs.reminder_settings?.default_channel ?? 'both';
-        const handledNatively = nativeSystemActive && channel !== 'in_app';
+        const requested = prefs.reminder_settings?.default_channel ?? 'both';
+        const channel = requested === 'system' ? 'system' : 'both';
+        const handledNatively = nativeSystemActive;
         if (!handledNatively) {
           play(soundPlanForReminder(item.reminder.sound_id, prefs, library));
           void deliverReminder(item.reminder, channel);
         } else if (channel === 'both') {
           void recordNotification('reminder', item.reminder.title, item.reminder.description || 'تذكير مخصص', 'settings');
         }
-        if (channel === 'in_app' || channel === 'both') onToast(item.reminder.title);
+        if (channel === 'both') onToast(item.reminder.title);
         return;
       }
       if (item.kind === 'task') {
         if (!claimAudio(item.key)) return;
         const taskSettings = getTaskNotificationSettings(prefs);
-        const channel = taskSettings.channel ?? 'both';
-        const handledNatively = nativeSystemActive && channel !== 'in_app';
+        const requested = taskSettings.channel ?? 'both';
+        const channel = requested === 'system' ? 'system' : 'both';
+        const handledNatively = nativeSystemActive;
         if (!handledNatively) {
           play(soundPlanForTask(taskSettings.sound_id, prefs, library));
-          if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
-            showBrowserNotification(item.event.title, {
-              body: item.event.body,
-              tag: item.key,
-              requireInteraction: true,
-              link: 'tasks',
-              silent: taskSettings.sound_id === 'builtin:silent',
-            });
-          }
+          void deliverDeviceNotification(item.event.title, {
+            body: item.event.body,
+            tag: item.key,
+            requireInteraction: true,
+            link: 'tasks',
+            soundId: taskSettings.sound_id,
+            silent: taskSettings.sound_id === 'builtin:silent',
+          });
         }
-        if (channel === 'in_app' || channel === 'both') {
+        if (channel === 'both') {
           onToast(item.event.title);
           void recordNotification('task', item.event.title, item.event.body, 'tasks');
         }
@@ -195,20 +196,20 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
         const ayahRange = passage.ayahStart && passage.ayahEnd ? ` (آية ${passage.ayahStart}–${passage.ayahEnd})` : '';
         const title = `مراجعة حفظ — ${surahName}${ayahRange}`;
         const body = 'حان وقت مراجعة مقطعك المحفوظ. «وَذَكِّرْ فَإِنَّ الذِّكْرَىٰ تَنفَعُ الْمُؤْمِنِينَ»';
-        const channel = prefs.reminder_settings?.default_channel ?? 'both';
-        const handledNatively = nativeSystemActive && channel !== 'in_app';
+        const requested = prefs.reminder_settings?.default_channel ?? 'both';
+        const channel = requested === 'system' ? 'system' : 'both';
+        const handledNatively = nativeSystemActive;
         if (!handledNatively) {
           play(soundPlanForReminder(prefs.reminder_settings?.default_sound_id, prefs, library));
-          if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
-            showBrowserNotification(title, {
-              body,
-              tag: item.key,
-              requireInteraction: true,
-              silent: prefs.reminder_settings?.default_sound_id === 'builtin:silent',
-            });
-          }
+          void deliverDeviceNotification(title, {
+            body,
+            tag: item.key,
+            requireInteraction: true,
+            soundId: prefs.reminder_settings?.default_sound_id,
+            silent: prefs.reminder_settings?.default_sound_id === 'builtin:silent',
+          });
         }
-        if (channel === 'in_app' || channel === 'both') {
+        if (channel === 'both') {
           onToast(title);
           void recordNotification('reminder', title, body, 'settings');
         }
@@ -216,10 +217,11 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
       }
       const {event} = item;
       if (!claimAudio(item.key)) return;
-      const channel = prefs.prayer_settings?.[event.prayer]?.channel ?? 'both';
+      const requested = prefs.prayer_settings?.[event.prayer]?.channel ?? 'both';
+      const channel = requested === 'system' ? 'system' : 'both';
       const setting = prefs.prayer_settings?.[event.prayer];
       const hasNativeSchedule = Boolean(resolveSchedulingLocation(prayerLocation));
-      const handledNatively = nativeSystemActive && hasNativeSchedule && channel !== 'in_app' && Boolean(setting?.enabled) && setting?.adhan_type !== 'silent';
+      const handledNatively = nativeSystemActive && hasNativeSchedule && Boolean(setting?.enabled) && setting?.adhan_type !== 'silent';
       if (!handledNatively) {
         let plan = soundPlanForPrayer(event, prefs, library);
         // Never substitute a short chime for the selected Adhan recording on prayer arrival.
@@ -228,16 +230,15 @@ export default function LiveNotifications({prayers, prayerLocation, passages, ta
           plan = {mode: 'file', id: adhan.soundId, url: adhan.url};
         }
         play(plan, event.kind === 'at' ? 'builtin:chime' : 'builtin:soft');
-        if ((channel === 'system' || channel === 'both') && isBrowserNotificationSupported()) {
-          showBrowserNotification(event.title, {
-            body: event.body,
-            tag: event.key,
-            requireInteraction: event.kind === 'at',
-            silent: item.silent || plan.mode === 'none',
-          });
-        }
+        void deliverDeviceNotification(event.title, {
+          body: event.body,
+          tag: event.key,
+          requireInteraction: event.kind === 'at',
+          soundId: setting?.sound_id,
+          silent: item.silent || plan.mode === 'none',
+        });
       }
-      if (channel === 'in_app' || channel === 'both') {
+      if (channel === 'both') {
         onToast(event.title);
         void recordNotification('prayer', event.title, event.body, 'settings');
       }

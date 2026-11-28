@@ -1,3 +1,4 @@
+import {existsSync} from 'node:fs';
 import {readdir,stat,rm,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {loadEnv} from 'vite';
@@ -11,12 +12,14 @@ const baseUrl=new URL('/storage/v1/object/public/journey-books/',env.VITE_SUPABA
 const redirects=[];
 let omitted=0;
 
-for(const file of await readdir(booksDir)){
-  if(!file.toLowerCase().endsWith('.pdf'))continue;
-  const path=join(booksDir,file);
-  if(file===unavailableBook)omitted++;
-  else redirects.push(`/books/${file} ${new URL(encodeURIComponent(file),baseUrl)} 302`);
-  await rm(path);
+if(existsSync(booksDir)){
+  for(const file of await readdir(booksDir)){
+    if(!file.toLowerCase().endsWith('.pdf'))continue;
+    const path=join(booksDir,file);
+    if(file===unavailableBook)omitted++;
+    else redirects.push(`/books/${file} ${new URL(encodeURIComponent(file),baseUrl)} 302`);
+    await rm(path);
+  }
 }
 
 await writeFile(join(distDir,'_redirects'),`${redirects.join('\n')}\n`,'utf8');
