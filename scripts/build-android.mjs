@@ -13,5 +13,6 @@ function run(command, args, env = process.env) {
 run(process.execPath, ['scripts/generate-capacitor-assets.mjs']);
 run('npm', ['run', 'build'], {...process.env, VITE_LOCAL_ONLY: 'true'});
 try { rmSync('dist/books', {recursive: true, force: true}); } catch {}
+try { rmSync('dist/assets/aistudio', {recursive: true, force: true}); } catch {}
 run('npx', ['cap', 'sync', 'android']);
-console.log('Android assets and Capacitor sync ready (books excluded).');
+console.log('Android assets and Capacitor sync ready (books and chat uploads excluded).');

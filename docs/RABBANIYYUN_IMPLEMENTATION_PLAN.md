@@ -181,3 +181,11 @@
   - حذف مجلد `public/books` بالكامل (١٤ ملف PDF + `book-text.json` + `manifest.json`، قرابة ١٢٥ ميجابايت) بناءً على طلب المستخدم، مع حماية سكربتي `scripts/generate-book-manifest.mjs` و`scripts/prepare-cloudflare-pages.mjs` لتخطي المجلد عند عدم وجوده حتى لا يتعطل البناء.
 - **الملفات**: حذف `public/books/*`، تعديل `scripts/generate-book-manifest.mjs`, `scripts/prepare-cloudflare-pages.mjs`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
 - **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npm run test:unit`, و`npm test`.
+
+### APK-SIZE-OPTIMIZATION — تقليص حجم حزمة التطبيق والـ APK بنحو ٢٨ ميجابايت دون حذف أي ميزة (2026-11-27)
+- **التحديث**:
+  - استبعاد مجلد صور مرفقات المحادثة (`dist/assets/aistudio`، ~٩.٥ ميجابايت) تلقائيًا من كل بناء ويب وأندرويد عبر إضافة `stripChatUploadsPlugin` في `vite.config.ts` وتحديث `scripts/build-android.mjs`، وإزالة المرجع القديم `books/manifest.json` من `includeAssets`.
+  - ضغط خلفيات التطبيق في `public/backgrounds` (`2026.jpg` من ٧ ميجابايت إلى ٢٤٣ كيلوبايت، وتحسين `zakhareph-hero.jpg` و`zakhareph-bg.jpg`) وحذف `2025.jpg` غير المستخدمة (توفير ~٧.٦ ميجابايت).
+  - توحيد ترميز أصوات الأذان (`.ogg` صوت بشري أحادي `16 kHz` جودة متوازنة عبر `libvorbis`) في كلٍّ من `public/sounds/adhan` (من ١٢ إلى ٦.١ ميجابايت) و`android/app/src/main/res/raw` (من ١١ إلى ٦.٠ ميجابايت) لتوفير ~١١ ميجابايت إضافية مع الحفاظ على جميع المؤذنين ووضوح الصوت.
+- **الملفات**: `vite.config.ts`, `scripts/build-android.mjs`, `public/backgrounds/*`, `public/sounds/adhan/*`, `android/app/src/main/res/raw/*`, `docs/RABBANIYYUN_IMPLEMENTATION_PLAN.md`.
+- **التحقق**: اجتياز `tsc --noEmit` (`lint_applet`), `vite build` (`compile_applet`), `npm run test:unit`, و`npm test`.
